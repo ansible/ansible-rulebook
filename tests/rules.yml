@@ -1,0 +1,49 @@
+---
+- name: Demo rules
+  hosts: all
+  sources:
+    - name: azure
+      azure_service_bus:
+        conn_str: "{{connection_str}}"
+        queue_name: "{{queue_name}}"
+      transform: jsonify
+    - name: local
+      local_events:
+  rules:
+    - name: send to slack3
+      condition: payload.provisioningState == 'Succeeded'
+      action:
+        slack:
+          token: "{{token}}"
+          msg: "Deployment success at {{event.payload.eventTime}}: {{management_url}}{{event.payload.applicationId}}"
+          color: good
+    - name: send to slack4
+      condition: payload.provisioningState == 'Deleted'
+      action:
+        slack:
+          token: "{{token}}"
+          msg: "Deployment deleted at {{event.payload.eventTime}}: {{management_url}}{{event.payload.applicationId}}"
+          color: warning
+    - name: send to slack5
+      condition: payload.eventType != 'GET'
+      action:
+        slack:
+          token: "{{token}}"
+          msg: "{{event}}"
+    - name: send to slack6
+      condition: payload.text != ''
+      action:
+        slack:
+          token: "{{token}}"
+          msg: "{{event}}"
+    - name: assert fact
+      condition: payload.text != ''
+      action:
+        assert_fact:
+          ruleset: Demo rules
+          fact:
+            received_greeting: True
+    - name: log event
+      condition: payload.text != ''
+      action:
+        log:
