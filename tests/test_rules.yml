@@ -17,6 +17,7 @@
       condition: i == 2
       action:
         run_playbook:
+          - name: hello_playbook.yml
     - name:
       condition: i == 3
       action:

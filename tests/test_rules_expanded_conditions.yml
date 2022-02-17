@@ -1,0 +1,24 @@
+---
+- name: run playbooks
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name: hello1
+      condition:
+        any:
+          - i == 2
+          - j == 2
+      action:
+        run_playbooks:
+          - name: hello_playbook.yml
+    - name: hello2
+      condition:
+        all:
+          - i == 2
+          - j == 2
+      action:
+        run_playbooks:
+          - name: hello_playbook.yml
