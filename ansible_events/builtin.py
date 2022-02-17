@@ -2,6 +2,7 @@
 import durable.lang
 
 from typing import Dict
+import ansible_runner
 
 
 def assert_fact(ruleset: str, fact: Dict):
@@ -16,7 +17,7 @@ def post_event(ruleset: str, fact: Dict):
     durable.lang.post(ruleset, fact)
 
 
-def run_playbook(ruleset: str, fact: Dict):
+def run_playbook():
     pass
 
 

@@ -10,8 +10,7 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['docopt',
-                'asyncio',
+requirements = ['asyncio',
                 'durable_rules',
                 'pyparsing',
                 'redis',
@@ -37,7 +36,7 @@ setup(
     description="Event driven automation for Ansible",
     entry_points={
         'console_scripts': [
-            'ansible_events=ansible_events.cli:main',
+            'ansible-events=ansible_events.cli:entry_point',
         ],
     },
     install_requires=requirements,
