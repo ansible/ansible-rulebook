@@ -8,7 +8,6 @@ import pytest
 
 from ansible_events.rules_parser import parse_rule_sets
 from ansible_events.rule_generator import generate_rulesets
-from ansible_events.util import get_modules
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -88,10 +87,6 @@ def test_parse_rules():
         data = yaml.safe_load(f.read())
 
     rulesets = parse_rule_sets(data)
-
-    modules = get_modules(rulesets)
-    assert 'slack' in modules
-    assert 'log' in modules
 
 @pytest.mark.asyncio
 async def test_generate_rules():

@@ -15,8 +15,8 @@ class EventSource(NamedTuple):
 
 
 class Action(NamedTuple):
-    module: str
-    module_args: dict
+    action: str
+    action_args: dict
 
 
 class Condition(NamedTuple):
@@ -36,9 +36,9 @@ class RuleSet(NamedTuple):
     rules: List[Rule]
 
 
-class ModuleContext(NamedTuple):
-    module: str
-    modules_args: Dict
+class ActionContext(NamedTuple):
+    action: str
+    actions_args: Dict
     variables: Dict
     inventory: Dict
     c: Any

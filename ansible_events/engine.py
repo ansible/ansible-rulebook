@@ -8,14 +8,14 @@ import select
 import ansible_events.rule_generator as rule_generator
 from ansible_events.durability import provide_durability
 from ansible_events.messages import Shutdown
-from ansible_events.util import get_modules, substitute_variables
-from ansible_events.builtin import modules as builtin_modules
+from ansible_events.util import substitute_variables
+from ansible_events.builtin import actions as builtin_actions
 from ansible_events.rule_types import (
     EventSource,
     RuleSetQueue,
     RuleSetQueuePlan,
     RuleSetPlan,
-    ModuleContext,
+    ActionContext,
 )
 
 from typing import Optional, Dict, List, cast
@@ -40,37 +40,31 @@ def start_sources(sources: List[EventSource], source_dirs: List[str], variables:
         queue.put(Shutdown())
 
 
-async def call_module(
-    module: str,
-    module_args: Dict,
+async def call_action(
+    action: str,
+    action_args: Dict,
     variables: Dict,
     inventory: Dict,
     c,
-    modules: Optional[List[str]] = None,
-    module_dirs: Optional[List[str]] = None,
-    gate_cache: Optional[Dict] = None,
-    dependencies: Optional[List[str]] = None,
 ) -> Dict:
 
     logger = mp.get_logger()
 
-    if module_dirs is None:
-        module_dirs = []
-    if module in builtin_modules:
+    if action in builtin_actions:
         try:
             variables_copy = variables.copy()
             variables_copy["event"] = c.m._d
-            module_args = {
+            action_args = {
                 k: substitute_variables(v, variables_copy)
-                for k, v in module_args.items()
+                for k, v in action_args.items()
             }
-            logger.info(module_args)
-            result = builtin_modules[module](**module_args)
+            logger.info(action_args)
+            result = builtin_actions[action](**action_args)
         except Exception as e:
             logger.error(e)
             result = dict(error=e)
     else:
-        raise Exception(f'Module {module} not supported')
+        raise Exception(f'Action {action} not supported')
 
     return result
 
@@ -82,8 +76,6 @@ def run_rulesets(
     inventory: Dict,
     redis_host_name: Optional[str] = None,
     redis_port: Optional[int] = None,
-    module_dirs: Optional[List[str]] = None,
-    dependencies: Optional[List[str]] = None,
 ):
 
     logger = mp.get_logger()
@@ -109,14 +101,12 @@ def run_rulesets(
     print(str([x.define() for x in durable_rulesets]))
     logger.info(str([x.define() for x in durable_rulesets]))
 
-    asyncio.run(_run_rulesets_async(event_log, ruleset_queue_plans, dependencies, module_dirs))
+    asyncio.run(_run_rulesets_async(event_log, ruleset_queue_plans))
 
 
 async def _run_rulesets_async(
     event_log: mp.Queue,
     ruleset_queue_plans: List[RuleSetQueuePlan],
-    dependencies: Optional[List[str]] = None,
-    module_dirs: Optional[List[str]] = None,
 ):
 
     logger = mp.get_logger()
@@ -124,8 +114,6 @@ async def _run_rulesets_async(
     gate_cache: Dict = dict()
 
     rulesets = [ruleset for ruleset, _, _ in ruleset_queue_plans]
-
-    modules = get_modules(rulesets)
 
     queue_readers = {i[1]._reader: i for i in ruleset_queue_plans}  # type: ignore
 
@@ -148,14 +136,10 @@ async def _run_rulesets_async(
                 logger.info("Asserting event")
                 durable.lang.assert_fact(ruleset.name, data)
                 while not plan.empty():
-                    item = cast(ModuleContext, await plan.get())
+                    item = cast(ActionContext, await plan.get())
                     logger.info(item)
-                    result = await call_module(
+                    result = await call_action(
                         *item,
-                        module_dirs=module_dirs,
-                        modules=modules,
-                        gate_cache=gate_cache,
-                        dependencies=dependencies,
                     )
 
                 logger.info("Retracting event")

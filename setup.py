@@ -14,7 +14,8 @@ requirements = ['docopt',
                 'asyncio',
                 'durable_rules',
                 'pyparsing',
-                'redis']
+                'redis',
+                'ansible-runner']
 
 test_requirements = ['pytest>=3',
                      'pytest-asyncio']

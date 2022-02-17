@@ -10,7 +10,7 @@ from ansible_events.condition_types import (
     ConditionTypes,
 )
 
-from ansible_events.rule_types import RuleSetPlan, ModuleContext
+from ansible_events.rule_types import RuleSetPlan, ActionContext
 from ansible_events.rule_types import Condition as RuleCondition
 
 
@@ -18,14 +18,14 @@ from typing import Dict, List, Callable
 
 
 def add_to_plan(
-    module: str,
-    module_args: Dict,
+    action: str,
+    action_args: Dict,
     variables: Dict,
     inventory: Dict,
     plan: asyncio.Queue,
     c,
 ) -> None:
-    plan.put_nowait(ModuleContext(module, module_args, variables, inventory, c))
+    plan.put_nowait(ActionContext(action, action_args, variables, inventory, c))
 
 
 def visit_condition(parsed_condition: ConditionTypes, condition):
@@ -63,8 +63,8 @@ def make_fn(
         logger = mp.get_logger()
         logger.info(f"calling {ansible_rule.name}")
         add_to_plan(
-            ansible_rule.action.module,
-            ansible_rule.action.module_args,
+            ansible_rule.action.action,
+            ansible_rule.action.action_args,
             variables,
             inventory,
             plan,

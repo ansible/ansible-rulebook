@@ -20,7 +20,7 @@ def run_playbook(ruleset: str, fact: Dict):
     pass
 
 
-modules = dict(assert_fact=assert_fact,
+actions = dict(assert_fact=assert_fact,
                retract_fact=retract_fact,
                post_event=post_event,
                run_playbook=run_playbook)

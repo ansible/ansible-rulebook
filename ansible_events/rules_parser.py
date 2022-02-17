@@ -47,12 +47,12 @@ def parse_rules(rules: Dict) -> List[rt.Rule]:
 
 
 def parse_action(action: Dict) -> rt.Action:
-    module_name = list(action.keys())[0]
-    if action[module_name]:
-        module_args = {k: v for k, v in action[module_name].items()}
+    action_name = list(action.keys())[0]
+    if action[action_name]:
+        action_args = {k: v for k, v in action[action_name].items()}
     else:
-        module_args = {}
-    return rt.Action(module=module_name, module_args=module_args)
+        action_args = {}
+    return rt.Action(action=action_name, action_args=action_args)
 
 
 def parse_condition(condition: ct.Condition) -> rt.Condition:
