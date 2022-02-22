@@ -1,0 +1,34 @@
+---
+- name: Test rules4
+  hosts: localhost0, localhost1
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name:
+      condition: i == 1
+      action:
+        assert_fact:
+          ruleset: Test rules4
+          fact:
+            j: 1
+    - name:
+      condition: i == 2
+      action:
+        run_playbook:
+          name: hello_playbook1.yml
+    - name:
+      condition: i == 3
+      action:
+        retract_fact:
+          ruleset: Test rules4
+          fact:
+            j: 3
+    - name:
+      condition: i == 4
+      action:
+        post_event:
+          ruleset: Test rules4
+          fact:
+            j: 4
