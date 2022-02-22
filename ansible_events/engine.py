@@ -59,7 +59,7 @@ async def call_action(
                 for k, v in action_args.items()
             }
             logger.info(action_args)
-            result = builtin_actions[action](**action_args)
+            result = builtin_actions[action](inventory=inventory, **action_args)
         except Exception as e:
             logger.error(e)
             result = dict(error=e)
