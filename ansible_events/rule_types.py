@@ -36,11 +36,18 @@ class RuleSet(NamedTuple):
     rules: List[Rule]
 
 
+class HostRuleSet(NamedTuple):
+    name: str
+    host: str
+    ruleset: RuleSet
+
+
 class ActionContext(NamedTuple):
     action: str
     actions_args: Dict
     variables: Dict
     inventory: Dict
+    hosts: List[str]
     c: Any
 
 

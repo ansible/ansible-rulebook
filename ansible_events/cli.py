@@ -18,6 +18,7 @@ import argparse
 import sys
 import os
 import yaml
+import logging
 import multiprocessing as mp
 
 import ansible_events.rules_parser as rules_parser
@@ -28,7 +29,7 @@ from ansible_events.util import load_inventory
 from typing import Dict, List
 
 
-def load_vars(parsed_args: Dict) -> Dict[str, str]:
+def load_vars(parsed_args) -> Dict[str, str]:
     variables = dict()
     if parsed_args.vars:
         with open(parsed_args.vars) as f:
@@ -44,7 +45,7 @@ def load_vars(parsed_args: Dict) -> Dict[str, str]:
     return variables
 
 
-def load_rules(parsed_args: dict) -> List[RuleSet]:
+def load_rules(parsed_args) -> List[RuleSet]:
     with open(parsed_args.rules) as f:
         return rules_parser.parse_rule_sets(yaml.safe_load(f.read()))
 
@@ -68,6 +69,7 @@ def main(args):
     parser = get_parser()
     parsed_args = parser.parse_args(args)
     logger = mp.log_to_stderr()
+    logger.setLevel(logging.INFO)
     variables = load_vars(parsed_args)
     rulesets = load_rules(parsed_args)
     if parsed_args.inventory:
@@ -107,8 +109,6 @@ def main(args):
     logger.info("Joining processes")
     for task in tasks:
         task.join()
-
-    return 0
 
     return 0
 

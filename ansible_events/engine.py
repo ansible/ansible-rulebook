@@ -14,7 +14,6 @@ from ansible_events.rule_types import (
     EventSource,
     RuleSetQueue,
     RuleSetQueuePlan,
-    RuleSetPlan,
     ActionContext,
 )
 
@@ -45,6 +44,7 @@ async def call_action(
     action_args: Dict,
     variables: Dict,
     inventory: Dict,
+    hosts: List,
     c,
 ) -> Dict:
 
@@ -59,9 +59,12 @@ async def call_action(
                 for k, v in action_args.items()
             }
             logger.info(action_args)
-            result = builtin_actions[action](inventory=inventory, **action_args)
+            result = builtin_actions[action](inventory=inventory, hosts=hosts, **action_args)
+        except durable.engine.MessageNotHandledException as e:
+            logger.error(f"MessageNotHandledException: {action_args}")
+            result = dict(error=e)
         except Exception as e:
-            logger.error(e)
+            logger.error(f'Error calling {action}: {e}')
             result = dict(error=e)
     else:
         raise Exception(f'Action {action} not supported')
@@ -89,39 +92,36 @@ def run_rulesets(
         RuleSetQueuePlan(ruleset, queue, asyncio.Queue())
         for ruleset, queue in ruleset_queues
     ]
-    ruleset_plans = [
-        RuleSetPlan(ruleset, plan) for ruleset, _, plan in ruleset_queue_plans
-    ]
-    rulesets = [ruleset for ruleset, _, _ in ruleset_queue_plans]
 
-    logger.info(str([rulesets]))
-    durable_rulesets = rule_generator.generate_rulesets(
-        ruleset_plans, variables, inventory
+    host_rulesets_queue_plans = rule_generator.generate_rulesets(
+        ruleset_queue_plans, variables, inventory
     )
-    print(str([x.define() for x in durable_rulesets]))
-    logger.info(str([x.define() for x in durable_rulesets]))
+    for host_rulesets_list in host_rulesets_queue_plans:
+        print(host_rulesets_list)
+        for host_rulesets in host_rulesets_list[0]:
+            print(host_rulesets.define())
+    # print(str([y.define() for x in durable_rulesets.values() for y in x]))
+    # print(str([y.define() for x in durable_rulesets.values() for y in x[1]]))
+    # logger.info(str([y.define() for y in [x[1] for x in durable_rulesets]]))
 
-    asyncio.run(_run_rulesets_async(event_log, ruleset_queue_plans))
+    asyncio.run(_run_rulesets_async(event_log, host_rulesets_queue_plans, inventory))
 
 
 async def _run_rulesets_async(
     event_log: mp.Queue,
-    ruleset_queue_plans: List[RuleSetQueuePlan],
+    host_rulesets_queue_plans,
+    inventory
 ):
 
     logger = mp.get_logger()
 
-    gate_cache: Dict = dict()
-
-    rulesets = [ruleset for ruleset, _, _ in ruleset_queue_plans]
-
-    queue_readers = {i[1]._reader: i for i in ruleset_queue_plans}  # type: ignore
+    queue_readers = {i[1]._reader: i for i in host_rulesets_queue_plans}  # type: ignore
 
     while True:
         logger.info("Waiting for event")
         read_ready, _, _ = select.select(queue_readers.keys(), [], [])
         for queue_reader in read_ready:
-            ruleset, queue, plan = queue_readers[queue_reader]
+            host_rulesets, queue, plan = queue_readers[queue_reader]
             data = queue.get()
             if isinstance(data, Shutdown):
                 event_log.put(dict(type='Shutdown'))
@@ -131,20 +131,45 @@ async def _run_rulesets_async(
                 event_log.put(dict(type='EmptyEvent'))
                 continue
             logger.info(str(data))
-            logger.info(str(ruleset.name))
+            logger.info(str([ruleset.name for ruleset in host_rulesets]))
+            results = []
             try:
                 logger.info("Asserting event")
-                durable.lang.assert_fact(ruleset.name, data)
+                for ruleset in host_rulesets:
+                    try:
+                        durable.lang.assert_fact(ruleset.name, data)
+                    except durable.engine.MessageNotHandledException:
+                        logger.error(f"MessageNotHandledException: {data}")
+                        event_log.put(dict(type='MessageNotHandled'))
                 while not plan.empty():
                     item = cast(ActionContext, await plan.get())
-                    logger.info(item)
-                    result = await call_action(
-                        *item,
-                    )
+                    logger.debug(item)
+                    # Combine run_playbook actions into one action with multiple hosts
+                    if item.action == 'run_playbook':
+                        new_item = item._replace(hosts=[])
+                        logger.debug(f'Extending hosts')
+                        while item.action == 'run_playbook':
+                            logger.debug(f'Adding hosts {item.hosts}')
+                            new_item.hosts.extend(item.hosts)
+                            if plan.empty():
+                                item = None
+                                break
+                            item = cast(ActionContext, await plan.get())
+                        result = await call_action(*new_item)
+                        results.append(result)
+                        if item is not None:
+                            result = await call_action(*item)
+                            results.append(result)
+
+                    # Run all other actions individually
+                    else:
+                        result = await call_action(*item)
+                        results.append(result)
 
                 logger.info("Retracting event")
-                durable.lang.retract_fact(ruleset.name, data)
-                event_log.put(dict(type='ProcessedEvent', result=result))
+                for ruleset in host_rulesets:
+                    durable.lang.retract_fact(ruleset.name, data)
+                event_log.put(dict(type='ProcessedEvent', results=results))
             except durable.engine.MessageNotHandledException:
                 logger.error(f"MessageNotHandledException: {data}")
                 event_log.put(dict(type='MessageNotHandled'))

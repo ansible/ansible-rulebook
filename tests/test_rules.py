@@ -5,6 +5,7 @@ import yaml
 import os
 import asyncio
 import pytest
+import multiprocessing as mp
 
 from ansible_events.rules_parser import parse_rule_sets
 from ansible_events.rule_generator import generate_rulesets
@@ -93,16 +94,18 @@ async def test_generate_rules():
     os.chdir(HERE)
     with open('rules.yml') as f:
         data = yaml.safe_load(f.read())
+    with open('inventory.yml') as f:
+        inventory = yaml.safe_load(f.read())
 
     rulesets = parse_rule_sets(data)
     print(rulesets)
-    ruleset_plans = [ (ruleset, asyncio.Queue()) for ruleset in rulesets ]
-    durable_rulesets = generate_rulesets(ruleset_plans, dict(), dict())
+    ruleset_queue_plans = [ (ruleset, mp.Queue(), asyncio.Queue()) for ruleset in rulesets ]
+    durable_rulesets = generate_rulesets(ruleset_queue_plans, dict(), inventory)
 
-    print(durable_rulesets[0].define())
+    print(durable_rulesets[0][0][0].define())
 
-    assert_fact('Demo rules',  {'payload': {'text': 'hello'}})
+    assert_fact('Demo rules_localhost',  {'payload': {'text': 'hello'}})
 
-    assert ruleset_plans[0][1].get_nowait()[0] == 'slack'
-    assert ruleset_plans[0][1].get_nowait()[0] == 'assert_fact'
-    assert ruleset_plans[0][1].get_nowait()[0] == 'log'
+    assert ruleset_queue_plans[0][2].get_nowait()[0] == 'slack'
+    assert ruleset_queue_plans[0][2].get_nowait()[0] == 'assert_fact'
+    assert ruleset_queue_plans[0][2].get_nowait()[0] == 'log'

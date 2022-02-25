@@ -69,6 +69,6 @@ def test_run_rulesets():
     assert event_log.get()['type'] == 'ProcessedEvent', '2'
     assert event_log.get()['type'] == 'ProcessedEvent', '3'
     assert event_log.get()['type'] == 'ProcessedEvent', '4'
-    assert event_log.get()['type'] == 'MessageNotHandled', '6'
-    assert event_log.get()['type'] == 'Shutdown', '7'
+    assert event_log.get()['type'] == 'ProcessedEvent', '5'
+    assert event_log.get()['type'] == 'Shutdown', '6'
     assert event_log.empty()

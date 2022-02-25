@@ -1,6 +1,6 @@
 ---
 - name: Demo rules
-  hosts: all
+  hosts: localhost
   sources:
     - name: azure
       azure_service_bus:
