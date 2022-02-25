@@ -1,0 +1,74 @@
+---
+- name: Test rules4 Prod
+  hosts: all
+  sources:
+    - name: sensu
+      type: kafka
+      topic: sensuprod
+      url: prod
+      schema: sensu/v1
+    - name: datadog
+      type: kafka
+      topic: datadogprod
+      url: prod
+      schema: datadog/v1
+  rules:
+    - name:
+      condition: sensu.i == 1 and datadog.i == 2
+      action:
+        assert_fact:
+          ruleset: Test rules4
+          fact:
+            j: 1
+    - name:
+      condition: i == 2
+      action:
+        run_playbook:
+          name: hello_playbook.yml
+    - name:
+      condition: i == 3
+      action:
+        retract_fact:
+          ruleset: Test rules4
+          fact:
+            j: 3
+    - name:
+      condition: i == 4
+      action:
+        post_event:
+          ruleset: Test rules4
+          fact:
+            j: 4
+- name: Test rules4 Staging
+  hosts: all
+  sources:
+    - name: kafka
+      topic: monitoring
+      url: staging
+  rules:
+    - name:
+      condition: i == 1
+      action:
+        assert_fact:
+          ruleset: Test rules4
+          fact:
+            j: 1
+    - name:
+      condition: i == 2
+      action:
+        run_playbook:
+          name: hello_playbook.yml
+    - name:
+      condition: i == 3
+      action:
+        retract_fact:
+          ruleset: Test rules4
+          fact:
+            j: 3
+    - name:
+      condition: i == 4
+      action:
+        post_event:
+          ruleset: Test rules4
+          fact:
+            j: 4

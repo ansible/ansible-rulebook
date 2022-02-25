@@ -1,0 +1,47 @@
+---
+- name: Test rules4 Prod
+  hosts: all
+  sources:
+    - name: sensu
+          topic: sensuprod
+          url: prod
+        schema: sensu/v1
+    - name: datadog
+          topic: datadogprod
+        schema: datadog/v1
+          url: prod
+  states:
+    - name: Initial
+      state: dev
+      rules:
+      - name:
+        condition: sensu.data.i == 1 and datadog.header.k == 2
+          action:
+            assert_fact:
+              ruleset: Test rules4 Prod
+              fact:
+                j: 1
+      - name:
+        condition: i == 2
+          action:
+            change_state:
+              name: production
+  - name: Production
+    state: production
+rules:
+				- name:
+							condition: sensu.data.i == 1 and datadog.header.k == 2
+							action:
+								assert_fact:
+								ruleset: Test rules4 Prod
+								fact:
+									j: 1
+				- name:
+							condition: i == 2
+							action:
+									change_state:
+										name: shutdown
+		- name: Shutdown
+				state: shutdown
+				rules: []
+
