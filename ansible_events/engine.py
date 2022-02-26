@@ -20,7 +20,9 @@ from ansible_events.rule_types import (
 from typing import Optional, Dict, List, cast
 
 
-def start_sources(sources: List[EventSource], source_dirs: List[str], variables: Dict, queue: mp.Queue) -> None:
+def start_sources(
+    sources: List[EventSource], source_dirs: List[str], variables: Dict, queue: mp.Queue
+) -> None:
 
     logger = mp.get_logger()
 
@@ -29,10 +31,13 @@ def start_sources(sources: List[EventSource], source_dirs: List[str], variables:
     try:
 
         for source in sources:
-            module = runpy.run_path(os.path.join(source_dirs[0], source.source_name + ".py"))
+            module = runpy.run_path(
+                os.path.join(source_dirs[0], source.source_name + ".py")
+            )
 
             args = {
-                k: substitute_variables(v, variables) for k, v in source.source_args.items()
+                k: substitute_variables(v, variables)
+                for k, v in source.source_args.items()
             }
             module["main"](queue, args)
     finally:
@@ -40,11 +45,13 @@ def start_sources(sources: List[EventSource], source_dirs: List[str], variables:
 
 
 async def call_action(
+    host_ruleset: str,
     action: str,
     action_args: Dict,
     variables: Dict,
     inventory: Dict,
     hosts: List,
+    facts: Dict,
     c,
 ) -> Dict:
 
@@ -53,21 +60,31 @@ async def call_action(
     if action in builtin_actions:
         try:
             variables_copy = variables.copy()
-            variables_copy["event"] = c.m._d
+            variables_copy["event"] = c.m._d  # event data is stored in c.m._d
             action_args = {
                 k: substitute_variables(v, variables_copy)
                 for k, v in action_args.items()
             }
             logger.info(action_args)
-            result = builtin_actions[action](inventory=inventory, hosts=hosts, **action_args)
+            logger.info(f"facts: {durable.lang.get_facts(host_ruleset)}")
+            result = builtin_actions[action](
+                inventory=inventory,
+                hosts=hosts,
+                variables=variables_copy,
+                facts=durable.lang.get_facts(host_ruleset),
+                **action_args,
+            )
         except durable.engine.MessageNotHandledException as e:
             logger.error(f"MessageNotHandledException: {action_args}")
             result = dict(error=e)
+        except durable.engine.MessageObservedException as e:
+            logger.error(f"MessageObservedException: {action_args}")
+            result = dict(error=e)
         except Exception as e:
-            logger.error(f'Error calling {action}: {e}')
+            logger.error(f"Error calling {action}: {e}")
             result = dict(error=e)
     else:
-        raise Exception(f'Action {action} not supported')
+        raise Exception(f"Action {action} not supported")
 
     return result
 
@@ -97,20 +114,14 @@ def run_rulesets(
         ruleset_queue_plans, variables, inventory
     )
     for host_rulesets_list in host_rulesets_queue_plans:
-        print(host_rulesets_list)
         for host_rulesets in host_rulesets_list[0]:
-            print(host_rulesets.define())
-    # print(str([y.define() for x in durable_rulesets.values() for y in x]))
-    # print(str([y.define() for x in durable_rulesets.values() for y in x[1]]))
-    # logger.info(str([y.define() for y in [x[1] for x in durable_rulesets]]))
+            logger.debug(host_rulesets.define())
 
     asyncio.run(_run_rulesets_async(event_log, host_rulesets_queue_plans, inventory))
 
 
 async def _run_rulesets_async(
-    event_log: mp.Queue,
-    host_rulesets_queue_plans,
-    inventory
+    event_log: mp.Queue, host_rulesets_queue_plans, inventory
 ):
 
     logger = mp.get_logger()
@@ -124,11 +135,11 @@ async def _run_rulesets_async(
             host_rulesets, queue, plan = queue_readers[queue_reader]
             data = queue.get()
             if isinstance(data, Shutdown):
-                event_log.put(dict(type='Shutdown'))
+                event_log.put(dict(type="Shutdown"))
                 return
             logger.info(str(data))
             if not data:
-                event_log.put(dict(type='EmptyEvent'))
+                event_log.put(dict(type="EmptyEvent"))
                 continue
             logger.info(str(data))
             logger.info(str([ruleset.name for ruleset in host_rulesets]))
@@ -140,16 +151,16 @@ async def _run_rulesets_async(
                         durable.lang.assert_fact(ruleset.name, data)
                     except durable.engine.MessageNotHandledException:
                         logger.error(f"MessageNotHandledException: {data}")
-                        event_log.put(dict(type='MessageNotHandled'))
+                        event_log.put(dict(type="MessageNotHandled"))
                 while not plan.empty():
                     item = cast(ActionContext, await plan.get())
                     logger.debug(item)
                     # Combine run_playbook actions into one action with multiple hosts
-                    if item.action == 'run_playbook':
-                        new_item = item._replace(hosts=[])
-                        logger.debug(f'Extending hosts')
-                        while item.action == 'run_playbook':
-                            logger.debug(f'Adding hosts {item.hosts}')
+                    if item.action == "run_playbook":
+                        new_item = item._replace(hosts=[], facts={})
+                        logger.debug(f"Extending hosts")
+                        while item.action == "run_playbook":
+                            logger.debug(f"Adding hosts {item.hosts}")
                             new_item.hosts.extend(item.hosts)
                             if plan.empty():
                                 item = None
@@ -169,7 +180,7 @@ async def _run_rulesets_async(
                 logger.info("Retracting event")
                 for ruleset in host_rulesets:
                     durable.lang.retract_fact(ruleset.name, data)
-                event_log.put(dict(type='ProcessedEvent', results=results))
+                event_log.put(dict(type="ProcessedEvent", results=results))
             except durable.engine.MessageNotHandledException:
                 logger.error(f"MessageNotHandledException: {data}")
-                event_log.put(dict(type='MessageNotHandled'))
+                event_log.put(dict(type="MessageNotHandled"))

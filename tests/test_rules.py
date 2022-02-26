@@ -22,7 +22,8 @@ def test_m():
     assert (m.x == m.y).define() ==  {'x': {'$m': 'y'}}
     assert m.x < m.y
     assert (m.x < m.y).define() ==  {'$lt': {'x': {'$m': 'y'}}}
-
+    assert (+m.x).define() == {'$ex': {'x': 1}}
+    assert (-m.x).define() == {'$nex': {'x': 1}}
 
 def test_ruleset():
 
@@ -106,6 +107,6 @@ async def test_generate_rules():
 
     assert_fact('Demo rules_localhost',  {'payload': {'text': 'hello'}})
 
-    assert ruleset_queue_plans[0][2].get_nowait()[0] == 'slack'
-    assert ruleset_queue_plans[0][2].get_nowait()[0] == 'assert_fact'
-    assert ruleset_queue_plans[0][2].get_nowait()[0] == 'log'
+    assert ruleset_queue_plans[0][2].get_nowait()[1] == 'slack'
+    assert ruleset_queue_plans[0][2].get_nowait()[1] == 'assert_fact'
+    assert ruleset_queue_plans[0][2].get_nowait()[1] == 'log'

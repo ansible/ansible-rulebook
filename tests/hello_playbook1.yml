@@ -5,5 +5,8 @@
   tasks:
     - name:
       debug:
-        msg: 'Hello world'
+        msg: 'Hello event {{event}}'
+    - name:
+      debug:
+        msg: 'Hello facts {{facts}}'
 ...

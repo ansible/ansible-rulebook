@@ -69,7 +69,10 @@ def main(args):
     parser = get_parser()
     parsed_args = parser.parse_args(args)
     logger = mp.log_to_stderr()
-    logger.setLevel(logging.INFO)
+    if parsed_args.debug:
+        logger.setLevel(logging.DEBUG)
+    elif parsed_args.verbose:
+        logger.setLevel(logging.INFO)
     variables = load_vars(parsed_args)
     rulesets = load_rules(parsed_args)
     if parsed_args.inventory:

@@ -20,7 +20,11 @@ class OperatorExpression(NamedTuple):
     operator: str
     right: Union[Integer, String]
 
-class Condition(NamedTuple):
-    value: Union[Integer, String,  Identifier, OperatorExpression]
+class ExistsExpression(NamedTuple):
+    operator: str
+    value: String
 
-ConditionTypes = Union[Condition, OperatorExpression, Identifier, String, Integer]
+class Condition(NamedTuple):
+    value: Union[Integer, String,  Identifier, OperatorExpression, ExistsExpression]
+
+ConditionTypes = Union[Condition, OperatorExpression, Identifier, String, Integer, ExistsExpression]

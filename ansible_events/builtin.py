@@ -1,5 +1,5 @@
-
 import durable.lang
+import multiprocessing as mp
 
 from typing import Dict, List
 import ansible_runner
@@ -8,38 +8,60 @@ import tempfile
 import os
 import yaml
 
+def none(
+    inventory: Dict, hosts: List, variables: Dict, facts: Dict
+):
+    pass
 
-def assert_fact(inventory: Dict, hosts: List, ruleset: str, fact: Dict):
+def assert_fact(
+    inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: str, fact: Dict
+):
     durable.lang.assert_fact(ruleset, fact)
 
 
-def retract_fact(inventory: Dict, hosts: List, ruleset: str, fact: Dict):
+def retract_fact(
+    inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: str, fact: Dict
+):
     durable.lang.retract_fact(ruleset, fact)
 
 
-def post_event(inventory: Dict, hosts: List, ruleset: str, fact: Dict):
+def post_event(
+    inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: str, fact: Dict
+):
     durable.lang.post(ruleset, fact)
 
 
-def run_playbook(inventory: Dict, hosts: List, name: str, **kwargs):
+def run_playbook(
+    inventory: Dict, hosts: List, name: str, variables: Dict, facts: Dict, **kwargs
+):
+    logger = mp.get_logger()
 
-    temp = tempfile.mkdtemp(prefix='run_playbook')
-    print(temp)
+    temp = tempfile.mkdtemp(prefix="run_playbook")
+    logger.debug(f'temp {temp}')
+    logger.debug(f'variables {variables}')
+    logger.debug(f'facts {facts}')
 
-    os.mkdir(os.path.join(temp, 'env'))
-    os.mkdir(os.path.join(temp, 'inventory'))
-    with open(os.path.join(temp, 'inventory', 'hosts'), 'w') as f:
+    variables['facts'] = facts
+
+    os.mkdir(os.path.join(temp, "env"))
+    with open(os.path.join(temp, "env", "extravars"), "w") as f:
+        f.write(yaml.dump(variables))
+    os.mkdir(os.path.join(temp, "inventory"))
+    with open(os.path.join(temp, "inventory", "hosts"), "w") as f:
         f.write(yaml.dump(inventory))
-    os.mkdir(os.path.join(temp, 'project'))
+    os.mkdir(os.path.join(temp, "project"))
 
-    shutil.copy(name, os.path.join(temp, 'project', name))
+    shutil.copy(name, os.path.join(temp, "project", name))
 
     host_limit = ",".join(hosts)
 
     ansible_runner.run(playbook=name, private_data_dir=temp, limit=host_limit)
 
 
-actions = dict(assert_fact=assert_fact,
-               retract_fact=retract_fact,
-               post_event=post_event,
-               run_playbook=run_playbook)
+actions = dict(
+    none=none,
+    assert_fact=assert_fact,
+    retract_fact=retract_fact,
+    post_event=post_event,
+    run_playbook=run_playbook,
+)

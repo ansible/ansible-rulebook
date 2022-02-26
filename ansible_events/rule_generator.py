@@ -8,6 +8,7 @@ from ansible_events.condition_types import (
     Integer,
     Condition,
     ConditionTypes,
+    ExistsExpression,
 )
 
 from ansible_events.rule_types import RuleSetQueuePlan, ActionContext
@@ -19,15 +20,17 @@ from typing import Dict, List, Callable
 
 
 def add_to_plan(
+    host_ruleset: str,
     action: str,
     action_args: Dict,
     variables: Dict,
     inventory: Dict,
     hosts: List,
+    facts: Dict,
     plan: asyncio.Queue,
     c,
 ) -> None:
-    plan.put_nowait(ActionContext(action, action_args, variables, inventory, hosts, c))
+    plan.put_nowait(ActionContext(host_ruleset, action, action_args, variables, inventory, hosts, facts, c))
 
 
 def visit_condition(parsed_condition: ConditionTypes, condition):
@@ -50,6 +53,8 @@ def visit_condition(parsed_condition: ConditionTypes, condition):
             )
         else:
             raise Exception(f"Unhandled token {parsed_condition}")
+    elif isinstance(parsed_condition, ExistsExpression):
+        return visit_condition(parsed_condition.value, condition).__pos__()
     else:
         raise Exception(f"Unhandled token {parsed_condition}")
 
@@ -59,17 +64,19 @@ def generate_condition(ansible_condition: RuleCondition):
 
 
 def make_fn(
-    ansible_rule, variables: Dict, inventory: Dict, hosts: List, plan: asyncio.Queue
+    host_ruleset, ansible_rule, variables: Dict, inventory: Dict, hosts: List, facts: Dict, plan: asyncio.Queue
 ) -> Callable:
     def fn(c):
         logger = mp.get_logger()
         logger.info(f"calling {ansible_rule.name}")
         add_to_plan(
+            host_ruleset,
             ansible_rule.action.action,
             ansible_rule.action.action_args,
             variables,
             inventory,
             hosts,
+            facts,
             plan,
             c,
         )
@@ -87,13 +94,13 @@ def generate_rulesets(
     for ansible_ruleset, queue, plan in ansible_ruleset_queue_plans:
         host_rulesets = []
         for host in matching_hosts(inventory, ansible_ruleset.hosts):
-            a_ruleset = ruleset(f'{ansible_ruleset.name}_{host}')
-            with a_ruleset:
+            host_ruleset = ruleset(f'{ansible_ruleset.name}_{host}')
+            with host_ruleset:
                 for ansible_rule in ansible_ruleset.rules:
-                    fn = make_fn(ansible_rule, variables, inventory, [host], plan)
+                    fn = make_fn(host_ruleset.name, ansible_rule, variables, inventory, [host], {}, plan)
                     r = rule("all", True, generate_condition(ansible_rule.condition))(fn)
                     logger.info(r.define())
-            host_rulesets.append(a_ruleset)
+            host_rulesets.append(host_ruleset)
         rulesets.append((host_rulesets, queue, plan))
 
     return rulesets

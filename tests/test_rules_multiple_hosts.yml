@@ -32,3 +32,7 @@
           ruleset: Test rules4_localhost0
           fact:
             j: 4
+    - name:
+      condition: +j
+      action:
+        none:

@@ -43,11 +43,13 @@ class HostRuleSet(NamedTuple):
 
 
 class ActionContext(NamedTuple):
+    host_ruleset: Any
     action: str
     actions_args: Dict
     variables: Dict
     inventory: Dict
     hosts: List[str]
+    facts: Dict
     c: Any
 
 

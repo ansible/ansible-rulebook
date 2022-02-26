@@ -2,7 +2,7 @@
 from durable.lang import m
 from pyparsing import pyparsing_common, infix_notation, OpAssoc, one_of, ParserElement, QuotedString, ZeroOrMore, Combine
 ParserElement.enable_packrat()
-from ansible_events.condition_types import Identifier, String, OperatorExpression, Integer, Condition
+from ansible_events.condition_types import Identifier, String, OperatorExpression, Integer, Condition, ExistsExpression
 
 
 
@@ -16,6 +16,7 @@ string2 = QuotedString('"').copy().add_parse_action(lambda toks: String(toks[0])
 
 condition = infix_notation(integer | varname | string1 | string2,
                             [
+                                ('+', 1, OpAssoc.RIGHT, lambda toks: ExistsExpression(*toks[0])),
                                 ('!', 1, OpAssoc.RIGHT),
                                 (one_of('* /'), 2, OpAssoc.LEFT),
                                 (one_of('+ -'), 2, OpAssoc.LEFT),

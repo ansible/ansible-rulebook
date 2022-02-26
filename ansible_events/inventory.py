@@ -5,14 +5,11 @@ def parse_inventory_pattern(pattern):
 
 def matches_host(subpattern, host):
     if subpattern == host:
-        print('matches_host', subpattern, host, True)
         return True
-    print('matches_host', subpattern, host, False)
     return False
 
 
 def matching_hosts(inventory, pattern):
-    print('matching_hosts', inventory, pattern)
     subpatterns = parse_inventory_pattern(pattern)
     hosts = []
     for groupname, group in inventory.items():
