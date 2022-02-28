@@ -20,7 +20,7 @@ from typing import Dict, List, Callable
 
 
 def add_to_plan(
-    host_ruleset: str,
+    ruleset: str,
     action: str,
     action_args: Dict,
     variables: Dict,
@@ -30,7 +30,7 @@ def add_to_plan(
     plan: asyncio.Queue,
     c,
 ) -> None:
-    plan.put_nowait(ActionContext(host_ruleset, action, action_args, variables, inventory, hosts, facts, c))
+    plan.put_nowait(ActionContext(ruleset, action, action_args, variables, inventory, hosts, facts, c))
 
 
 def visit_condition(parsed_condition: ConditionTypes, condition):
@@ -64,13 +64,13 @@ def generate_condition(ansible_condition: RuleCondition):
 
 
 def make_fn(
-    host_ruleset, ansible_rule, variables: Dict, inventory: Dict, hosts: List, facts: Dict, plan: asyncio.Queue
+    ruleset, ansible_rule, variables: Dict, inventory: Dict, hosts: List, facts: Dict, plan: asyncio.Queue
 ) -> Callable:
     def fn(c):
         logger = mp.get_logger()
         logger.info(f"calling {ansible_rule.name}")
         add_to_plan(
-            host_ruleset,
+            ruleset,
             ansible_rule.action.action,
             ansible_rule.action.action_args,
             variables,
@@ -93,6 +93,12 @@ def generate_host_rulesets(
 
     for ansible_ruleset, queue, plan in ansible_ruleset_queue_plans:
         host_rulesets = []
+        a_ruleset = ruleset(ansible_ruleset.name)
+        with a_ruleset:
+            for ansible_rule in ansible_ruleset.rules:
+                fn = make_fn(a_ruleset.name, ansible_rule, variables, inventory, [], {}, plan)
+                r = rule("all", True, generate_condition(ansible_rule.condition))(fn)
+                logger.info(r.define())
         for host in matching_hosts(inventory, ansible_ruleset.hosts):
             host_ruleset = ruleset(f'{ansible_ruleset.name}_{host}')
             with host_ruleset:
@@ -101,6 +107,6 @@ def generate_host_rulesets(
                     r = rule("all", True, generate_condition(ansible_rule.condition))(fn)
                     logger.info(r.define())
             host_rulesets.append(host_ruleset)
-        rulesets.append((host_rulesets, queue, plan))
+        rulesets.append((a_ruleset, host_rulesets, queue, plan))
 
     return rulesets

@@ -1,0 +1,13 @@
+---
+- name: Test rules4
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name:
+      condition: i == 2
+      action:
+        run_playbook:
+          name: hello_playbook.yml

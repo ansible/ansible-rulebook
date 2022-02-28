@@ -103,7 +103,8 @@ async def test_generate_rules():
     ruleset_queue_plans = [ (ruleset, mp.Queue(), asyncio.Queue()) for ruleset in rulesets ]
     durable_rulesets = generate_host_rulesets(ruleset_queue_plans, dict(), inventory)
 
-    print(durable_rulesets[0][0][0].define())
+    print(durable_rulesets[0][0].define())
+    print(durable_rulesets[0][1][0].define())
 
     assert_fact('Demo rules_localhost',  {'payload': {'text': 'hello'}})
 

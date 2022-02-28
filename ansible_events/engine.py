@@ -78,7 +78,7 @@ async def call_action(
             logger.error(f"MessageNotHandledException: {action_args}")
             result = dict(error=e)
         except durable.engine.MessageObservedException as e:
-            logger.error(f"MessageObservedException: {action_args}")
+            logger.info(f"MessageObservedException: {action_args}")
             result = dict(error=e)
         except Exception as e:
             logger.error(f"Error calling {action}: {e}")
@@ -105,16 +105,16 @@ def run_rulesets(
     if redis_host_name and redis_port:
         provide_durability(durable.lang.get_host(), redis_host_name, redis_port)
 
-    ruleset_queue_plans = [
+    ansible_ruleset_queue_plans = [
         RuleSetQueuePlan(ruleset, queue, asyncio.Queue())
         for ruleset, queue in ruleset_queues
     ]
 
     host_rulesets_queue_plans = rule_generator.generate_host_rulesets(
-        ruleset_queue_plans, variables, inventory
+        ansible_ruleset_queue_plans, variables, inventory
     )
     for host_rulesets_list in host_rulesets_queue_plans:
-        for host_rulesets in host_rulesets_list[0]:
+        for host_rulesets in host_rulesets_list[1]:
             logger.debug(host_rulesets.define())
 
     asyncio.run(_run_rulesets_async(event_log, host_rulesets_queue_plans, inventory))
@@ -126,13 +126,13 @@ async def _run_rulesets_async(
 
     logger = mp.get_logger()
 
-    queue_readers = {i[1]._reader: i for i in host_rulesets_queue_plans}  # type: ignore
+    queue_readers = {i[2]._reader: i for i in host_rulesets_queue_plans}  # type: ignore
 
     while True:
         logger.info("Waiting for event")
         read_ready, _, _ = select.select(queue_readers.keys(), [], [])
         for queue_reader in read_ready:
-            host_rulesets, queue, plan = queue_readers[queue_reader]
+            global_ruleset, host_rulesets, queue, plan = queue_readers[queue_reader]
             data = queue.get()
             if isinstance(data, Shutdown):
                 event_log.put(dict(type="Shutdown"))
@@ -146,12 +146,20 @@ async def _run_rulesets_async(
             results = []
             try:
                 logger.info("Asserting event")
+                handled = False
+                try:
+                    durable.lang.assert_fact(global_ruleset.name, data)
+                    handled = True
+                except durable.engine.MessageNotHandledException:
+                    logger.debug(f"MessageNotHandledException: {data}")
                 for ruleset in host_rulesets:
                     try:
                         durable.lang.assert_fact(ruleset.name, data)
+                        handled = True
                     except durable.engine.MessageNotHandledException:
-                        logger.error(f"MessageNotHandledException: {data}")
-                        event_log.put(dict(type="MessageNotHandled"))
+                        logger.debug(f"MessageNotHandledException: {data}")
+                if not handled:
+                    event_log.put(dict(type="MessageNotHandled"))
                 while not plan.empty():
                     item = cast(ActionContext, await plan.get())
                     logger.debug(item)
@@ -178,9 +186,10 @@ async def _run_rulesets_async(
                         results.append(result)
 
                 logger.info("Retracting event")
+                durable.lang.retract_fact(global_ruleset.name, data)
                 for ruleset in host_rulesets:
                     durable.lang.retract_fact(ruleset.name, data)
                 event_log.put(dict(type="ProcessedEvent", results=results))
             except durable.engine.MessageNotHandledException:
-                logger.error(f"MessageNotHandledException: {data}")
+                logger.info(f"MessageNotHandledException: {data}")
                 event_log.put(dict(type="MessageNotHandled"))

@@ -5,7 +5,7 @@
     - name: range
       range:
         limit: 5
-  rules:
+  host_rules:
     - name:
       condition: i == 1
       action:
@@ -32,7 +32,3 @@
           ruleset: Test rules4
           fact:
             j: 4
-    - name:
-      condition: +j
-      action:
-        none:
