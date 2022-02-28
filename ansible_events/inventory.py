@@ -4,7 +4,11 @@ def parse_inventory_pattern(pattern):
 
 
 def matches_host(subpattern, host):
-    if subpattern == host:
+    if subpattern == "all" and host == 'localhost':
+        return False
+    elif subpattern == "all":
+        return True
+    elif subpattern == host:
         return True
     return False
 
