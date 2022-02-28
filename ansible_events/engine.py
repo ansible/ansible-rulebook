@@ -110,7 +110,7 @@ def run_rulesets(
         for ruleset, queue in ruleset_queues
     ]
 
-    host_rulesets_queue_plans = rule_generator.generate_rulesets(
+    host_rulesets_queue_plans = rule_generator.generate_host_rulesets(
         ruleset_queue_plans, variables, inventory
     )
     for host_rulesets_list in host_rulesets_queue_plans:

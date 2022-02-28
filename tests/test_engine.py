@@ -8,7 +8,6 @@ import multiprocessing as mp
 from pprint import pprint
 
 from ansible_events.rules_parser import parse_rule_sets
-from ansible_events.rule_generator import generate_rulesets
 from ansible_events.engine import run_rulesets, start_sources
 from ansible_events.messages import Shutdown
 from ansible_events.rule_types import EventSource

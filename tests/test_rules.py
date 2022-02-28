@@ -8,7 +8,7 @@ import pytest
 import multiprocessing as mp
 
 from ansible_events.rules_parser import parse_rule_sets
-from ansible_events.rule_generator import generate_rulesets
+from ansible_events.rule_generator import generate_host_rulesets
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -101,7 +101,7 @@ async def test_generate_rules():
     rulesets = parse_rule_sets(data)
     print(rulesets)
     ruleset_queue_plans = [ (ruleset, mp.Queue(), asyncio.Queue()) for ruleset in rulesets ]
-    durable_rulesets = generate_rulesets(ruleset_queue_plans, dict(), inventory)
+    durable_rulesets = generate_host_rulesets(ruleset_queue_plans, dict(), inventory)
 
     print(durable_rulesets[0][0][0].define())
 

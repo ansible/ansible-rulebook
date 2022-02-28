@@ -84,7 +84,7 @@ def make_fn(
     return fn
 
 
-def generate_rulesets(
+def generate_host_rulesets(
     ansible_ruleset_queue_plans: List[RuleSetQueuePlan], variables: Dict, inventory: Dict
 ):
 
