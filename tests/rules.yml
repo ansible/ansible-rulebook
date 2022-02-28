@@ -9,7 +9,7 @@
       transform: jsonify
     - name: local
       local_events:
-  rules:
+  host_rules:
     - name: send to slack3
       condition: payload.provisioningState == 'Succeeded'
       action:

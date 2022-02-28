@@ -13,7 +13,7 @@
   states:
     - name: Initial
       state: dev
-      rules:
+      host_rules:
       - name:
         condition: sensu.data.i == 1 and datadog.header.k == 2
           action:
@@ -28,7 +28,7 @@
               name: production
   - name: Production
     state: production
-rules:
+host_rules:
 				- name:
 							condition: sensu.data.i == 1 and datadog.header.k == 2
 							action:

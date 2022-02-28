@@ -1,0 +1,12 @@
+---
+- name: "Null rules"
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name:
+      condition: +i
+      action:
+        none:

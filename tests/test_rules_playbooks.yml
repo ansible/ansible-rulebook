@@ -5,7 +5,7 @@
     - name: range
       range:
         limit: 5
-  rules:
+  host_rules:
     - name:
       condition: i == 2 and j == 2
       action:

@@ -34,6 +34,7 @@ class RuleSet(NamedTuple):
     hosts: Union[str, List[str]]
     sources: List[EventSource]
     rules: List[Rule]
+    host_rules: List[Rule]
 
 
 class HostRuleSet(NamedTuple):

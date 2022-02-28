@@ -96,7 +96,7 @@ def generate_rulesets(
         for host in matching_hosts(inventory, ansible_ruleset.hosts):
             host_ruleset = ruleset(f'{ansible_ruleset.name}_{host}')
             with host_ruleset:
-                for ansible_rule in ansible_ruleset.rules:
+                for ansible_rule in ansible_ruleset.host_rules:
                     fn = make_fn(host_ruleset.name, ansible_rule, variables, inventory, [host], {}, plan)
                     r = rule("all", True, generate_condition(ansible_rule.condition))(fn)
                     logger.info(r.define())
