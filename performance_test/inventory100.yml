@@ -1,0 +1,203 @@
+all:
+  hosts:
+    localhost0:
+      ansible_host: localhost
+    localhost1:
+      ansible_host: localhost
+    localhost10:
+      ansible_host: localhost
+    localhost11:
+      ansible_host: localhost
+    localhost12:
+      ansible_host: localhost
+    localhost13:
+      ansible_host: localhost
+    localhost14:
+      ansible_host: localhost
+    localhost15:
+      ansible_host: localhost
+    localhost16:
+      ansible_host: localhost
+    localhost17:
+      ansible_host: localhost
+    localhost18:
+      ansible_host: localhost
+    localhost19:
+      ansible_host: localhost
+    localhost2:
+      ansible_host: localhost
+    localhost20:
+      ansible_host: localhost
+    localhost21:
+      ansible_host: localhost
+    localhost22:
+      ansible_host: localhost
+    localhost23:
+      ansible_host: localhost
+    localhost24:
+      ansible_host: localhost
+    localhost25:
+      ansible_host: localhost
+    localhost26:
+      ansible_host: localhost
+    localhost27:
+      ansible_host: localhost
+    localhost28:
+      ansible_host: localhost
+    localhost29:
+      ansible_host: localhost
+    localhost3:
+      ansible_host: localhost
+    localhost30:
+      ansible_host: localhost
+    localhost31:
+      ansible_host: localhost
+    localhost32:
+      ansible_host: localhost
+    localhost33:
+      ansible_host: localhost
+    localhost34:
+      ansible_host: localhost
+    localhost35:
+      ansible_host: localhost
+    localhost36:
+      ansible_host: localhost
+    localhost37:
+      ansible_host: localhost
+    localhost38:
+      ansible_host: localhost
+    localhost39:
+      ansible_host: localhost
+    localhost4:
+      ansible_host: localhost
+    localhost40:
+      ansible_host: localhost
+    localhost41:
+      ansible_host: localhost
+    localhost42:
+      ansible_host: localhost
+    localhost43:
+      ansible_host: localhost
+    localhost44:
+      ansible_host: localhost
+    localhost45:
+      ansible_host: localhost
+    localhost46:
+      ansible_host: localhost
+    localhost47:
+      ansible_host: localhost
+    localhost48:
+      ansible_host: localhost
+    localhost49:
+      ansible_host: localhost
+    localhost5:
+      ansible_host: localhost
+    localhost50:
+      ansible_host: localhost
+    localhost51:
+      ansible_host: localhost
+    localhost52:
+      ansible_host: localhost
+    localhost53:
+      ansible_host: localhost
+    localhost54:
+      ansible_host: localhost
+    localhost55:
+      ansible_host: localhost
+    localhost56:
+      ansible_host: localhost
+    localhost57:
+      ansible_host: localhost
+    localhost58:
+      ansible_host: localhost
+    localhost59:
+      ansible_host: localhost
+    localhost6:
+      ansible_host: localhost
+    localhost60:
+      ansible_host: localhost
+    localhost61:
+      ansible_host: localhost
+    localhost62:
+      ansible_host: localhost
+    localhost63:
+      ansible_host: localhost
+    localhost64:
+      ansible_host: localhost
+    localhost65:
+      ansible_host: localhost
+    localhost66:
+      ansible_host: localhost
+    localhost67:
+      ansible_host: localhost
+    localhost68:
+      ansible_host: localhost
+    localhost69:
+      ansible_host: localhost
+    localhost7:
+      ansible_host: localhost
+    localhost70:
+      ansible_host: localhost
+    localhost71:
+      ansible_host: localhost
+    localhost72:
+      ansible_host: localhost
+    localhost73:
+      ansible_host: localhost
+    localhost74:
+      ansible_host: localhost
+    localhost75:
+      ansible_host: localhost
+    localhost76:
+      ansible_host: localhost
+    localhost77:
+      ansible_host: localhost
+    localhost78:
+      ansible_host: localhost
+    localhost79:
+      ansible_host: localhost
+    localhost8:
+      ansible_host: localhost
+    localhost80:
+      ansible_host: localhost
+    localhost81:
+      ansible_host: localhost
+    localhost82:
+      ansible_host: localhost
+    localhost83:
+      ansible_host: localhost
+    localhost84:
+      ansible_host: localhost
+    localhost85:
+      ansible_host: localhost
+    localhost86:
+      ansible_host: localhost
+    localhost87:
+      ansible_host: localhost
+    localhost88:
+      ansible_host: localhost
+    localhost89:
+      ansible_host: localhost
+    localhost9:
+      ansible_host: localhost
+    localhost90:
+      ansible_host: localhost
+    localhost91:
+      ansible_host: localhost
+    localhost92:
+      ansible_host: localhost
+    localhost93:
+      ansible_host: localhost
+    localhost94:
+      ansible_host: localhost
+    localhost95:
+      ansible_host: localhost
+    localhost96:
+      ansible_host: localhost
+    localhost97:
+      ansible_host: localhost
+    localhost98:
+      ansible_host: localhost
+    localhost99:
+      ansible_host: localhost
+

@@ -1,0 +1,12 @@
+---
+- name: A playbook
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name:
+      debug:
+        msg: 'Hello event {{event}}'
+    - name:
+      debug:
+        msg: 'Hello facts {{facts}}'
+...

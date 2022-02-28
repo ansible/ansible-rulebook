@@ -1,0 +1,23 @@
+all:
+  hosts:
+    localhost0:
+      ansible_host: localhost
+    localhost1:
+      ansible_host: localhost
+    localhost2:
+      ansible_host: localhost
+    localhost3:
+      ansible_host: localhost
+    localhost4:
+      ansible_host: localhost
+    localhost5:
+      ansible_host: localhost
+    localhost6:
+      ansible_host: localhost
+    localhost7:
+      ansible_host: localhost
+    localhost8:
+      ansible_host: localhost
+    localhost9:
+      ansible_host: localhost
+
