@@ -8,10 +8,12 @@ import tempfile
 import os
 import yaml
 
+
 def none(
-    inventory: Dict, hosts: List, variables: Dict, facts: Dict
+    inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: str
 ):
     pass
+
 
 def assert_fact(
     inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: str, fact: Dict
@@ -32,7 +34,7 @@ def post_event(
 
 
 def run_playbook(
-    inventory: Dict, hosts: List, name: str, variables: Dict, facts: Dict, **kwargs
+    inventory: Dict, hosts: List, name: str, variables: Dict, facts: Dict, ruleset: str, **kwargs
 ):
     logger = mp.get_logger()
 

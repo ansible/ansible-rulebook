@@ -69,6 +69,8 @@ async def call_action(
             if facts is None:
                 facts = durable.lang.get_facts(ruleset)
             logger.info(f"facts: {durable.lang.get_facts(ruleset)}")
+            if 'ruleset' not in action_args:
+                action_args['ruleset'] = ruleset
             result = builtin_actions[action](
                 inventory=inventory,
                 hosts=hosts,

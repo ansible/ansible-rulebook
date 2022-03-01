@@ -1,5 +1,5 @@
 ---
-- name: Test rules4
+- name: Host Rules Perf
   hosts: all
   sources:
     - name: range
@@ -10,7 +10,6 @@
       condition: i == 1
       action:
         assert_fact:
-          ruleset: Test rules4_localhost0
           fact:
             j: 1
     - name:
@@ -22,14 +21,12 @@
       condition: i == 3
       action:
         retract_fact:
-          ruleset: Test rules4_localhost0
           fact:
             j: 3
     - name:
       condition: i == 4
       action:
         post_event:
-          ruleset: Test rules4_localhost0
           fact:
             j: 4
     - name:
