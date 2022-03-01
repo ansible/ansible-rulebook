@@ -45,7 +45,7 @@ def start_sources(
 
 
 async def call_action(
-    host_ruleset: str,
+    ruleset: str,
     action: str,
     action_args: Dict,
     variables: Dict,
@@ -67,8 +67,8 @@ async def call_action(
             }
             logger.info(action_args)
             if facts is None:
-                facts = durable.lang.get_facts(host_ruleset)
-            logger.info(f"facts: {durable.lang.get_facts(host_ruleset)}")
+                facts = durable.lang.get_facts(ruleset)
+            logger.info(f"facts: {durable.lang.get_facts(ruleset)}")
             result = builtin_actions[action](
                 inventory=inventory,
                 hosts=hosts,
@@ -174,8 +174,8 @@ async def _run_rulesets_async(
                             new_item.hosts.extend(item.hosts)
                             if item.hosts:
                                 logger.debug('Adding facts')
-                                logger.debug(f'host {item.hosts[0]} = {durable.lang.get_facts(item.host_ruleset)}')
-                                new_item.facts[item.hosts[0]] = durable.lang.get_facts(item.host_ruleset)
+                                logger.debug(f'host {item.hosts[0]} = {durable.lang.get_facts(item.ruleset)}')
+                                new_item.facts[item.hosts[0]] = durable.lang.get_facts(item.ruleset)
                                 logger.debug(f'facts {new_item.facts}')
                             if plan.empty():
                                 item = None

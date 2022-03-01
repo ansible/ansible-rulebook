@@ -44,7 +44,7 @@ class HostRuleSet(NamedTuple):
 
 
 class ActionContext(NamedTuple):
-    host_ruleset: Any
+    ruleset: Any
     action: str
     actions_args: Dict
     variables: Dict
