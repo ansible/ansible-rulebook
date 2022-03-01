@@ -66,12 +66,14 @@ async def call_action(
                 for k, v in action_args.items()
             }
             logger.info(action_args)
+            if facts is None:
+                facts = durable.lang.get_facts(host_ruleset)
             logger.info(f"facts: {durable.lang.get_facts(host_ruleset)}")
             result = builtin_actions[action](
                 inventory=inventory,
                 hosts=hosts,
                 variables=variables_copy,
-                facts=durable.lang.get_facts(host_ruleset),
+                facts=facts,
                 **action_args,
             )
         except durable.engine.MessageNotHandledException as e:
@@ -170,6 +172,11 @@ async def _run_rulesets_async(
                         while item.action == "run_playbook":
                             logger.debug(f"Adding hosts {item.hosts}")
                             new_item.hosts.extend(item.hosts)
+                            if item.hosts:
+                                logger.debug('Adding facts')
+                                logger.debug(f'host {item.hosts[0]} = {durable.lang.get_facts(item.host_ruleset)}')
+                                new_item.facts[item.hosts[0]] = durable.lang.get_facts(item.host_ruleset)
+                                logger.debug(f'facts {new_item.facts}')
                             if plan.empty():
                                 item = None
                                 break

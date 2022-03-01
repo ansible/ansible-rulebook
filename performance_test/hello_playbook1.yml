@@ -8,5 +8,5 @@
         msg: 'Hello event {{event}}'
     - name:
       debug:
-        msg: 'Hello facts {{facts}}'
+        msg: 'Hello facts {{facts[inventory_hostname]}}'
 ...
