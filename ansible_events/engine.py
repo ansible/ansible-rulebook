@@ -165,6 +165,7 @@ async def _run_rulesets_async(
                 if not handled:
                     event_log.put(dict(type="MessageNotHandled"))
                 while not plan.empty():
+                    run_last_item = True
                     item = cast(ActionContext, await plan.get())
                     logger.debug(item)
                     # Combine run_playbook actions into one action with multiple hosts
@@ -180,12 +181,12 @@ async def _run_rulesets_async(
                                 new_item.facts[item.hosts[0]] = durable.lang.get_facts(item.ruleset)
                                 logger.debug(f'facts {new_item.facts}')
                             if plan.empty():
-                                item = None
+                                run_last_item = False
                                 break
                             item = cast(ActionContext, await plan.get())
                         result = await call_action(*new_item)
                         results.append(result)
-                        if item is not None:
+                        if run_last_item:
                             result = await call_action(*item)
                             results.append(result)
 
