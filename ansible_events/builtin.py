@@ -7,12 +7,20 @@ import shutil
 import tempfile
 import os
 import yaml
+from pprint import pprint
+from .util import get_horizontal_rule
 
 
 def none(
     inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: str
 ):
     pass
+
+
+def debug(**kwargs):
+    print(get_horizontal_rule('='))
+    pprint(kwargs)
+    print(get_horizontal_rule('='))
 
 
 def assert_fact(
@@ -62,6 +70,7 @@ def run_playbook(
 
 actions = dict(
     none=none,
+    debug=debug,
     assert_fact=assert_fact,
     retract_fact=retract_fact,
     post_event=post_event,
