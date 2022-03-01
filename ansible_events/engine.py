@@ -56,11 +56,13 @@ async def call_action(
 ) -> Dict:
 
     logger = mp.get_logger()
+    logger.info(f"call_action {action}")
 
     if action in builtin_actions:
         try:
             variables_copy = variables.copy()
             variables_copy["event"] = c.m._d  # event data is stored in c.m._d
+            logger.info(f"substitute_variables {action_args} {variables_copy}")
             action_args = {
                 k: substitute_variables(v, variables_copy)
                 for k, v in action_args.items()
