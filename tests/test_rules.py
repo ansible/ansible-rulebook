@@ -24,6 +24,7 @@ def test_m():
     assert (m.x < m.y).define() ==  {'$lt': {'x': {'$m': 'y'}}}
     assert (+m.x).define() == {'$ex': {'x': 1}}
     assert (-m.x).define() == {'$nex': {'x': 1}}
+    assert (m.x.y.z == 'foo').define() ==  {'x.y.z': 'foo'}
 
 def test_ruleset():
 
