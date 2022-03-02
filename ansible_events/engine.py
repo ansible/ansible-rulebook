@@ -154,6 +154,7 @@ async def _run_rulesets_async(
                 logger.info("Asserting event")
                 handled = False
                 try:
+                    logger.debug(data)
                     durable.lang.assert_fact(global_ruleset.name, data)
                     handled = True
                 except durable.engine.MessageNotHandledException:

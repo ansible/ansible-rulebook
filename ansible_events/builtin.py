@@ -7,8 +7,12 @@ import shutil
 import tempfile
 import os
 import yaml
+import glob
+import json
 from pprint import pprint
 from .util import get_horizontal_rule
+
+from typing import Optional
 
 
 def none(
@@ -42,7 +46,7 @@ def post_event(
 
 
 def run_playbook(
-    inventory: Dict, hosts: List, name: str, variables: Dict, facts: Dict, ruleset: str, **kwargs
+    inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: str, name: str, assert_facts: Optional[bool] = None, **kwargs
 ):
     logger = mp.get_logger()
 
@@ -65,7 +69,14 @@ def run_playbook(
 
     host_limit = ",".join(hosts)
 
-    ansible_runner.run(playbook=name, private_data_dir=temp, limit=host_limit)
+    ansible_runner.run(playbook=name, private_data_dir=temp, limit=host_limit, verbosity=1)
+
+    if assert_facts:
+        for host_facts in glob.glob(os.path.join(temp, 'artifacts', '*', 'fact_cache', '*')):
+            with open(host_facts) as f:
+                fact = json.loads(f.read())
+            print(fact)
+            durable.lang.assert_fact(ruleset, fact)
 
 
 actions = dict(
