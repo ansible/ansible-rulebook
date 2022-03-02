@@ -33,9 +33,9 @@ def add_to_plan(
     plan.put_nowait(ActionContext(ruleset, action, action_args, variables, inventory, hosts, facts, c))
 
 
-def visit_condition(parsed_condition: ConditionTypes, condition):
+def visit_condition(parsed_condition: ConditionTypes, condition, variables: Dict):
     if isinstance(parsed_condition, Condition):
-        return visit_condition(parsed_condition.value, condition)
+        return visit_condition(parsed_condition.value, condition, variables)
     elif isinstance(parsed_condition, Identifier):
         return condition.__getattr__(parsed_condition.value)
     elif isinstance(parsed_condition, String):
@@ -44,23 +44,23 @@ def visit_condition(parsed_condition: ConditionTypes, condition):
         return parsed_condition.value
     elif isinstance(parsed_condition, OperatorExpression):
         if parsed_condition.operator == "!=":
-            return visit_condition(parsed_condition.left, condition).__ne__(
-                visit_condition(parsed_condition.right, condition)
+            return visit_condition(parsed_condition.left, condition, variables).__ne__(
+                visit_condition(parsed_condition.right, condition, variables)
             )
         elif parsed_condition.operator == "==":
-            return visit_condition(parsed_condition.left, condition).__eq__(
-                visit_condition(parsed_condition.right, condition)
+            return visit_condition(parsed_condition.left, condition, variables).__eq__(
+                visit_condition(parsed_condition.right, condition, variables)
             )
         else:
             raise Exception(f"Unhandled token {parsed_condition}")
     elif isinstance(parsed_condition, ExistsExpression):
-        return visit_condition(parsed_condition.value, condition).__pos__()
+        return visit_condition(parsed_condition.value, condition, variables).__pos__()
     else:
         raise Exception(f"Unhandled token {parsed_condition}")
 
 
-def generate_condition(ansible_condition: RuleCondition):
-    return visit_condition(ansible_condition.value, m)
+def generate_condition(ansible_condition: RuleCondition, variables: Dict):
+    return visit_condition(ansible_condition.value, m, variables)
 
 
 def make_fn(
@@ -97,14 +97,14 @@ def generate_host_rulesets(
         with a_ruleset:
             for ansible_rule in ansible_ruleset.rules:
                 fn = make_fn(a_ruleset.name, ansible_rule, variables, inventory, [], {}, plan)
-                r = rule("all", True, generate_condition(ansible_rule.condition))(fn)
+                r = rule("all", True, generate_condition(ansible_rule.condition, variables))(fn)
                 logger.info(r.define())
         for host in matching_hosts(inventory, ansible_ruleset.hosts):
             host_ruleset = ruleset(f'{ansible_ruleset.name}_{host}')
             with host_ruleset:
                 for ansible_rule in ansible_ruleset.host_rules:
                     fn = make_fn(host_ruleset.name, ansible_rule, variables, inventory, [host], {}, plan)
-                    r = rule("all", True, generate_condition(ansible_rule.condition))(fn)
+                    r = rule("all", True, generate_condition(ansible_rule.condition, variables))(fn)
                     logger.info(r.define())
             host_rulesets.append(host_ruleset)
         rulesets.append((a_ruleset, host_rulesets, queue, plan))
