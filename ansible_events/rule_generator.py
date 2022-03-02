@@ -14,6 +14,7 @@ from ansible_events.condition_types import (
 from ansible_events.rule_types import RuleSetQueuePlan, ActionContext
 from ansible_events.rule_types import Condition as RuleCondition
 from ansible_events.inventory import matching_hosts
+from ansible_events.util import substitute_variables
 
 
 from typing import Dict, List, Callable
@@ -39,7 +40,7 @@ def visit_condition(parsed_condition: ConditionTypes, condition, variables: Dict
     elif isinstance(parsed_condition, Identifier):
         return condition.__getattr__(parsed_condition.value)
     elif isinstance(parsed_condition, String):
-        return parsed_condition.value
+        return substitute_variables(parsed_condition.value, variables)
     elif isinstance(parsed_condition, Integer):
         return parsed_condition.value
     elif isinstance(parsed_condition, OperatorExpression):
