@@ -179,10 +179,13 @@ async def _run_rulesets_async(
                             logger.debug(f"Adding hosts {item.hosts}")
                             new_item.hosts.extend(item.hosts)
                             if item.hosts:
-                                logger.debug('Adding facts')
+                                logger.debug('Adding host facts')
                                 logger.debug(f'host {item.hosts[0]} = {durable.lang.get_facts(item.ruleset)}')
                                 new_item.facts[item.hosts[0]] = durable.lang.get_facts(item.ruleset)
                                 logger.debug(f'facts {new_item.facts}')
+                            else:
+                                logger.debug('Adding facts')
+                                new_item.facts['global'] = durable.lang.get_facts(item.ruleset)
                             if plan.empty():
                                 run_last_item = False
                                 break
