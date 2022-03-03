@@ -34,14 +34,14 @@ def print_event(
     variables: Dict,
     facts: Dict,
     ruleset: str,
-    glob: Optional[str] = None,
+    var_root: Optional[str] = None,
     pretty: Optional[str] = None,
 ):
     print_fn = print
     if pretty:
         print_fn = pprint
-    if glob:
-        print_fn(dpath.util.get(variables["event"], glob, separator="."))
+    if var_root:
+        print_fn(dpath.util.get(variables["event"], var_root, separator="."))
     else:
         print_fn(variables["event"])
 
@@ -74,6 +74,7 @@ def run_playbook(
     assert_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
     verbosity: int = 0,
+    var_root: Optional[str] = None,
     **kwargs,
 ):
     logger = mp.get_logger()
@@ -84,6 +85,11 @@ def run_playbook(
     logger.debug(f"facts {facts}")
 
     variables["facts"] = facts
+
+    if var_root:
+        o = dpath.util.get(variables["event"], var_root, separator=".")
+        if isinstance(o, dict):
+            variables.update(o)
 
     os.mkdir(os.path.join(temp, "env"))
     with open(os.path.join(temp, "env", "extravars"), "w") as f:
