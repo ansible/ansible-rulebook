@@ -49,7 +49,7 @@ setup(
     packages=find_packages(include=['ansible_events', 'ansible_events.*']),
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/benthomasson/ansible_events',
+    url='https://github.com/benthomasson/ansible-events',
     version='0.1.0',
     zip_safe=False,
 )
