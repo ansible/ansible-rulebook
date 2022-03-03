@@ -14,6 +14,7 @@ requirements = ['asyncio',
                 'durable_rules',
                 'pyparsing',
                 'redis',
+                'dpath',
                 'ansible-runner']
 
 test_requirements = ['pytest>=3',
