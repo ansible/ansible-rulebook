@@ -126,6 +126,18 @@ def run_rulesets(
     asyncio.run(_run_rulesets_async(event_log, host_rulesets_queue_plans, inventory))
 
 
+def json_count(data):
+    q = []
+    q.append(data)
+    while q:
+        o = q.pop()
+        if isinstance(o, dict):
+            if len(o) > 255:
+                raise Exception(f'Only 255 values supported per dictionary found {len(o)}')
+            for i in o.values():
+                q.append(i)
+
+
 async def _run_rulesets_async(
     event_log: mp.Queue, host_rulesets_queue_plans, inventory
 ):
@@ -140,6 +152,7 @@ async def _run_rulesets_async(
         for queue_reader in read_ready:
             global_ruleset, host_rulesets, queue, plan = queue_readers[queue_reader]
             data = queue.get()
+            json_count(data)
             if isinstance(data, Shutdown):
                 event_log.put(dict(type="Shutdown"))
                 return
