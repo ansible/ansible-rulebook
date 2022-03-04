@@ -112,3 +112,25 @@ async def test_generate_rules():
     assert ruleset_queue_plans[0][2].get_nowait()[1] == 'slack'
     assert ruleset_queue_plans[0][2].get_nowait()[1] == 'assert_fact'
     assert ruleset_queue_plans[0][2].get_nowait()[1] == 'log'
+
+
+@pytest.mark.asyncio
+async def test_generate_rules_multiple_conditions():
+    os.chdir(HERE)
+    with open('rules_with_multiple_conditions.yml') as f:
+        data = yaml.safe_load(f.read())
+    with open('inventory.yml') as f:
+        inventory = yaml.safe_load(f.read())
+
+    rulesets = parse_rule_sets(data)
+    print(rulesets)
+    ruleset_queue_plans = [ (ruleset, mp.Queue(), asyncio.Queue()) for ruleset in rulesets ]
+    durable_rulesets = generate_host_rulesets(ruleset_queue_plans, dict(), inventory)
+
+    print(durable_rulesets[0][0].define())
+    print(durable_rulesets[0][1][0].define())
+
+    assert_fact('Demo rules multiple conditions',  {'payload': {'provisioningState': 'Succeeded'}})
+    assert ruleset_queue_plans[0][2].get_nowait()[1] == 'slack'
+    assert_fact('Demo rules multiple conditions',  {'payload': {'provisioningState': 'Deleted'}})
+    assert ruleset_queue_plans[0][2].get_nowait()[1] == 'slack'

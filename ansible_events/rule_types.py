@@ -20,7 +20,8 @@ class Action(NamedTuple):
 
 
 class Condition(NamedTuple):
-    value: ct.Condition
+    when: str
+    value: List[ct.Condition]
 
 
 class Rule(NamedTuple):

@@ -3,7 +3,7 @@ import ansible_events.condition_types as ct
 
 from ansible_events.condition_parser import parse_condition as parse_condition_value
 
-from typing import Dict, List
+from typing import Dict, List, Any
 
 
 def parse_rule_sets(rule_sets: Dict) -> List[rt.RuleSet]:
@@ -51,7 +51,7 @@ def parse_rules(rules: Dict) -> List[rt.Rule]:
         rule_list.append(
             rt.Rule(
                 name=name,
-                condition=parse_condition(parse_condition_value(rule["condition"])),
+                condition=parse_condition(rule["condition"]),
                 action=parse_action(rule["action"]),
             )
         )
@@ -68,5 +68,16 @@ def parse_action(action: Dict) -> rt.Action:
     return rt.Action(action=action_name, action_args=action_args)
 
 
-def parse_condition(condition: ct.Condition) -> rt.Condition:
-    return rt.Condition(condition)
+def parse_condition(condition: Any) -> rt.Condition:
+    if isinstance(condition, str):
+        return rt.Condition('all', [parse_condition_value(condition)])
+    elif isinstance(condition, dict):
+        keys = list(condition.keys())
+        if len(condition) == 1 and keys[0] in ['any', 'all']:
+            when = keys[0]
+            return rt.Condition(when, [parse_condition_value(c) for c in condition[when]])
+        else:
+            raise Exception(f'Condition should have one of any or all: {condition}')
+
+    else:
+        raise Exception(f'Unsupported condition {condition}')

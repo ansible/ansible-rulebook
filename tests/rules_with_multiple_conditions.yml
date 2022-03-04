@@ -1,0 +1,17 @@
+---
+- name: Demo rules multiple conditions
+  hosts: localhost
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name: multiple conditions
+      condition:
+        any:
+          - payload.provisioningState == 'Succeeded'
+          - payload.provisioningState == 'Deleted'
+      action:
+        slack:
+          token: "{{token}}"
+          msg: "Deployment changed at {{event.payload.eventTime}}: {{management_url}}{{event.payload.applicationId}}"

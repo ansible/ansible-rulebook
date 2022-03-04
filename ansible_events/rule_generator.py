@@ -35,7 +35,9 @@ def add_to_plan(
 
 
 def visit_condition(parsed_condition: ConditionTypes, condition, variables: Dict):
-    if isinstance(parsed_condition, Condition):
+    if isinstance(parsed_condition, list):
+        return [visit_condition(c, condition, variables) for c in parsed_condition]
+    elif isinstance(parsed_condition, Condition):
         return visit_condition(parsed_condition.value, condition, variables)
     elif isinstance(parsed_condition, Identifier):
         return condition.__getattr__(parsed_condition.value)
@@ -102,14 +104,14 @@ def generate_host_rulesets(
         with a_ruleset:
             for ansible_rule in ansible_ruleset.rules:
                 fn = make_fn(a_ruleset.name, ansible_rule, variables, inventory, [], {}, plan)
-                r = rule("all", True, generate_condition(ansible_rule.condition, variables))(fn)
+                r = rule(ansible_rule.condition.when, True, *generate_condition(ansible_rule.condition, variables))(fn)
                 logger.info(r.define())
         for host in matching_hosts(inventory, ansible_ruleset.hosts):
             host_ruleset = ruleset(f'{ansible_ruleset.name}_{host}')
             with host_ruleset:
                 for ansible_rule in ansible_ruleset.host_rules:
                     fn = make_fn(host_ruleset.name, ansible_rule, variables, inventory, [host], {}, plan)
-                    r = rule("all", True, generate_condition(ansible_rule.condition, variables))(fn)
+                    r = rule(ansible_rule.condition.when, True, *generate_condition(ansible_rule.condition, variables))(fn)
                     logger.info(r.define())
             host_rulesets.append(host_ruleset)
         rulesets.append((a_ruleset, host_rulesets, queue, plan))
