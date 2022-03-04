@@ -3,6 +3,7 @@ import yaml
 import os
 import json
 import multiprocessing as mp
+import dpath.util
 
 from typing import Dict, Union
 
@@ -22,7 +23,7 @@ def render_string(value: str, context: Dict) -> str:
 def render_string_or_return_value(value: Any, context: Dict) -> Any:
     if isinstance(value, str):
         if value.startswith('{{') and value.endswith('}}'):
-            return context[value[2:-2]]
+            return dpath.util.get(context, value[2:-2], separator='.')
         else:
             return render_string(value, context)
 

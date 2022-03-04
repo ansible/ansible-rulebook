@@ -47,8 +47,15 @@ def print_event(
 
 
 def assert_fact(
-    inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: str, fact: Dict
+    inventory: Dict,
+    hosts: List,
+    variables: Dict,
+    facts: Dict,
+    ruleset: str,
+    fact: Dict,
 ):
+    logger = mp.get_logger()
+    logger.debug(f"assert_fact {ruleset} {fact}")
     durable.lang.assert_fact(ruleset, fact)
 
 
@@ -88,8 +95,7 @@ def run_playbook(
 
     if var_root:
         o = dpath.util.get(variables["event"], var_root, separator=".")
-        if isinstance(o, dict):
-            variables.update(o)
+        variables["event"] = o
 
     os.mkdir(os.path.join(temp, "env"))
     with open(os.path.join(temp, "env", "extravars"), "w") as f:
@@ -108,13 +114,13 @@ def run_playbook(
     )
 
     if assert_facts or post_events:
-        logger.debug('assert_facts')
+        logger.debug("assert_facts")
         for host_facts in glob.glob(
             os.path.join(temp, "artifacts", "*", "fact_cache", "*")
         ):
             with open(host_facts) as f:
                 fact = json.loads(f.read())
-            logger.debug(f'fact {fact}')
+            logger.debug(f"fact {fact}")
             durable.lang.assert_fact(ruleset, fact)
             if post_events:
                 durable.lang.retract_fact(ruleset, fact)

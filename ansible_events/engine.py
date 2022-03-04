@@ -4,6 +4,7 @@ import runpy
 import asyncio
 import durable.lang
 import select
+import traceback
 
 import ansible_events.rule_generator as rule_generator
 from ansible_events.durability import provide_durability
@@ -87,7 +88,7 @@ async def call_action(
             logger.info(f"MessageObservedException: {action_args}")
             result = dict(error=e)
         except Exception as e:
-            logger.error(f"Error calling {action}: {e}")
+            logger.error(f"Error calling {action}: {e}\n {traceback.format_exc()}")
             result = dict(error=e)
     else:
         raise Exception(f"Action {action} not supported")
