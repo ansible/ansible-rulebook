@@ -52,6 +52,10 @@ def visit_condition(parsed_condition: ConditionTypes, condition, variables: Dict
             return visit_condition(parsed_condition.left, condition, variables).__eq__(
                 visit_condition(parsed_condition.right, condition, variables)
             )
+        elif parsed_condition.operator == "is":
+            if isinstance(parsed_condition.right, Identifier):
+                if parsed_condition.right.value == 'defined':
+                    return visit_condition(parsed_condition.left, condition, variables).__pos__()
         else:
             raise Exception(f"Unhandled token {parsed_condition}")
     elif isinstance(parsed_condition, ExistsExpression):

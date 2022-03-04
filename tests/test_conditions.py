@@ -112,3 +112,9 @@ def test_parse_condition():
     print(visit_condition(result, m, {}).define())
     print((m.x != m.y).define())
     assert visit_condition(result, m, {}).define() == (+m.i).define()
+
+    result = parse_condition('i is defined')[0]
+    print(result)
+    print(visit_condition(result, m, {}).define())
+    print((m.x != m.y).define())
+    assert visit_condition(result, m, {}).define() == (+m.i).define()
