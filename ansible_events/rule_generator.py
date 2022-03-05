@@ -68,7 +68,7 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
                 if parsed_condition.right.value == 'defined':
                     return visit_condition(parsed_condition.left, variables).__pos__()
         elif parsed_condition.operator == "<<":
-            return c.__getattr__(visit_condition(parsed_condition.left, variables)).__lshift__(
+            return visit_condition(parsed_condition.left, variables).__lshift__(
                 visit_condition(parsed_condition.right, variables)
             )
         else:
@@ -80,7 +80,11 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
 
 
 def generate_condition(ansible_condition: RuleCondition, variables: Dict):
-    return visit_condition(ansible_condition.value, variables)
+    condition =  visit_condition(ansible_condition.value, variables)
+    logger = mp.get_logger()
+    for i in condition:
+        logger.debug(f"{i.define()}")
+    return condition
 
 
 def make_fn(

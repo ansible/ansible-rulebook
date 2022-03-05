@@ -1,6 +1,6 @@
 
 
-from durable.lang import m
+from durable.lang import m, c
 
 from ansible_events.condition_parser import parse_condition, Identifier, String, OperatorExpression, condition
 from ansible_events.rule_generator import visit_condition
@@ -132,3 +132,9 @@ def test_parse_condition():
     print(visit_condition(result, {}).define())
     print((m.x != m.y).define())
     assert visit_condition(result, {}).define() == ((m.x == 'foo') & (m.y == 'bar')).define()
+
+    result = parse_condition('events.first << fact.payload.src_path == "{{src_path}}"')[0]
+    print(result)
+    print(visit_condition(result, {'src_path': 'x'}).define())
+    print((m.x != m.y).define())
+    assert visit_condition(result, {'src_path': 'x'}).define() == (c.first << (m.payload.src_path == 'x')).define()

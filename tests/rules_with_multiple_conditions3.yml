@@ -1,0 +1,17 @@
+---
+- name: Demo rules multiple conditions all
+  hosts: localhost
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name: multiple conditions
+      condition:
+        all:
+          - events.first << fact.i == 0
+          - events.second << fact.i == 1
+      action:
+        debug:
+          first: "{{events.first}}"
+          second: "{{events.second}}"

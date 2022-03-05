@@ -62,7 +62,11 @@ async def call_action(
     if action in builtin_actions:
         try:
             variables_copy = variables.copy()
-            variables_copy["event"] = c.m._d  # event data is stored in c.m._d
+            if c.m is not None:
+                variables_copy["event"] = c.m._d  # event data is stored in c.m._d
+            else:
+                print(c._m)
+                variables_copy["events"] = c._m
             logger.info(f"substitute_variables {action_args} {variables_copy}")
             action_args = {
                 k: substitute_variables(v, variables_copy)

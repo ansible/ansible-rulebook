@@ -1,0 +1,13 @@
+---
+- name: Demo rules multiple conditions all
+  hosts: localhost
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name: assignment
+      condition: fact.i == 0
+      action:
+        debug:
+          event: "{{event}}"

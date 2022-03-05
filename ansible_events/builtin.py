@@ -22,6 +22,8 @@ def none(inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: st
 
 def debug(**kwargs):
     print(get_horizontal_rule("="))
+    pprint(durable.lang.c.__dict__)
+    print(get_horizontal_rule("="))
     pprint(durable.lang.get_facts(kwargs["ruleset"]))
     print(get_horizontal_rule("="))
     pprint(kwargs)
