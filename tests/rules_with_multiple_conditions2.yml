@@ -1,5 +1,5 @@
 ---
-- name: Demo rules multiple conditions any
+- name: Demo rules multiple conditions all
   hosts: localhost
   sources:
     - name: range
@@ -8,7 +8,7 @@
   rules:
     - name: multiple conditions
       condition:
-        any:
+        all:
           - fact.payload.provisioningState == 'Succeeded'
           - fact.payload.provisioningState == 'Deleted'
       action:

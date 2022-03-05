@@ -24,6 +24,8 @@ condition = infix_notation(integer | varname | string1 | string2,
                                 ('!=', 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
                                 ('==', 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
                                 ('is', 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
+                                ('and', 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
+                                ('<<', 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
                                 ('>=', 2, OpAssoc.LEFT),
                                 ('<=', 2, OpAssoc.LEFT),
                             ]).add_parse_action(lambda toks: Condition(toks[0]))

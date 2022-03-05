@@ -1,4 +1,4 @@
-from durable.lang import ruleset, rule, m
+from durable.lang import ruleset, rule, m, c
 import asyncio
 import multiprocessing as mp
 from ansible_events.condition_types import (
@@ -34,40 +34,53 @@ def add_to_plan(
     plan.put_nowait(ActionContext(ruleset, action, action_args, variables, inventory, hosts, facts, c))
 
 
-def visit_condition(parsed_condition: ConditionTypes, condition, variables: Dict):
+def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
     if isinstance(parsed_condition, list):
-        return [visit_condition(c, condition, variables) for c in parsed_condition]
+        return [visit_condition(c, variables) for c in parsed_condition]
     elif isinstance(parsed_condition, Condition):
-        return visit_condition(parsed_condition.value, condition, variables)
+        return visit_condition(parsed_condition.value, variables)
     elif isinstance(parsed_condition, Identifier):
-        return condition.__getattr__(parsed_condition.value)
+        if parsed_condition.value.startswith('fact.'):
+            return m.__getattr__(parsed_condition.value[5:])
+        elif parsed_condition.value.startswith('events.'):
+            return c.__getattr__(parsed_condition.value[7:])
+        else:
+            raise Exception(f'Unhandled identifier {parsed_condition.value}')
     elif isinstance(parsed_condition, String):
         return substitute_variables(parsed_condition.value, variables)
     elif isinstance(parsed_condition, Integer):
         return parsed_condition.value
     elif isinstance(parsed_condition, OperatorExpression):
         if parsed_condition.operator == "!=":
-            return visit_condition(parsed_condition.left, condition, variables).__ne__(
-                visit_condition(parsed_condition.right, condition, variables)
+            return visit_condition(parsed_condition.left, variables).__ne__(
+                visit_condition(parsed_condition.right, variables)
             )
         elif parsed_condition.operator == "==":
-            return visit_condition(parsed_condition.left, condition, variables).__eq__(
-                visit_condition(parsed_condition.right, condition, variables)
+            return visit_condition(parsed_condition.left, variables).__eq__(
+                visit_condition(parsed_condition.right, variables)
+            )
+        elif parsed_condition.operator == "and":
+            return visit_condition(parsed_condition.left, variables).__and__(
+                visit_condition(parsed_condition.right, variables)
             )
         elif parsed_condition.operator == "is":
             if isinstance(parsed_condition.right, Identifier):
                 if parsed_condition.right.value == 'defined':
-                    return visit_condition(parsed_condition.left, condition, variables).__pos__()
+                    return visit_condition(parsed_condition.left, variables).__pos__()
+        elif parsed_condition.operator == "<<":
+            return c.__getattr__(visit_condition(parsed_condition.left, variables)).__lshift__(
+                visit_condition(parsed_condition.right, variables)
+            )
         else:
             raise Exception(f"Unhandled token {parsed_condition}")
     elif isinstance(parsed_condition, ExistsExpression):
-        return visit_condition(parsed_condition.value, condition, variables).__pos__()
+        return visit_condition(parsed_condition.value, variables).__pos__()
     else:
         raise Exception(f"Unhandled token {parsed_condition}")
 
 
 def generate_condition(ansible_condition: RuleCondition, variables: Dict):
-    return visit_condition(ansible_condition.value, m, variables)
+    return visit_condition(ansible_condition.value, variables)
 
 
 def make_fn(

@@ -169,13 +169,13 @@ async def _run_rulesets_async(
                 handled = False
                 try:
                     logger.debug(data)
-                    durable.lang.assert_fact(global_ruleset.name, data)
+                    durable.lang.post(global_ruleset.name, data)
                     handled = True
                 except durable.engine.MessageNotHandledException:
                     logger.debug(f"MessageNotHandledException: {data}")
                 for ruleset in host_rulesets:
                     try:
-                        durable.lang.assert_fact(ruleset.name, data)
+                        durable.lang.post(ruleset.name, data)
                         handled = True
                     except durable.engine.MessageNotHandledException:
                         logger.debug(f"MessageNotHandledException: {data}")
@@ -215,10 +215,6 @@ async def _run_rulesets_async(
                         result = await call_action(*item)
                         results.append(result)
 
-                logger.info("Retracting event")
-                durable.lang.retract_fact(global_ruleset.name, data)
-                for ruleset in host_rulesets:
-                    durable.lang.retract_fact(ruleset.name, data)
                 event_log.put(dict(type="ProcessedEvent", results=results))
             except durable.engine.MessageNotHandledException:
                 logger.info(f"MessageNotHandledException: {data}")

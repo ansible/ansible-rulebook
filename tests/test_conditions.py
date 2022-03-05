@@ -43,25 +43,25 @@ def test_m():
                          text != ""
     ''', full_dump=False)
 
-    result = condition.parseString('text')[0]
+    result = condition.parseString('fact.text')[0]
     print(result)
-    print(visit_condition(result, m, {}).define())
+    print(visit_condition(result, {}).define())
 
     result = condition.parseString('""')[0]
     print(result)
-    print(visit_condition(result, m, {}))
+    print(visit_condition(result, {}))
 
-    result = condition.parseString('text != ""')[0]
+    result = condition.parseString('fact.text != ""')[0]
     print(result)
-    print(visit_condition(result, m, {}).define())
+    print(visit_condition(result, {}).define())
     print((m.text != "").define())
-    assert visit_condition(result, m, {}).define() == (m.text != "").define()
+    assert visit_condition(result, {}).define() == (m.text != "").define()
 
-    result = condition.parseString('x != y')[0]
+    result = condition.parseString('fact.x != fact.y')[0]
     print(result)
-    print(visit_condition(result, m, {}).define())
+    print(visit_condition(result, {}).define())
     print((m.x != m.y).define())
-    assert visit_condition(result, m, {}).define() == (m.x != m.y).define()
+    assert visit_condition(result, {}).define() == (m.x != m.y).define()
 
 
 def test_parse_condition():
@@ -75,46 +75,60 @@ def test_parse_condition():
     assert m.x < m.y
     assert (m.x < m.y).define() == {'$lt': {'x': {'$m': 'y'}}}
 
-    result = parse_condition('text')[0]
+    result = parse_condition('fact.text')[0]
     print(result)
-    print(visit_condition(result, m, {}).define())
+    print(visit_condition(result, {}))
+    assert visit_condition(result, {}) == ''
 
     result = parse_condition('""')[0]
     print(result)
-    print(visit_condition(result, m, {}))
+    print(visit_condition(result, {}))
+    assert visit_condition(result, {}) == ''
 
-    result = parse_condition('text != ""')[0]
+    result = parse_condition('fact.text != ""')[0]
     print(result)
-    print(visit_condition(result, m, {}).define())
+    print(visit_condition(result, {}).define())
     print((m.text != "").define())
-    assert visit_condition(result, m, {}).define() == (m.text != "").define()
+    assert visit_condition(result, {}).define() == (m.text != "").define()
 
-    result = parse_condition('x != y')[0]
+    result = parse_condition('fact.x != fact.y')[0]
     print(result)
-    print(visit_condition(result, m, {}).define())
+    print(visit_condition(result, {}).define())
     print((m.x != m.y).define())
-    assert visit_condition(result, m, {}).define() == (m.x != m.y).define()
+    assert visit_condition(result, {}).define() == (m.x != m.y).define()
 
-    result = parse_condition('payload.text != ""')[0]
+    result = parse_condition('fact.payload.text != ""')[0]
     print(result)
-    print(visit_condition(result, m, {}).define())
+    print(visit_condition(result, {}).define())
     print((m.x != m.y).define())
-    assert visit_condition(result, m, {}).define() == (m.payload.text != "").define()
+    assert visit_condition(result, {}).define() == (m.payload.text != "").define()
 
-    result = parse_condition('i == 1')[0]
+    result = parse_condition('fact.i == 1')[0]
     print(result)
-    print(visit_condition(result, m, {}).define())
+    print(visit_condition(result, {}).define())
     print((m.x != m.y).define())
-    assert visit_condition(result, m, {}).define() == (m.i == 1).define()
+    assert visit_condition(result, {}).define() == (m.i == 1).define()
 
-    result = parse_condition('+i')[0]
+    result = parse_condition('+fact.i')[0]
     print(result)
-    print(visit_condition(result, m, {}).define())
+    print(visit_condition(result, {}).define())
     print((m.x != m.y).define())
-    assert visit_condition(result, m, {}).define() == (+m.i).define()
+    assert visit_condition(result, {}).define() == (+m.i).define()
 
-    result = parse_condition('i is defined')[0]
+    result = parse_condition('fact.i is defined')[0]
     print(result)
-    print(visit_condition(result, m, {}).define())
+    print(visit_condition(result, {}).define())
     print((m.x != m.y).define())
-    assert visit_condition(result, m, {}).define() == (+m.i).define()
+    assert visit_condition(result, {}).define() == (+m.i).define()
+
+    result = parse_condition('fact.x == "foo" and fact.y == "bar"')[0]
+    print(result)
+    print(visit_condition(result, {}).define())
+    print((m.x != m.y).define())
+    assert visit_condition(result, {}).define() == ((m.x == 'foo') & (m.y == 'bar')).define()
+
+    result = parse_condition('events.first << fact.x == "foo" and fact.y == "bar"')[0]
+    print(result)
+    print(visit_condition(result, {}).define())
+    print((m.x != m.y).define())
+    assert visit_condition(result, {}).define() == ((m.x == 'foo') & (m.y == 'bar')).define()
