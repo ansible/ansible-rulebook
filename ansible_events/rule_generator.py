@@ -40,10 +40,14 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
     elif isinstance(parsed_condition, Condition):
         return visit_condition(parsed_condition.value, variables)
     elif isinstance(parsed_condition, Identifier):
-        if parsed_condition.value.startswith('event.'):
+        if parsed_condition.value.startswith('fact.'):
+            return m.__getattr__(parsed_condition.value[5:])
+        elif parsed_condition.value.startswith('event.'):
             return m.__getattr__(parsed_condition.value[6:])
         elif parsed_condition.value.startswith('events.'):
             return c.__getattr__(parsed_condition.value[7:])
+        elif parsed_condition.value.startswith('facts.'):
+            return c.__getattr__(parsed_condition.value[6:])
         else:
             raise Exception(f'Unhandled identifier {parsed_condition.value}')
     elif isinstance(parsed_condition, String):
