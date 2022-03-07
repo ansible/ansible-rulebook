@@ -6,6 +6,8 @@ import durable.lang
 import select
 import traceback
 
+from pprint import pprint
+
 import ansible_events.rule_generator as rule_generator
 from ansible_events.durability import provide_durability
 from ansible_events.messages import Shutdown
@@ -18,11 +20,26 @@ from ansible_events.rule_types import (
     ActionContext,
 )
 
-from typing import Optional, Dict, List, cast
+from typing import Optional, Dict, List, cast, Callable
+
+
+class FilteredQueue():
+
+    def __init__(self, filters, queue):
+        self.filters = filters
+        self.queue = queue
+
+    def put(self, data):
+        for f, kwargs in self.filters:
+            data = f(data, **kwargs)
+        self.queue.put(data)
 
 
 def start_sources(
-    sources: List[EventSource], source_dirs: List[str], variables: Dict, queue: mp.Queue
+    sources: List[EventSource],
+    source_dirs: List[str],
+    variables: Dict,
+    queue: mp.Queue,
 ) -> None:
 
     logger = mp.get_logger()
@@ -30,17 +47,28 @@ def start_sources(
     logger.info("start_sources")
 
     try:
-
+        logger.info("load sources")
         for source in sources:
             module = runpy.run_path(
                 os.path.join(source_dirs[0], source.source_name + ".py")
             )
 
+            source_filters = []
+
+            logger.info("load source filters")
+            for source_filter in source.source_filters:
+                logger.info(f'loading {source_filter.filter_name}')
+                source_filter_module = runpy.run_path(
+                    os.path.join("event_filters", source_filter.filter_name + ".py")
+                )
+                source_filters.append((source_filter_module["main"], source_filter.filter_args))
+
             args = {
                 k: substitute_variables(v, variables)
                 for k, v in source.source_args.items()
             }
-            module["main"](queue, args)
+            fqueue = FilteredQueue(source_filters, queue)
+            module["main"](fqueue, args)
     finally:
         queue.put(Shutdown())
 
@@ -76,8 +104,8 @@ async def call_action(
             if facts is None:
                 facts = durable.lang.get_facts(ruleset)
             logger.info(f"facts: {durable.lang.get_facts(ruleset)}")
-            if 'ruleset' not in action_args:
-                action_args['ruleset'] = ruleset
+            if "ruleset" not in action_args:
+                action_args["ruleset"] = ruleset
             result = builtin_actions[action](
                 inventory=inventory,
                 hosts=hosts,
@@ -132,13 +160,24 @@ def run_rulesets(
 
 
 def json_count(data):
+    s = 0
     q = []
     q.append(data)
     while q:
         o = q.pop()
         if isinstance(o, dict):
+            s += len(o)
+            print(len(o), s)
             if len(o) > 255:
-                raise Exception(f'Only 255 values supported per dictionary found {len(o)}')
+                pprint(data)
+                raise Exception(
+                    f"Only 255 values supported per dictionary found {len(o)}"
+                )
+            if s > 255:
+                pprint(data)
+                raise Exception(
+                    f"Only 255 values supported per dictionary found {s}"
+                )
             for i in o.values():
                 q.append(i)
 
@@ -197,13 +236,19 @@ async def _run_rulesets_async(
                             logger.debug(f"Adding hosts {item.hosts}")
                             new_item.hosts.extend(item.hosts)
                             if item.hosts:
-                                logger.debug('Adding host facts')
-                                logger.debug(f'host {item.hosts[0]} = {durable.lang.get_facts(item.ruleset)}')
-                                new_item.facts[item.hosts[0]] = durable.lang.get_facts(item.ruleset)
-                                logger.debug(f'facts {new_item.facts}')
+                                logger.debug("Adding host facts")
+                                logger.debug(
+                                    f"host {item.hosts[0]} = {durable.lang.get_facts(item.ruleset)}"
+                                )
+                                new_item.facts[item.hosts[0]] = durable.lang.get_facts(
+                                    item.ruleset
+                                )
+                                logger.debug(f"facts {new_item.facts}")
                             else:
-                                logger.debug('Adding facts')
-                                new_item.facts['global'] = durable.lang.get_facts(item.ruleset)
+                                logger.debug("Adding facts")
+                                new_item.facts["global"] = durable.lang.get_facts(
+                                    item.ruleset
+                                )
                             if plan.empty():
                                 run_last_item = False
                                 break

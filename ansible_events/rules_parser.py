@@ -26,7 +26,10 @@ def parse_event_sources(sources: Dict) -> List[rt.EventSource]:
     for source in sources:
         name = source["name"]
         del source["name"]
-        transform = source.pop("transform", None)
+        source_filters = []
+        for source_filter in source.pop("filters", []):
+            source_filters.append(parse_source_filter(source_filter))
+        print(f'source_filters {source_filters}')
         source_name = list(source.keys())[0]
         if source[source_name]:
             source_args = {k: v for k, v in source[source_name].items()}
@@ -37,11 +40,21 @@ def parse_event_sources(sources: Dict) -> List[rt.EventSource]:
                 name=name,
                 source_name=source_name,
                 source_args=source_args,
-                transform=transform,
+                source_filters=source_filters,
             )
         )
 
     return source_list
+
+
+def parse_source_filter(source_filter: Dict) -> rt.EventSourceFilter:
+
+
+    source_filter_name = list(source_filter.keys())[0]
+    source_filter_args = source_filter[source_filter_name]
+
+    return rt.EventSourceFilter(source_filter_name,
+                             source_filter_args)
 
 
 def parse_rules(rules: Dict) -> List[rt.Rule]:
