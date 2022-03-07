@@ -24,12 +24,10 @@ def parse_rule_sets(rule_sets: Dict) -> List[rt.RuleSet]:
 def parse_event_sources(sources: Dict) -> List[rt.EventSource]:
     source_list = []
     for source in sources:
-        name = source["name"]
-        del source["name"]
+        name = source.pop("name", '')
         source_filters = []
         for source_filter in source.pop("filters", []):
             source_filters.append(parse_source_filter(source_filter))
-        print(f'source_filters {source_filters}')
         source_name = list(source.keys())[0]
         if source[source_name]:
             source_args = {k: v for k, v in source[source_name].items()}
@@ -37,7 +35,7 @@ def parse_event_sources(sources: Dict) -> List[rt.EventSource]:
             source_args = {}
         source_list.append(
             rt.EventSource(
-                name=name,
+                name=name or source_name,
                 source_name=source_name,
                 source_args=source_args,
                 source_filters=source_filters,
