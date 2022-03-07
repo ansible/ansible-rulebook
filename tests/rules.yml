@@ -11,39 +11,39 @@
       local_events:
   host_rules:
     - name: send to slack3
-      condition: fact.payload.provisioningState == 'Succeeded'
+      condition: event.payload.provisioningState == 'Succeeded'
       action:
         slack:
           token: "{{token}}"
           msg: "Deployment success at {{event.payload.eventTime}}: {{management_url}}{{event.payload.applicationId}}"
           color: good
     - name: send to slack4
-      condition: fact.payload.provisioningState == 'Deleted'
+      condition: event.payload.provisioningState == 'Deleted'
       action:
         slack:
           token: "{{token}}"
           msg: "Deployment deleted at {{event.payload.eventTime}}: {{management_url}}{{event.payload.applicationId}}"
           color: warning
     - name: send to slack5
-      condition: fact.payload.eventType != 'GET'
+      condition: event.payload.eventType != 'GET'
       action:
         slack:
           token: "{{token}}"
           msg: "{{event}}"
     - name: send to slack6
-      condition: fact.payload.text != ''
+      condition: event.payload.text != ''
       action:
         slack:
           token: "{{token}}"
           msg: "{{event}}"
     - name: assert fact
-      condition: fact.payload.text != ''
+      condition: event.payload.text != ''
       action:
         assert_fact:
           ruleset: Demo rules
           fact:
             received_greeting: True
     - name: log event
-      condition: fact.payload.text != ''
+      condition: event.payload.text != ''
       action:
         log:

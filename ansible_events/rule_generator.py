@@ -40,8 +40,8 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
     elif isinstance(parsed_condition, Condition):
         return visit_condition(parsed_condition.value, variables)
     elif isinstance(parsed_condition, Identifier):
-        if parsed_condition.value.startswith('fact.'):
-            return m.__getattr__(parsed_condition.value[5:])
+        if parsed_condition.value.startswith('event.'):
+            return m.__getattr__(parsed_condition.value[6:])
         elif parsed_condition.value.startswith('events.'):
             return c.__getattr__(parsed_condition.value[7:])
         else:

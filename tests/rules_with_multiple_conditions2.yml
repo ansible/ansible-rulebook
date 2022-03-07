@@ -9,8 +9,8 @@
     - name: multiple conditions
       condition:
         all:
-          - fact.payload.provisioningState == 'Succeeded'
-          - fact.payload.provisioningState == 'Deleted'
+          - event.payload.provisioningState == 'Succeeded'
+          - event.payload.provisioningState == 'Deleted'
       action:
         slack:
           token: "{{token}}"

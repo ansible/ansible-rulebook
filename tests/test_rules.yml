@@ -7,32 +7,32 @@
         limit: 5
   rules:
     - name:
-      condition: fact.i == 1
+      condition: event.i == 1
       action:
         assert_fact:
           ruleset: Test rules4
           fact:
             j: 1
     - name:
-      condition: fact.i == 2
+      condition: event.i == 2
       action:
         run_playbook:
           name: hello_playbook.yml
     - name:
-      condition: fact.i == 3
+      condition: event.i == 3
       action:
         retract_fact:
           ruleset: Test rules4
           fact:
             j: 3
     - name:
-      condition: fact.i == 4
+      condition: event.i == 4
       action:
         post_event:
           ruleset: Test rules4
           fact:
             j: 4
     - name:
-      condition: +fact.j
+      condition: +event.j
       action:
         none:
