@@ -1,5 +1,5 @@
 
-from typing import NamedTuple, Union
+from typing import NamedTuple, Union, List
 
 
 
@@ -27,4 +27,4 @@ class ExistsExpression(NamedTuple):
 class Condition(NamedTuple):
     value: Union[Integer, String,  Identifier, OperatorExpression, ExistsExpression]
 
-ConditionTypes = Union[Condition, OperatorExpression, Identifier, String, Integer, ExistsExpression]
+ConditionTypes = Union[List, Condition, OperatorExpression, Identifier, String, Integer, ExistsExpression]

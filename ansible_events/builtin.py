@@ -1,7 +1,7 @@
 import durable.lang
 import multiprocessing as mp
 
-from typing import Dict, List
+from typing import Dict, List, Callable
 import ansible_runner
 import shutil
 import tempfile
@@ -39,7 +39,7 @@ def print_event(
     var_root: Optional[str] = None,
     pretty: Optional[str] = None,
 ):
-    print_fn = print
+    print_fn:Callable = print
     if pretty:
         print_fn = pprint
     if var_root:
@@ -128,7 +128,7 @@ def run_playbook(
                 durable.lang.retract_fact(ruleset, fact)
 
 
-actions = dict(
+actions: Dict[str, Callable] = dict(
     none=none,
     debug=debug,
     print_event=print_event,
