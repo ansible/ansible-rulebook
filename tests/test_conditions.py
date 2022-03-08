@@ -138,3 +138,15 @@ def test_parse_condition():
     print(visit_condition(result, {'src_path': 'x'}).define())
     print((m.x != m.y).define())
     assert visit_condition(result, {'src_path': 'x'}).define() == (c.first << (m.payload.src_path == 'x')).define()
+
+    result = parse_condition("(event.payload.repository.full_name == \"{{repo_name}}\") and (event.payload.after is defined)")
+    print(result)
+    print(visit_condition(result, {'repo_name': 'x'}).define())
+    print((m.x != m.y).define())
+    assert visit_condition(result, {'repo_name': 'x'}).define() == ((m.payload.repository.full_name == 'x') & (+m.payload.after)).define()
+
+    result = parse_condition("((event.x == 5) and (event.y == 6)) and (event.z == 7)")
+    print(result)
+    print(visit_condition(result, {}).define())
+    print((m.x != m.y).define())
+    assert visit_condition(result, {}).define() == (((m.x == 5) & (m.y == 6)) & (m.z == 7)).define()
