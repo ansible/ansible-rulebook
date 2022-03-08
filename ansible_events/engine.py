@@ -6,7 +6,7 @@ import durable.lang
 import select
 import traceback
 
-from pprint import pprint
+from pprint import pprint, pformat
 
 import ansible_events.rule_generator as rule_generator
 from ansible_events.durability import provide_durability
@@ -95,7 +95,6 @@ async def call_action(
             if c.m is not None:
                 variables_copy["event"] = c.m._d  # event data is stored in c.m._d
             else:
-                print(c._m)
                 variables_copy["events"] = c._m
             logger.info(f"substitute_variables {action_args} {variables_copy}")
             action_args = {
@@ -115,6 +114,9 @@ async def call_action(
                 facts=facts,
                 **action_args,
             )
+        except KeyError as e:
+            logger.error(f"{e}\n{pformat(variables_copy)}")
+            raise
         except durable.engine.MessageNotHandledException as e:
             logger.error(f"MessageNotHandledException: {action_args}")
             result = dict(error=e)
@@ -169,7 +171,6 @@ def json_count(data):
         o = q.pop()
         if isinstance(o, dict):
             s += len(o)
-            print(len(o), s)
             if len(o) > 255:
                 pprint(data)
                 raise Exception(
