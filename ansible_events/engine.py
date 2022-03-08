@@ -31,6 +31,8 @@ class FilteredQueue():
 
     def put(self, data):
         for f, kwargs in self.filters:
+            if kwargs is None:
+                kwargs = {}
             data = f(data, **kwargs)
         self.queue.put(data)
 
