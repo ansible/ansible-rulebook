@@ -32,6 +32,7 @@ class Rule(NamedTuple):
     name: str
     condition: Condition
     action: Action
+    enabled: bool
 
 
 class RuleSet(NamedTuple):

@@ -64,6 +64,7 @@ def parse_rules(rules: Dict) -> List[rt.Rule]:
                 name=name,
                 condition=parse_condition(rule["condition"]),
                 action=parse_action(rule["action"]),
+                enabled=rule.get('enabled', True)
             )
         )
 
