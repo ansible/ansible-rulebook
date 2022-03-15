@@ -9,8 +9,8 @@
     - name: multiple conditions
       condition:
         all:
-          - events.first << fact.i == 0
-          - events.second << fact.i == 1
+          - events.first << event.i == 0
+          - events.second << event.i == 1
       action:
         debug:
           first: "{{events.first}}"

@@ -208,3 +208,5 @@ async def test_generate_rules_multiple_conditions_all():
     )
     assert ruleset_queue_plans[0][2].qsize() == 1
     assert ruleset_queue_plans[0][2].get_nowait()[1] == "slack"
+
+
