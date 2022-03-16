@@ -10,6 +10,7 @@ import yaml
 import glob
 import json
 import dpath.util
+import sys
 from pprint import pprint
 from .util import get_horizontal_rule
 
@@ -28,6 +29,7 @@ def debug(**kwargs):
     print(get_horizontal_rule("="))
     pprint(kwargs)
     print(get_horizontal_rule("="))
+    sys.stdout.flush()
 
 
 def print_event(
@@ -46,6 +48,7 @@ def print_event(
         print_fn(dpath.util.get(variables["event"], var_root, separator="."))
     else:
         print_fn(variables["event"])
+    sys.stdout.flush()
 
 
 def assert_fact(
