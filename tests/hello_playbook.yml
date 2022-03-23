@@ -6,4 +6,7 @@
     - name:
       debug:
         msg: 'Hello world'
+    - set_fact:
+        msg: 'hello world'
+        cacheable: yes
 ...

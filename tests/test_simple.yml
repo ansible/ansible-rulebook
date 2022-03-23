@@ -21,3 +21,10 @@
       action:
         run_playbook:
           name: hello_playbook.yml
+          var_root: i
+          post_events: true
+    - name:
+      condition: event.msg is defined
+      action:
+        print_event:
+
