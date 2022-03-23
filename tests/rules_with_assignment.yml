@@ -1,5 +1,5 @@
 ---
-- name: Demo rules multiple conditions all
+- name: Demo rules with assignment
   hosts: localhost
   sources:
     - name: range

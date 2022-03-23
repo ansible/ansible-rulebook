@@ -4,6 +4,7 @@ import yaml
 import os
 import asyncio
 import multiprocessing as mp
+import pytest
 
 from pprint import pprint
 
@@ -28,9 +29,17 @@ def test_start_sources():
     assert queue.get() == dict(i=0)
 
 
-def test_run_rulesets():
+@pytest.fixture
+def new_event_loop():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    return loop
+
+
+
+def load_rules(rules_file):
     os.chdir(HERE)
-    with open("test_rules.yml") as f:
+    with open(rules_file) as f:
         data = yaml.safe_load(f.read())
 
     rulesets = parse_rule_sets(data)
@@ -41,6 +50,14 @@ def test_run_rulesets():
     event_log = mp.Queue()
 
     queue = ruleset_queues[0][1]
+
+    return ruleset_queues, queue, event_log
+
+
+def test_run_rulesets(new_event_loop):
+
+    ruleset_queues, queue, event_log = load_rules("test_rules.yml")
+
     queue.put(dict())
     queue.put(dict(i=1))
     queue.put(dict(i=2))
@@ -49,18 +66,11 @@ def test_run_rulesets():
     queue.put(dict(i=5))
     queue.put(Shutdown())
 
-    redis_host_name = None
-    redis_port = None
-    # redis_host_name='localhost'
-    # redis_port=6379
-
     run_rulesets(
         event_log,
         ruleset_queues,
         dict(),
         dict(),
-        redis_host_name=redis_host_name,
-        redis_port=redis_port,
     )
 
     assert event_log.get()['type'] == 'EmptyEvent', '0'
@@ -71,4 +81,26 @@ def test_run_rulesets():
     assert event_log.get()['type'] == 'MessageNotHandled', '5'
     assert event_log.get()['type'] == 'ProcessedEvent', '6'
     assert event_log.get()['type'] == 'Shutdown', '7'
+    assert event_log.empty()
+
+
+def test_run_rules_with_assignment(new_event_loop):
+
+    ruleset_queues, queue, event_log = load_rules("rules_with_assignment.yml")
+
+    queue.put(dict(i=0))
+    queue.put(dict(i=1))
+    queue.put(Shutdown())
+
+    run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        dict(),
+    )
+
+    assert event_log.get()['type'] == 'ProcessedEvent', '0'
+    assert event_log.get()['type'] == 'MessageNotHandled', '1'
+    assert event_log.get()['type'] == 'ProcessedEvent', '2'
+    assert event_log.get()['type'] == 'Shutdown', '3'
     assert event_log.empty()
