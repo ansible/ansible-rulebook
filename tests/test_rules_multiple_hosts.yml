@@ -1,5 +1,5 @@
 ---
-- name: Test rules4
+- name: Test rules multiple hosts
   hosts: localhost0, localhost1
   sources:
     - name: range
