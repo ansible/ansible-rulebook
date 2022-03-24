@@ -1,0 +1,12 @@
+---
+- name: Test rules multiple hosts 2
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 5
+  host_rules:
+    - name:
+      condition: i == 1
+      action:
+        debug:
