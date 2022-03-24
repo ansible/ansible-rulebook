@@ -12,6 +12,7 @@ from ansible_events.rules_parser import parse_rule_sets
 from ansible_events.engine import run_rulesets, start_sources
 from ansible_events.messages import Shutdown
 from ansible_events.rule_types import EventSource
+from ansible_events.util import load_inventory
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -135,12 +136,44 @@ def test_run_multiple_hosts(new_event_loop):
     queue.put(dict(i=0))
     queue.put(dict(i=1))
     queue.put(dict(i=2))
+    queue.put(dict(i=3))
+    queue.put(dict(i=4))
+    queue.put(dict(i=5))
     queue.put(Shutdown())
 
     run_rulesets(
         event_log,
         ruleset_queues,
+        load_inventory('inventory1.yml'),
         dict(),
+    )
+
+    assert event_log.get()['type'] == 'MessageNotHandled', '0'
+    assert event_log.get()['type'] == 'ProcessedEvent', '1'
+    assert event_log.get()['type'] == 'MessageNotHandled', '2'
+    assert event_log.get()['type'] == 'ProcessedEvent', '3'
+    assert event_log.get()['type'] == 'MessageNotHandled', '4'
+    assert event_log.get()['type'] == 'ProcessedEvent', '5'
+    assert event_log.get()['type'] == 'Shutdown', '6'
+    assert event_log.empty()
+
+
+def test_run_multiple_hosts2(new_event_loop):
+
+    ruleset_queues, queue, event_log = load_rules("test_rules_multiple_hosts2.yml")
+
+    queue.put(dict(i=0))
+    queue.put(dict(i=1))
+    queue.put(dict(i=2))
+    queue.put(dict(i=3))
+    queue.put(dict(i=4))
+    queue.put(dict(i=5))
+    queue.put(Shutdown())
+
+    run_rulesets(
+        event_log,
+        ruleset_queues,
+        load_inventory('inventory1.yml'),
         dict(),
     )
 
