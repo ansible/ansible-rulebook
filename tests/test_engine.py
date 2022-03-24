@@ -154,7 +154,13 @@ def test_run_multiple_hosts(new_event_loop):
     assert event_log.get()['type'] == 'ProcessedEvent', '3'
     assert event_log.get()['type'] == 'MessageNotHandled', '4'
     assert event_log.get()['type'] == 'ProcessedEvent', '5'
-    assert event_log.get()['type'] == 'Shutdown', '6'
+    assert event_log.get()['type'] == 'MessageNotHandled', '6'
+    assert event_log.get()['type'] == 'ProcessedEvent', '7'
+    assert event_log.get()['type'] == 'MessageNotHandled', '8'
+    assert event_log.get()['type'] == 'ProcessedEvent', '9'
+    assert event_log.get()['type'] == 'MessageNotHandled', '10'
+    assert event_log.get()['type'] == 'ProcessedEvent', '11'
+    assert event_log.get()['type'] == 'Shutdown', '12'
     assert event_log.empty()
 
 
@@ -183,5 +189,11 @@ def test_run_multiple_hosts2(new_event_loop):
     assert event_log.get()['type'] == 'ProcessedEvent', '3'
     assert event_log.get()['type'] == 'MessageNotHandled', '4'
     assert event_log.get()['type'] == 'ProcessedEvent', '5'
-    assert event_log.get()['type'] == 'Shutdown', '6'
+    assert event_log.get()['type'] == 'MessageNotHandled', '6'
+    assert event_log.get()['type'] == 'ProcessedEvent', '7'
+    assert event_log.get()['type'] == 'MessageNotHandled', '8'
+    assert event_log.get()['type'] == 'ProcessedEvent', '9'
+    assert event_log.get()['type'] == 'MessageNotHandled', '10'
+    assert event_log.get()['type'] == 'ProcessedEvent', '11'
+    assert event_log.get()['type'] == 'Shutdown', '12'
     assert event_log.empty()
