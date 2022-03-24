@@ -144,8 +144,11 @@ def test_run_multiple_hosts(new_event_loop):
         dict(),
     )
 
-    assert event_log.get()['type'] == 'ProcessedEvent', '0'
+    assert event_log.get()['type'] == 'MessageNotHandled', '0'
     assert event_log.get()['type'] == 'ProcessedEvent', '1'
-    assert event_log.get()['type'] == 'ProcessedEvent', '2'
-    assert event_log.get()['type'] == 'Shutdown', '3'
+    assert event_log.get()['type'] == 'MessageNotHandled', '2'
+    assert event_log.get()['type'] == 'ProcessedEvent', '3'
+    assert event_log.get()['type'] == 'MessageNotHandled', '4'
+    assert event_log.get()['type'] == 'ProcessedEvent', '5'
+    assert event_log.get()['type'] == 'Shutdown', '6'
     assert event_log.empty()
