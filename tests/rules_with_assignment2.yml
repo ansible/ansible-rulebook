@@ -1,0 +1,13 @@
+---
+- name: Demo rules with assignment2
+  hosts: localhost
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name: assignment
+      condition: facts.first << fact.i == 0
+      action:
+        debug:
+          events_event: "{{events.first}}"
