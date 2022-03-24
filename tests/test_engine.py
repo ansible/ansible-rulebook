@@ -126,3 +126,26 @@ def test_run_rules_simple(new_event_loop):
     assert event_log.get()['type'] == 'ProcessedEvent', '2'
     assert event_log.get()['type'] == 'Shutdown', '3'
     assert event_log.empty()
+
+
+def test_run_multiple_hosts(new_event_loop):
+
+    ruleset_queues, queue, event_log = load_rules("test_rules_multiple_hosts.yml")
+
+    queue.put(dict(i=0))
+    queue.put(dict(i=1))
+    queue.put(dict(i=2))
+    queue.put(Shutdown())
+
+    run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        dict(),
+    )
+
+    assert event_log.get()['type'] == 'ProcessedEvent', '0'
+    assert event_log.get()['type'] == 'ProcessedEvent', '1'
+    assert event_log.get()['type'] == 'ProcessedEvent', '2'
+    assert event_log.get()['type'] == 'Shutdown', '3'
+    assert event_log.empty()
