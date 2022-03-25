@@ -1,0 +1,32 @@
+---
+- name: Automatic Remediation of a webserver
+  hosts: webservers
+  sources:
+    - name: ping web server
+      ping:
+        ip: "{{gateway_ip}}"
+        timeout: 10s
+        repeats_every: 1s
+    - name: sensu
+      sensu:
+        url: "{{sensu_url}}"
+        token: "{{sensu_token}}"
+        host_selector: event.sensu.host
+  host_rules:
+    - name: If webserver is down remediate the problem
+      condition:
+        all:
+          - events.ping << event.ping.timeout == true   # no host info
+          - events.process << event.sensu.process.status == "stopped"   # web server
+          - events.database << event.sensu.storage.percent > 95  # database server
+        timeout: 5 minute
+      action:
+        run_playbook:
+          name: expand_storage.yml
+          post_events: true
+    - name: Validate remediation
+      condition: event.fixed_storage == true
+      action:
+        run_playbook:
+          name: validate_webserver.yml
+...
