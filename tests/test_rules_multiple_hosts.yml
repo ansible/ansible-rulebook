@@ -7,32 +7,32 @@
         limit: 5
   host_rules:
     - name:
-      condition: i == 1
+      condition: event.i == 1
       action:
         assert_fact:
-          ruleset: Test rules4_localhost0
+          ruleset: Test rules multiple hosts_localhost0
           fact:
             j: 1
     - name:
-      condition: i == 2
+      condition: event.i == 2
       action:
         run_playbook:
           name: hello_playbook1.yml
     - name:
-      condition: i == 3
+      condition: event.i == 3
       action:
         retract_fact:
-          ruleset: Test rules4_localhost0
+          ruleset: Test rules multiple hosts_localhost0
           fact:
             j: 3
     - name:
-      condition: i == 4
+      condition: event.i == 4
       action:
         post_event:
-          ruleset: Test rules4_localhost0
+          ruleset: Test rules multiple hosts_localhost0
           fact:
             j: 4
     - name:
-      condition: +j
+      condition: +event.j
       action:
         none:
