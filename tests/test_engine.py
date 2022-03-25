@@ -165,23 +165,19 @@ def test_run_multiple_hosts(new_event_loop):
     run_rulesets(
         event_log,
         ruleset_queues,
-        load_inventory('inventory1.yml'),
         dict(),
+        load_inventory('inventory1.yml'),
     )
 
     assert event_log.get()['type'] == 'MessageNotHandled', '0'
     assert event_log.get()['type'] == 'ProcessedEvent', '1'
+    assert event_log.get()['type'] == 'ProcessedEvent', '1.1'
+    assert event_log.get()['type'] == 'ProcessedEvent', '1.2'
+    assert event_log.get()['type'] == 'ProcessedEvent', '1.3'
+    assert event_log.get()['type'] == 'ProcessedEvent', '1.4'
     assert event_log.get()['type'] == 'MessageNotHandled', '2'
     assert event_log.get()['type'] == 'ProcessedEvent', '3'
-    assert event_log.get()['type'] == 'MessageNotHandled', '4'
-    assert event_log.get()['type'] == 'ProcessedEvent', '5'
-    assert event_log.get()['type'] == 'MessageNotHandled', '6'
-    assert event_log.get()['type'] == 'ProcessedEvent', '7'
-    assert event_log.get()['type'] == 'MessageNotHandled', '8'
-    assert event_log.get()['type'] == 'ProcessedEvent', '9'
-    assert event_log.get()['type'] == 'MessageNotHandled', '10'
-    assert event_log.get()['type'] == 'ProcessedEvent', '11'
-    assert event_log.get()['type'] == 'Shutdown', '12'
+    assert event_log.get()['type'] == 'Shutdown', '4'
     assert event_log.empty()
 
 
@@ -200,13 +196,14 @@ def test_run_multiple_hosts2(new_event_loop):
     run_rulesets(
         event_log,
         ruleset_queues,
-        load_inventory('inventory1.yml'),
         dict(),
+        load_inventory('inventory1.yml'),
     )
 
     assert event_log.get()['type'] == 'MessageNotHandled', '0'
     assert event_log.get()['type'] == 'ProcessedEvent', '1'
-    assert event_log.get()['type'] == 'MessageNotHandled', '2'
+    assert event_log.get()['type'] == 'ProcessedEvent', '2'
+    assert event_log.get()['type'] == 'MessageNotHandled', '2.5'
     assert event_log.get()['type'] == 'ProcessedEvent', '3'
     assert event_log.get()['type'] == 'MessageNotHandled', '4'
     assert event_log.get()['type'] == 'ProcessedEvent', '5'
@@ -214,9 +211,7 @@ def test_run_multiple_hosts2(new_event_loop):
     assert event_log.get()['type'] == 'ProcessedEvent', '7'
     assert event_log.get()['type'] == 'MessageNotHandled', '8'
     assert event_log.get()['type'] == 'ProcessedEvent', '9'
-    assert event_log.get()['type'] == 'MessageNotHandled', '10'
-    assert event_log.get()['type'] == 'ProcessedEvent', '11'
-    assert event_log.get()['type'] == 'Shutdown', '12'
+    assert event_log.get()['type'] == 'Shutdown', '10'
     assert event_log.empty()
 
 def test_filters(new_event_loop):

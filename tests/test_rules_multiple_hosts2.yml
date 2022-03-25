@@ -7,6 +7,6 @@
         limit: 5
   host_rules:
     - name:
-      condition: i == 1
+      condition: event.i == 1
       action:
         debug:
