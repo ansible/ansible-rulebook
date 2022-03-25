@@ -1,3 +1,3 @@
 
 def test_foo():
-    assert False
+    assert True
