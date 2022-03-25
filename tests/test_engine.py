@@ -11,7 +11,7 @@ from pprint import pprint
 from ansible_events.rules_parser import parse_rule_sets
 from ansible_events.engine import run_rulesets, start_sources
 from ansible_events.messages import Shutdown
-from ansible_events.rule_types import EventSource
+from ansible_events.rule_types import EventSource, EventSourceFilter
 from ansible_events.util import load_inventory
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -22,7 +22,7 @@ def test_start_sources():
 
     queue = mp.Queue()
     start_sources(
-        [EventSource("range", "range", dict(limit=1), [])],
+        [EventSource("range", "range", dict(limit=1), [EventSourceFilter('noop', {})])],
         ["sources"],
         dict(limit=1),
         queue,
