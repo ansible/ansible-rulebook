@@ -1,4 +1,5 @@
 
+import pytest
 import os
 import multiprocessing as mp
 
@@ -21,6 +22,7 @@ def f(name):
     print('hello', name)
 
 
+@pytest.mark.timeout(10)
 def test_process_check(new_event_loop):
     os.chdir(HERE)
 
