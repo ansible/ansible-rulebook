@@ -2,6 +2,7 @@ from durable.lang import ruleset, rule, m, c
 import asyncio
 import multiprocessing as mp
 from ansible_events.condition_types import (
+    Boolean,
     Identifier,
     String,
     OperatorExpression,
@@ -39,6 +40,8 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
         return [visit_condition(c, variables) for c in parsed_condition]
     elif isinstance(parsed_condition, Condition):
         return visit_condition(parsed_condition.value, variables)
+    elif isinstance(parsed_condition, Boolean):
+        return True if parsed_condition.value == 'true' else False
     elif isinstance(parsed_condition, Identifier):
         if parsed_condition.value.startswith('fact.'):
             return m.__getattr__(parsed_condition.value[5:])

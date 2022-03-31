@@ -1,20 +1,23 @@
 
 from durable.lang import m
-from pyparsing import pyparsing_common, infix_notation, OpAssoc, one_of, ParserElement, QuotedString, ZeroOrMore, Combine
+from pyparsing import pyparsing_common, infix_notation, OpAssoc, one_of, ParserElement, QuotedString, ZeroOrMore, Combine, Literal
 ParserElement.enable_packrat()
-from ansible_events.condition_types import Identifier, String, OperatorExpression, Integer, Condition, ExistsExpression
+from ansible_events.condition_types import Identifier, String, OperatorExpression, Integer, Condition, ExistsExpression, Boolean
 
 
 
 integer = pyparsing_common.signed_integer.copy().add_parse_action(lambda toks: Integer(toks[0]))
 ident = pyparsing_common.identifier
 varname = Combine(ident + ZeroOrMore('.' + ident)).copy().add_parse_action(lambda toks: Identifier(toks[0]))
+true = Literal('true') | Literal('True')
+false = Literal('false') | Literal('False')
+boolean = (true | false).copy().add_parse_action(lambda toks: Boolean(toks[0].lower()))
 
 
 string1 = QuotedString("'").copy().add_parse_action(lambda toks: String(toks[0]))
 string2 = QuotedString('"').copy().add_parse_action(lambda toks: String(toks[0]))
 
-condition = infix_notation(integer | varname | string1 | string2,
+condition = infix_notation(integer | boolean | varname | string1 | string2,
                             [
                                 ('+', 1, OpAssoc.RIGHT, lambda toks: ExistsExpression(*toks[0])),
                                 ('!', 1, OpAssoc.RIGHT),

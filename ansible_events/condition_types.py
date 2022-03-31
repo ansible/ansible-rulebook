@@ -10,6 +10,9 @@ class Integer(NamedTuple):
 class String(NamedTuple):
     value: str
 
+class Boolean(NamedTuple):
+    value: str
+
 
 class Identifier(NamedTuple):
     value: str
