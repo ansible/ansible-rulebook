@@ -37,6 +37,7 @@ def main(queue, args):
                     f.seek(log_file_locs[event.src_path])
                     new_data = f.readlines()
                     print(new_data)
+                    log_file_locs[event.src_path] = f.tell()
                 for pattern in log_file_patterns[event.src_path]:
                     for line in new_data:
                         if pattern in line:
