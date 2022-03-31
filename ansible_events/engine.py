@@ -36,8 +36,8 @@ class FilteredQueue():
         self.queue.put(data)
 
 
-def start_sources(
-    sources: List[EventSource],
+def start_source(
+    source: EventSource,
     source_dirs: List[str],
     variables: Dict,
     queue: mp.Queue,
@@ -45,31 +45,30 @@ def start_sources(
 
     logger = mp.get_logger()
 
-    logger.info("start_sources")
+    logger.info("start_source")
 
     try:
-        logger.info("load sources")
-        for source in sources:
-            module = runpy.run_path(
-                os.path.join(source_dirs[0], source.source_name + ".py")
+        logger.info("load source")
+        module = runpy.run_path(
+            os.path.join(source_dirs[0], source.source_name + ".py")
+        )
+
+        source_filters = []
+
+        logger.info("load source filters")
+        for source_filter in source.source_filters:
+            logger.info(f'loading {source_filter.filter_name}')
+            source_filter_module = runpy.run_path(
+                os.path.join("event_filters", source_filter.filter_name + ".py")
             )
+            source_filters.append((source_filter_module["main"], source_filter.filter_args))
 
-            source_filters = []
-
-            logger.info("load source filters")
-            for source_filter in source.source_filters:
-                logger.info(f'loading {source_filter.filter_name}')
-                source_filter_module = runpy.run_path(
-                    os.path.join("event_filters", source_filter.filter_name + ".py")
-                )
-                source_filters.append((source_filter_module["main"], source_filter.filter_args))
-
-            args = {
-                k: substitute_variables(v, variables)
-                for k, v in source.source_args.items()
-            }
-            fqueue = FilteredQueue(source_filters, queue)
-            module["main"](fqueue, args)
+        args = {
+            k: substitute_variables(v, variables)
+            for k, v in source.source_args.items()
+        }
+        fqueue = FilteredQueue(source_filters, queue)
+        module["main"](fqueue, args)
     finally:
         queue.put(Shutdown())
 
@@ -216,6 +215,8 @@ async def _run_rulesets_async(
                     logger.debug(data)
                     durable.lang.post(global_ruleset.name, data)
                     handled = True
+                except durable.engine.MessageObservedException:
+                    logger.debug(f"MessageObservedException: {data}")
                 except durable.engine.MessageNotHandledException:
                     logger.debug(f"MessageNotHandledException: {data}")
                 for ruleset in host_rulesets:

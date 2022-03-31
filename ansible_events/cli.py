@@ -22,7 +22,7 @@ import logging
 import multiprocessing as mp
 
 import ansible_events.rules_parser as rules_parser
-from ansible_events.engine import start_sources, run_rulesets
+from ansible_events.engine import start_source, run_rulesets
 from ansible_events.rule_types import RuleSet
 from ansible_events.util import load_inventory
 
@@ -89,7 +89,8 @@ def main(args):
         sources = ruleset.sources
         queue: mp.Queue = mp.Queue()
 
-        tasks.append(mp.Process(target=start_sources, args=(sources, [parsed_args.source_dir], variables, queue)))
+        for source in sources:
+            tasks.append(mp.Process(target=start_source, args=(source, [parsed_args.source_dir], variables, queue)))
         ruleset_queues.append((ruleset, queue))
 
     tasks.append(
