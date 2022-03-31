@@ -3,7 +3,7 @@ import pytest
 import os
 import multiprocessing as mp
 
-from ansible_events.engine import run_rulesets, start_sources
+from ansible_events.engine import run_rulesets, start_source
 from ansible_events.rule_types import EventSource, EventSourceFilter
 
 from .test_engine import new_event_loop
@@ -28,8 +28,8 @@ def test_process_check(new_event_loop):
     os.chdir(HERE)
 
     queue = mp.Queue()
-    p1 = mp.Process(target=start_sources,
-        args=([EventSource("process_check", "process_check", dict(limit=1), [EventSourceFilter('noop', {})])],
+    p1 = mp.Process(target=start_source,
+        args=(EventSource("process_check", "process_check", dict(limit=1), [EventSourceFilter('noop', {})]),
         ["sources"],
         dict(names=['Python']),
         queue),
