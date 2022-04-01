@@ -35,6 +35,13 @@ def add_to_plan(
     plan.put_nowait(ActionContext(ruleset, action, action_args, variables, inventory, hosts, facts, c))
 
 
+def dotted_getattr(o, value):
+    parts = value.split('.')
+    current = o
+    for part in parts:
+        current = current.__getattr__(part)
+    return current
+
 def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
     if isinstance(parsed_condition, list):
         return [visit_condition(c, variables) for c in parsed_condition]
@@ -44,13 +51,13 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
         return True if parsed_condition.value == 'true' else False
     elif isinstance(parsed_condition, Identifier):
         if parsed_condition.value.startswith('fact.'):
-            return m.__getattr__(parsed_condition.value[5:])
+            return dotted_getattr(m, parsed_condition.value[5:])
         elif parsed_condition.value.startswith('event.'):
-            return m.__getattr__(parsed_condition.value[6:])
+            return dotted_getattr(m, parsed_condition.value[6:])
         elif parsed_condition.value.startswith('events.'):
-            return c.__getattr__(parsed_condition.value[7:])
+            return dotted_getattr(c, parsed_condition.value[7:])
         elif parsed_condition.value.startswith('facts.'):
-            return c.__getattr__(parsed_condition.value[6:])
+            return dotted_getattr(c, parsed_condition.value[6:])
         else:
             raise Exception(f'Unhandled identifier {parsed_condition.value}')
     elif isinstance(parsed_condition, String):
