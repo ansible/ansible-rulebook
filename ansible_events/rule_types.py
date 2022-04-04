@@ -16,6 +16,7 @@ class EventSource(NamedTuple):
     source_name: str
     source_args: dict
     source_filters: List[EventSourceFilter]
+    source_type: str
 
 
 class Action(NamedTuple):

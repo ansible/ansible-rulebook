@@ -22,7 +22,7 @@ def test_start_source():
 
     queue = mp.Queue()
     start_source(
-        EventSource("range", "range", dict(limit=1), [EventSourceFilter('noop', {})]),
+        EventSource("range", "range", dict(limit=1), [EventSourceFilter('noop', {})], 'event'),
         ["sources"],
         dict(limit=1),
         queue,
