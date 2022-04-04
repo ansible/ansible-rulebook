@@ -4,10 +4,14 @@ import os
 import json
 import multiprocessing as mp
 import dpath.util
+from .filters.lookup import lookup
 
 from typing import Dict, Union
 
 from typing import Any
+
+jinja2_env = jinja2.Environment(undefined=jinja2.StrictUndefined)
+jinja2_env.globals["lookup"] = lookup
 
 def get_horizontal_rule(character):
     try:
@@ -17,13 +21,16 @@ def get_horizontal_rule(character):
 
 
 def render_string(value: str, context: Dict) -> str:
-    return jinja2.Template(value, undefined=jinja2.StrictUndefined).render(context)
+    return jinja2_env.from_string(value).render(context)
 
 
 def render_string_or_return_value(value: Any, context: Dict) -> Any:
     if isinstance(value, str):
         if value.startswith('{{') and value.endswith('}}'):
-            return dpath.util.get(context, value[2:-2], separator='.')
+            try:
+                return dpath.util.get(context, value[2:-2], separator='.')
+            except KeyError:
+                return render_string(value, context)
         else:
             return render_string(value, context)
 
