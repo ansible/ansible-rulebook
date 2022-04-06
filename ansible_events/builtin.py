@@ -41,7 +41,7 @@ def print_event(
     var_root: Optional[str] = None,
     pretty: Optional[str] = None,
 ):
-    print_fn:Callable = print
+    print_fn: Callable = print
     if pretty:
         print_fn = pprint
     if var_root:
@@ -87,6 +87,7 @@ def run_playbook(
     post_events: Optional[bool] = None,
     verbosity: int = 0,
     var_root: Optional[str] = None,
+    copy_files: Optional[bool] = False,
     **kwargs,
 ):
     logger = mp.get_logger()
@@ -111,6 +112,8 @@ def run_playbook(
     os.mkdir(os.path.join(temp, "project"))
 
     shutil.copy(name, os.path.join(temp, "project", name))
+    if copy_files:
+        shutil.copytree(os.path.dirname(os.path.abspath(name)), os.path.join(temp, "project"), dirs_exist_ok=True)
 
     host_limit = ",".join(hosts)
 
@@ -126,9 +129,10 @@ def run_playbook(
             with open(host_facts) as f:
                 fact = json.loads(f.read())
             logger.debug(f"fact {fact}")
-            durable.lang.assert_fact(ruleset, fact)
+            if assert_facts:
+                durable.lang.assert_fact(ruleset, fact)
             if post_events:
-                durable.lang.retract_fact(ruleset, fact)
+                durable.lang.post(ruleset, fact)
 
 
 actions: Dict[str, Callable] = dict(
