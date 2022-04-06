@@ -5,7 +5,7 @@ import json
 import multiprocessing as mp
 import dpath.util
 
-from typing import Dict, Union
+from typing import Dict, Union, List
 
 from typing import Any
 
@@ -28,9 +28,14 @@ def render_string_or_return_value(value: Any, context: Dict) -> Any:
             return render_string(value, context)
 
 
-def substitute_variables(value: Union[str, int, Dict], context: Dict) -> Union[str, int, Dict]:
+def substitute_variables(value: Union[str, int, Dict, List], context: Dict) -> Union[str, int, Dict, List]:
     if isinstance(value, str):
         return render_string_or_return_value(value, context)
+    elif isinstance(value, list):
+        new_value = []
+        for item in value:
+            new_value.append(render_string_or_return_value(item, context))
+        return new_value
     elif isinstance(value, dict):
         new_value = value.copy()
         for key, subvalue in new_value.items():
