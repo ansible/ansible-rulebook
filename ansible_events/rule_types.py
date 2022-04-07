@@ -6,10 +6,12 @@ import ansible_events.condition_types as ct
 import asyncio
 import multiprocessing as mp
 
+
 class EventSourceFilter(NamedTuple):
 
     filter_name: str
     filter_args: dict
+
 
 class EventSource(NamedTuple):
     name: str
@@ -33,6 +35,7 @@ class Rule(NamedTuple):
     condition: Condition
     action: Action
     enabled: bool
+    to: Optional[str]
 
 
 class RuleSet(NamedTuple):
@@ -57,12 +60,26 @@ class RuleSetPlan(NamedTuple):
     ruleset: RuleSet
     plan: asyncio.Queue
 
+
 class RuleSetQueue(NamedTuple):
     ruleset: RuleSet
     queue: mp.Queue
+
 
 class RuleSetQueuePlan(NamedTuple):
     ruleset: RuleSet
     queue: mp.Queue
     plan: asyncio.Queue
 
+
+class State(NamedTuple):
+    name: str
+    rules: List[Rule]
+    host_rules: List[Rule]
+
+
+class StateMachine(NamedTuple):
+    name: str
+    hosts: Union[str, List[str]]
+    sources: List[EventSource]
+    states: List[State]

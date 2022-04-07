@@ -1,9 +1,22 @@
 import ansible_events.rule_types as rt
-import ansible_events.condition_types as ct
 
 from ansible_events.condition_parser import parse_condition as parse_condition_value
 
 from typing import Dict, List, Any
+
+
+def parse_state_machines(state_machines: Dict) -> List[rt.StateMachine]:
+    state_matchine_list = []
+    for state_machine in state_machines:
+        state_matchine_list.append(
+            rt.StateMachine(
+                name=state_machine["name"],
+                hosts=state_machine["hosts"],
+                sources=parse_event_sources(state_machine["sources"]),
+                states=parse_states(state_machine.get("states", {})),
+            )
+        )
+    return state_matchine_list
 
 
 def parse_rule_sets(rule_sets: Dict) -> List[rt.RuleSet]:
@@ -23,7 +36,7 @@ def parse_rule_sets(rule_sets: Dict) -> List[rt.RuleSet]:
 def parse_event_sources(sources: Dict) -> List[rt.EventSource]:
     source_list = []
     for source in sources:
-        name = source.pop("name", '')
+        name = source.pop("name", "")
         source_filters = []
         for source_filter in source.pop("filters", []):
             source_filters.append(parse_source_filter(source_filter))
@@ -46,12 +59,10 @@ def parse_event_sources(sources: Dict) -> List[rt.EventSource]:
 
 def parse_source_filter(source_filter: Dict) -> rt.EventSourceFilter:
 
-
     source_filter_name = list(source_filter.keys())[0]
     source_filter_args = source_filter[source_filter_name]
 
-    return rt.EventSourceFilter(source_filter_name,
-                             source_filter_args)
+    return rt.EventSourceFilter(source_filter_name, source_filter_args)
 
 
 def parse_rules(rules: Dict) -> List[rt.Rule]:
@@ -63,11 +74,27 @@ def parse_rules(rules: Dict) -> List[rt.Rule]:
                 name=name,
                 condition=parse_condition(rule["condition"]),
                 action=parse_action(rule["action"]),
-                enabled=rule.get('enabled', True)
+                enabled=rule.get("enabled", True),
+                to=rule.get("to", None),
             )
         )
 
     return rule_list
+
+
+def parse_states(states: Dict) -> List[rt.Rule]:
+    state_list = []
+    for state in states:
+        name = state.get("state")
+        state_list.append(
+            rt.State(
+                name=name,
+                rules=parse_rules(state.get("rules", {})),
+                host_rules=parse_rules(state.get("host_rules", {})),
+            )
+        )
+
+    return state_list
 
 
 def parse_action(action: Dict) -> rt.Action:
@@ -81,14 +108,16 @@ def parse_action(action: Dict) -> rt.Action:
 
 def parse_condition(condition: Any) -> rt.Condition:
     if isinstance(condition, str):
-        return rt.Condition('all', [parse_condition_value(condition)])
+        return rt.Condition("all", [parse_condition_value(condition)])
     elif isinstance(condition, dict):
         keys = list(condition.keys())
-        if len(condition) == 1 and keys[0] in ['any', 'all']:
+        if len(condition) == 1 and keys[0] in ["any", "all"]:
             when = keys[0]
-            return rt.Condition(when, [parse_condition_value(c) for c in condition[when]])
+            return rt.Condition(
+                when, [parse_condition_value(c) for c in condition[when]]
+            )
         else:
-            raise Exception(f'Condition should have one of any or all: {condition}')
+            raise Exception(f"Condition should have one of any or all: {condition}")
 
     else:
-        raise Exception(f'Unsupported condition {condition}')
+        raise Exception(f"Unsupported condition {condition}")
