@@ -9,12 +9,15 @@ def send_facts(queue, filename):
         data = yaml.safe_load(f.read())
         if data is None:
             return
-        if not isinstance(data, list):
-            raise Exception(f'Unsupported facts type, expects a list of dicts found {type(data)}')
-        if not all([True if isinstance(item, dict) else False for item in data]):
-            raise Exception(f'Unsupported facts type, expects a list of dicts found {data}')
-        for item in data:
-            queue.put(item)
+        if isinstance(data, dict):
+            queue.put(data)
+        else:
+            if not isinstance(data, list):
+                raise Exception(f'Unsupported facts type, expects a list of dicts found {type(data)}')
+            if not all([True if isinstance(item, dict) else False for item in data]):
+                raise Exception(f'Unsupported facts type, expects a list of dicts found {data}')
+            for item in data:
+                queue.put(item)
 
 
 def main(queue, args):
@@ -32,7 +35,8 @@ def main(queue, args):
             RegexMatchingEventHandler.__init__(self, **kwargs)
 
         def on_created(self, event):
-            pass
+            if event.src_path in files:
+                send_facts(queue, event.src_path)
 
         def on_deleted(self, event):
             pass

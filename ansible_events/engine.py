@@ -68,6 +68,7 @@ def start_source(
             for k, v in source.source_args.items()
         }
         fqueue = FilteredQueue(source_filters, queue)
+        logger.info(f"calling main in {source.source_name}")
         module["main"](fqueue, args)
     finally:
         queue.put(Shutdown())
@@ -219,6 +220,8 @@ async def _run_rulesets_async(
                     logger.debug(f"MessageObservedException: {data}")
                 except durable.engine.MessageNotHandledException:
                     logger.debug(f"MessageNotHandledException: {data}")
+                finally:
+                    logger.debug(durable.lang.get_pending_events(global_ruleset.name))
                 for ruleset in host_rulesets:
                     try:
                         durable.lang.post(ruleset.name, data)
