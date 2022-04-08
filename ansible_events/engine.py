@@ -152,14 +152,14 @@ def run_rulesets(
         for ruleset, queue in ruleset_queues
     ]
 
-    host_rulesets_queue_plans = rule_generator.generate_host_rulesets(
+    rulesets_queue_plans = rule_generator.generate_rulesets(
         ansible_ruleset_queue_plans, variables, inventory
     )
-    for host_rulesets_list in host_rulesets_queue_plans:
-        for host_rulesets in host_rulesets_list[1]:
-            logger.debug(host_rulesets.define())
+    for rulesets_list in rulesets_queue_plans:
+        for rulesets in rulesets_list[1]:
+            logger.debug(rulesets.define())
 
-    asyncio.run(_run_rulesets_async(event_log, host_rulesets_queue_plans, inventory))
+    asyncio.run(_run_rulesets_async(event_log, rulesets_queue_plans, inventory))
 
 
 def json_count(data):
@@ -185,18 +185,18 @@ def json_count(data):
 
 
 async def _run_rulesets_async(
-    event_log: mp.Queue, host_rulesets_queue_plans, inventory
+    event_log: mp.Queue, rulesets_queue_plans, inventory
 ):
 
     logger = mp.get_logger()
 
-    queue_readers = {i[2]._reader: i for i in host_rulesets_queue_plans}  # type: ignore
+    queue_readers = {i[2]._reader: i for i in rulesets_queue_plans}  # type: ignore
 
     while True:
         logger.info("Waiting for event")
         read_ready, _, _ = select.select(queue_readers.keys(), [], [])
         for queue_reader in read_ready:
-            global_ruleset, host_rulesets, queue, plan = queue_readers[queue_reader]
+            ruleset, _, queue, plan = queue_readers[queue_reader]
             data = queue.get()
             json_count(data)
             if isinstance(data, Shutdown):
@@ -207,69 +207,20 @@ async def _run_rulesets_async(
                 event_log.put(dict(type="EmptyEvent"))
                 continue
             logger.info(str(data))
-            logger.info(str([ruleset.name for ruleset in host_rulesets]))
             results = []
             try:
                 logger.info("Asserting event")
                 handled = False
                 try:
                     logger.debug(data)
-                    durable.lang.post(global_ruleset.name, data)
+                    durable.lang.post(ruleset.name, data)
                     handled = True
                 except durable.engine.MessageObservedException:
                     logger.debug(f"MessageObservedException: {data}")
                 except durable.engine.MessageNotHandledException:
                     logger.debug(f"MessageNotHandledException: {data}")
                 finally:
-                    logger.debug(durable.lang.get_pending_events(global_ruleset.name))
-                for ruleset in host_rulesets:
-                    try:
-                        durable.lang.post(ruleset.name, data)
-                        handled = True
-                    except durable.engine.MessageNotHandledException:
-                        logger.debug(f"MessageNotHandledException: {data}")
-                if not handled:
-                    event_log.put(dict(type="MessageNotHandled"))
-                while not plan.empty():
-                    run_last_item = True
-                    item = cast(ActionContext, await plan.get())
-                    logger.debug(item)
-                    # Combine run_playbook actions into one action with multiple hosts
-                    if item.action == "run_playbook":
-                        new_item = item._replace(hosts=[], facts={})
-                        logger.debug(f"Extending hosts")
-                        while item.action == "run_playbook":
-                            logger.debug(f"Adding hosts {item.hosts}")
-                            new_item.hosts.extend(item.hosts)
-                            if item.hosts:
-                                logger.debug("Adding host facts")
-                                logger.debug(
-                                    f"host {item.hosts[0]} = {durable.lang.get_facts(item.ruleset)}"
-                                )
-                                new_item.facts[item.hosts[0]] = durable.lang.get_facts(
-                                    item.ruleset
-                                )
-                                logger.debug(f"facts {new_item.facts}")
-                            else:
-                                logger.debug("Adding facts")
-                                new_item.facts["global"] = durable.lang.get_facts(
-                                    item.ruleset
-                                )
-                            if plan.empty():
-                                run_last_item = False
-                                break
-                            item = cast(ActionContext, await plan.get())
-                        result = await call_action(*new_item)
-                        results.append(result)
-                        if run_last_item:
-                            result = await call_action(*item)
-                            results.append(result)
-
-                    # Run all other actions individually
-                    else:
-                        result = await call_action(*item)
-                        results.append(result)
-
+                    logger.debug(durable.lang.get_pending_events(ruleset.name))
                 event_log.put(dict(type="ProcessedEvent", results=results))
             except durable.engine.MessageNotHandledException:
                 logger.info(f"MessageNotHandledException: {data}")

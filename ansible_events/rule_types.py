@@ -40,13 +40,6 @@ class RuleSet(NamedTuple):
     hosts: Union[str, List[str]]
     sources: List[EventSource]
     rules: List[Rule]
-    host_rules: List[Rule]
-
-
-class HostRuleSet(NamedTuple):
-    name: str
-    host: str
-    ruleset: RuleSet
 
 
 class ActionContext(NamedTuple):
