@@ -126,7 +126,7 @@ def make_fn(
     return fn
 
 
-def generate_host_rulesets(
+def generate_rulesets(
     ansible_ruleset_queue_plans: List[RuleSetQueuePlan], variables: Dict, inventory: Dict
 ):
 
@@ -134,7 +134,6 @@ def generate_host_rulesets(
     rulesets = []
 
     for ansible_ruleset, queue, plan in ansible_ruleset_queue_plans:
-        host_rulesets = []
         a_ruleset = ruleset(ansible_ruleset.name)
         with a_ruleset:
             for ansible_rule in ansible_ruleset.rules:
@@ -142,15 +141,6 @@ def generate_host_rulesets(
                     fn = make_fn(a_ruleset.name, ansible_rule, variables, inventory, [], {}, plan)
                     r = rule(ansible_rule.condition.when, True, *generate_condition(ansible_rule.condition, variables))(fn)
                     logger.info(r.define())
-        for host in matching_hosts(inventory, ansible_ruleset.hosts):
-            host_ruleset = ruleset(f'{ansible_ruleset.name}_{host}')
-            with host_ruleset:
-                for ansible_rule in ansible_ruleset.host_rules:
-                    if ansible_rule.enabled:
-                        fn = make_fn(host_ruleset.name, ansible_rule, variables, inventory, [host], {}, plan)
-                        r = rule(ansible_rule.condition.when, True, *generate_condition(ansible_rule.condition, variables))(fn)
-                        logger.info(r.define())
-            host_rulesets.append(host_ruleset)
-        rulesets.append((a_ruleset, host_rulesets, queue, plan))
+        rulesets.append((a_ruleset, [], queue, plan))
 
     return rulesets

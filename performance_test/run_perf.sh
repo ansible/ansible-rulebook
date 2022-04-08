@@ -2,7 +2,7 @@ ulimit -Sn 10000
 #Argtest
 
 ./perf_test.py x x x x --only-header
-for t in host_rules.yml
+for t in rules.yml
 do
 for n in 1 10 100
 do
