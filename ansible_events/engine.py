@@ -20,11 +20,10 @@ from ansible_events.rule_types import (
     ActionContext,
 )
 
-from typing import Optional, Dict, List, cast, Callable
+from typing import Optional, Dict, List, cast
 
 
-class FilteredQueue():
-
+class FilteredQueue:
     def __init__(self, filters, queue):
         self.filters = filters
         self.queue = queue
@@ -57,15 +56,16 @@ def start_source(
 
         logger.info("load source filters")
         for source_filter in source.source_filters:
-            logger.info(f'loading {source_filter.filter_name}')
+            logger.info(f"loading {source_filter.filter_name}")
             source_filter_module = runpy.run_path(
                 os.path.join("event_filters", source_filter.filter_name + ".py")
             )
-            source_filters.append((source_filter_module["main"], source_filter.filter_args))
+            source_filters.append(
+                (source_filter_module["main"], source_filter.filter_args)
+            )
 
         args = {
-            k: substitute_variables(v, variables)
-            for k, v in source.source_args.items()
+            k: substitute_variables(v, variables) for k, v in source.source_args.items()
         }
         fqueue = FilteredQueue(source_filters, queue)
         logger.info(f"calling main in {source.source_name}")
@@ -177,16 +177,12 @@ def json_count(data):
                 )
             if s > 255:
                 pprint(data)
-                raise Exception(
-                    f"Only 255 values supported per dictionary found {s}"
-                )
+                raise Exception(f"Only 255 values supported per dictionary found {s}")
             for i in o.values():
                 q.append(i)
 
 
-async def _run_rulesets_async(
-    event_log: mp.Queue, rulesets_queue_plans, inventory
-):
+async def _run_rulesets_async(event_log: mp.Queue, rulesets_queue_plans, inventory):
 
     logger = mp.get_logger()
 
@@ -210,17 +206,55 @@ async def _run_rulesets_async(
             results = []
             try:
                 logger.info("Asserting event")
-                handled = False
                 try:
                     logger.debug(data)
                     durable.lang.post(ruleset.name, data)
-                    handled = True
                 except durable.engine.MessageObservedException:
                     logger.debug(f"MessageObservedException: {data}")
                 except durable.engine.MessageNotHandledException:
                     logger.debug(f"MessageNotHandledException: {data}")
                 finally:
                     logger.debug(durable.lang.get_pending_events(ruleset.name))
+                while not plan.empty():
+                    run_last_item = True
+                    item = cast(ActionContext, await plan.get())
+                    logger.debug(item)
+                    # Combine run_playbook actions into one action with multiple hosts
+                    if item.action == "run_playbook":
+                        new_item = item._replace(hosts=[], facts={})
+                        logger.debug(f"Extending hosts")
+                        while item.action == "run_playbook":
+                            logger.debug(f"Adding hosts {item.hosts}")
+                            new_item.hosts.extend(item.hosts)
+                            if item.hosts:
+                                logger.debug("Adding host facts")
+                                logger.debug(
+                                    f"host {item.hosts[0]} = {durable.lang.get_facts(item.ruleset)}"
+                                )
+                                new_item.facts[item.hosts[0]] = durable.lang.get_facts(
+                                    item.ruleset
+                                )
+                                logger.debug(f"facts {new_item.facts}")
+                            else:
+                                logger.debug("Adding facts")
+                                new_item.facts["global"] = durable.lang.get_facts(
+                                    item.ruleset
+                                )
+                            if plan.empty():
+                                run_last_item = False
+                                break
+                            item = cast(ActionContext, await plan.get())
+                        result = await call_action(*new_item)
+                        results.append(result)
+                        if run_last_item:
+                            result = await call_action(*item)
+                            results.append(result)
+
+                    # Run all other actions individually
+                    else:
+                        result = await call_action(*item)
+                        results.append(result)
+
                 event_log.put(dict(type="ProcessedEvent", results=results))
             except durable.engine.MessageNotHandledException:
                 logger.info(f"MessageNotHandledException: {data}")
