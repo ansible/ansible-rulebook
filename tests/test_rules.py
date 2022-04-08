@@ -142,9 +142,8 @@ async def test_generate_rules():
     durable_rulesets = generate_host_rulesets(ruleset_queue_plans, dict(), inventory)
 
     print(durable_rulesets[0][0].define())
-    print(durable_rulesets[0][1][0].define())
 
-    assert_fact("Demo rules_localhost", {"payload": {"text": "hello"}})
+    assert_fact("Demo rules", {"payload": {"text": "hello"}})
 
     assert ruleset_queue_plans[0][2].get_nowait()[1] == "slack"
     assert ruleset_queue_plans[0][2].get_nowait()[1] == "assert_fact"
@@ -167,7 +166,6 @@ async def test_generate_rules_multiple_conditions_any():
     durable_rulesets = generate_host_rulesets(ruleset_queue_plans, dict(), inventory)
 
     print(durable_rulesets[0][0].define())
-    print(durable_rulesets[0][1][0].define())
 
     post(
         "Demo rules multiple conditions any",
@@ -195,7 +193,6 @@ async def test_generate_rules_multiple_conditions_all():
     durable_rulesets = generate_host_rulesets(ruleset_queue_plans, dict(), inventory)
 
     print(durable_rulesets[0][0].define())
-    print(durable_rulesets[0][1][0].define())
 
     post(
         "Demo rules multiple conditions all",
