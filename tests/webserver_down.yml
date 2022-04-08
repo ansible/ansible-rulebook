@@ -12,7 +12,7 @@
         url: "{{sensu_url}}"
         token: "{{sensu_token}}"
         host_selector: event.sensu.host
-  host_rules:
+  rules:
     - name: If webserver is down remediate the problem
       condition:
         all:
