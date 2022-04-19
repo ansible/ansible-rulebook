@@ -1,0 +1,53 @@
+---
+- name: Test rules4
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 5
+  states:
+    - state: initial
+      rules:
+      - name:
+        condition: event.i == 1
+        action:
+          assert_fact:
+            ruleset: Test rules4
+            fact:
+              j: 1
+        to: second
+    - state: second
+      rules:
+      - name:
+        condition: event.i == 2
+        action:
+          run_playbook:
+            name: hello_playbook.yml
+        to: third
+    - state: third
+      rules:
+      - name:
+        condition: event.i == 3
+        action:
+          retract_fact:
+            ruleset: Test rules4
+            fact:
+              j: 3
+        to: fourth
+    - state: fourth
+      rules:
+      - name:
+        condition: event.i == 4
+        action:
+          post_event:
+            ruleset: Test rules4
+            fact:
+              j: 4
+        to: fifth
+    - state: fifth
+      rules:
+      - name:
+        condition: +event.j
+        action:
+          none:
+        to: fifth

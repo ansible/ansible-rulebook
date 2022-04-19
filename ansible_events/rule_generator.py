@@ -1,4 +1,4 @@
-from durable.lang import ruleset, rule, m, c
+from durable.lang import ruleset, rule, m, c, statechart, state, to
 import asyncio
 import multiprocessing as mp
 from ansible_events.condition_types import (
@@ -14,6 +14,7 @@ from ansible_events.condition_types import (
 
 from ansible_events.rule_types import RuleSetQueuePlan, ActionContext
 from ansible_events.rule_types import Condition as RuleCondition
+from ansible_events.rule_types import StateMachineQueuePlan
 from ansible_events.inventory import matching_hosts
 from ansible_events.util import substitute_variables
 
@@ -144,3 +145,25 @@ def generate_rulesets(
         rulesets.append((a_ruleset, [], queue, plan))
 
     return rulesets
+
+
+def generate_statecharts(
+    ansible_machine_queue_plans: List[StateMachineQueuePlan], variables: Dict, inventory: Dict
+):
+
+    logger = mp.get_logger()
+    statecharts = []
+
+    for ansible_machine, queue, plan in ansible_machine_queue_plans:
+        a_statechart = statechart(ansible_machine.name)
+        with a_statechart:
+            for ansible_state in ansible_machine.states:
+                a_state = state(ansible_state.name)
+                with a_state:
+                    for ansible_rule in ansible_state.rules:
+                        fn = make_fn(a_statechart.name, ansible_rule, variables, inventory, [], {}, plan)
+                        r = to(ansible_rule.to)(rule(ansible_rule.condition.when, True, *generate_condition(ansible_rule.condition, variables))(fn))
+                        logger.info(r.define())
+        statecharts.append((a_statechart, [], queue, plan))
+
+    return statecharts

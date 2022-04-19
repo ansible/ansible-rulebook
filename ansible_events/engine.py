@@ -17,6 +17,8 @@ from ansible_events.rule_types import (
     EventSource,
     RuleSetQueue,
     RuleSetQueuePlan,
+    StateMachineQueue,
+    StateMachineQueuePlan,
     ActionContext,
 )
 
@@ -134,6 +136,7 @@ async def call_action(
 def run_rulesets(
     event_log: mp.Queue,
     ruleset_queues: List[RuleSetQueue],
+    statemachine_queues: List[StateMachineQueue],
     variables: Dict,
     inventory: Dict,
     redis_host_name: Optional[str] = None,
@@ -152,14 +155,24 @@ def run_rulesets(
         for ruleset, queue in ruleset_queues
     ]
 
+    ansible_state_machine_queue_plans = [
+        StateMachineQueuePlan(state_machine, queue, asyncio.Queue())
+        for state_machine, queue in statemachine_queues
+    ]
+
     rulesets_queue_plans = rule_generator.generate_rulesets(
         ansible_ruleset_queue_plans, variables, inventory
     )
+
     for rulesets_list in rulesets_queue_plans:
         for rulesets in rulesets_list[1]:
             logger.debug(rulesets.define())
 
-    asyncio.run(_run_rulesets_async(event_log, rulesets_queue_plans, inventory))
+    state_machine_queue_plans = rule_generator.generate_statecharts(
+        ansible_state_machine_queue_plans, variables, inventory
+    )
+
+    asyncio.run(_run_rulesets_async(event_log, rulesets_queue_plans + state_machine_queue_plans, inventory))
 
 
 def json_count(data):

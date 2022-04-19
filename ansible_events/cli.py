@@ -7,6 +7,7 @@ Options:
     -v, --vars=<v>              Variables file
     -i, --inventory=<i>         Inventory
     --rules=<r>                 The rules file
+    --states=<s>                States file
     -S=<S>, --source_dir=<S>    Source dir
     --vars=<v>                  A vars file
     --env-vars=<e>              Comma separated list of variables to import from the environment
@@ -24,7 +25,7 @@ import multiprocessing as mp
 
 import ansible_events.rules_parser as rules_parser
 from ansible_events.engine import start_source, run_rulesets
-from ansible_events.rule_types import RuleSet
+from ansible_events.rule_types import RuleSet, StateMachine
 from ansible_events.util import load_inventory
 
 from typing import Dict, List
@@ -54,9 +55,18 @@ def load_rules(parsed_args) -> List[RuleSet]:
         return []
 
 
+def load_state_machines(parsed_args) -> List[StateMachine]:
+    if parsed_args.states:
+        with open(parsed_args.states) as f:
+            return rules_parser.parse_state_machines(yaml.safe_load(f.read()))
+    else:
+        return []
+
+
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--rules')
+    parser.add_argument('--states')
     parser.add_argument('--vars')
     parser.add_argument('--env-vars')
     parser.add_argument('--debug', action='store_true')
@@ -79,6 +89,7 @@ def main(args):
         logger.setLevel(logging.INFO)
     variables = load_vars(parsed_args)
     rulesets = load_rules(parsed_args)
+    state_machines = load_state_machines(parsed_args)
     if parsed_args.inventory:
         inventory = load_inventory(parsed_args.inventory)
     else:
@@ -86,6 +97,7 @@ def main(args):
 
     tasks = []
     ruleset_queues = []
+    state_machine_queues = []
 
     event_log: mp.Queue = mp.Queue()
 
@@ -97,12 +109,21 @@ def main(args):
             tasks.append(mp.Process(target=start_source, args=(source, [parsed_args.source_dir], variables, queue)))
         ruleset_queues.append((ruleset, queue))
 
+    for statemachine in state_machines:
+        sources = statemachine.sources
+        queue: mp.Queue = mp.Queue()
+
+        for source in sources:
+            tasks.append(mp.Process(target=start_source, args=(source, [parsed_args.source_dir], variables, queue)))
+        state_machine_queues.append((statemachine, queue))
+
     tasks.append(
         mp.Process(
             target=run_rulesets,
             args=(
                 event_log,
                 ruleset_queues,
+                state_machine_queues,
                 variables,
                 inventory,
                 parsed_args.redis_host_name,

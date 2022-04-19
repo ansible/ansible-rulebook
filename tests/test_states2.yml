@@ -1,5 +1,5 @@
 ---
-- name: Test state machines
+- name: Test state machines2
   hosts: all
   sources: []
   states:

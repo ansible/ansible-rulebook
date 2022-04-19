@@ -1,6 +1,15 @@
 from durable.lang import m, c, assert_fact, ruleset, rule, when_all, post
 from durable.lang import statechart, state, to
 import durable
+from ansible_events.rule_generator import generate_statecharts
+from ansible_events.rules_parser import parse_state_machines
+import pytest
+import os
+import yaml
+import multiprocessing as mp
+import asyncio
+
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def test_statemachine():
@@ -74,3 +83,31 @@ def no_test_parse_rules():
         data = yaml.safe_load(f.read())
 
     rulesets = parse_rule_sets(data)
+
+
+@pytest.mark.asyncio
+async def test_generate_statecharts():
+    os.chdir(HERE)
+    with open("test_states2.yml") as f:
+        data = yaml.safe_load(f.read())
+    with open("inventory.yml") as f:
+        inventory = yaml.safe_load(f.read())
+
+    state_machines = parse_state_machines(data)
+    print(state_machines)
+    state_machine_queue_plans = [
+        (state_machine, mp.Queue(), asyncio.Queue()) for state_machine in state_machines
+    ]
+    durable_statecharts = generate_statecharts(state_machine_queue_plans, dict(), inventory)
+
+    print(durable_statecharts[0][0].define())
+
+    assert_fact("Test state machines2", {"payload": {"text": "hello"}})
+    assert_fact("Test state machines2", {"payload": {"text": "goodbye"}})
+
+    assert state_machine_queue_plans[0][2].get_nowait()[1] == "debug"
+    assert state_machine_queue_plans[0][2].get_nowait()[1] == "debug"
+
+
+def test_experimental():
+    assert False, "experimental code do not merge"

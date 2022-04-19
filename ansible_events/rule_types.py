@@ -83,3 +83,14 @@ class StateMachine(NamedTuple):
     hosts: Union[str, List[str]]
     sources: List[EventSource]
     states: List[State]
+
+
+class StateMachineQueue(NamedTuple):
+    statemachine: StateMachine
+    queue: mp.Queue
+
+
+class StateMachineQueuePlan(NamedTuple):
+    statemachine: StateMachine
+    queue: mp.Queue
+    plan: asyncio.Queue

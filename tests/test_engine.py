@@ -87,6 +87,7 @@ def test_run_rulesets(new_event_loop):
     run_rulesets(
         event_log,
         ruleset_queues,
+        [],
         dict(),
         dict(),
     )
@@ -113,6 +114,7 @@ def test_run_rules_with_assignment(new_event_loop):
     run_rulesets(
         event_log,
         ruleset_queues,
+        [],
         dict(),
         dict(),
     )
@@ -134,6 +136,7 @@ def test_run_rules_with_assignment2(new_event_loop):
     run_rulesets(
         event_log,
         ruleset_queues,
+        [],
         dict(),
         dict(),
     )
@@ -156,6 +159,7 @@ def test_run_rules_simple(new_event_loop):
     run_rulesets(
         event_log,
         ruleset_queues,
+        [],
         dict(),
         dict(),
     )
@@ -182,6 +186,7 @@ def test_run_multiple_hosts(new_event_loop):
     run_rulesets(
         event_log,
         ruleset_queues,
+        [],
         dict(),
         load_inventory('inventory1.yml'),
     )
@@ -213,6 +218,7 @@ def test_run_multiple_hosts2(new_event_loop):
     run_rulesets(
         event_log,
         ruleset_queues,
+        [],
         dict(),
         load_inventory('inventory1.yml'),
     )
@@ -247,6 +253,7 @@ def test_run_multiple_hosts3(new_event_loop):
     run_rulesets(
         event_log,
         ruleset_queues,
+        [],
         dict(),
         load_inventory('inventory.yml'),
     )
@@ -278,6 +285,7 @@ def test_filters(new_event_loop):
     run_rulesets(
         event_log,
         ruleset_queues,
+        [],
         dict(),
         dict(),
     )
@@ -288,12 +296,28 @@ def test_filters(new_event_loop):
     assert event_log.get()['type'] == 'Shutdown', '3'
     assert event_log.empty()
 
+
 def test_states(new_event_loop):
 
-    load_state_machines('test_states.yml')
+    fsm_queues, queue, event_log = load_state_machines('test_states.yml')
 
 
-    assert False
+    queue.put(dict(payload=dict(text="hello")))
+    queue.put(dict(payload=dict(text="goodbye")))
+    queue.put(Shutdown())
+
+    run_rulesets(
+        event_log,
+        [],
+        fsm_queues,
+        dict(),
+        dict(),
+    )
+
+    assert event_log.get()['type'] == 'ProcessedEvent', '0'
+    assert event_log.get()['type'] == 'ProcessedEvent', '1'
+    assert event_log.get()['type'] == 'Shutdown', '3'
+    assert event_log.empty()
 
 
 
