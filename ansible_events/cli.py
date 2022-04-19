@@ -1,11 +1,12 @@
 """
 Usage:
-    ansible-events [options] <rules.yml>
+    ansible-events [options]
 
 Options:
     -h, --help                  Show this page
     -v, --vars=<v>              Variables file
     -i, --inventory=<i>         Inventory
+    --rules=<r>                 The rules file
     -S=<S>, --source_dir=<S>    Source dir
     --vars=<v>                  A vars file
     --env-vars=<e>              Comma separated list of variables to import from the environment
@@ -46,8 +47,11 @@ def load_vars(parsed_args) -> Dict[str, str]:
 
 
 def load_rules(parsed_args) -> List[RuleSet]:
-    with open(parsed_args.rules) as f:
-        return rules_parser.parse_rule_sets(yaml.safe_load(f.read()))
+    if parsed_args.rules:
+        with open(parsed_args.rules) as f:
+            return rules_parser.parse_rule_sets(yaml.safe_load(f.read()))
+    else:
+        return []
 
 
 def get_parser():
