@@ -1,7 +1,7 @@
 
 import pytest
 import os
-import multiprocessing as mp
+import threading
 
 from ansible_events.engine import run_rulesets, start_source
 from ansible_events.rule_types import EventSource, EventSourceFilter
@@ -27,8 +27,8 @@ def f(name):
 def test_process_check(new_event_loop):
     os.chdir(HERE)
 
-    queue = mp.Queue()
-    p1 = mp.Process(target=start_source,
+    queue = ueue()
+    p1 = threading.Thread(target=start_source,
         args=(EventSource("process_check", "process_check", dict(limit=1), [EventSourceFilter('noop', {})]),
         ["sources"],
         dict(names=['Python']),
@@ -36,7 +36,7 @@ def test_process_check(new_event_loop):
         daemon=True
     )
     p1.start()
-    p2 = mp.Process(target=f, args=('bob',))
+    p2 = threading.Thread(target=f, args=('bob',))
     p2.start()
     p2.join()
 

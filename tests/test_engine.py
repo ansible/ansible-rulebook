@@ -3,8 +3,8 @@ import durable.lang
 import yaml
 import os
 import asyncio
-import multiprocessing as mp
 import pytest
+from queue import Queue
 
 from pprint import pprint
 
@@ -20,7 +20,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 def test_start_source():
     os.chdir(HERE)
 
-    queue = mp.Queue()
+    queue = Queue()
     start_source(
         EventSource("range", "range", dict(limit=1), [EventSourceFilter('noop', {})]),
         ["sources"],
@@ -46,9 +46,9 @@ def load_rules(rules_file):
     rulesets = parse_rule_sets(data)
     pprint(rulesets)
 
-    ruleset_queues = [(ruleset, mp.Queue()) for ruleset in rulesets]
+    ruleset_queues = [(ruleset, Queue()) for ruleset in rulesets]
 
-    event_log = mp.Queue()
+    event_log = Queue()
 
     queue = ruleset_queues[0][1]
 
