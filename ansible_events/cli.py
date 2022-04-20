@@ -56,7 +56,7 @@ def load_rules(parsed_args) -> List[RuleSet]:
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('rules')
+    parser.add_argument('--rules')
     parser.add_argument('--vars')
     parser.add_argument('--env-vars')
     parser.add_argument('--debug', action='store_true')
