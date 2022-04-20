@@ -1,10 +1,12 @@
 import os
-import multiprocessing as mp
 import runpy
 import asyncio
 import durable.lang
 import select
 import traceback
+import logging
+from queue import Queue
+
 
 from pprint import pprint, pformat
 
@@ -47,10 +49,10 @@ def start_source(
     source: EventSource,
     source_dirs: List[str],
     variables: Dict,
-    queue: mp.Queue,
+    queue: Queue,
 ) -> None:
 
-    logger = mp.get_logger()
+    logger = logging.getLogger()
 
     logger.info("start_source")
 
@@ -115,7 +117,7 @@ async def call_action(
     c,
 ) -> Dict:
 
-    logger = mp.get_logger()
+    logger = logging.getLogger()
     logger.info(f"call_action {action}")
 
     if action in builtin_actions:
@@ -173,7 +175,7 @@ async def call_action(
 
 
 def run_rulesets(
-    event_log: mp.Queue,
+    event_log: Queue,
     ruleset_queues: List[RuleSetQueue],
     variables: Dict,
     inventory: Dict,
@@ -181,7 +183,7 @@ def run_rulesets(
     redis_port: Optional[int] = None,
 ):
 
-    logger = mp.get_logger()
+    logger = logging.getLogger()
 
     logger.info("run_ruleset")
 
@@ -226,9 +228,9 @@ def json_count(data):
                 q.append(i)
 
 
-async def _run_rulesets_async(event_log: mp.Queue, rulesets_queue_plans, inventory):
+async def _run_rulesets_async(event_log: Queue, rulesets_queue_plans, inventory):
 
-    logger = mp.get_logger()
+    logger = logging.getLogger()
 
     queue_readers = {i[2]._reader: i for i in rulesets_queue_plans}  # type: ignore
 

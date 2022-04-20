@@ -21,7 +21,8 @@ import sys
 import os
 import yaml
 import logging
-import multiprocessing as mp
+import threading
+import queue
 
 import ansible_events
 
@@ -90,7 +91,7 @@ def main(args):
     if parsed_args.version:
         print(ansible_events.__version__)
         return 0
-    logger = mp.log_to_stderr()
+    logger = logging.getLogger()
     if parsed_args.debug:
         logger.setLevel(logging.DEBUG)
     elif parsed_args.verbose:
@@ -105,18 +106,18 @@ def main(args):
     tasks = []
     ruleset_queues = []
 
-    event_log: mp.Queue = mp.Queue()
+    event_log: queue.Queue = queue.Queue()
 
     for ruleset in rulesets:
         sources = ruleset.sources
-        queue: mp.Queue = mp.Queue()
+        source_queue: queue.Queue = queue.Queue()
 
         for source in sources:
-            tasks.append(mp.Process(target=start_source, args=(source, [parsed_args.source_dir], variables, queue)))
-        ruleset_queues.append((ruleset, queue))
+            tasks.append(threading.Thread(target=start_source, args=(source, [parsed_args.source_dir], variables, source_queue)))
+        ruleset_queues.append((ruleset, source_queue))
 
     tasks.append(
-        mp.Process(
+        threading.Thread(
             target=run_rulesets,
             args=(
                 event_log,

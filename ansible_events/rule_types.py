@@ -4,7 +4,7 @@ from typing import NamedTuple, Union, List, Any, Dict, Optional
 import ansible_events.condition_types as ct
 
 import asyncio
-import multiprocessing as mp
+from queue import Queue
 
 class EventSourceFilter(NamedTuple):
 
@@ -59,10 +59,10 @@ class RuleSetPlan(NamedTuple):
 
 class RuleSetQueue(NamedTuple):
     ruleset: RuleSet
-    queue: mp.Queue
+    queue: Queue
 
 class RuleSetQueuePlan(NamedTuple):
     ruleset: RuleSet
-    queue: mp.Queue
+    queue: Queue
     plan: asyncio.Queue
 

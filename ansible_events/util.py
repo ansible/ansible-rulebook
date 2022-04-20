@@ -2,7 +2,6 @@ import jinja2
 import yaml
 import os
 import json
-import multiprocessing as mp
 import dpath.util
 
 from typing import Dict, Union, List

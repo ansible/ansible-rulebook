@@ -10,10 +10,9 @@ Arguments:
     * include_keys = a list of strings or patterns to keep even if it matches exclude_keys patterns.
 """
 
-import multiprocessing as mp
-
 
 import fnmatch
+import logging
 
 
 def matches_include_keys(include_keys, s):
@@ -31,7 +30,7 @@ def matches_exclude_keys(exclude_keys, s):
 
 
 def main(event, exclude_keys=[], include_keys=[]):
-    logger = mp.get_logger()
+    logger = logging.getLogger()
     q = []
     q.append(event)
     while q:

@@ -5,11 +5,10 @@ For instance, the list ['a', 'b', 'c'] becomes the dict {0: 'a', 1: 'b': 2: 'c'}
 
 """
 
-import multiprocessing as mp
-
+import logging
 
 def main(event):
-    logger = mp.get_logger()
+    logger = logging.getLogger()
     logger.info('lists_to_dicts')
     q = []
     q.append(event)

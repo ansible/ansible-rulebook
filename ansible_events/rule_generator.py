@@ -1,6 +1,6 @@
 from durable.lang import ruleset, rule, m, c
 import asyncio
-import multiprocessing as mp
+import logging
 from ansible_events.condition_types import (
     Boolean,
     Identifier,
@@ -98,7 +98,7 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
 
 def generate_condition(ansible_condition: RuleCondition, variables: Dict):
     condition =  visit_condition(ansible_condition.value, variables)
-    logger = mp.get_logger()
+    logger = logging.getLogger()
     for i in condition:
         logger.debug(f"{i.define()}")
     return condition
@@ -108,7 +108,7 @@ def make_fn(
     ruleset, ansible_rule, variables: Dict, inventory: Dict, hosts: List, facts: Dict, plan: asyncio.Queue
 ) -> Callable:
     def fn(c):
-        logger = mp.get_logger()
+        logger = logging.getLogger()
         logger.info(f"calling {ansible_rule.name}")
         add_to_plan(
             ruleset,
@@ -129,7 +129,7 @@ def generate_rulesets(
     ansible_ruleset_queue_plans: List[RuleSetQueuePlan], variables: Dict, inventory: Dict
 ):
 
-    logger = mp.get_logger()
+    logger = logging.getLogger()
     rulesets = []
 
     for ansible_ruleset, queue, plan in ansible_ruleset_queue_plans:

@@ -4,7 +4,7 @@ import yaml
 import os
 import asyncio
 import pytest
-import multiprocessing as mp
+from queue import Queue
 
 from ansible_events.rules_parser import parse_rule_sets
 from ansible_events.rule_generator import generate_rulesets
@@ -137,7 +137,7 @@ async def test_generate_rules():
     rulesets = parse_rule_sets(data)
     print(rulesets)
     ruleset_queue_plans = [
-        (ruleset, mp.Queue(), asyncio.Queue()) for ruleset in rulesets
+        (ruleset, Queue(), asyncio.Queue()) for ruleset in rulesets
     ]
     durable_rulesets = generate_rulesets(ruleset_queue_plans, dict(), inventory)
 
@@ -161,7 +161,7 @@ async def test_generate_rules_multiple_conditions_any():
     rulesets = parse_rule_sets(data)
     print(rulesets)
     ruleset_queue_plans = [
-        (ruleset, mp.Queue(), asyncio.Queue()) for ruleset in rulesets
+        (ruleset, Queue(), asyncio.Queue()) for ruleset in rulesets
     ]
     durable_rulesets = generate_rulesets(ruleset_queue_plans, dict(), inventory)
 
@@ -188,7 +188,7 @@ async def test_generate_rules_multiple_conditions_all():
     rulesets = parse_rule_sets(data)
     print(rulesets)
     ruleset_queue_plans = [
-        (ruleset, mp.Queue(), asyncio.Queue()) for ruleset in rulesets
+        (ruleset, Queue(), asyncio.Queue()) for ruleset in rulesets
     ]
     durable_rulesets = generate_rulesets(ruleset_queue_plans, dict(), inventory)
 

@@ -1,5 +1,4 @@
 import durable.lang
-import multiprocessing as mp
 
 from typing import Dict, List, Callable
 import ansible_runner
@@ -11,6 +10,7 @@ import glob
 import json
 import dpath.util
 import sys
+import logging
 from pprint import pprint
 from .util import get_horizontal_rule
 from .collection import split_collection_name, has_playbook, find_playbook
@@ -60,7 +60,7 @@ def assert_fact(
     ruleset: str,
     fact: Dict,
 ):
-    logger = mp.get_logger()
+    logger = logging.getLogger()
     logger.debug(f"assert_fact {ruleset} {fact}")
     durable.lang.assert_fact(ruleset, fact)
 
@@ -91,7 +91,7 @@ def run_playbook(
     copy_files: Optional[bool] = False,
     **kwargs,
 ):
-    logger = mp.get_logger()
+    logger = logging.getLogger()
 
     temp = tempfile.mkdtemp(prefix="run_playbook")
     logger.debug(f"temp {temp}")

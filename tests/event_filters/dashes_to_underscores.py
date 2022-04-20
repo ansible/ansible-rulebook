@@ -7,11 +7,11 @@ Arguments:
     * overwrite: Overwrite the values if there is a collision with a new key.
 """
 
-import multiprocessing as mp
+import logging
 
 
 def main(event, overwrite=True):
-    logger = mp.get_logger()
+    logger = logging.getLogger()
     logger.info('dashes_to_underscores')
     q = []
     q.append(event)
