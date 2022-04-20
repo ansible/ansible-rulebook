@@ -216,44 +216,10 @@ async def _run_rulesets_async(event_log: mp.Queue, rulesets_queue_plans, invento
                 finally:
                     logger.debug(durable.lang.get_pending_events(ruleset.name))
                 while not plan.empty():
-                    run_last_item = True
                     item = cast(ActionContext, await plan.get())
                     logger.debug(item)
-                    # Combine run_playbook actions into one action with multiple hosts
-                    if item.action == "run_playbook":
-                        new_item = item._replace(hosts=[], facts={})
-                        logger.debug(f"Extending hosts")
-                        while item.action == "run_playbook":
-                            logger.debug(f"Adding hosts {item.hosts}")
-                            new_item.hosts.extend(item.hosts)
-                            if item.hosts:
-                                logger.debug("Adding host facts")
-                                logger.debug(
-                                    f"host {item.hosts[0]} = {durable.lang.get_facts(item.ruleset)}"
-                                )
-                                new_item.facts[item.hosts[0]] = durable.lang.get_facts(
-                                    item.ruleset
-                                )
-                                logger.debug(f"facts {new_item.facts}")
-                            else:
-                                logger.debug("Adding facts")
-                                new_item.facts["global"] = durable.lang.get_facts(
-                                    item.ruleset
-                                )
-                            if plan.empty():
-                                run_last_item = False
-                                break
-                            item = cast(ActionContext, await plan.get())
-                        result = await call_action(*new_item)
-                        results.append(result)
-                        if run_last_item:
-                            result = await call_action(*item)
-                            results.append(result)
-
-                    # Run all other actions individually
-                    else:
-                        result = await call_action(*item)
-                        results.append(result)
+                    result = await call_action(*item)
+                    results.append(result)
 
                 event_log.put(dict(type="ProcessedEvent", results=results))
             except durable.engine.MessageNotHandledException:

@@ -6,13 +6,22 @@ from ansible_events.condition_parser import parse_condition as parse_condition_v
 from typing import Dict, List, Any
 
 
+def parse_hosts(hosts):
+    if isinstance(hosts, str):
+        return [hosts]
+    elif isinstance(hosts, list):
+        return hosts
+    else:
+        raise Exception(f'Unsupported hosts value {hosts}')
+
+
 def parse_rule_sets(rule_sets: Dict) -> List[rt.RuleSet]:
     rule_set_list = []
     for rule_set in rule_sets:
         rule_set_list.append(
             rt.RuleSet(
                 name=rule_set["name"],
-                hosts=rule_set["hosts"],
+                hosts=parse_hosts(rule_set["hosts"]),
                 sources=parse_event_sources(rule_set["sources"]),
                 rules=parse_rules(rule_set.get("rules", {})),
             )

@@ -14,7 +14,6 @@ from ansible_events.condition_types import (
 
 from ansible_events.rule_types import RuleSetQueuePlan, ActionContext
 from ansible_events.rule_types import Condition as RuleCondition
-from ansible_events.inventory import matching_hosts
 from ansible_events.util import substitute_variables
 
 
@@ -138,7 +137,7 @@ def generate_rulesets(
         with a_ruleset:
             for ansible_rule in ansible_ruleset.rules:
                 if ansible_rule.enabled:
-                    fn = make_fn(a_ruleset.name, ansible_rule, variables, inventory, [], {}, plan)
+                    fn = make_fn(a_ruleset.name, ansible_rule, variables, inventory, ansible_ruleset.hosts, {}, plan)
                     r = rule(ansible_rule.condition.when, True, *generate_condition(ansible_rule.condition, variables))(fn)
                     logger.info(r.define())
         rulesets.append((a_ruleset, [], queue, plan))
