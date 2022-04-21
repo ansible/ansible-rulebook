@@ -299,3 +299,7 @@ def test_run_rulesets_on_hosts(new_event_loop):
     assert event_log.get()['type'] == 'ProcessedEvent', '6'
     assert event_log.get()['type'] == 'Shutdown', '7'
     assert event_log.empty()
+
+
+def test_do_not_merge():
+    assert False

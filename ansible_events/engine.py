@@ -76,6 +76,13 @@ def start_source(
         queue.put(Shutdown())
 
 
+def get_hosts_from_event(event):
+    if "meta" in event:
+        if "hosts" in event["meta"]:
+            return parse_hosts(event["meta"]["hosts"])
+    return []
+
+
 async def call_action(
     ruleset: str,
     action: str,
@@ -95,10 +102,7 @@ async def call_action(
             variables_copy = variables.copy()
             if c.m is not None:
                 variables_copy["event"] = c.m._d  # event data is stored in c.m._d
-                event = c.m._d  # event data is stored in c.m._d
-                if "meta" in event:
-                    if "hosts" in event["meta"]:
-                        hosts = parse_hosts(event["meta"]["hosts"])
+                hosts = get_hosts_from_event(c.m._d)
             else:
                 variables_copy["events"] = c._m
                 new_hosts = []
@@ -241,10 +245,30 @@ async def _run_rulesets_async(event_log: mp.Queue, rulesets_queue_plans, invento
                     except durable.engine.MessageNotHandledException:
                         logger.debug(f"MessageNotHandledException: {data}")
                 while not plan.empty():
+                    run_last_item = True
                     item = cast(ActionContext, await plan.get())
                     logger.debug(item)
-                    result = await call_action(*item)
-                    results.append(result)
+                    # Combine run_playbook actions into one action with multiple hosts
+                    if item.action == "run_playbook":
+                        new_item = item._replace(hosts=[], facts={})
+                        logger.debug(f"Extending hosts")
+                        while item.action == "run_playbook":
+                            logger.debug(f"Adding hosts {item.c.m._d['meta']['hosts']}")
+                            new_item.c.m._d['meta']['hosts'].extend(item.c.m._d['meta']['hosts'])
+                            if plan.empty():
+                                run_last_item = False
+                                break
+                            item = cast(ActionContext, await plan.get())
+                            logger.debug(item)
+                        result = await call_action(*new_item)
+                        results.append(result)
+                        if run_last_item:
+                            result = await call_action(*item)
+                            results.append(result)
+                    # Run all other actions individually
+                    else:
+                        result = await call_action(*item)
+                        results.append(result)
 
                 event_log.put(dict(type="ProcessedEvent", results=results))
             except durable.engine.MessageNotHandledException:
