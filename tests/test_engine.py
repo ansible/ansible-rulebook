@@ -270,3 +270,32 @@ def test_filters(new_event_loop):
     assert event_log.get()['type'] == 'ProcessedEvent', '2'
     assert event_log.get()['type'] == 'Shutdown', '3'
     assert event_log.empty()
+
+def test_run_rulesets_on_hosts(new_event_loop):
+
+    ruleset_queues, queue, event_log = load_rules("test_host_rules.yml")
+
+    queue.put(dict())
+    queue.put(dict(i=1, meta=dict(hosts='localhost0')))
+    queue.put(dict(i=2, meta=dict(hosts='localhost0')))
+    queue.put(dict(i=3, meta=dict(hosts='localhost0')))
+    queue.put(dict(i=4, meta=dict(hosts='localhost0')))
+    queue.put(dict(i=5, meta=dict(hosts='localhost0')))
+    queue.put(Shutdown())
+
+    run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        dict(),
+    )
+
+    assert event_log.get()['type'] == 'EmptyEvent', '0'
+    assert event_log.get()['type'] == 'ProcessedEvent', '1'
+    assert event_log.get()['type'] == 'ProcessedEvent', '2'
+    assert event_log.get()['type'] == 'ProcessedEvent', '3'
+    assert event_log.get()['type'] == 'ProcessedEvent', '4'
+    #assert event_log.get()['type'] == 'MessageNotHandled', '5'
+    assert event_log.get()['type'] == 'ProcessedEvent', '6'
+    assert event_log.get()['type'] == 'Shutdown', '7'
+    assert event_log.empty()
