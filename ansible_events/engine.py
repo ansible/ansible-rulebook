@@ -19,6 +19,7 @@ from ansible_events.rule_types import (
     RuleSetQueuePlan,
     ActionContext,
 )
+from ansible_events.rules_parser import parse_hosts
 
 from typing import Optional, Dict, List, cast
 
@@ -93,8 +94,19 @@ async def call_action(
             variables_copy = variables.copy()
             if c.m is not None:
                 variables_copy["event"] = c.m._d  # event data is stored in c.m._d
+                event = c.m._d  # event data is stored in c.m._d
+                if 'meta' in event:
+                    if 'hosts' in event['meta']:
+                        hosts = parse_hosts(event['meta']['hosts'])
             else:
                 variables_copy["events"] = c._m
+                new_hosts = []
+                for event in variables_copy["events"]:
+                    if 'meta' in event:
+                        if 'hosts' in event['meta']:
+                            new_hosts.append(parse_hosts(event['meta']['hosts']))
+                if new_hosts:
+                    hosts = new_hosts
             logger.info(f"substitute_variables {action_args} {variables_copy}")
             action_args = {
                 k: substitute_variables(v, variables_copy)
