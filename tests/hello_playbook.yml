@@ -1,6 +1,6 @@
 ---
 - name: A playbook
-  hosts: localhost
+  hosts: all
   gather_facts: false
   tasks:
     - name:
