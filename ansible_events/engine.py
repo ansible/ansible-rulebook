@@ -230,6 +230,8 @@ async def _run_rulesets_async(event_log: mp.Queue, rulesets_queue_plans, invento
                 if found_hosts:
                     for host in found_hosts:
                         data["sid"] = get_host_id(host)
+                        if "meta" not in data:
+                            data["meta"] = dict()
                         data["meta"]["hosts"] = [host]
                         try:
                             durable.lang.post(ruleset.name, data)
@@ -253,8 +255,9 @@ async def _run_rulesets_async(event_log: mp.Queue, rulesets_queue_plans, invento
                         new_item = item._replace(hosts=[], facts={})
                         logger.debug(f"Extending hosts")
                         while item.action == "run_playbook":
-                            logger.debug(f"Adding hosts {item.c.m._d['meta']['hosts']}")
-                            new_item.c.m._d['meta']['hosts'].extend(item.c.m._d['meta']['hosts'])
+                            if "meta" in item.c.m._d:
+                                logger.debug(f"Adding hosts {item.c.m._d['meta']['hosts']}")
+                                new_item.c.m._d['meta']['hosts'].extend(item.c.m._d['meta']['hosts'])
                             if plan.empty():
                                 run_last_item = False
                                 break
