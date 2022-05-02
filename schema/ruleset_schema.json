@@ -1,0 +1,177 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "http://jsonschema.net",
+    "type": "array",
+    "items": {"$ref": "#/$defs/ruleset"},
+    "$defs": {
+        "ruleset": {
+            "type": "object",
+            "properties": {
+                "hosts": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sources": {
+                    "type": "array",
+                    "items": {"$ref": "#/$defs/source"}
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {"$ref": "#/$defs/rule"}
+                }
+            },
+            "required": [
+                "hosts",
+                "sources",
+                "rules"
+            ],
+            "additionalProperties": false
+        },
+        "source": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "filters": {
+                    "type": "array",
+                    "items": {"type": "object"}
+                }
+            },
+            "additionalProperties": {
+                "type": "object"
+            }
+        },
+        "rule": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "condition": {
+                    "anyOf": [
+                        { "type": "string" },
+                        {"$ref": "#/$defs/all-condition"},
+                        {"$ref": "#/$defs/any-condition"}
+                    ]
+                },
+                "action": {
+                    "anyOf": [
+                        {"$ref": "#/$defs/run-playbook-action"},
+                        {"$ref": "#/$defs/post-event-action"},
+                        {"$ref": "#/$defs/assert-fact-action"},
+                        {"$ref": "#/$defs/retract-fact-action"},
+                        {"$ref": "#/$defs/print-event-action"},
+                        {"$ref": "#/$defs/debug-action"},
+                        {"$ref": "#/$defs/none-action"}
+                    ]
+                }
+            },
+            "additionalProperties": false
+        },
+        "all-condition": {
+            "type": "object",
+            "properties": {
+                "all": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                }
+            }
+        },
+        "any-condition": {
+            "type": "object",
+            "properties": {
+                "any": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                }
+            }
+        },
+        "run-playbook-action": {
+            "type": "object",
+            "properties": {
+                "run_playbook": {
+                    "type": "object",
+                    "properties": {
+                        "copy_files": { "type": "boolean" },
+                        "name": {"type": "string" },
+                        "post_events": { "type": "boolean" },
+                        "assert_facts": { "type": "boolean" },
+                        "verbosity": {"type": "integer" },
+                        "var_root": {"type": "string" }
+                    },
+                    "required": [
+                        "name"
+                    ],
+                    "additionalProperties": false
+                }
+            }
+        },
+        "post-event-action": {
+            "type": "object",
+            "properties": {
+                "post_event": {
+                    "type": "object",
+                    "properties": {
+                        "ruleset": {"type": "string" },
+                        "fact": {"type": "object" }
+                    }
+                }
+            }
+        },
+        "assert-fact-action": {
+            "type": "object",
+            "properties": {
+                "assert_fact": {
+                    "type": "object",
+                    "properties": {
+                        "ruleset": {"type": "string" },
+                        "fact": {"type": "object" }
+                    }
+                }
+            }
+        },
+        "retract-fact-action": {
+            "type": "object",
+            "properties": {
+                "retract_fact": {
+                    "type": "object",
+                    "properties": {
+                        "ruleset": {"type": "string" },
+                        "fact": {"type": "object" }
+                    }
+                }
+            }
+        },
+        "print-event-action": {
+            "type": "object",
+            "properties": {
+                "print_event": {
+                    "type": "object",
+                    "properties": {
+                        "var_root": {"type": "string" },
+                        "pretty": {"type": "boolean" }
+                    }
+                }
+            }
+        },
+        "debug-action": {
+            "type": "object",
+            "properties": {
+                "debug": {
+                    "type": "object"
+                }
+            }
+        },
+        "none-action": {
+            "type": "object",
+            "properties": {
+                "none": {
+                    "type": "object"
+                }
+            }
+        }
+    }
+}
