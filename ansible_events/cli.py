@@ -6,7 +6,7 @@ Options:
     -h, --help                  Show this page
     -v, --vars=<v>              Variables file
     -i, --inventory=<i>         Inventory
-    --rules=<r>                 The rules file
+    --rules=<r>                 The rules file or rules from a collection
     -S=<S>, --source_dir=<S>    Source dir
     --vars=<v>                  A vars file
     --env-vars=<e>              Comma separated list of variables to import from the environment
@@ -26,6 +26,8 @@ import ansible_events.rules_parser as rules_parser
 from ansible_events.engine import start_source, run_rulesets
 from ansible_events.rule_types import RuleSet
 from ansible_events.util import load_inventory
+from ansible_events.collection import has_rules, split_collection_name
+from ansible_events.collection import load_rules as collection_load_rules
 
 from typing import Dict, List
 
@@ -47,11 +49,13 @@ def load_vars(parsed_args) -> Dict[str, str]:
 
 
 def load_rules(parsed_args) -> List[RuleSet]:
-    if parsed_args.rules:
+    if not parsed_args.rules:
+        return []
+    elif os.path.exists(parsed_args.rules):
         with open(parsed_args.rules) as f:
             return rules_parser.parse_rule_sets(yaml.safe_load(f.read()))
-    else:
-        return []
+    elif has_rules(*split_collection_name(parsed_args.rules)):
+        return rules_parser.parse_rule_sets(collection_load_rules(*split_collection_name(parsed_args.rules)))
 
 
 def get_parser():
@@ -115,8 +119,11 @@ def main(args):
         task.start()
 
     logger.info("Joining processes")
-    for task in tasks:
-        task.join()
+    try:
+        for task in tasks:
+            task.join()
+    except KeyboardInterrupt:
+        pass
 
     return 0
 

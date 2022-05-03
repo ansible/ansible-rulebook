@@ -13,6 +13,7 @@ import dpath.util
 import sys
 from pprint import pprint
 from .util import get_horizontal_rule
+from .collection import split_collection_name, has_playbook, find_playbook
 
 from typing import Optional
 
@@ -111,7 +112,13 @@ def run_playbook(
         f.write(yaml.dump(inventory))
     os.mkdir(os.path.join(temp, "project"))
 
-    shutil.copy(name, os.path.join(temp, "project", name))
+    if os.path.exists(name):
+        shutil.copy(name, os.path.join(temp, "project", name))
+    elif has_playbook(*split_collection_name(name)):
+        shutil.copy(find_playbook(*split_collection_name(name)), os.path.join(temp, "project", name))
+    else:
+        raise Exception(f"Could not find a playbook for {name}")
+
     if copy_files:
         shutil.copytree(os.path.dirname(os.path.abspath(name)), os.path.join(temp, "project"), dirs_exist_ok=True)
 

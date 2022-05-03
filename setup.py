@@ -13,6 +13,7 @@ with open('HISTORY.rst') as history_file:
 requirements = ['asyncio',
                 'durable_rules',
                 'pyparsing',
+                'jsonschema',
                 'redis',
                 'dpath',
                 'ansible-runner']
