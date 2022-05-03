@@ -20,6 +20,13 @@ from ansible_events.rule_types import (
     ActionContext,
 )
 from ansible_events.rules_parser import parse_hosts
+from ansible_events.collection import (
+    has_source,
+    split_collection_name,
+    find_source,
+    has_source_filter,
+    find_source_filter,
+)
 
 from typing import Optional, Dict, List, cast
 
@@ -49,18 +56,38 @@ def start_source(
 
     try:
         logger.info("load source")
-        module = runpy.run_path(
-            os.path.join(source_dirs[0], source.source_name + ".py")
-        )
+        if source_dirs and source_dirs[0] and os.path.exists(os.path.join(source_dirs[0], source.source_name + ".py")):
+            module = runpy.run_path(
+                os.path.join(source_dirs[0], source.source_name + ".py")
+            )
+        elif has_source(*split_collection_name(source.source_name)):
+            module = runpy.run_path(
+                find_source(*split_collection_name(source.source_name))
+            )
+        else:
+            raise Exception(f"Could not find source plugin for {source.source_name}")
 
         source_filters = []
 
         logger.info("load source filters")
         for source_filter in source.source_filters:
             logger.info(f"loading {source_filter.filter_name}")
-            source_filter_module = runpy.run_path(
+            if os.path.exists(
                 os.path.join("event_filters", source_filter.filter_name + ".py")
-            )
+            ):
+                source_filter_module = runpy.run_path(
+                    os.path.join("event_filters", source_filter.filter_name + ".py")
+                )
+            elif has_source_filter(*split_collection_name(source_filter.filter_name)):
+                source_filter_module = runpy.run_path(
+                    find_source_filter(
+                        *split_collection_name(source_filter.filter_name)
+                    )
+                )
+            else:
+                raise Exception(
+                    f"Could not find source filter plugin for {source_filter.filter_name}"
+                )
             source_filters.append(
                 (source_filter_module["main"], source_filter.filter_args)
             )
@@ -95,16 +122,16 @@ async def call_action(
             if c.m is not None:
                 variables_copy["event"] = c.m._d  # event data is stored in c.m._d
                 event = c.m._d  # event data is stored in c.m._d
-                if 'meta' in event:
-                    if 'hosts' in event['meta']:
-                        hosts = parse_hosts(event['meta']['hosts'])
+                if "meta" in event:
+                    if "hosts" in event["meta"]:
+                        hosts = parse_hosts(event["meta"]["hosts"])
             else:
                 variables_copy["events"] = c._m
                 new_hosts = []
                 for event in variables_copy["events"]:
-                    if 'meta' in event:
-                        if 'hosts' in event['meta']:
-                            new_hosts.append(parse_hosts(event['meta']['hosts']))
+                    if "meta" in event:
+                        if "hosts" in event["meta"]:
+                            new_hosts.append(parse_hosts(event["meta"]["hosts"]))
                 if new_hosts:
                     hosts = new_hosts
             logger.info(f"substitute_variables {action_args} {variables_copy}")
@@ -171,7 +198,10 @@ def run_rulesets(
         for rulesets in rulesets_list[1]:
             logger.debug(rulesets.define())
 
-    asyncio.run(_run_rulesets_async(event_log, rulesets_queue_plans, inventory))
+    try:
+        asyncio.run(_run_rulesets_async(event_log, rulesets_queue_plans, inventory))
+    except KeyboardInterrupt:
+        pass
 
 
 def json_count(data):
