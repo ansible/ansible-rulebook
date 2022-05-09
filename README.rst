@@ -33,9 +33,8 @@ Features
 Examples
 --------
 
-Rules are organized into rulesets using a syntax that is similar to ansible-playbooks.
+Rules are organized into rulesets using a syntax that is similar to ansible-playbooks::
 
-```
     ---
     - name: Hello Events
       hosts: localhost
@@ -49,7 +48,6 @@ Rules are organized into rulesets using a syntax that is similar to ansible-play
             run_playbook:
               name: benthomasson.eda.hello
     ...
-```
 
 Each ruleset defines: a set of hosts to pass to the playbook, a set of event sources,
 and a set of rules.   The set of hosts is the normal hosts pattern from ansible playbooks.
@@ -58,27 +56,22 @@ The rules have conditions that match values in the events and actions that can r
 assert facts, retract facts, and print information to the console.
 
 
-Let's look closer at the event source.
+Let's look closer at the event source::
 
-```
         - benthomasson.eda.range:
             limit: 5
-```
 
 This section of YAML defines that an event source plugin from the benthomasson.eda should
 be loaded and given the arguments: limit=5.  This source will generate a range of numbers
 from zero to 4 and then exit.
 
-The rules YAML structure looks like the following:
+The rules YAML structure looks like the following::
 
-
-```
         - name: Say Hello
           condition: event.i == 1
           action:
             run_playbook:
               name: benthomasson.eda.hello
-```
 
 
 This block of YAML defines a rule with name "Say Hello", a condition that matches
