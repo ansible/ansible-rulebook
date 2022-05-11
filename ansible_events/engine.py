@@ -98,6 +98,8 @@ def start_source(
         fqueue = FilteredQueue(source_filters, queue)
         logger.info(f"calling main in {source.source_name}")
         module["main"](fqueue, args)
+    except KeyboardInterrupt:
+        pass
     finally:
         queue.put(Shutdown())
 
