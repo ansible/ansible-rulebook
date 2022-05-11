@@ -14,6 +14,7 @@ Options:
     --redis_port=<p>            Redis port
     --debug                     Show debug logging
     --verbose                   Show verbose logging
+    --version                   Show the version and exit
 """
 import argparse
 import sys
@@ -21,6 +22,8 @@ import os
 import yaml
 import logging
 import multiprocessing as mp
+
+import ansible_events
 
 import ansible_events.rules_parser as rules_parser
 from ansible_events.engine import start_source, run_rulesets
@@ -72,6 +75,7 @@ def get_parser():
     parser.add_argument('--env-vars')
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--verbose', action='store_true')
+    parser.add_argument('--version', action='store_true')
     parser.add_argument('--redis-host-name')
     parser.add_argument('--redis-port')
     parser.add_argument('-S', '--source-dir')
@@ -83,6 +87,9 @@ def main(args):
     """Console script for ansible_events."""
     parser = get_parser()
     parsed_args = parser.parse_args(args)
+    if parsed_args.version:
+        print(ansible_events.__version__)
+        return 0
     logger = mp.log_to_stderr()
     if parsed_args.debug:
         logger.setLevel(logging.DEBUG)
