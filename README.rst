@@ -69,9 +69,9 @@ is a more complete example that accepts alerts from Alertmanager::
     ...
 
 
- This example sets up a webhook to receive events from alertmanager and then matches events
- where the `fastapi` job alert has a staus of `firing`.  This runs a playbook that will
- remediate the issue.
+This example sets up a webhook to receive events from alertmanager and then matches events
+where the `fastapi` job alert has a staus of `firing`.  This runs a playbook that will
+remediate the issue.
 
 * Free software: Apache Software License 2.0
 * Documentation: https://ansible-events.readthedocs.io.
