@@ -40,13 +40,13 @@ Let's get started with a simple hello world example to familiarize ourselves wit
     ...
 
 
-Events come from a *event source* and then are checked against *rules* to determine if an *action* should
-be taken.  If the *condition* of a rule matches the event it will run the action for that rule.
+Events come from a **event source** and then are checked against **rules** to determine if an **action** should
+be taken.  If the **condition** of a rule matches the event it will run the action for that rule.
 
 In this example the event source is the Python range function.  It produces events that count from
-`i=0` to `i=<limit>`.
+:code:`i=0` to :code:`i=<limit>`.
 
-When `i` is equal to 1 the condition for the the `Say Hello` rule matches and it runs a playbook.
+When :code:`i` is equal to 1 the condition for the the :code:`Say Hello` rule matches and it runs a playbook.
 
 
 Normally events would come from monitoring and alerting systems or other software. The following
