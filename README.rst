@@ -13,6 +13,9 @@ ansible-events
         :target: https://ansible-events.readthedocs.io/en/latest/?version=latest
         :alt: Documentation Status
 
+* Free software: Apache Software License 2.0
+* Documentation: https://ansible-events.readthedocs.io.
+
 
 Event driven automation for Ansible.
 
@@ -73,8 +76,6 @@ This example sets up a webhook to receive events from alertmanager and then matc
 where the `fastapi` job alert has a staus of `firing`.  This runs a playbook that will
 remediate the issue.
 
-* Free software: Apache Software License 2.0
-* Documentation: https://ansible-events.readthedocs.io.
 
 
 Features
