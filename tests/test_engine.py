@@ -3,6 +3,7 @@ import durable.lang
 import yaml
 import os
 import asyncio
+import janus
 import pytest
 from queue import Queue
 
@@ -46,18 +47,19 @@ def load_rules(rules_file):
     rulesets = parse_rule_sets(data)
     pprint(rulesets)
 
-    ruleset_queues = [(ruleset, Queue()) for ruleset in rulesets]
+    queue = janus.Queue()
+
+    ruleset_queues = [(ruleset, queue.async_q) for ruleset in rulesets]
 
     event_log = Queue()
 
-    queue = ruleset_queues[0][1]
-
-    return ruleset_queues, queue, event_log
+    return ruleset_queues, queue.sync_q, queue.async_q, event_log
 
 
-def test_run_rulesets(new_event_loop):
+@pytest.mark.asyncio
+async def test_run_rulesets(new_event_loop):
 
-    ruleset_queues, queue, event_log = load_rules("test_rules.yml")
+    ruleset_queues, queue, aqueue, event_log = load_rules("test_rules.yml")
 
     queue.put(dict())
     queue.put(dict(i=1))
@@ -67,7 +69,7 @@ def test_run_rulesets(new_event_loop):
     queue.put(dict(i=5))
     queue.put(Shutdown())
 
-    run_rulesets(
+    await run_rulesets(
         event_log,
         ruleset_queues,
         dict(),
@@ -85,15 +87,16 @@ def test_run_rulesets(new_event_loop):
     assert event_log.empty()
 
 
-def test_run_rules_with_assignment(new_event_loop):
+@pytest.mark.asyncio
+async def test_run_rules_with_assignment(new_event_loop):
 
-    ruleset_queues, queue, event_log = load_rules("rules_with_assignment.yml")
+    ruleset_queues, queue, aqueue, event_log = load_rules("rules_with_assignment.yml")
 
     queue.put(dict(i=0))
     queue.put(dict(i=1))
     queue.put(Shutdown())
 
-    run_rulesets(
+    await run_rulesets(
         event_log,
         ruleset_queues,
         dict(),
@@ -106,15 +109,16 @@ def test_run_rules_with_assignment(new_event_loop):
     assert event_log.get()['type'] == 'Shutdown', '3'
     assert event_log.empty()
 
-def test_run_rules_with_assignment2(new_event_loop):
+@pytest.mark.asyncio
+async def test_run_rules_with_assignment2(new_event_loop):
 
-    ruleset_queues, queue, event_log = load_rules("rules_with_assignment2.yml")
+    ruleset_queues, queue, aqueue, event_log = load_rules("rules_with_assignment2.yml")
 
     queue.put(dict(i=0))
     queue.put(dict(i=1))
     queue.put(Shutdown())
 
-    run_rulesets(
+    await run_rulesets(
         event_log,
         ruleset_queues,
         dict(),
@@ -127,16 +131,17 @@ def test_run_rules_with_assignment2(new_event_loop):
     assert event_log.get()['type'] == 'Shutdown', '3'
     assert event_log.empty()
 
-def test_run_rules_simple(new_event_loop):
+@pytest.mark.asyncio
+async def test_run_rules_simple(new_event_loop):
 
-    ruleset_queues, queue, event_log = load_rules("test_simple.yml")
+    ruleset_queues, queue, aqueue, event_log = load_rules("test_simple.yml")
 
     queue.put(dict(i=0))
     queue.put(dict(i=1))
     queue.put(dict(i=2))
     queue.put(Shutdown())
 
-    run_rulesets(
+    await run_rulesets(
         event_log,
         ruleset_queues,
         dict(),
@@ -150,9 +155,10 @@ def test_run_rules_simple(new_event_loop):
     assert event_log.empty()
 
 
-def test_run_multiple_hosts(new_event_loop):
+@pytest.mark.asyncio
+async def test_run_multiple_hosts(new_event_loop):
 
-    ruleset_queues, queue, event_log = load_rules("test_rules_multiple_hosts.yml")
+    ruleset_queues, queue, aqueue, event_log = load_rules("test_rules_multiple_hosts.yml")
 
     queue.put(dict(i=0))
     queue.put(dict(i=1))
@@ -162,7 +168,7 @@ def test_run_multiple_hosts(new_event_loop):
     queue.put(dict(i=5))
     queue.put(Shutdown())
 
-    run_rulesets(
+    await run_rulesets(
         event_log,
         ruleset_queues,
         dict(),
@@ -181,9 +187,10 @@ def test_run_multiple_hosts(new_event_loop):
     assert event_log.empty()
 
 
-def test_run_multiple_hosts2(new_event_loop):
+@pytest.mark.asyncio
+async def test_run_multiple_hosts2(new_event_loop):
 
-    ruleset_queues, queue, event_log = load_rules("test_rules_multiple_hosts2.yml")
+    ruleset_queues, queue, aqueue, event_log = load_rules("test_rules_multiple_hosts2.yml")
 
     queue.put(dict(i=0))
     queue.put(dict(i=1))
@@ -193,7 +200,7 @@ def test_run_multiple_hosts2(new_event_loop):
     queue.put(dict(i=5))
     queue.put(Shutdown())
 
-    run_rulesets(
+    await run_rulesets(
         event_log,
         ruleset_queues,
         dict(),
@@ -215,9 +222,10 @@ def test_run_multiple_hosts2(new_event_loop):
     assert event_log.empty()
 
 
-def test_run_multiple_hosts3(new_event_loop):
+@pytest.mark.asyncio
+async def test_run_multiple_hosts3(new_event_loop):
 
-    ruleset_queues, queue, event_log = load_rules("test_rules_multiple_hosts3.yml")
+    ruleset_queues, queue, aqueue, event_log = load_rules("test_rules_multiple_hosts3.yml")
 
     queue.put(dict(i=0))
     queue.put(dict(i=1))
@@ -227,7 +235,7 @@ def test_run_multiple_hosts3(new_event_loop):
     queue.put(dict(i=5))
     queue.put(Shutdown())
 
-    run_rulesets(
+    await run_rulesets(
         event_log,
         ruleset_queues,
         dict(),
@@ -249,16 +257,17 @@ def test_run_multiple_hosts3(new_event_loop):
     assert event_log.get()['type'] == 'Shutdown', '12'
     assert event_log.empty()
 
-def test_filters(new_event_loop):
+@pytest.mark.asyncio
+async def test_filters(new_event_loop):
 
-    ruleset_queues, queue, event_log = load_rules("test_filters.yml")
+    ruleset_queues, queue, aqueue, event_log = load_rules("test_filters.yml")
 
     queue.put(dict(i=0))
     queue.put(dict(i=1))
     queue.put(dict(i=2))
     queue.put(Shutdown())
 
-    run_rulesets(
+    await run_rulesets(
         event_log,
         ruleset_queues,
         dict(),
@@ -271,9 +280,10 @@ def test_filters(new_event_loop):
     assert event_log.get()['type'] == 'Shutdown', '3'
     assert event_log.empty()
 
-def test_run_rulesets_on_hosts(new_event_loop):
+@pytest.mark.asyncio
+async def test_run_rulesets_on_hosts(new_event_loop):
 
-    ruleset_queues, queue, event_log = load_rules("test_host_rules.yml")
+    ruleset_queues, queue, aqueue, event_log = load_rules("test_host_rules.yml")
 
     queue.put(dict())
     queue.put(dict(i=1, meta=dict(hosts='localhost0')))
@@ -283,7 +293,7 @@ def test_run_rulesets_on_hosts(new_event_loop):
     queue.put(dict(i=5, meta=dict(hosts='localhost0')))
     queue.put(Shutdown())
 
-    run_rulesets(
+    await run_rulesets(
         event_log,
         ruleset_queues,
         dict(),

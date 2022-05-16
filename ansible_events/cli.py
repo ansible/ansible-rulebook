@@ -16,6 +16,8 @@ Options:
     --verbose                   Show verbose logging
     --version                   Show the version and exit
 """
+import asyncio
+import concurrent.futures
 import argparse
 import sys
 import os
@@ -23,13 +25,14 @@ import yaml
 import logging
 import threading
 import queue
+import janus
 
 import ansible_events
 
 import ansible_events.rules_parser as rules_parser
 from ansible_events.engine import start_source, run_rulesets
 from ansible_events.rule_types import RuleSet
-from ansible_events.util import load_inventory
+from ansible_events.util import load_inventory, await_future
 from ansible_events.collection import has_rules, split_collection_name
 from ansible_events.collection import load_rules as collection_load_rules
 
@@ -53,7 +56,7 @@ def load_vars(parsed_args) -> Dict[str, str]:
 
 
 def load_rules(parsed_args) -> List[RuleSet]:
-    logger = mp.log_to_stderr()
+    logger = logging.getLogger()
     if not parsed_args.rules:
         logger.debug('Loading no rules')
         return []
@@ -84,7 +87,7 @@ def get_parser():
     return parser
 
 
-def main(args):
+async def main(args):
     """Console script for ansible_events."""
     parser = get_parser()
     parsed_args = parser.parse_args(args)
@@ -93,9 +96,11 @@ def main(args):
         return 0
     logger = logging.getLogger()
     if parsed_args.debug:
-        logger.setLevel(logging.DEBUG)
+        logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
     elif parsed_args.verbose:
-        logger.setLevel(logging.INFO)
+        logging.basicConfig(encoding='utf-8', level=logging.INFO)
+    else:
+        logging.basicConfig(encoding='utf-8', level=logging.WARNING)
     variables = load_vars(parsed_args)
     rulesets = load_rules(parsed_args)
     if parsed_args.inventory:
@@ -108,43 +113,39 @@ def main(args):
 
     event_log: queue.Queue = queue.Queue()
 
+    loop = asyncio.get_running_loop()
+
+    source_pool = concurrent.futures.ThreadPoolExecutor()
+    rules_pool = concurrent.futures.ThreadPoolExecutor()
+
+    logger.info('Starting sources')
+
     for ruleset in rulesets:
         sources = ruleset.sources
-        source_queue: queue.Queue = queue.Queue()
+        source_queue = janus.Queue()
 
         for source in sources:
-            tasks.append(threading.Thread(target=start_source, args=(source, [parsed_args.source_dir], variables, source_queue)))
-        ruleset_queues.append((ruleset, source_queue))
+            tasks.append(asyncio.create_task(await_future(loop.run_in_executor(source_pool, start_source, source, [parsed_args.source_dir], variables, source_queue.sync_q))))
+        ruleset_queues.append((ruleset, source_queue.async_q))
 
-    tasks.append(
-        threading.Thread(
-            target=run_rulesets,
-            args=(
-                event_log,
-                ruleset_queues,
-                variables,
-                inventory,
-                parsed_args.redis_host_name,
-                parsed_args.redis_port,
-            ),
-        )
+    logger.info('Starting rules')
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        variables,
+        inventory,
+        parsed_args.redis_host_name,
+        parsed_args.redis_port,
     )
-    logger.info("Starting processes")
-    for task in tasks:
-        task.start()
 
-    logger.info("Joining processes")
-    try:
-        for task in tasks:
-            task.join()
-    except KeyboardInterrupt:
-        pass
+    logger.info('Main complete')
 
     return 0
 
 
 def entry_point() -> None:
-    main(sys.argv[1:])
+    asyncio.run(main(sys.argv[1:]))
 
 
 if __name__ == "__main__":

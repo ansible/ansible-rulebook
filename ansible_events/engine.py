@@ -5,6 +5,7 @@ import durable.lang
 import select
 import traceback
 import logging
+import janus
 from queue import Queue
 
 
@@ -13,7 +14,7 @@ from pprint import pprint, pformat
 import ansible_events.rule_generator as rule_generator
 from ansible_events.durability import provide_durability
 from ansible_events.messages import Shutdown
-from ansible_events.util import substitute_variables
+from ansible_events.util import substitute_variables, json_count
 from ansible_events.builtin import actions as builtin_actions
 from ansible_events.rule_types import (
     EventSource,
@@ -174,7 +175,7 @@ async def call_action(
     return result
 
 
-def run_rulesets(
+async def run_rulesets(
     event_log: Queue,
     ruleset_queues: List[RuleSetQueue],
     variables: Dict,
@@ -202,44 +203,16 @@ def run_rulesets(
         for rulesets in rulesets_list[1]:
             logger.debug(rulesets.define())
 
-    try:
-        asyncio.run(_run_rulesets_async(event_log, rulesets_queue_plans, inventory))
-    except KeyboardInterrupt:
-        pass
-
-
-def json_count(data):
-    s = 0
-    q = []
-    q.append(data)
-    while q:
-        o = q.pop()
-        if isinstance(o, dict):
-            s += len(o)
-            if len(o) > 255:
-                pprint(data)
-                raise Exception(
-                    f"Only 255 values supported per dictionary found {len(o)}"
-                )
-            if s > 255:
-                pprint(data)
-                raise Exception(f"Only 255 values supported per dictionary found {s}")
-            for i in o.values():
-                q.append(i)
-
-
-async def _run_rulesets_async(event_log: Queue, rulesets_queue_plans, inventory):
-
-    logger = logging.getLogger()
-
-    queue_readers = {i[2]._reader: i for i in rulesets_queue_plans}  # type: ignore
+    if not rulesets_queue_plans:
+        return
 
     while True:
         logger.info("Waiting for event")
-        read_ready, _, _ = select.select(queue_readers.keys(), [], [])
-        for queue_reader in read_ready:
-            ruleset, _, queue, plan = queue_readers[queue_reader]
-            data = queue.get()
+        queue_tasks = {asyncio.create_task(rqp[2].get()): rqp for rqp in rulesets_queue_plans}
+        done, pending = await asyncio.wait(list(queue_tasks.keys()), return_when=asyncio.FIRST_COMPLETED)
+        for queue_reader in done:
+            ruleset, _, queue, plan = queue_tasks[queue_reader]
+            data = queue_reader.result()
             json_count(data)
             if isinstance(data, Shutdown):
                 event_log.put(dict(type="Shutdown"))
