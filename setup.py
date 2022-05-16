@@ -16,6 +16,7 @@ requirements = ['asyncio',
                 'jsonschema',
                 'redis',
                 'dpath',
+                'janus',
                 'ansible-runner']
 
 test_requirements = ['pytest>=3',

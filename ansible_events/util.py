@@ -1,12 +1,17 @@
 import jinja2
 import yaml
 import os
-import json
 import dpath.util
+from pprint import pprint
 
 from typing import Dict, Union, List
 
 from typing import Any
+
+
+async def await_future(f):
+    await f
+
 
 def get_horizontal_rule(character):
     try:
@@ -21,13 +26,15 @@ def render_string(value: str, context: Dict) -> str:
 
 def render_string_or_return_value(value: Any, context: Dict) -> Any:
     if isinstance(value, str):
-        if value.startswith('{{') and value.endswith('}}'):
-            return dpath.util.get(context, value[2:-2], separator='.')
+        if value.startswith("{{") and value.endswith("}}"):
+            return dpath.util.get(context, value[2:-2], separator=".")
         else:
             return render_string(value, context)
 
 
-def substitute_variables(value: Union[str, int, Dict, List], context: Dict) -> Union[str, int, Dict, List]:
+def substitute_variables(
+    value: Union[str, int, Dict, List], context: Dict
+) -> Union[str, int, Dict, List]:
     if isinstance(value, str):
         return render_string_or_return_value(value, context)
     elif isinstance(value, list):
@@ -49,3 +56,23 @@ def load_inventory(inventory_file: str) -> Any:
     with open(inventory_file) as f:
         inventory_data = yaml.safe_load(f.read())
     return inventory_data
+
+
+def json_count(data):
+    s = 0
+    q = []
+    q.append(data)
+    while q:
+        o = q.pop()
+        if isinstance(o, dict):
+            s += len(o)
+            if len(o) > 255:
+                pprint(data)
+                raise Exception(
+                    f"Only 255 values supported per dictionary found {len(o)}"
+                )
+            if s > 255:
+                pprint(data)
+                raise Exception(f"Only 255 values supported per dictionary found {s}")
+            for i in o.values():
+                q.append(i)
