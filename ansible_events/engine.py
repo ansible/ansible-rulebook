@@ -17,6 +17,7 @@ from ansible_events.collection import (
     has_source_filter,
     split_collection_name,
 )
+from ansible_events import durable
 from ansible_events.durability import provide_durability
 from ansible_events.exception import ShutdownException
 from ansible_events.messages import Shutdown
