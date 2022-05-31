@@ -15,3 +15,6 @@ docopt==0.6.2
 psutil==5.9.0
 requests==2.27.1
 pytest-timeout==2.1.0
+ansible==5.8.0
+ansible-core==2.12.6
+ansible-runner==2.2.0
