@@ -71,6 +71,7 @@ Ready to contribute? Here's how to set up `ansible_events` for local development
     $ source venv/bin/activate
     $ python setup.py develop
     $ pip install -r requirements_dev.txt
+    $ ansible-galaxy collection install benthomasson.eda
 
 4. Create a branch for local development::
 
