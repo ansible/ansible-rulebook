@@ -51,7 +51,7 @@ def load_rules(rules_file):
 
     ruleset_queues = [(ruleset, queue.async_q) for ruleset in rulesets]
 
-    event_log = Queue()
+    event_log = asyncio.Queue()
 
     return ruleset_queues, queue.sync_q, queue.async_q, event_log
 
@@ -76,14 +76,19 @@ async def test_run_rulesets(new_event_loop):
         dict(),
     )
 
-    assert event_log.get()['type'] == 'EmptyEvent', '0'
-    assert event_log.get()['type'] == 'ProcessedEvent', '1'
-    assert event_log.get()['type'] == 'ProcessedEvent', '2'
-    assert event_log.get()['type'] == 'ProcessedEvent', '3'
-    assert event_log.get()['type'] == 'ProcessedEvent', '4'
-    #assert event_log.get()['type'] == 'MessageNotHandled', '5'
-    assert event_log.get()['type'] == 'ProcessedEvent', '6'
-    assert event_log.get()['type'] == 'Shutdown', '7'
+    assert event_log.get_nowait()['type'] == 'EmptyEvent', '0'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '1'
+    assert event_log.get_nowait()['type'] == 'Job', '1.0'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.2'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.3'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.4'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '2'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '3'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '4'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '5'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '6'
+    assert event_log.get_nowait()['type'] == 'Shutdown', '7'
     assert event_log.empty()
 
 
@@ -103,10 +108,10 @@ async def test_run_rules_with_assignment(new_event_loop):
         dict(),
     )
 
-    assert event_log.get()['type'] == 'ProcessedEvent', '0'
-    #assert event_log.get()['type'] == 'MessageNotHandled', '1'
-    assert event_log.get()['type'] == 'ProcessedEvent', '2'
-    assert event_log.get()['type'] == 'Shutdown', '3'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '0'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '1'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '2'
+    assert event_log.get_nowait()['type'] == 'Shutdown', '3'
     assert event_log.empty()
 
 @pytest.mark.asyncio
@@ -125,10 +130,10 @@ async def test_run_rules_with_assignment2(new_event_loop):
         dict(),
     )
 
-    assert event_log.get()['type'] == 'ProcessedEvent', '0'
-    #assert event_log.get()['type'] == 'MessageNotHandled', '1'
-    assert event_log.get()['type'] == 'ProcessedEvent', '2'
-    assert event_log.get()['type'] == 'Shutdown', '3'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '0'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '1'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '2'
+    assert event_log.get_nowait()['type'] == 'Shutdown', '3'
     assert event_log.empty()
 
 @pytest.mark.asyncio
@@ -148,10 +153,15 @@ async def test_run_rules_simple(new_event_loop):
         dict(),
     )
 
-    assert event_log.get()['type'] == 'ProcessedEvent', '0'
-    assert event_log.get()['type'] == 'ProcessedEvent', '1'
-    assert event_log.get()['type'] == 'ProcessedEvent', '2'
-    assert event_log.get()['type'] == 'Shutdown', '3'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '0'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '1'
+    assert event_log.get_nowait()['type'] == 'Job', '1.0'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.2'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.3'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.4'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '2'
+    assert event_log.get_nowait()['type'] == 'Shutdown', '3'
     assert event_log.empty()
 
 
@@ -175,15 +185,29 @@ async def test_run_multiple_hosts(new_event_loop):
         load_inventory('inventory1.yml'),
     )
 
-    #assert event_log.get()['type'] == 'MessageNotHandled', '0'
-    assert event_log.get()['type'] == 'ProcessedEvent', '1'
-    assert event_log.get()['type'] == 'ProcessedEvent', '1.1'
-    assert event_log.get()['type'] == 'ProcessedEvent', '1.2'
-    assert event_log.get()['type'] == 'ProcessedEvent', '1.3'
-    assert event_log.get()['type'] == 'ProcessedEvent', '1.4'
-    #assert event_log.get()['type'] == 'MessageNotHandled', '2'
-    assert event_log.get()['type'] == 'ProcessedEvent', '3'
-    assert event_log.get()['type'] == 'Shutdown', '4'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '0'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '1'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '1.1'
+    assert event_log.get_nowait()['type'] == 'Job', '1.1.0'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1.1'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1.2'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1.3'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1.4'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1.5'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1.6'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1.7'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1.8'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1.9'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1.10'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1.11'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1.12'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1.13'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '1.2'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '1.3'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '1.4'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '2'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '3'
+    assert event_log.get_nowait()['type'] == 'Shutdown', '4'
     assert event_log.empty()
 
 
@@ -207,18 +231,18 @@ async def test_run_multiple_hosts2(new_event_loop):
         load_inventory('inventory1.yml'),
     )
 
-    #assert event_log.get()['type'] == 'MessageNotHandled', '0'
-    assert event_log.get()['type'] == 'ProcessedEvent', '1'
-    assert event_log.get()['type'] == 'ProcessedEvent', '2'
-    #assert event_log.get()['type'] == 'MessageNotHandled', '2.5'
-    assert event_log.get()['type'] == 'ProcessedEvent', '3'
-    #assert event_log.get()['type'] == 'MessageNotHandled', '4'
-    assert event_log.get()['type'] == 'ProcessedEvent', '5'
-    #assert event_log.get()['type'] == 'MessageNotHandled', '6'
-    assert event_log.get()['type'] == 'ProcessedEvent', '7'
-    #assert event_log.get()['type'] == 'MessageNotHandled', '8'
-    assert event_log.get()['type'] == 'ProcessedEvent', '9'
-    assert event_log.get()['type'] == 'Shutdown', '10'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '0'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '1'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '2'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '2.5'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '3'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '4'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '5'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '6'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '7'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '8'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '9'
+    assert event_log.get_nowait()['type'] == 'Shutdown', '10'
     assert event_log.empty()
 
 
@@ -242,19 +266,19 @@ async def test_run_multiple_hosts3(new_event_loop):
         load_inventory('inventory.yml'),
     )
 
-    #assert event_log.get()['type'] == 'MessageNotHandled', '0'
-    assert event_log.get()['type'] == 'ProcessedEvent', '1'
-    #assert event_log.get()['type'] == 'MessageNotHandled', '2'
-    assert event_log.get()['type'] == 'ProcessedEvent', '3'
-    #assert event_log.get()['type'] == 'MessageNotHandled', '4'
-    assert event_log.get()['type'] == 'ProcessedEvent', '5'
-    #assert event_log.get()['type'] == 'MessageNotHandled', '6'
-    assert event_log.get()['type'] == 'ProcessedEvent', '7'
-    #assert event_log.get()['type'] == 'MessageNotHandled', '8'
-    assert event_log.get()['type'] == 'ProcessedEvent', '9'
-    #assert event_log.get()['type'] == 'MessageNotHandled', '10'
-    assert event_log.get()['type'] == 'ProcessedEvent', '11'
-    assert event_log.get()['type'] == 'Shutdown', '12'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '0'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '1'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '2'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '3'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '4'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '5'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '6'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '7'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '8'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '9'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '10'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '11'
+    assert event_log.get_nowait()['type'] == 'Shutdown', '12'
     assert event_log.empty()
 
 @pytest.mark.asyncio
@@ -274,10 +298,15 @@ async def test_filters(new_event_loop):
         dict(),
     )
 
-    assert event_log.get()['type'] == 'ProcessedEvent', '0'
-    assert event_log.get()['type'] == 'ProcessedEvent', '1'
-    assert event_log.get()['type'] == 'ProcessedEvent', '2'
-    assert event_log.get()['type'] == 'Shutdown', '3'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '0'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '1'
+    assert event_log.get_nowait()['type'] == 'Job', '1.0'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.2'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.3'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.4'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '2'
+    assert event_log.get_nowait()['type'] == 'Shutdown', '3'
     assert event_log.empty()
 
 @pytest.mark.asyncio
@@ -300,12 +329,15 @@ async def test_run_rulesets_on_hosts(new_event_loop):
         dict(),
     )
 
-    assert event_log.get()['type'] == 'EmptyEvent', '0'
-    assert event_log.get()['type'] == 'ProcessedEvent', '1'
-    assert event_log.get()['type'] == 'ProcessedEvent', '2'
-    assert event_log.get()['type'] == 'ProcessedEvent', '3'
-    assert event_log.get()['type'] == 'ProcessedEvent', '4'
-    #assert event_log.get()['type'] == 'MessageNotHandled', '5'
-    assert event_log.get()['type'] == 'ProcessedEvent', '6'
-    assert event_log.get()['type'] == 'Shutdown', '7'
+    assert event_log.get_nowait()['type'] == 'EmptyEvent', '0'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '1'
+    assert event_log.get_nowait()['type'] == 'Job', '1.0'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.1'
+    assert event_log.get_nowait()['type'] == 'AnsibleEvent', '1.2'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '2'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '3'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '4'
+    #assert event_log.get_nowait()['type'] == 'MessageNotHandled', '5'
+    assert event_log.get_nowait()['type'] == 'ProcessedEvent', '6'
+    assert event_log.get_nowait()['type'] == 'Shutdown', '7'
     assert event_log.empty()

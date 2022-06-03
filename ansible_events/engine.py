@@ -116,6 +116,7 @@ async def call_action(
     hosts: List,
     facts: Dict,
     c,
+    event_log,
 ) -> Dict:
 
     logger = logging.getLogger()
@@ -151,6 +152,7 @@ async def call_action(
             if "ruleset" not in action_args:
                 action_args["ruleset"] = ruleset
             result = builtin_actions[action](
+                event_log=event_log,
                 inventory=inventory,
                 hosts=hosts,
                 variables=variables_copy,
@@ -215,11 +217,11 @@ async def run_rulesets(
             data = queue_reader.result()
             json_count(data)
             if isinstance(data, Shutdown):
-                event_log.put(dict(type="Shutdown"))
+                await event_log.put(dict(type="Shutdown"))
                 return
             logger.info(str(data))
             if not data:
-                event_log.put(dict(type="EmptyEvent"))
+                await event_log.put(dict(type="EmptyEvent"))
                 continue
             logger.info(str(data))
             results = []
@@ -237,10 +239,10 @@ async def run_rulesets(
                 while not plan.empty():
                     item = cast(ActionContext, await plan.get())
                     logger.debug(item)
-                    result = await call_action(*item)
+                    result = await call_action(*item, event_log=event_log)
                     results.append(result)
 
-                event_log.put(dict(type="ProcessedEvent", results=results))
+                await event_log.put(dict(type="ProcessedEvent", results=results))
             except durable.engine.MessageNotHandledException:
                 logger.info(f"MessageNotHandledException: {data}")
-                event_log.put(dict(type="MessageNotHandled"))
+                await event_log.put(dict(type="MessageNotHandled"))

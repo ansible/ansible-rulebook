@@ -15,6 +15,7 @@ Options:
     --debug                     Show debug logging
     --verbose                   Show verbose logging
     --version                   Show the version and exit
+    --websocket-address=<w>     Connect the event log to a websocket
 """
 import asyncio
 import concurrent.futures
@@ -35,6 +36,7 @@ from ansible_events.rule_types import RuleSet
 from ansible_events.util import load_inventory, await_future
 from ansible_events.collection import has_rules, split_collection_name
 from ansible_events.collection import load_rules as collection_load_rules
+from ansible_events.websocket import send_event_log_to_websocket
 
 from typing import Dict, List
 
@@ -84,6 +86,7 @@ def get_parser():
     parser.add_argument('--redis-port')
     parser.add_argument('-S', '--source-dir')
     parser.add_argument('-i', '--inventory')
+    parser.add_argument('--websocket-address')
     return parser
 
 
@@ -111,7 +114,7 @@ async def main(args):
     tasks = []
     ruleset_queues = []
 
-    event_log: queue.Queue = queue.Queue()
+    event_log: asyncio.Queue = asyncio.Queue()
 
     loop = asyncio.get_running_loop()
 
@@ -130,14 +133,17 @@ async def main(args):
 
     logger.info('Starting rules')
 
+    if parsed_args.websocket_address:
+        tasks.append(asyncio.create_task(send_event_log_to_websocket(event_log, parsed_args.websocket_address)))
+
     await run_rulesets(
         event_log,
         ruleset_queues,
         variables,
         inventory,
         parsed_args.redis_host_name,
-        parsed_args.redis_port,
-    )
+        parsed_args.redis_port)
+
 
     logger.info('Main complete')
 

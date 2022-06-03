@@ -18,7 +18,8 @@ requirements = ['asyncio',
                 'redis',
                 'dpath',
                 'janus',
-                'ansible-runner']
+                'ansible-runner',
+                'websockets']
 
 test_requirements = ['pytest>=3',
                      'pytest-asyncio']
