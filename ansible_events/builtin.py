@@ -11,14 +11,18 @@ import json
 import dpath.util
 import sys
 import logging
+import uuid
 from pprint import pprint
 from .util import get_horizontal_rule
 from .collection import split_collection_name, has_playbook, find_playbook
+from .ansible_events import identifier as ansible_events_id
 
 from typing import Optional
 
 
-def none(inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: str):
+def none(
+    event_log, inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: str
+):
     pass
 
 
@@ -34,6 +38,7 @@ def debug(**kwargs):
 
 
 def print_event(
+    event_log,
     inventory: Dict,
     hosts: List,
     variables: Dict,
@@ -53,6 +58,7 @@ def print_event(
 
 
 def assert_fact(
+    event_log,
     inventory: Dict,
     hosts: List,
     variables: Dict,
@@ -66,18 +72,31 @@ def assert_fact(
 
 
 def retract_fact(
-    inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: str, fact: Dict
+    event_log,
+    inventory: Dict,
+    hosts: List,
+    variables: Dict,
+    facts: Dict,
+    ruleset: str,
+    fact: Dict,
 ):
     durable.lang.retract_fact(ruleset, fact)
 
 
 def post_event(
-    inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: str, fact: Dict
+    event_log,
+    inventory: Dict,
+    hosts: List,
+    variables: Dict,
+    facts: Dict,
+    ruleset: str,
+    fact: Dict,
 ):
     durable.lang.post(ruleset, fact)
 
 
 def run_playbook(
+    event_log,
     inventory: Dict,
     hosts: List,
     variables: Dict,
@@ -115,17 +134,37 @@ def run_playbook(
     if os.path.exists(name):
         shutil.copy(name, os.path.join(temp, "project", name))
     elif has_playbook(*split_collection_name(name)):
-        shutil.copy(find_playbook(*split_collection_name(name)), os.path.join(temp, "project", name))
+        shutil.copy(
+            find_playbook(*split_collection_name(name)),
+            os.path.join(temp, "project", name),
+        )
     else:
         raise Exception(f"Could not find a playbook for {name}")
 
     if copy_files:
-        shutil.copytree(os.path.dirname(os.path.abspath(name)), os.path.join(temp, "project"), dirs_exist_ok=True)
+        shutil.copytree(
+            os.path.dirname(os.path.abspath(name)),
+            os.path.join(temp, "project"),
+            dirs_exist_ok=True,
+        )
 
     host_limit = ",".join(hosts)
 
+    job_id = str(uuid.uuid4())
+
+    event_log.put_nowait(dict(type='Job', job_id=job_id, ansible_events_id=ansible_events_id))
+
+    def event_callback(event, *args, **kwargs):
+        event['job_id'] = job_id
+        event['ansible_events_id'] = ansible_events_id
+        event_log.put_nowait(dict(type="AnsibleEvent", event=event))
+
     ansible_runner.run(
-        playbook=name, private_data_dir=temp, limit=host_limit, verbosity=verbosity
+        playbook=name,
+        private_data_dir=temp,
+        limit=host_limit,
+        verbosity=verbosity,
+        event_handler=event_callback,
     )
 
     if assert_facts or post_events:
