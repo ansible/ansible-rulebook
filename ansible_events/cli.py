@@ -16,6 +16,7 @@ Options:
     --verbose                   Show verbose logging
     --version                   Show the version and exit
     --websocket-address=<w>     Connect the event log to a websocket
+    --id=<i>                    Identifier
 """
 import asyncio
 import concurrent.futures
@@ -29,6 +30,7 @@ import queue
 import janus
 
 import ansible_events
+from ansible_events.conf import settings
 
 import ansible_events.rules_parser as rules_parser
 from ansible_events.engine import start_source, run_rulesets
@@ -87,6 +89,7 @@ def get_parser():
     parser.add_argument('-S', '--source-dir')
     parser.add_argument('-i', '--inventory')
     parser.add_argument('--websocket-address')
+    parser.add_argument('--id')
     return parser
 
 
@@ -94,8 +97,11 @@ async def main(args):
     """Console script for ansible_events."""
     parser = get_parser()
     parsed_args = parser.parse_args(args)
+    if parsed_args.id:
+        settings.identifier = parsed_args.id
     if parsed_args.version:
         print(ansible_events.__version__)
+        print(settings.identifier)
         return 0
     logger = logging.getLogger()
     if parsed_args.debug:
