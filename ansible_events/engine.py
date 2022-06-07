@@ -103,6 +103,8 @@ def start_source(
         module["main"](fqueue, args)
     except KeyboardInterrupt:
         pass
+    except BaseException as e:
+        logger.error(f"Source error {e}")
     finally:
         queue.put(Shutdown())
 

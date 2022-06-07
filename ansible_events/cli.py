@@ -105,11 +105,11 @@ async def main(args):
         return 0
     logger = logging.getLogger()
     if parsed_args.debug:
-        logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG)
     elif parsed_args.verbose:
-        logging.basicConfig(encoding='utf-8', level=logging.INFO)
+        logging.basicConfig(level=logging.INFO)
     else:
-        logging.basicConfig(encoding='utf-8', level=logging.WARNING)
+        logging.basicConfig(level=logging.WARNING)
     variables = load_vars(parsed_args)
     rulesets = load_rules(parsed_args)
     if parsed_args.inventory:
