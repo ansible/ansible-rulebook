@@ -15,7 +15,7 @@ import uuid
 from pprint import pprint
 from .util import get_horizontal_rule
 from .collection import split_collection_name, has_playbook, find_playbook
-from .ansible_events import identifier as ansible_events_id
+from .conf import settings
 
 from typing import Optional
 
@@ -152,11 +152,11 @@ def run_playbook(
 
     job_id = str(uuid.uuid4())
 
-    event_log.put_nowait(dict(type='Job', job_id=job_id, ansible_events_id=ansible_events_id))
+    event_log.put_nowait(dict(type='Job', job_id=job_id, ansible_events_id=settings.identifier))
 
     def event_callback(event, *args, **kwargs):
         event['job_id'] = job_id
-        event['ansible_events_id'] = ansible_events_id
+        event['ansible_events_id'] = settings.identifier
         event_log.put_nowait(dict(type="AnsibleEvent", event=event))
 
     ansible_runner.run(
