@@ -25,8 +25,6 @@ import sys
 import os
 import yaml
 import logging
-import threading
-import queue
 import janus
 
 import ansible_events
@@ -62,34 +60,35 @@ def load_vars(parsed_args) -> Dict[str, str]:
 def load_rules(parsed_args) -> List[RuleSet]:
     logger = logging.getLogger()
     if not parsed_args.rules:
-        logger.debug('Loading no rules')
+        logger.debug("Loading no rules")
         return []
     elif os.path.exists(parsed_args.rules):
-        logger.debug(f'Loading rules from the file system {parsed_args.rules}')
+        logger.debug(f"Loading rules from the file system {parsed_args.rules}")
         with open(parsed_args.rules) as f:
             return rules_parser.parse_rule_sets(yaml.safe_load(f.read()))
     elif has_rules(*split_collection_name(parsed_args.rules)):
-        logger.debug(f'Loading rules from a collection {parsed_args.rules}')
-        return rules_parser.parse_rule_sets(collection_load_rules(*split_collection_name(parsed_args.rules)))
+        logger.debug(f"Loading rules from a collection {parsed_args.rules}")
+        return rules_parser.parse_rule_sets(
+            collection_load_rules(*split_collection_name(parsed_args.rules))
+        )
     else:
-        raise Exception(f'Could not find ruleset {parsed_args.rules}')
-
+        raise Exception(f"Could not find ruleset {parsed_args.rules}")
 
 
 def get_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--rules')
-    parser.add_argument('--vars')
-    parser.add_argument('--env-vars')
-    parser.add_argument('--debug', action='store_true')
-    parser.add_argument('--verbose', action='store_true')
-    parser.add_argument('--version', action='store_true')
-    parser.add_argument('--redis-host-name')
-    parser.add_argument('--redis-port')
-    parser.add_argument('-S', '--source-dir')
-    parser.add_argument('-i', '--inventory')
-    parser.add_argument('--websocket-address')
-    parser.add_argument('--id')
+    parser.add_argument("--rules")
+    parser.add_argument("--vars")
+    parser.add_argument("--env-vars")
+    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--verbose", action="store_true")
+    parser.add_argument("--version", action="store_true")
+    parser.add_argument("--redis-host-name")
+    parser.add_argument("--redis-port")
+    parser.add_argument("-S", "--source-dir")
+    parser.add_argument("-i", "--inventory")
+    parser.add_argument("--websocket-address")
+    parser.add_argument("--id")
     return parser
 
 
@@ -125,22 +124,38 @@ async def main(args):
     loop = asyncio.get_running_loop()
 
     source_pool = concurrent.futures.ThreadPoolExecutor()
-    rules_pool = concurrent.futures.ThreadPoolExecutor()
 
-    logger.info('Starting sources')
+    logger.info("Starting sources")
 
     for ruleset in rulesets:
         sources = ruleset.sources
         source_queue = janus.Queue()
 
         for source in sources:
-            tasks.append(asyncio.create_task(await_future(loop.run_in_executor(source_pool, start_source, source, [parsed_args.source_dir], variables, source_queue.sync_q))))
+            tasks.append(
+                asyncio.create_task(
+                    await_future(
+                        loop.run_in_executor(
+                            source_pool,
+                            start_source,
+                            source,
+                            [parsed_args.source_dir],
+                            variables,
+                            source_queue.sync_q,
+                        )
+                    )
+                )
+            )
         ruleset_queues.append((ruleset, source_queue.async_q))
 
-    logger.info('Starting rules')
+    logger.info("Starting rules")
 
     if parsed_args.websocket_address:
-        tasks.append(asyncio.create_task(send_event_log_to_websocket(event_log, parsed_args.websocket_address)))
+        tasks.append(
+            asyncio.create_task(
+                send_event_log_to_websocket(event_log, parsed_args.websocket_address)
+            )
+        )
 
     await run_rulesets(
         event_log,
@@ -148,10 +163,10 @@ async def main(args):
         variables,
         inventory,
         parsed_args.redis_host_name,
-        parsed_args.redis_port)
+        parsed_args.redis_port,
+    )
 
-
-    logger.info('Main complete')
+    logger.info("Main complete")
 
     return 0
 

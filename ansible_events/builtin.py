@@ -1,6 +1,8 @@
 import durable.lang
 
 from typing import Dict, List, Callable
+import asyncio
+import concurrent.futures
 import ansible_runner
 import shutil
 import tempfile
@@ -12,6 +14,7 @@ import dpath.util
 import sys
 import logging
 import uuid
+from functools import partial
 from pprint import pprint
 from .util import get_horizontal_rule
 from .collection import split_collection_name, has_playbook, find_playbook
@@ -20,13 +23,13 @@ from .conf import settings
 from typing import Optional
 
 
-def none(
+async def none(
     event_log, inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: str
 ):
     pass
 
 
-def debug(**kwargs):
+async def debug(**kwargs):
     print(get_horizontal_rule("="))
     pprint(durable.lang.c.__dict__)
     print(get_horizontal_rule("="))
@@ -37,7 +40,7 @@ def debug(**kwargs):
     sys.stdout.flush()
 
 
-def print_event(
+async def print_event(
     event_log,
     inventory: Dict,
     hosts: List,
@@ -57,7 +60,7 @@ def print_event(
     sys.stdout.flush()
 
 
-def assert_fact(
+async def assert_fact(
     event_log,
     inventory: Dict,
     hosts: List,
@@ -71,7 +74,7 @@ def assert_fact(
     durable.lang.assert_fact(ruleset, fact)
 
 
-def retract_fact(
+async def retract_fact(
     event_log,
     inventory: Dict,
     hosts: List,
@@ -83,7 +86,7 @@ def retract_fact(
     durable.lang.retract_fact(ruleset, fact)
 
 
-def post_event(
+async def post_event(
     event_log,
     inventory: Dict,
     hosts: List,
@@ -95,7 +98,7 @@ def post_event(
     durable.lang.post(ruleset, fact)
 
 
-def run_playbook(
+async def run_playbook(
     event_log,
     inventory: Dict,
     hosts: List,
@@ -152,19 +155,28 @@ def run_playbook(
 
     job_id = str(uuid.uuid4())
 
-    event_log.put_nowait(dict(type='Job', job_id=job_id, ansible_events_id=settings.identifier))
+    await event_log.put(
+        dict(type="Job", job_id=job_id, ansible_events_id=settings.identifier)
+    )
 
     def event_callback(event, *args, **kwargs):
-        event['job_id'] = job_id
-        event['ansible_events_id'] = settings.identifier
+        event["job_id"] = job_id
+        event["ansible_events_id"] = settings.identifier
         event_log.put_nowait(dict(type="AnsibleEvent", event=event))
 
-    ansible_runner.run(
-        playbook=name,
-        private_data_dir=temp,
-        limit=host_limit,
-        verbosity=verbosity,
-        event_handler=event_callback,
+    loop = asyncio.get_running_loop()
+    task_pool = concurrent.futures.ThreadPoolExecutor()
+
+    await loop.run_in_executor(
+        task_pool,
+        partial(
+            ansible_runner.run,
+            playbook=name,
+            private_data_dir=temp,
+            limit=host_limit,
+            verbosity=verbosity,
+            event_handler=event_callback,
+        ),
     )
 
     if assert_facts or post_events:
