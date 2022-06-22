@@ -153,7 +153,7 @@ async def call_action(
             logger.info(f"facts: {durable.lang.get_facts(ruleset)}")
             if "ruleset" not in action_args:
                 action_args["ruleset"] = ruleset
-            result = builtin_actions[action](
+            result = await builtin_actions[action](
                 event_log=event_log,
                 inventory=inventory,
                 hosts=hosts,
