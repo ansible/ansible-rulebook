@@ -6,7 +6,4 @@
     - name:
       debug:
         msg: 'Hello event {{event}}'
-    - name:
-      debug:
-        msg: 'Hello facts {{facts[inventory_hostname]}}'
 ...
