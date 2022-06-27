@@ -167,12 +167,14 @@ async def main(args):
     )
 
     logger.info("Main complete")
+    await event_log.put(dict(type="Exit"))
 
     return 0
 
 
 def entry_point() -> None:
     asyncio.run(main(sys.argv[1:]))
+    print('asyncio.run exit')
 
 
 if __name__ == "__main__":

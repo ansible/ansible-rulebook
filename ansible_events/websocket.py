@@ -14,6 +14,8 @@ async def send_event_log_to_websocket(event_log, websocket_address):
             while True:
                 event = await event_log.get()
                 await websocket.send(json.dumps(event))
+                if event == dict(type="Shutdown"):
+                    break
         except websockets.ConnectionClosed:
             logger.warning(f'websocket {websocket_address} connection closed')
             continue
