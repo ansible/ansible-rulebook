@@ -69,7 +69,7 @@ Ready to contribute? Here's how to set up `ansible_events` for local development
     $ cd ansible_events/
     $ python3.9 -m venv venv
     $ source venv/bin/activate
-    $ python setup.py develop
+    $ pip install -e .
     $ pip install -r requirements_dev.txt
     $ ansible-galaxy collection install benthomasson.eda
 
@@ -83,7 +83,7 @@ Ready to contribute? Here's how to set up `ansible_events` for local development
    tests, including testing other Python versions with tox::
 
     $ flake8 ansible_events tests
-    $ python setup.py test or pytest
+    $ pytest
     $ tox
 
    To get flake8 and tox, just pip install them into your virtualenv.
@@ -134,6 +134,6 @@ A reminder for the maintainers on how to deploy.
 Make sure all your changes are committed (including an entry in HISTORY.rst).
 Then run::
 
-$ python setup.py sdist
+$ python -m build
 $ twine upload dist/*
 
