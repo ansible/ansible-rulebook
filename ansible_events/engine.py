@@ -59,7 +59,11 @@ def start_source(
 
     try:
         logger.info("load source")
-        if source_dirs and source_dirs[0] and os.path.exists(os.path.join(source_dirs[0], source.source_name + ".py")):
+        if (
+            source_dirs
+            and source_dirs[0]
+            and os.path.exists(os.path.join(source_dirs[0], source.source_name + ".py"))
+        ):
             module = runpy.run_path(
                 os.path.join(source_dirs[0], source.source_name + ".py")
             )
@@ -212,8 +216,12 @@ async def run_rulesets(
 
     while True:
         logger.info("Waiting for event")
-        queue_tasks = {asyncio.create_task(rqp[2].get()): rqp for rqp in rulesets_queue_plans}
-        done, pending = await asyncio.wait(list(queue_tasks.keys()), return_when=asyncio.FIRST_COMPLETED)
+        queue_tasks = {
+            asyncio.create_task(rqp[2].get()): rqp for rqp in rulesets_queue_plans
+        }
+        done, pending = await asyncio.wait(
+            list(queue_tasks.keys()), return_when=asyncio.FIRST_COMPLETED
+        )
         for queue_reader in done:
             ruleset, _, queue, plan = queue_tasks[queue_reader]
             data = queue_reader.result()

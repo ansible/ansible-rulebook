@@ -1,5 +1,3 @@
-
-
 import asyncio
 import websockets
 import json
@@ -17,8 +15,8 @@ async def send_event_log_to_websocket(event_log, websocket_address):
                 if event == dict(type="Shutdown"):
                     break
         except websockets.ConnectionClosed:
-            logger.warning(f'websocket {websocket_address} connection closed')
+            logger.warning(f"websocket {websocket_address} connection closed")
             continue
         except BaseException as e:
-            logger.error(f'websocket error {e} on {event}')
+            logger.error(f"websocket error {e} on {event}")
             continue

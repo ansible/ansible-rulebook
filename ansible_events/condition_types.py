@@ -1,6 +1,4 @@
-
 from typing import NamedTuple, Union, List
-
 
 
 class Integer(NamedTuple):
@@ -9,6 +7,7 @@ class Integer(NamedTuple):
 
 class String(NamedTuple):
     value: str
+
 
 class Boolean(NamedTuple):
     value: str
@@ -23,11 +22,16 @@ class OperatorExpression(NamedTuple):
     operator: str
     right: Union[Integer, String]
 
+
 class ExistsExpression(NamedTuple):
     operator: str
     value: String
 
-class Condition(NamedTuple):
-    value: Union[Integer, String,  Identifier, OperatorExpression, ExistsExpression]
 
-ConditionTypes = Union[List, Condition, OperatorExpression, Identifier, String, Integer, ExistsExpression]
+class Condition(NamedTuple):
+    value: Union[Integer, String, Identifier, OperatorExpression, ExistsExpression]
+
+
+ConditionTypes = Union[
+    List, Condition, OperatorExpression, Identifier, String, Integer, ExistsExpression
+]
