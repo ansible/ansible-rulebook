@@ -18,3 +18,4 @@ pytest-timeout==2.1.0
 ansible
 ansible-core
 ansible-runner
+build
