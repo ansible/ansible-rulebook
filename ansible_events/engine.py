@@ -201,7 +201,7 @@ async def call_action(
 
 
 async def run_rulesets(
-    event_log: Queue,
+    event_log: asyncio.Queue,
     ruleset_queues: List[RuleSetQueue],
     variables: Dict,
     inventory: Dict,
