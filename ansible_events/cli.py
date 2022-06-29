@@ -9,7 +9,8 @@ Options:
     --rules=<r>                 The rules file or rules from a collection
     -S=<S>, --source_dir=<S>    Source dir
     --vars=<v>                  A vars file
-    --env-vars=<e>              Comma separated list of variables to import from the environment
+    --env-vars=<e>              Comma separated list of variables to import
+                                from the environment
     --redis_host_name=<h>       Redis host name
     --redis_port=<p>            Redis port
     --debug                     Show debug logging

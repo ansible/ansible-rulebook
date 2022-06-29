@@ -1,5 +1,4 @@
 import uuid
-import os
 
 
 class _Settings:

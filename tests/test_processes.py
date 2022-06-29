@@ -1,11 +1,10 @@
 import pytest
 import os
 import threading
+from queue import Queue
 
-from ansible_events.engine import run_rulesets, start_source
+from ansible_events.engine import start_source
 from ansible_events.rule_types import EventSource, EventSourceFilter
-
-from .test_engine import new_event_loop
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -27,7 +26,7 @@ def f(name):
 def test_process_check(new_event_loop):
     os.chdir(HERE)
 
-    queue = ueue()
+    queue = Queue()
     p1 = threading.Thread(
         target=start_source,
         args=(

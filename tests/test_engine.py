@@ -1,5 +1,3 @@
-from durable.lang import *
-import durable.lang
 import yaml
 import os
 import asyncio

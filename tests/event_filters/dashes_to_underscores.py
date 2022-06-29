@@ -1,5 +1,6 @@
 """
-dashes_to_underscores.py:   An event filter that changes dashes in keys to underscores.
+dashes_to_underscores.py: An event filter that changes dashes
+in keys to underscores.
 
 For instance, the key X-Y becomes the new key X_Y.
 

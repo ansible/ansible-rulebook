@@ -29,7 +29,7 @@ def main(queue, args):
                     )
                 )
 
-            except (ConnectionError, ReadTimeout) as e:
+            except (ConnectionError, ReadTimeout):
                 queue.put(
                     dict(
                         url_check=dict(
