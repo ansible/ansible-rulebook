@@ -33,7 +33,7 @@ from ansible_events.conf import settings
 import ansible_events.rules_parser as rules_parser
 from ansible_events.engine import start_source, run_rulesets
 from ansible_events.rule_types import RuleSet
-from ansible_events.util import load_inventory, await_future
+from ansible_events.util import load_inventory
 from ansible_events.collection import has_rules, split_collection_name
 from ansible_events.collection import load_rules as collection_load_rules
 from ansible_events.websocket import send_event_log_to_websocket
@@ -135,17 +135,13 @@ async def main(args):
 
         for source in sources:
             tasks.append(
-                asyncio.create_task(
-                    await_future(
-                        loop.run_in_executor(
-                            source_pool,
-                            start_source,
-                            source,
-                            [parsed_args.source_dir],
-                            variables,
-                            source_queue.sync_q,
-                        )
-                    )
+                loop.run_in_executor(
+                    source_pool,
+                    start_source,
+                    source,
+                    [parsed_args.source_dir],
+                    variables,
+                    source_queue.sync_q,
                 )
             )
         ruleset_queues.append((ruleset, source_queue.async_q))
