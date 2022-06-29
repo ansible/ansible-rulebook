@@ -2,9 +2,6 @@ from durable.lang import m, c
 
 from ansible_events.condition_parser import (
     parse_condition,
-    Identifier,
-    String,
-    OperatorExpression,
     condition,
 )
 from ansible_events.rule_generator import visit_condition
@@ -155,7 +152,8 @@ def test_parse_condition():
     )
 
     result = parse_condition(
-        '(event.payload.repository.full_name == "{{repo_name}}") and (event.payload.after is defined)'
+        '(event.payload.repository.full_name == "{{repo_name}}")'
+        " and (event.payload.after is defined)"
     )
     print(result)
     print(visit_condition(result, {"repo_name": "x"}).define())

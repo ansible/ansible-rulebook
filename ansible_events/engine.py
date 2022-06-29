@@ -2,14 +2,12 @@ import os
 import runpy
 import asyncio
 import durable.lang
-import select
 import traceback
 import logging
-import janus
 from queue import Queue
 
 
-from pprint import pprint, pformat
+from pprint import pformat
 
 import ansible_events.rule_generator as rule_generator
 from ansible_events.durability import provide_durability
@@ -103,7 +101,8 @@ def start_source(
                 )
             else:
                 raise Exception(
-                    f"Could not find source filter plugin for {source_filter.filter_name}"
+                    f"Could not find source filter plugin "
+                    f"for {source_filter.filter_name}"
                 )
             source_filters.append(
                 (source_filter_module["main"], source_filter.filter_args)

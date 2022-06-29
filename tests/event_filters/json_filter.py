@@ -3,16 +3,17 @@ json_filter.py:   An event filter that filters keys out of events.
 
 Includes override excludes.
 
-This is useful to exclude information from events that is unneeded by the rule engine.
+This is useful to exclude information from events that is unneeded
+by the rule engine.
 
 Arguments:
     * exclude_keys = a list of strings or patterns to remove
-    * include_keys = a list of strings or patterns to keep even if it matches exclude_keys patterns.
+    * include_keys = a list of strings or patterns to keep even if it matches
+        exclude_keys patterns.
 """
 
 
 import fnmatch
-import logging
 
 
 def matches_include_keys(include_keys, s):
@@ -29,8 +30,8 @@ def matches_exclude_keys(exclude_keys, s):
     return False
 
 
+# FIXME(cutwater): Mutable instances are used as a default value of a function.
 def main(event, exclude_keys=[], include_keys=[]):
-    logger = logging.getLogger()
     q = []
     q.append(event)
     while q:

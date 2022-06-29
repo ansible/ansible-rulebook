@@ -5,9 +5,6 @@
 import pytest
 
 
-from ansible_events import ansible_events
-
-
 @pytest.fixture
 def response():
     """Sample pytest fixture.

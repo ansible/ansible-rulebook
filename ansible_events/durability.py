@@ -1,9 +1,5 @@
-from durable.lang import *
 import redis
-import time
 import datetime
-import traceback
-import sys
 import logging
 
 logger = logging.getLogger("durability")

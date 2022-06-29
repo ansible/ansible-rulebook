@@ -132,7 +132,7 @@ def test_parse_rules():
     with open("rules.yml") as f:
         data = yaml.safe_load(f.read())
 
-    rulesets = parse_rule_sets(data)
+    parse_rule_sets(data)
 
 
 @pytest.mark.asyncio

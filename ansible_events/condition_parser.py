@@ -1,4 +1,3 @@
-from durable.lang import m
 from pyparsing import (
     pyparsing_common,
     infix_notation,
@@ -12,7 +11,8 @@ from pyparsing import (
 )
 
 ParserElement.enable_packrat()
-from ansible_events.condition_types import (
+
+from ansible_events.condition_types import (  # noqa: E402
     Identifier,
     String,
     OperatorExpression,
@@ -48,6 +48,8 @@ string2 = (
     QuotedString('"').copy().add_parse_action(lambda toks: String(toks[0]))
 )
 
+# REVIEW(cutwater): The expression `lambda toks: OperatorExpression(*toks[0])`
+#   is duplicated 8 times here. Can it be a function?
 condition = infix_notation(
     integer | boolean | varname | string1 | string2,
     [

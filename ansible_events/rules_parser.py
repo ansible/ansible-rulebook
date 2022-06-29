@@ -1,5 +1,4 @@
 import ansible_events.rule_types as rt
-import ansible_events.condition_types as ct
 
 from ansible_events.condition_parser import (
     parse_condition as parse_condition_value,

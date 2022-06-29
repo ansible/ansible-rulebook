@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import NamedTuple, Union, List, Any, Dict, Optional
+from typing import NamedTuple, Union, List, Any, Dict
 import ansible_events.condition_types as ct
 
 import asyncio
