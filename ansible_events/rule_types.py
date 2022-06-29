@@ -6,10 +6,12 @@ import ansible_events.condition_types as ct
 import asyncio
 from queue import Queue
 
+
 class EventSourceFilter(NamedTuple):
 
     filter_name: str
     filter_args: dict
+
 
 class EventSource(NamedTuple):
     name: str
@@ -57,12 +59,13 @@ class RuleSetPlan(NamedTuple):
     ruleset: RuleSet
     plan: asyncio.Queue
 
+
 class RuleSetQueue(NamedTuple):
     ruleset: RuleSet
     queue: Queue
+
 
 class RuleSetQueuePlan(NamedTuple):
     ruleset: RuleSet
     queue: Queue
     plan: asyncio.Queue
-

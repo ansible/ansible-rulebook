@@ -21,7 +21,9 @@ def get_horizontal_rule(character):
 
 
 def render_string(value: str, context: Dict) -> str:
-    return jinja2.Template(value, undefined=jinja2.StrictUndefined).render(context)
+    return jinja2.Template(value, undefined=jinja2.StrictUndefined).render(
+        context
+    )
 
 
 def render_string_or_return_value(value: Any, context: Dict) -> Any:
@@ -73,6 +75,8 @@ def json_count(data):
                 )
             if s > 255:
                 pprint(data)
-                raise Exception(f"Only 255 values supported per dictionary found {s}")
+                raise Exception(
+                    f"Only 255 values supported per dictionary found {s}"
+                )
             for i in o.values():
                 q.append(i)

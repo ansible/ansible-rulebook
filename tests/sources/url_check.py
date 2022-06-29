@@ -20,7 +20,9 @@ def main(queue, args):
                     dict(
                         url_check=dict(
                             url=url,
-                            status="up" if response.status_code == 200 else "down",
+                            status="up"
+                            if response.status_code == 200
+                            else "down",
                             status_code=response.status_code,
                         ),
                         meta=dict(time=time.time()),
@@ -30,7 +32,9 @@ def main(queue, args):
             except (ConnectionError, ReadTimeout) as e:
                 queue.put(
                     dict(
-                        url_check=dict(url=url, status="down", status_code=None),
+                        url_check=dict(
+                            url=url, status="down", status_code=None
+                        ),
                         meta=dict(time=time.time()),
                     )
                 )

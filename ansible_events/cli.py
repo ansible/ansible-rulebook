@@ -51,7 +51,9 @@ def load_vars(parsed_args) -> Dict[str, str]:
         for env_var in parsed_args.env_vars.split(","):
             env_var = env_var.strip()
             if env_var not in os.environ:
-                raise KeyError(f'Could not find environment variable "{env_var}"')
+                raise KeyError(
+                    f'Could not find environment variable "{env_var}"'
+                )
             variables[env_var] = os.environ[env_var]
 
     return variables
@@ -153,7 +155,9 @@ async def main(args):
     if parsed_args.websocket_address:
         tasks.append(
             asyncio.create_task(
-                send_event_log_to_websocket(event_log, parsed_args.websocket_address)
+                send_event_log_to_websocket(
+                    event_log, parsed_args.websocket_address
+                )
             )
         )
 
@@ -174,7 +178,7 @@ async def main(args):
 
 def entry_point() -> None:
     asyncio.run(main(sys.argv[1:]))
-    print('asyncio.run exit')
+    print("asyncio.run exit")
 
 
 if __name__ == "__main__":

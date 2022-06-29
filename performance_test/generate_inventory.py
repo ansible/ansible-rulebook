@@ -18,36 +18,36 @@ import logging
 import sys
 import yaml
 
-logger = logging.getLogger('generate_inventory')
+logger = logging.getLogger("generate_inventory")
 
 
 def main(args=None):
     if args is None:
         args = sys.argv[1:]
     parsed_args = docopt(__doc__, args)
-    if parsed_args['--debug']:
+    if parsed_args["--debug"]:
         logging.basicConfig(level=logging.DEBUG)
-    elif parsed_args['--verbose']:
+    elif parsed_args["--verbose"]:
         logging.basicConfig(level=logging.INFO)
     else:
         logging.basicConfig(level=logging.WARNING)
 
     inventory = dict(all=dict(hosts={}))
 
-    for i in range(int(parsed_args['<n>'])):
+    for i in range(int(parsed_args["<n>"])):
         data = dict()
-        if parsed_args['--local']:
-            data['ansible_connection'] = 'local'
+        if parsed_args["--local"]:
+            data["ansible_connection"] = "local"
         else:
-            data['ansible_host'] = 'localhost'
-        if parsed_args['--python']:
-            data['ansible_python_interpreter'] = parsed_args['--python']
-        inventory['all']['hosts'][f'localhost{i}'] = data
+            data["ansible_host"] = "localhost"
+        if parsed_args["--python"]:
+            data["ansible_python_interpreter"] = parsed_args["--python"]
+        inventory["all"]["hosts"][f"localhost{i}"] = data
 
     print(yaml.dump(inventory, default_flow_style=False))
 
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))

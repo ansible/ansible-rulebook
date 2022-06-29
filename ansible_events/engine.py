@@ -59,7 +59,13 @@ def start_source(
 
     try:
         logger.info("load source")
-        if source_dirs and source_dirs[0] and os.path.exists(os.path.join(source_dirs[0], source.source_name + ".py")):
+        if (
+            source_dirs
+            and source_dirs[0]
+            and os.path.exists(
+                os.path.join(source_dirs[0], source.source_name + ".py")
+            )
+        ):
             module = runpy.run_path(
                 os.path.join(source_dirs[0], source.source_name + ".py")
             )
@@ -68,7 +74,9 @@ def start_source(
                 find_source(*split_collection_name(source.source_name))
             )
         else:
-            raise Exception(f"Could not find source plugin for {source.source_name}")
+            raise Exception(
+                f"Could not find source plugin for {source.source_name}"
+            )
 
         source_filters = []
 
@@ -76,12 +84,18 @@ def start_source(
         for source_filter in source.source_filters:
             logger.info(f"loading {source_filter.filter_name}")
             if os.path.exists(
-                os.path.join("event_filters", source_filter.filter_name + ".py")
+                os.path.join(
+                    "event_filters", source_filter.filter_name + ".py"
+                )
             ):
                 source_filter_module = runpy.run_path(
-                    os.path.join("event_filters", source_filter.filter_name + ".py")
+                    os.path.join(
+                        "event_filters", source_filter.filter_name + ".py"
+                    )
                 )
-            elif has_source_filter(*split_collection_name(source_filter.filter_name)):
+            elif has_source_filter(
+                *split_collection_name(source_filter.filter_name)
+            ):
                 source_filter_module = runpy.run_path(
                     find_source_filter(
                         *split_collection_name(source_filter.filter_name)
@@ -96,7 +110,8 @@ def start_source(
             )
 
         args = {
-            k: substitute_variables(v, variables) for k, v in source.source_args.items()
+            k: substitute_variables(v, variables)
+            for k, v in source.source_args.items()
         }
         fqueue = FilteredQueue(source_filters, queue)
         logger.info(f"calling main in {source.source_name}")
@@ -128,7 +143,9 @@ async def call_action(
         try:
             variables_copy = variables.copy()
             if c.m is not None:
-                variables_copy["event"] = c.m._d  # event data is stored in c.m._d
+                variables_copy[
+                    "event"
+                ] = c.m._d  # event data is stored in c.m._d
                 event = c.m._d  # event data is stored in c.m._d
                 if "meta" in event:
                     if "hosts" in event["meta"]:
@@ -139,7 +156,9 @@ async def call_action(
                 for event in variables_copy["events"]:
                     if "meta" in event:
                         if "hosts" in event["meta"]:
-                            new_hosts.append(parse_hosts(event["meta"]["hosts"]))
+                            new_hosts.append(
+                                parse_hosts(event["meta"]["hosts"])
+                            )
                 if new_hosts:
                     hosts = new_hosts
             logger.info(f"substitute_variables {action_args} {variables_copy}")
@@ -171,7 +190,9 @@ async def call_action(
             logger.info(f"MessageObservedException: {action_args}")
             result = dict(error=e)
         except Exception as e:
-            logger.error(f"Error calling {action}: {e}\n {traceback.format_exc()}")
+            logger.error(
+                f"Error calling {action}: {e}\n {traceback.format_exc()}"
+            )
             result = dict(error=e)
     else:
         raise Exception(f"Action {action} not supported")
@@ -193,7 +214,9 @@ async def run_rulesets(
     logger.info("run_ruleset")
 
     if redis_host_name and redis_port:
-        provide_durability(durable.lang.get_host(), redis_host_name, redis_port)
+        provide_durability(
+            durable.lang.get_host(), redis_host_name, redis_port
+        )
 
     ansible_ruleset_queue_plans = [
         RuleSetQueuePlan(ruleset, queue, asyncio.Queue())
@@ -212,8 +235,13 @@ async def run_rulesets(
 
     while True:
         logger.info("Waiting for event")
-        queue_tasks = {asyncio.create_task(rqp[2].get()): rqp for rqp in rulesets_queue_plans}
-        done, pending = await asyncio.wait(list(queue_tasks.keys()), return_when=asyncio.FIRST_COMPLETED)
+        queue_tasks = {
+            asyncio.create_task(rqp[2].get()): rqp
+            for rqp in rulesets_queue_plans
+        }
+        done, pending = await asyncio.wait(
+            list(queue_tasks.keys()), return_when=asyncio.FIRST_COMPLETED
+        )
         for queue_reader in done:
             ruleset, _, queue, plan = queue_tasks[queue_reader]
             data = queue_reader.result()
@@ -244,7 +272,9 @@ async def run_rulesets(
                     result = await call_action(*item, event_log=event_log)
                     results.append(result)
 
-                await event_log.put(dict(type="ProcessedEvent", results=results))
+                await event_log.put(
+                    dict(type="ProcessedEvent", results=results)
+                )
             except durable.engine.MessageNotHandledException:
                 logger.info(f"MessageNotHandledException: {data}")
                 await event_log.put(dict(type="MessageNotHandled"))

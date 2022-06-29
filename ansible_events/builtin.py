@@ -24,7 +24,12 @@ from typing import Optional
 
 
 async def none(
-    event_log, inventory: Dict, hosts: List, variables: Dict, facts: Dict, ruleset: str
+    event_log,
+    inventory: Dict,
+    hosts: List,
+    variables: Dict,
+    facts: Dict,
+    ruleset: str,
 ):
     pass
 
