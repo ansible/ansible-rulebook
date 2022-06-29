@@ -12,7 +12,7 @@ import logging
 
 def main(event, overwrite=True):
     logger = logging.getLogger()
-    logger.info('dashes_to_underscores')
+    logger.info("dashes_to_underscores")
     q = []
     q.append(event)
     while q:
@@ -26,9 +26,9 @@ def main(event, overwrite=True):
                     del o[key]
                     if new_key in o and overwrite:
                         o[new_key] = value
-                        logger.info(f'Replacing {key} with {new_key}')
+                        logger.info(f"Replacing {key} with {new_key}")
                     elif new_key not in o:
                         o[new_key] = value
-                        logger.info(f'Replacing {key} with {new_key}')
+                        logger.info(f"Replacing {key} with {new_key}")
 
     return event
