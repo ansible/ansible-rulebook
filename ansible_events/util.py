@@ -9,10 +9,6 @@ from typing import Dict, Union, List
 from typing import Any
 
 
-async def await_future(f):
-    await f
-
-
 def get_horizontal_rule(character):
     try:
         return character * int(os.get_terminal_size()[0])
