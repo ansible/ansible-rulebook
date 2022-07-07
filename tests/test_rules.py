@@ -222,3 +222,40 @@ async def test_generate_rules_multiple_conditions_all():
     )
     assert ruleset_queue_plans[0][2].qsize() == 1
     assert ruleset_queue_plans[0][2].get_nowait()[1] == "debug"
+
+
+@pytest.mark.asyncio
+async def test_generate_rules_multiple_conditions_all_3():
+    os.chdir(HERE)
+    with open("rules_with_multiple_conditions3.yml") as f:
+        data = yaml.safe_load(f.read())
+    with open("inventory.yml") as f:
+        inventory = yaml.safe_load(f.read())
+
+    rulesets = parse_rule_sets(data)
+    print(rulesets)
+    ruleset_queue_plans = [
+        (ruleset, Queue(), asyncio.Queue()) for ruleset in rulesets
+    ]
+    durable_rulesets = generate_rulesets(
+        ruleset_queue_plans, dict(), inventory
+    )
+
+    print(durable_rulesets[0][0].define())
+
+    post(
+        "Demo rules multiple conditions reference assignment",
+        {"i": 0}
+    )
+    assert ruleset_queue_plans[0][2].qsize() == 0
+    post(
+        "Demo rules multiple conditions reference assignment",
+        {"i": 1}
+    )
+    assert ruleset_queue_plans[0][2].qsize() == 0
+    post(
+        "Demo rules multiple conditions reference assignment",
+        {"i": 2}
+    )
+    assert ruleset_queue_plans[0][2].qsize() == 1
+    assert ruleset_queue_plans[0][2].get_nowait()[1] == "debug"

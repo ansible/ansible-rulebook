@@ -36,10 +36,13 @@ async def none(
 
 async def debug(**kwargs):
     print(get_horizontal_rule("="))
+    print("context:")
     pprint(durable.lang.c.__dict__)
     print(get_horizontal_rule("="))
+    print("facts:")
     pprint(durable.lang.get_facts(kwargs["ruleset"]))
     print(get_horizontal_rule("="))
+    print("kwargs:")
     pprint(kwargs)
     print(get_horizontal_rule("="))
     sys.stdout.flush()
