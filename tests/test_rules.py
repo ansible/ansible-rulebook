@@ -182,14 +182,14 @@ async def test_generate_rules_multiple_conditions_any():
 
     post(
         "Demo rules multiple conditions any",
-        {"payload": {"provisioningState": "Succeeded"}},
+        {"i": 0}
     )
-    assert ruleset_queue_plans[0][2].get_nowait()[1] == "slack"
+    assert ruleset_queue_plans[0][2].get_nowait()[1] == "debug"
     post(
         "Demo rules multiple conditions any",
-        {"payload": {"provisioningState": "Deleted"}},
+        {"i": 1}
     )
-    assert ruleset_queue_plans[0][2].get_nowait()[1] == "slack"
+    assert ruleset_queue_plans[0][2].get_nowait()[1] == "debug"
 
 
 @pytest.mark.asyncio
@@ -213,12 +213,12 @@ async def test_generate_rules_multiple_conditions_all():
 
     post(
         "Demo rules multiple conditions all",
-        {"payload": {"provisioningState": "Succeeded"}},
+        {"i": 0}
     )
     assert ruleset_queue_plans[0][2].qsize() == 0
     post(
         "Demo rules multiple conditions all",
-        {"payload": {"provisioningState": "Deleted"}},
+        {"i": 1}
     )
     assert ruleset_queue_plans[0][2].qsize() == 1
-    assert ruleset_queue_plans[0][2].get_nowait()[1] == "slack"
+    assert ruleset_queue_plans[0][2].get_nowait()[1] == "debug"

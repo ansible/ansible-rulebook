@@ -2,8 +2,7 @@
 - name: Demo rules multiple conditions all
   hosts: localhost
   sources:
-    - name: range
-      range:
+    - range:
         limit: 5
   rules:
     - name: multiple conditions

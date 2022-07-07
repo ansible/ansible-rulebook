@@ -9,9 +9,7 @@
     - name: multiple conditions
       condition:
         all:
-          - event.payload.provisioningState == 'Succeeded'
-          - event.payload.provisioningState == 'Deleted'
+          - events.first << event.i == 0
+          - events.second << event.i == 1
       action:
-        slack:
-          token: "{{token}}"
-          msg: "Deployment changed at {{event.payload.eventTime}}: {{management_url}}{{event.payload.applicationId}}"
+        debug:
