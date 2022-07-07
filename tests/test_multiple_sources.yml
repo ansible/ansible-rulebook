@@ -1,0 +1,18 @@
+---
+- name: Test multiple sources
+  hosts: all
+  sources:
+    - range:
+        limit: 6
+    - range2:
+        limit: 5
+  rules:
+    - name:
+      condition: event.range2.i == 2
+      action:
+        run_playbook:
+          name: hello_playbook.yml
+    - name:
+      condition: +event.range2.i
+      action:
+        none:
