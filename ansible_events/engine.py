@@ -1,127 +1,147 @@
+import asyncio
+import logging
 import os
 import runpy
-import asyncio
-import durable.lang
 import traceback
-import logging
-from queue import Queue
-
-
 from pprint import pformat
+from typing import Any, Dict, List, Optional, cast
+
+import durable.lang
+import durable.engine
 
 import ansible_events.rule_generator as rule_generator
-from ansible_events.durability import provide_durability
-from ansible_events.messages import Shutdown
-from ansible_events.util import substitute_variables, json_count
 from ansible_events.builtin import actions as builtin_actions
+from ansible_events.collection import (
+    find_source,
+    find_source_filter,
+    has_source,
+    has_source_filter,
+    split_collection_name,
+)
+from ansible_events.durability import provide_durability
+from ansible_events.exception import ShutdownException
+from ansible_events.messages import Shutdown
 from ansible_events.rule_types import (
+    ActionContext,
     EventSource,
     RuleSetQueue,
     RuleSetQueuePlan,
-    ActionContext,
 )
 from ansible_events.rules_parser import parse_hosts
-from ansible_events.exception import ShutdownException
-from ansible_events.collection import (
-    has_source,
-    split_collection_name,
-    find_source,
-    has_source_filter,
-    find_source_filter,
-)
+from ansible_events.util import json_count, substitute_variables
 
-from typing import Optional, Dict, List, cast
+logger = logging.getLogger("ansible_events")
 
 
+# NOTE(cutwater): This class should probably inherit asyncio.Queue
 class FilteredQueue:
-    def __init__(self, filters, queue):
+    def __init__(self, filters, queue: asyncio.Queue):
         self.filters = filters
         self.queue = queue
 
-    def put(self, data):
-        for f, kwargs in self.filters:
+    async def put(self, item: Any):
+        for filter_, kwargs in self.filters:
             kwargs = kwargs or {}
-            data = f(data, **kwargs)
-        self.queue.put(data)
+            item = filter_(item, **kwargs)
+        await self.queue.put(item)
 
 
-def start_source(
+def load_source_module(
+    source: EventSource, source_dirs: List[str]
+) -> Dict[str, Any]:
+    if (
+        source_dirs
+        and source_dirs[0]
+        and os.path.exists(
+            os.path.join(source_dirs[0], source.source_name + ".py")
+        )
+    ):
+        module_path = os.path.join(source_dirs[0], source.source_name + ".py")
+    elif has_source(*split_collection_name(source.source_name)):
+        module_path = find_source(*split_collection_name(source.source_name))
+    else:
+        raise Exception(
+            f"Could not find source plugin for {source.source_name}"
+        )
+
+    return runpy.run_path(module_path)
+
+
+def get_source_filter_path(filter_name: str) -> str:
+    path = os.path.join("event_filters", filter_name + ".py")
+    if os.path.exists(path):
+        return path
+
+    collection, resource = split_collection_name(filter_name)
+    if has_source_filter(collection, resource):
+        return find_source_filter(collection, resource)
+
+    raise Exception(
+        f"Could not find source filter plugin " f"for {filter_name}"
+    )
+
+
+def load_source_filters(source: EventSource) -> List:
+    source_filters = []
+
+    for source_filter in source.source_filters:
+        logger.info(f"Loading {source_filter.filter_name}")
+
+        path = get_source_filter_path(source_filter.filter_name)
+        module = runpy.run_path(path)
+
+        try:
+            entrypoint = module["main"]
+        except KeyError:
+            # FIXME(cutwater): Replace with custom exception class
+            raise Exception("Entrypoint missing.")
+
+        source_filters.append((entrypoint, source_filter.filter_args))
+
+    return source_filters
+
+
+async def start_source(
     source: EventSource,
     source_dirs: List[str],
-    variables: Dict,
-    queue: Queue,
+    variables: Dict[str, Any],
+    queue: asyncio.Queue,
 ) -> None:
-
-    logger = logging.getLogger()
-
-    logger.info("start_source")
-
     try:
-        logger.info("load source")
-        if (
-            source_dirs
-            and source_dirs[0]
-            and os.path.exists(
-                os.path.join(source_dirs[0], source.source_name + ".py")
-            )
-        ):
-            module = runpy.run_path(
-                os.path.join(source_dirs[0], source.source_name + ".py")
-            )
-        elif has_source(*split_collection_name(source.source_name)):
-            module = runpy.run_path(
-                find_source(*split_collection_name(source.source_name))
-            )
-        else:
-            raise Exception(
-                f"Could not find source plugin for {source.source_name}"
-            )
+        logger.info("Loading source")
+        module = load_source_module(source, source_dirs)
 
-        source_filters = []
-
-        logger.info("load source filters")
-        for source_filter in source.source_filters:
-            logger.info(f"loading {source_filter.filter_name}")
-            if os.path.exists(
-                os.path.join(
-                    "event_filters", source_filter.filter_name + ".py"
-                )
-            ):
-                source_filter_module = runpy.run_path(
-                    os.path.join(
-                        "event_filters", source_filter.filter_name + ".py"
-                    )
-                )
-            elif has_source_filter(
-                *split_collection_name(source_filter.filter_name)
-            ):
-                source_filter_module = runpy.run_path(
-                    find_source_filter(
-                        *split_collection_name(source_filter.filter_name)
-                    )
-                )
-            else:
-                raise Exception(
-                    f"Could not find source filter plugin "
-                    f"for {source_filter.filter_name}"
-                )
-            source_filters.append(
-                (source_filter_module["main"], source_filter.filter_args)
-            )
+        logger.info("Loading source filters")
+        source_filters = load_source_filters(source)
 
         args = {
             k: substitute_variables(v, variables)
             for k, v in source.source_args.items()
         }
         fqueue = FilteredQueue(source_filters, queue)
-        logger.info(f"calling main in {source.source_name}")
-        module["main"](fqueue, args)
+        logger.info(f"Calling main in {source.source_name}")
+
+        try:
+            entrypoint = module["main"]
+        except KeyError:
+            # FIXME(cutwater): Replace with custom exception class
+            raise Exception(
+                "Entrypoint missing. Source module must have function 'main'."
+            )
+
+        # NOTE(cutwater): This check may be unnecessary.
+        if not asyncio.iscoroutinefunction(entrypoint):
+            # FIXME(cutwater): Replace with custom exception class
+            raise Exception("Entrypoint is not a coroutine function.")
+
+        await entrypoint(fqueue, args)
+
     except KeyboardInterrupt:
         pass
     except BaseException as e:
         logger.error(f"Source error {e}")
     finally:
-        queue.put(Shutdown())
+        await queue.put(Shutdown())
 
 
 async def call_action(
@@ -135,8 +155,6 @@ async def call_action(
     c,
     event_log,
 ) -> Dict:
-
-    logger = logging.getLogger()
     logger.info(f"call_action {action}")
 
     if action in builtin_actions:
@@ -214,9 +232,6 @@ async def run_rulesets(
     redis_host_name: Optional[str] = None,
     redis_port: Optional[int] = None,
 ):
-
-    logger = logging.getLogger()
-
     logger.info("run_ruleset")
 
     if redis_host_name and redis_port:
