@@ -1,4 +1,4 @@
-from durable.lang import ruleset, rule, m, c
+from durable.lang import ruleset, rule, m, c, none
 import asyncio
 import logging
 from ansible_events.condition_types import (
@@ -101,12 +101,22 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
             return visit_condition(parsed_condition.left, variables).__add__(
                 visit_condition(parsed_condition.right, variables)
             )
+        elif parsed_condition.operator == "-":
+            return visit_condition(parsed_condition.left, variables).__sub__(
+                visit_condition(parsed_condition.right, variables)
+            )
         elif parsed_condition.operator == "is":
             if isinstance(parsed_condition.right, Identifier):
                 if parsed_condition.right.value == "defined":
                     return visit_condition(
                         parsed_condition.left, variables
                     ).__pos__()
+        elif parsed_condition.operator == "is not":
+            if isinstance(parsed_condition.right, Identifier):
+                if parsed_condition.right.value == "defined":
+                    return none(visit_condition(
+                        parsed_condition.left, variables
+                    ).__pos__())
         elif parsed_condition.operator == "<<":
             return visit_condition(
                 parsed_condition.left, variables
@@ -123,7 +133,10 @@ def generate_condition(ansible_condition: RuleCondition, variables: Dict):
     condition = visit_condition(ansible_condition.value, variables)
     logger = logging.getLogger()
     for i in condition:
-        logger.debug(f"{i.define()}")
+        if i:
+            logger.debug(f"{i.define()}")
+        else:
+            logger.debug("None")
     return condition
 
 

@@ -77,6 +77,7 @@ condition = infix_notation(
         ),
         ("!=", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
         ("==", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
+        ("is not", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
         ("is", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
         ("and", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
         ("<<", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),

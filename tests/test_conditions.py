@@ -1,4 +1,4 @@
-from durable.lang import m, c
+from durable.lang import m, c, none
 
 from ansible_events.condition_parser import (
     parse_condition,
@@ -122,6 +122,11 @@ def test_parse_condition():
     print(result)
     print(visit_condition(result, {}).define())
     assert visit_condition(result, {}).define() == (+m.i).define()
+
+    result = parse_condition("event.i is not defined")[0]
+    print(result)
+    print(visit_condition(result, {}).define())
+    assert visit_condition(result, {}).define() == none(+m.i).define()
 
     result = parse_condition('event.x == "foo" and event.y == "bar"')[0]
     print(result)
