@@ -85,6 +85,18 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
             return visit_condition(parsed_condition.left, variables).__gt__(
                 visit_condition(parsed_condition.right, variables)
             )
+        elif parsed_condition.operator == "<":
+            return visit_condition(parsed_condition.left, variables).__lt__(
+                visit_condition(parsed_condition.right, variables)
+            )
+        elif parsed_condition.operator == ">=":
+            return visit_condition(parsed_condition.left, variables).__ge__(
+                visit_condition(parsed_condition.right, variables)
+            )
+        elif parsed_condition.operator == "<=":
+            return visit_condition(parsed_condition.left, variables).__le__(
+                visit_condition(parsed_condition.right, variables)
+            )
         elif parsed_condition.operator == "+":
             return visit_condition(parsed_condition.left, variables).__add__(
                 visit_condition(parsed_condition.right, variables)
