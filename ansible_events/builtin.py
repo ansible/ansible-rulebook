@@ -19,6 +19,7 @@ from pprint import pprint
 from .util import get_horizontal_rule
 from .collection import split_collection_name, has_playbook, find_playbook
 from .conf import settings
+from .exception import ShutdownException
 
 from typing import Optional
 
@@ -201,6 +202,16 @@ async def run_playbook(
                 durable.lang.post(ruleset, fact)
 
 
+async def shutdown(
+    event_log,
+    inventory: Dict,
+    hosts: List,
+    variables: Dict,
+    facts: Dict,
+    ruleset: str,
+):
+    raise ShutdownException()
+
 actions: Dict[str, Callable] = dict(
     none=none,
     debug=debug,
@@ -209,4 +220,5 @@ actions: Dict[str, Callable] = dict(
     retract_fact=retract_fact,
     post_event=post_event,
     run_playbook=run_playbook,
+    shutdown=shutdown,
 )

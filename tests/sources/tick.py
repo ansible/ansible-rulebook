@@ -1,13 +1,12 @@
-
+import itertools
 import time
+
 
 def main(queue, args):
 
-    delay = args.get('delay', 0)
-
-    for i in range(int(args["limit"])):
-        queue.put(dict(i=i))
-        time.sleep(delay)
+    for i in itertools.count(start=1):
+        queue.put(dict(time=dict(tick=i)))
+        time.sleep(1)
 
 
 if __name__ == "__main__":
