@@ -21,6 +21,7 @@ from ansible_events.rule_types import (
     ActionContext,
 )
 from ansible_events.rules_parser import parse_hosts
+from ansible_events.exception import ShutdownException
 from ansible_events.collection import (
     has_source,
     split_collection_name,
@@ -188,6 +189,8 @@ async def call_action(
         except durable.engine.MessageObservedException as e:
             logger.info(f"MessageObservedException: {action_args}")
             result = dict(error=e)
+        except ShutdownException as e:
+            raise
         except Exception as e:
             logger.error(
                 f"Error calling {action}: {e}\n {traceback.format_exc()}"
@@ -277,3 +280,6 @@ async def run_rulesets(
             except durable.engine.MessageNotHandledException:
                 logger.info(f"MessageNotHandledException: {data}")
                 await event_log.put(dict(type="MessageNotHandled"))
+            except ShutdownException:
+                await event_log.put(dict(type="Shutdown"))
+                return

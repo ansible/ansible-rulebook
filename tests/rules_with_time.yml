@@ -1,0 +1,26 @@
+---
+- name: Demo rules with time
+  hosts: localhost
+  sources:
+    - tick:
+  rules:
+    - name: promote time.tick to current_time fact
+      condition: event.time.tick is defined
+      action:
+        assert_fact:
+          fact:
+            current_time: "{{event.time.tick}}"
+    - name: retract current_time fact
+      condition: fact.current_time is defined
+      action:
+        retract_fact:
+          fact:
+            current_time: "{{event.current_time}}"
+    - name: matches current_time fact before it is retracted since facts fire all matching rules
+      condition: fact.current_time is defined
+      action:
+        debug:
+    - name: shutdown after 5 ticks
+      condition: fact.current_time > 5
+      action:
+        shutdown:
