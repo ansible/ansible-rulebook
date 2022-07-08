@@ -146,12 +146,16 @@ async def call_action(
                 variables_copy[
                     "event"
                 ] = c.m._d  # event data is stored in c.m._d
+                variables_copy[
+                    "fact"
+                ] = c.m._d  # event data is stored in c.m._d
                 event = c.m._d  # event data is stored in c.m._d
                 if "meta" in event:
                     if "hosts" in event["meta"]:
                         hosts = parse_hosts(event["meta"]["hosts"])
             else:
                 variables_copy["events"] = c._m
+                variables_copy["facts"] = c._m
                 new_hosts = []
                 for event in variables_copy["events"]:
                     if "meta" in event:

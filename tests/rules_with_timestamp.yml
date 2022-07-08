@@ -1,5 +1,5 @@
 ---
-- name: Demo rules with time
+- name: Demo rules with timestamp
   hosts: localhost
   sources:
     - timestamp:
@@ -13,18 +13,18 @@
     - name: set the initial time
       condition:
         all:
-          - events.time << event.current_time is defined
+          - facts.time << fact.current_time is defined
           - event.initial_time is not defined
       action:
         assert_fact:
           fact:
-            initial_time: "{{events.time.current_time}}"
+            initial_time: "{{facts.time.current_time}}"
     - name: retract current_time fact
       condition: fact.current_time is defined
       action:
         retract_fact:
           fact:
-            current_time: "{{event.current_time}}"
+            current_time: "{{fact.current_time}}"
     - name: debug
       condition: fact.initial_time is defined
       action:
