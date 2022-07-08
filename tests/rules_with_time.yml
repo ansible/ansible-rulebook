@@ -21,6 +21,6 @@
       action:
         debug:
     - name: shutdown after 5 ticks
-      condition: fact.current_time > 5
+      condition: fact.current_time >= 5
       action:
         shutdown:
