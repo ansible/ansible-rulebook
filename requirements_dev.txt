@@ -1,20 +1,12 @@
+-r requirements_test.txt
+
 bump2version
-watchdog
-docopt
-psutil
-requests
-ansible
-ansible-core
-ansible-runner
 
 # Packaging / distribution
 twine
 build
 
 # Testing
-pytest
-pytest-asyncio
-pytest-timeout
 tox
 coverage
 

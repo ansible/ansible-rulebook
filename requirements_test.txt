@@ -1,0 +1,11 @@
+watchdog
+docopt
+psutil
+requests
+ansible
+ansible-core
+ansible-runner
+
+pytest
+pytest-asyncio
+pytest-timeout
