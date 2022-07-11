@@ -1,41 +1,19 @@
-import yaml
-import os
 import asyncio
-import janus
-import pytest
+import os
+from pprint import pprint
 from queue import Queue
 
-from pprint import pprint
+import janus
+import pytest
+import yaml
 
-from ansible_events.rules_parser import parse_rule_sets
 from ansible_events.engine import run_rulesets, start_source
 from ansible_events.messages import Shutdown
 from ansible_events.rule_types import EventSource, EventSourceFilter
+from ansible_events.rules_parser import parse_rule_sets
 from ansible_events.util import load_inventory
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-
-
-def test_start_source():
-    os.chdir(HERE)
-
-    queue = Queue()
-    start_source(
-        EventSource(
-            "range", "range", dict(limit=1), [EventSourceFilter("noop", {})]
-        ),
-        ["sources"],
-        dict(limit=1),
-        queue,
-    )
-    assert queue.get() == dict(i=0)
-
-
-@pytest.fixture
-def new_event_loop():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    return loop
 
 
 def load_rules(rules_file):
@@ -55,9 +33,23 @@ def load_rules(rules_file):
     return ruleset_queues, queue.sync_q, queue.async_q, event_log
 
 
-@pytest.mark.asyncio
-async def test_run_rulesets(new_event_loop):
+def test_start_source():
+    os.chdir(HERE)
 
+    queue = Queue()
+    start_source(
+        EventSource(
+            "range", "range", dict(limit=1), [EventSourceFilter("noop", {})]
+        ),
+        ["sources"],
+        dict(limit=1),
+        queue,
+    )
+    assert queue.get() == dict(i=0)
+
+
+@pytest.mark.asyncio
+async def test_run_rulesets():
     ruleset_queues, queue, aqueue, event_log = load_rules("test_rules.yml")
 
     queue.put(dict())
@@ -92,8 +84,7 @@ async def test_run_rulesets(new_event_loop):
 
 
 @pytest.mark.asyncio
-async def test_run_rules_with_assignment(new_event_loop):
-
+async def test_run_rules_with_assignment():
     ruleset_queues, queue, aqueue, event_log = load_rules(
         "rules_with_assignment.yml"
     )
@@ -117,8 +108,7 @@ async def test_run_rules_with_assignment(new_event_loop):
 
 
 @pytest.mark.asyncio
-async def test_run_rules_with_assignment2(new_event_loop):
-
+async def test_run_rules_with_assignment2():
     ruleset_queues, queue, aqueue, event_log = load_rules(
         "rules_with_assignment2.yml"
     )
@@ -142,8 +132,7 @@ async def test_run_rules_with_assignment2(new_event_loop):
 
 
 @pytest.mark.asyncio
-async def test_run_rules_simple(new_event_loop):
-
+async def test_run_rules_simple():
     ruleset_queues, queue, aqueue, event_log = load_rules("test_simple.yml")
 
     queue.put(dict(i=0))
@@ -171,8 +160,7 @@ async def test_run_rules_simple(new_event_loop):
 
 
 @pytest.mark.asyncio
-async def test_run_multiple_hosts(new_event_loop):
-
+async def test_run_multiple_hosts():
     ruleset_queues, queue, aqueue, event_log = load_rules(
         "test_rules_multiple_hosts.yml"
     )
@@ -219,8 +207,7 @@ async def test_run_multiple_hosts(new_event_loop):
 
 
 @pytest.mark.asyncio
-async def test_run_multiple_hosts2(new_event_loop):
-
+async def test_run_multiple_hosts2():
     ruleset_queues, queue, aqueue, event_log = load_rules(
         "test_rules_multiple_hosts2.yml"
     )
@@ -256,8 +243,7 @@ async def test_run_multiple_hosts2(new_event_loop):
 
 
 @pytest.mark.asyncio
-async def test_run_multiple_hosts3(new_event_loop):
-
+async def test_run_multiple_hosts3():
     ruleset_queues, queue, aqueue, event_log = load_rules(
         "test_rules_multiple_hosts3.yml"
     )
@@ -294,8 +280,7 @@ async def test_run_multiple_hosts3(new_event_loop):
 
 
 @pytest.mark.asyncio
-async def test_filters(new_event_loop):
-
+async def test_filters():
     ruleset_queues, queue, aqueue, event_log = load_rules("test_filters.yml")
 
     queue.put(dict(i=0))
@@ -323,8 +308,7 @@ async def test_filters(new_event_loop):
 
 
 @pytest.mark.asyncio
-async def test_run_rulesets_on_hosts(new_event_loop):
-
+async def test_run_rulesets_on_hosts():
     ruleset_queues, queue, aqueue, event_log = load_rules(
         "test_host_rules.yml"
     )
