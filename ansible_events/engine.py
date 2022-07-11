@@ -1,36 +1,34 @@
+import asyncio
+import logging
 import os
 import runpy
-import asyncio
-import durable.lang
 import traceback
-import logging
-from queue import Queue
-
-
 from pprint import pformat
+from queue import Queue
+from typing import Dict, List, Optional, cast
+
+import durable.lang
 
 import ansible_events.rule_generator as rule_generator
-from ansible_events.durability import provide_durability
-from ansible_events.messages import Shutdown
-from ansible_events.util import substitute_variables, json_count
 from ansible_events.builtin import actions as builtin_actions
+from ansible_events.collection import (
+    find_source,
+    find_source_filter,
+    has_source,
+    has_source_filter,
+    split_collection_name,
+)
+from ansible_events.durability import provide_durability
+from ansible_events.exception import ShutdownException
+from ansible_events.messages import Shutdown
 from ansible_events.rule_types import (
+    ActionContext,
     EventSource,
     RuleSetQueue,
     RuleSetQueuePlan,
-    ActionContext,
 )
 from ansible_events.rules_parser import parse_hosts
-from ansible_events.exception import ShutdownException
-from ansible_events.collection import (
-    has_source,
-    split_collection_name,
-    find_source,
-    has_source_filter,
-    find_source_filter,
-)
-
-from typing import Optional, Dict, List, cast
+from ansible_events.util import json_count, substitute_variables
 
 
 class FilteredQueue:

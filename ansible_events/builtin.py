@@ -1,27 +1,26 @@
-import durable.lang
-
-from typing import Dict, List, Callable
 import asyncio
 import concurrent.futures
-import ansible_runner
-import shutil
-import tempfile
-import os
-import yaml
 import glob
 import json
-import dpath.util
-import sys
 import logging
+import os
+import shutil
+import sys
+import tempfile
 import uuid
 from functools import partial
 from pprint import pprint
-from .util import get_horizontal_rule
-from .collection import split_collection_name, has_playbook, find_playbook
+from typing import Callable, Dict, List, Optional
+
+import ansible_runner
+import dpath.util
+import durable.lang
+import yaml
+
+from .collection import find_playbook, has_playbook, split_collection_name
 from .conf import settings
 from .exception import ShutdownException
-
-from typing import Optional
+from .util import get_horizontal_rule
 
 
 async def none(
@@ -211,6 +210,7 @@ async def shutdown(
     ruleset: str,
 ):
     raise ShutdownException()
+
 
 actions: Dict[str, Callable] = dict(
     none=none,

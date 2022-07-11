@@ -1,12 +1,10 @@
+import os
+from pprint import pprint
+from typing import Any, Dict, List, Union
+
+import dpath.util
 import jinja2
 import yaml
-import os
-import dpath.util
-from pprint import pprint
-
-from typing import Dict, Union, List
-
-from typing import Any
 
 
 def get_horizontal_rule(character):

@@ -1,16 +1,16 @@
-import yaml
-import os
 import asyncio
-import janus
-import pytest
+import os
+from pprint import pprint
 from queue import Queue
 
-from pprint import pprint
+import janus
+import pytest
+import yaml
 
-from ansible_events.rules_parser import parse_rule_sets
 from ansible_events.engine import run_rulesets, start_source
 from ansible_events.messages import Shutdown
 from ansible_events.rule_types import EventSource, EventSourceFilter
+from ansible_events.rules_parser import parse_rule_sets
 from ansible_events.util import load_inventory
 
 HERE = os.path.dirname(os.path.abspath(__file__))

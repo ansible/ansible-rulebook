@@ -1,7 +1,8 @@
-import pytest
 import os
 import threading
 from queue import Queue
+
+import pytest
 
 from ansible_events.engine import start_source
 from ansible_events.rule_types import EventSource, EventSourceFilter

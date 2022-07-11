@@ -1,10 +1,9 @@
-import ansible_events.rule_types as rt
+from typing import Any, Dict, List
 
+import ansible_events.rule_types as rt
 from ansible_events.condition_parser import (
     parse_condition as parse_condition_value,
 )
-
-from typing import Dict, List, Any
 
 
 def parse_hosts(hosts):

@@ -1,8 +1,9 @@
 import os
 import shutil
 import subprocess
-import yaml
 from functools import lru_cache
+
+import yaml
 
 ANSIBLE_GALAXY = shutil.which("ansible-galaxy")
 

@@ -1,6 +1,7 @@
+import os
+
 from watchdog.events import RegexMatchingEventHandler
 from watchdog.observers import Observer
-import os
 
 
 def main(queue, args):

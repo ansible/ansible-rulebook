@@ -1,13 +1,14 @@
-from durable.lang import m, c, assert_fact, ruleset, rule, when_all, post
-import durable.lang
-import yaml
-import os
 import asyncio
-import pytest
+import os
 from queue import Queue
 
-from ansible_events.rules_parser import parse_rule_sets
+import durable.lang
+import pytest
+import yaml
+from durable.lang import assert_fact, c, m, post, rule, ruleset, when_all
+
 from ansible_events.rule_generator import generate_rulesets
+from ansible_events.rules_parser import parse_rule_sets
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -180,15 +181,9 @@ async def test_generate_rules_multiple_conditions_any():
 
     print(durable_rulesets[0][0].define())
 
-    post(
-        "Demo rules multiple conditions any",
-        {"i": 0}
-    )
+    post("Demo rules multiple conditions any", {"i": 0})
     assert ruleset_queue_plans[0][2].get_nowait()[1] == "debug"
-    post(
-        "Demo rules multiple conditions any",
-        {"i": 1}
-    )
+    post("Demo rules multiple conditions any", {"i": 1})
     assert ruleset_queue_plans[0][2].get_nowait()[1] == "debug"
 
 
@@ -211,15 +206,9 @@ async def test_generate_rules_multiple_conditions_all():
 
     print(durable_rulesets[0][0].define())
 
-    post(
-        "Demo rules multiple conditions all",
-        {"i": 0}
-    )
+    post("Demo rules multiple conditions all", {"i": 0})
     assert ruleset_queue_plans[0][2].qsize() == 0
-    post(
-        "Demo rules multiple conditions all",
-        {"i": 1}
-    )
+    post("Demo rules multiple conditions all", {"i": 1})
     assert ruleset_queue_plans[0][2].qsize() == 1
     assert ruleset_queue_plans[0][2].get_nowait()[1] == "debug"
 
@@ -243,19 +232,10 @@ async def test_generate_rules_multiple_conditions_all_3():
 
     print(durable_rulesets[0][0].define())
 
-    post(
-        "Demo rules multiple conditions reference assignment",
-        {"i": 0}
-    )
+    post("Demo rules multiple conditions reference assignment", {"i": 0})
     assert ruleset_queue_plans[0][2].qsize() == 0
-    post(
-        "Demo rules multiple conditions reference assignment",
-        {"i": 1}
-    )
+    post("Demo rules multiple conditions reference assignment", {"i": 1})
     assert ruleset_queue_plans[0][2].qsize() == 0
-    post(
-        "Demo rules multiple conditions reference assignment",
-        {"i": 2}
-    )
+    post("Demo rules multiple conditions reference assignment", {"i": 2})
     assert ruleset_queue_plans[0][2].qsize() == 1
     assert ruleset_queue_plans[0][2].get_nowait()[1] == "debug"

@@ -1,9 +1,6 @@
-from durable.lang import m, c, none
+from durable.lang import c, m, none
 
-from ansible_events.condition_parser import (
-    parse_condition,
-    condition,
-)
+from ansible_events.condition_parser import condition, parse_condition
 from ansible_events.rule_generator import visit_condition
 
 

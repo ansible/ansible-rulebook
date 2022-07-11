@@ -13,10 +13,11 @@ Options:
     --local
     --python=<p>
 """
-from docopt import docopt
 import logging
 import sys
+
 import yaml
+from docopt import docopt
 
 logger = logging.getLogger("generate_inventory")
 

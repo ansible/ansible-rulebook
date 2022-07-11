@@ -1,5 +1,3 @@
-
-
 class ShutdownException(Exception):
 
     pass

@@ -12,12 +12,13 @@ Options:
     --no-header
     --only-header
 """
-from docopt import docopt
-import logging
-import sys
 import csv
+import logging
 import subprocess
+import sys
 import time
+
+from docopt import docopt
 
 logger = logging.getLogger("perf_test")
 

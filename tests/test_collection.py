@@ -1,8 +1,8 @@
 from ansible_events.collection import (
     find_collection,
-    split_collection_name,
     find_source,
     load_rules,
+    split_collection_name,
 )
 
 

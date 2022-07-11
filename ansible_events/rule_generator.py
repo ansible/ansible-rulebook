@@ -1,23 +1,25 @@
-from durable.lang import ruleset, rule, m, c, none
 import asyncio
 import logging
+from typing import Callable, Dict, List
+
+from durable.lang import c, m, none, rule, ruleset
+
 from ansible_events.condition_types import (
     Boolean,
-    Identifier,
-    String,
-    OperatorExpression,
-    Integer,
     Condition,
     ConditionTypes,
     ExistsExpression,
+    Identifier,
+    Integer,
+    OperatorExpression,
+    String,
 )
-
-from ansible_events.rule_types import RuleSetQueuePlan, ActionContext
-from ansible_events.rule_types import Condition as RuleCondition
+from ansible_events.rule_types import (
+    ActionContext,
+    Condition as RuleCondition,
+    RuleSetQueuePlan,
+)
 from ansible_events.util import substitute_variables
-
-
-from typing import Dict, List, Callable
 
 
 def add_to_plan(
@@ -114,9 +116,11 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
         elif parsed_condition.operator == "is not":
             if isinstance(parsed_condition.right, Identifier):
                 if parsed_condition.right.value == "defined":
-                    return none(visit_condition(
-                        parsed_condition.left, variables
-                    ).__pos__())
+                    return none(
+                        visit_condition(
+                            parsed_condition.left, variables
+                        ).__pos__()
+                    )
         elif parsed_condition.operator == "<<":
             return visit_condition(
                 parsed_condition.left, variables
