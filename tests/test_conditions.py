@@ -202,3 +202,13 @@ def test_parse_condition():
         visit_condition(result, {}).define()
         == (m.process_check.pid == c.process_pid.pid).define()
     )
+
+    result = parse_condition(
+        "((event.x == 5) or (event.y == 6)) or (event.z == 7)"
+    )
+    print(result)
+    print(visit_condition(result, {}).define())
+    assert (
+        visit_condition(result, {}).define()
+        == (((m.x == 5) | (m.y == 6)) | (m.z == 7)).define()
+    )

@@ -83,6 +83,10 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
             return visit_condition(parsed_condition.left, variables).__and__(
                 visit_condition(parsed_condition.right, variables)
             )
+        elif parsed_condition.operator == "or":
+            return visit_condition(parsed_condition.left, variables).__or__(
+                visit_condition(parsed_condition.right, variables)
+            )
         elif parsed_condition.operator == ">":
             return visit_condition(parsed_condition.left, variables).__gt__(
                 visit_condition(parsed_condition.right, variables)

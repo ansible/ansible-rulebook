@@ -79,6 +79,7 @@ condition = infix_notation(
         ("is not", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
         ("is", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
         ("and", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
+        ("or", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
         ("<<", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
     ],
 ).add_parse_action(lambda toks: Condition(toks[0]))
