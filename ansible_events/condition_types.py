@@ -1,4 +1,4 @@
-from typing import NamedTuple, Union, List
+from typing import List, NamedTuple, Union
 
 
 class Integer(NamedTuple):

@@ -1,27 +1,26 @@
 from pyparsing import (
-    pyparsing_common,
-    infix_notation,
+    Combine,
+    Literal,
     OpAssoc,
-    one_of,
     ParserElement,
     QuotedString,
     ZeroOrMore,
-    Combine,
-    Literal,
+    infix_notation,
+    one_of,
+    pyparsing_common,
 )
 
 ParserElement.enable_packrat()
 
 from ansible_events.condition_types import (  # noqa: E402
-    Identifier,
-    String,
-    OperatorExpression,
-    Integer,
+    Boolean,
     Condition,
     ExistsExpression,
-    Boolean,
+    Identifier,
+    Integer,
+    OperatorExpression,
+    String,
 )
-
 
 integer = pyparsing_common.signed_integer.copy().add_parse_action(
     lambda toks: Integer(toks[0])

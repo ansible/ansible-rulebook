@@ -1,6 +1,7 @@
-import websockets
 import json
 import logging
+
+import websockets
 
 
 async def send_event_log_to_websocket(event_log, websocket_address):

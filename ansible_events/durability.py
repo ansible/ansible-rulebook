@@ -1,6 +1,7 @@
-import redis
 import datetime
 import logging
+
+import redis
 
 logger = logging.getLogger("durability")
 

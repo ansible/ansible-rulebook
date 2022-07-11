@@ -19,27 +19,29 @@ Options:
     --websocket-address=<w>     Connect the event log to a websocket
     --id=<i>                    Identifier
 """
+import argparse
 import asyncio
 import concurrent.futures
-import argparse
-import sys
-import os
-import yaml
 import logging
+import os
+import sys
+from typing import Dict, List
+
 import janus
+import yaml
 
 import ansible_events
-from ansible_events.conf import settings
-
 import ansible_events.rules_parser as rules_parser
-from ansible_events.engine import start_source, run_rulesets
+from ansible_events.collection import (
+    has_rules,
+    load_rules as collection_load_rules,
+    split_collection_name,
+)
+from ansible_events.conf import settings
+from ansible_events.engine import run_rulesets, start_source
 from ansible_events.rule_types import RuleSet
 from ansible_events.util import load_inventory
-from ansible_events.collection import has_rules, split_collection_name
-from ansible_events.collection import load_rules as collection_load_rules
 from ansible_events.websocket import send_event_log_to_websocket
-
-from typing import Dict, List
 
 
 def load_vars(parsed_args) -> Dict[str, str]:

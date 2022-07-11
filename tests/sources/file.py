@@ -1,7 +1,8 @@
+import os
+
+import yaml
 from watchdog.events import RegexMatchingEventHandler
 from watchdog.observers import Observer
-import os
-import yaml
 
 
 def send_facts(queue, filename):

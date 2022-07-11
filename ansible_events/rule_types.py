@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import NamedTuple, Union, List, Any, Dict
-import ansible_events.condition_types as ct
-
 import asyncio
 from queue import Queue
+from typing import Any, Dict, List, NamedTuple, Union
+
+import ansible_events.condition_types as ct
 
 
 class EventSourceFilter(NamedTuple):
