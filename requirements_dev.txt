@@ -21,6 +21,7 @@ coverage
 # Linters
 flake8
 black
+isort
 
 # Docs
 Sphinx
