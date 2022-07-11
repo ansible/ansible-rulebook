@@ -193,7 +193,7 @@ async def call_action(
         except durable.engine.MessageObservedException as e:
             logger.info(f"MessageObservedException: {action_args}")
             result = dict(error=e)
-        except ShutdownException as e:
+        except ShutdownException:
             raise
         except Exception as e:
             logger.error(

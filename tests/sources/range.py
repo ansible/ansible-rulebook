@@ -1,9 +1,9 @@
-
 import time
+
 
 def main(queue, args):
 
-    delay = args.get('delay', 0)
+    delay = args.get("delay", 0)
 
     for i in range(int(args["limit"])):
         queue.put(dict(i=i))
