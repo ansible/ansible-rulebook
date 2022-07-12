@@ -68,14 +68,20 @@ async def test_run_rulesets():
     )
 
     assert event_log.get_nowait()["type"] == "EmptyEvent", "0"
+    assert event_log.get_nowait()["type"] == "Action", "0.1"
+    assert event_log.get_nowait()["type"] == "Action", "0.2"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
     assert event_log.get_nowait()["type"] == "Job", "1.0"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.2"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.3"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.4"
+    assert event_log.get_nowait()["type"] == "Action", "1.5"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
+    assert event_log.get_nowait()["type"] == "Action", "2.1"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
+    assert event_log.get_nowait()["type"] == "Action", "3.1"
+    assert event_log.get_nowait()["type"] == "Action", "3.2"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "4"
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '5'
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "6"
@@ -98,7 +104,8 @@ async def test_run_rules_with_assignment():
         dict(),
     )
 
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "0"
+    assert event_log.get_nowait()["type"] == "Action", "0"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '1'
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
     assert event_log.get_nowait()["type"] == "Shutdown", "3"
@@ -120,7 +127,8 @@ async def test_run_rules_with_assignment2():
         dict(),
     )
 
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "0"
+    assert event_log.get_nowait()["type"] == "Action", "0"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '1'
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
     assert event_log.get_nowait()["type"] == "Shutdown", "3"
@@ -143,13 +151,16 @@ async def test_run_rules_simple():
         dict(),
     )
 
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "0"
+    assert event_log.get_nowait()["type"] == "Action", "0"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "0.1"
+    assert event_log.get_nowait()["type"] == "Action", "0.2"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
     assert event_log.get_nowait()["type"] == "Job", "1.0"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.2"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.3"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.4"
+    assert event_log.get_nowait()["type"] == "Action", "1.5"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
     assert event_log.get_nowait()["type"] == "Shutdown", "3"
     assert event_log.empty()
@@ -178,6 +189,8 @@ async def test_run_multiple_hosts():
 
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '0'
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
+    assert event_log.get_nowait()["type"] == "Action", "1.0.1"
+    assert event_log.get_nowait()["type"] == "Action", "1.0.2"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1.1"
     assert event_log.get_nowait()["type"] == "Job", "1.1.0"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1.1"
@@ -193,8 +206,12 @@ async def test_run_multiple_hosts():
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1.11"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1.12"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1.13"
+    assert event_log.get_nowait()["type"] == "Action", "1.1.14"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1.2"
+    assert event_log.get_nowait()["type"] == "Action", "1.2.1"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1.3"
+    assert event_log.get_nowait()["type"] == "Action", "1.3.1"
+    assert event_log.get_nowait()["type"] == "Action", "1.3.2"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1.4"
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '2'
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
@@ -225,6 +242,7 @@ async def test_run_multiple_hosts2():
 
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '0'
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
+    assert event_log.get_nowait()["type"] == "Action", "1.1"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '2.5'
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
@@ -262,6 +280,7 @@ async def test_run_multiple_hosts3():
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '0'
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '2'
+    assert event_log.get_nowait()["type"] == "Action", "2"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '4'
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "5"
@@ -291,13 +310,16 @@ async def test_filters():
         dict(),
     )
 
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "0"
+    assert event_log.get_nowait()["type"] == "Action", "0"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "0.1"
+    assert event_log.get_nowait()["type"] == "Action", "0.2"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
     assert event_log.get_nowait()["type"] == "Job", "1.0"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.2"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.3"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.4"
+    assert event_log.get_nowait()["type"] == "Action", "1.5"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
     assert event_log.get_nowait()["type"] == "Shutdown", "3"
     assert event_log.empty()
@@ -323,12 +345,18 @@ async def test_run_rulesets_on_hosts():
     )
 
     assert event_log.get_nowait()["type"] == "EmptyEvent", "0"
+    assert event_log.get_nowait()["type"] == "Action", "0.1"
+    assert event_log.get_nowait()["type"] == "Action", "0.2"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
     assert event_log.get_nowait()["type"] == "Job", "1.0"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.2"
+    assert event_log.get_nowait()["type"] == "Action", "1.3"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
+    assert event_log.get_nowait()["type"] == "Action", "2.1"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
+    assert event_log.get_nowait()["type"] == "Action", "3.1"
+    assert event_log.get_nowait()["type"] == "Action", "3.2"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "4"
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '5'
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "6"

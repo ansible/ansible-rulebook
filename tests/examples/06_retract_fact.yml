@@ -1,0 +1,25 @@
+---
+- name: 06 Retract Fact
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name:
+      condition: event.i == 1
+      action:
+        assert_fact:
+          fact:
+            msg: hello world
+    - name:
+      condition: event.msg == "hello world"
+      action:
+        retract_fact:
+          fact:
+            msg: hello world
+    - name:
+      condition: event.msg is not defined
+      action:
+        debug:
+

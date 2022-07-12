@@ -1,0 +1,16 @@
+---
+- name: 15 multiple events all
+  hosts: all
+  sources:
+    - nested:
+        i_limit: 5
+        j_limit: 5
+  rules:
+    - name:
+      condition:
+        all:
+          - event.nested.i == 1
+          - event.nested.j == 1
+      action:
+        debug:
+

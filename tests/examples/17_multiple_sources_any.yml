@@ -1,0 +1,17 @@
+---
+- name: 17 multiple sources
+  hosts: all
+  sources:
+    - range:
+        limit: 5
+    - range2:
+        limit: 5
+  rules:
+    - name:
+      condition:
+        any:
+          - event.i == 1
+          - event.range2.i == 1
+      action:
+        debug:
+

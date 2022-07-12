@@ -31,10 +31,10 @@ async def none(
     facts: Dict,
     ruleset: str,
 ):
-    pass
+    await event_log.put(dict(type="Action", action="noop"))
 
 
-async def debug(**kwargs):
+async def debug(event_log, **kwargs):
     print(get_horizontal_rule("="))
     print("context:")
     pprint(durable.lang.c.__dict__)
@@ -46,6 +46,7 @@ async def debug(**kwargs):
     pprint(kwargs)
     print(get_horizontal_rule("="))
     sys.stdout.flush()
+    await event_log.put(dict(type="Action", action="debug"))
 
 
 async def print_event(
@@ -66,6 +67,7 @@ async def print_event(
     else:
         print_fn(variables["event"])
     sys.stdout.flush()
+    await event_log.put(dict(type="Action", action="print_event"))
 
 
 async def assert_fact(
@@ -80,6 +82,7 @@ async def assert_fact(
     logger = logging.getLogger()
     logger.debug(f"assert_fact {ruleset} {fact}")
     durable.lang.assert_fact(ruleset, fact)
+    await event_log.put(dict(type="Action", action="assert_fact"))
 
 
 async def retract_fact(
@@ -92,6 +95,7 @@ async def retract_fact(
     fact: Dict,
 ):
     durable.lang.retract_fact(ruleset, fact)
+    await event_log.put(dict(type="Action", action="retract_fact"))
 
 
 async def post_event(
@@ -104,6 +108,7 @@ async def post_event(
     event: Dict,
 ):
     durable.lang.post(ruleset, event)
+    await event_log.put(dict(type="Action", action="post_event"))
 
 
 async def run_playbook(
@@ -143,21 +148,22 @@ async def run_playbook(
     os.mkdir(os.path.join(temp, "project"))
 
     if os.path.exists(name):
-        shutil.copy(name, os.path.join(temp, "project", name))
+        playbook_name = os.path.basename(name)
+        shutil.copy(name, os.path.join(temp, "project", playbook_name))
+        if copy_files:
+            shutil.copytree(
+                os.path.dirname(os.path.abspath(name)),
+                os.path.join(temp, "project"),
+                dirs_exist_ok=True,
+            )
     elif has_playbook(*split_collection_name(name)):
+        playbook_name = name
         shutil.copy(
             find_playbook(*split_collection_name(name)),
             os.path.join(temp, "project", name),
         )
     else:
         raise Exception(f"Could not find a playbook for {name}")
-
-    if copy_files:
-        shutil.copytree(
-            os.path.dirname(os.path.abspath(name)),
-            os.path.join(temp, "project"),
-            dirs_exist_ok=True,
-        )
 
     host_limit = ",".join(hosts)
 
@@ -179,7 +185,7 @@ async def run_playbook(
         task_pool,
         partial(
             ansible_runner.run,
-            playbook=name,
+            playbook=playbook_name,
             private_data_dir=temp,
             limit=host_limit,
             verbosity=verbosity,
@@ -199,6 +205,7 @@ async def run_playbook(
                 durable.lang.assert_fact(ruleset, fact)
             if post_events:
                 durable.lang.post(ruleset, fact)
+    await event_log.put(dict(type="Action", action="run_playbook"))
 
 
 async def shutdown(
@@ -209,6 +216,7 @@ async def shutdown(
     facts: Dict,
     ruleset: str,
 ):
+    await event_log.put(dict(type="Action", action="shutdown"))
     raise ShutdownException()
 
 

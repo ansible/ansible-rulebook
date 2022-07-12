@@ -1,0 +1,13 @@
+---
+- name: A playbook
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - debug:
+        msg: 'Hello world'
+    - debug:
+        msg: '{{event}}'
+    - set_fact:
+        msg: 'hello world'
+        cacheable: yes
+...
