@@ -149,6 +149,7 @@ async def main(args):
     tasks, ruleset_queues = spawn_sources(
         rulesets, variables, [parsed_args.source_dir]
     )
+    num_sources = len(tasks)
 
     logger.info("Starting rules")
 
@@ -164,6 +165,7 @@ async def main(args):
     await run_rulesets(
         event_log,
         ruleset_queues,
+        num_sources,
         variables,
         inventory,
         parsed_args.redis_host_name,

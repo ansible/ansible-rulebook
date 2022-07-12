@@ -223,6 +223,7 @@ async def call_action(
 async def run_rulesets(
     event_log: asyncio.Queue,
     ruleset_queues: List[RuleSetQueue],
+    num_sources: int,
     variables: Dict,
     inventory: Dict,
     redis_host_name: Optional[str] = None,
@@ -233,6 +234,7 @@ async def run_rulesets(
 
     logger.info("run_ruleset")
 
+    finished_sources = 0
     if redis_host_name and redis_port:
         provide_durability(
             durable.lang.get_host(), redis_host_name, redis_port
@@ -267,8 +269,10 @@ async def run_rulesets(
             data = queue_reader.result()
             json_count(data)
             if isinstance(data, Shutdown):
-                await event_log.put(dict(type="Shutdown"))
-                return
+                finished_sources += 1
+                if finished_sources == num_sources:
+                    await event_log.put(dict(type="Shutdown"))
+                    return
             logger.info(str(data))
             if not data:
                 await event_log.put(dict(type="EmptyEvent"))
@@ -299,5 +303,7 @@ async def run_rulesets(
                 logger.info(f"MessageNotHandledException: {data}")
                 await event_log.put(dict(type="MessageNotHandled"))
             except ShutdownException:
-                await event_log.put(dict(type="Shutdown"))
-                return
+                finished_sources += 1
+                if finished_sources == num_sources:
+                    await event_log.put(dict(type="Shutdown"))
+                    return

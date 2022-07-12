@@ -8,7 +8,7 @@
         limit: 5
   rules:
     - name:
-      condition: event.range2.i == 2
+      condition: event.i == 2
       action:
         run_playbook:
           name: hello_playbook.yml

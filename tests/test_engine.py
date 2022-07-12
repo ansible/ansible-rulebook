@@ -63,6 +63,7 @@ async def test_run_rulesets():
     await run_rulesets(
         event_log,
         ruleset_queues,
+        1,
         dict(),
         dict(),
     )
@@ -94,6 +95,7 @@ async def test_run_rules_with_assignment():
     await run_rulesets(
         event_log,
         ruleset_queues,
+        1,
         dict(),
         dict(),
     )
@@ -116,6 +118,7 @@ async def test_run_rules_with_assignment2():
     await run_rulesets(
         event_log,
         ruleset_queues,
+        1,
         dict(),
         dict(),
     )
@@ -139,6 +142,7 @@ async def test_run_rules_simple():
     await run_rulesets(
         event_log,
         ruleset_queues,
+        1,
         dict(),
         dict(),
     )
@@ -172,6 +176,7 @@ async def test_run_multiple_hosts():
     await run_rulesets(
         event_log,
         ruleset_queues,
+        1,
         dict(),
         load_inventory("inventory1.yml"),
     )
@@ -219,6 +224,7 @@ async def test_run_multiple_hosts2():
     await run_rulesets(
         event_log,
         ruleset_queues,
+        1,
         dict(),
         load_inventory("inventory1.yml"),
     )
@@ -255,6 +261,7 @@ async def test_run_multiple_hosts3():
     await run_rulesets(
         event_log,
         ruleset_queues,
+        1,
         dict(),
         load_inventory("inventory.yml"),
     )
@@ -287,6 +294,7 @@ async def test_filters():
     await run_rulesets(
         event_log,
         ruleset_queues,
+        1,
         dict(),
         dict(),
     )
@@ -318,6 +326,7 @@ async def test_run_rulesets_on_hosts():
     await run_rulesets(
         event_log,
         ruleset_queues,
+        1,
         dict(),
         dict(),
     )
@@ -333,4 +342,52 @@ async def test_run_rulesets_on_hosts():
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '5'
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "6"
     assert event_log.get_nowait()["type"] == "Shutdown", "7"
+    assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_run_rules_with_multiple_sources():
+
+    ruleset_queues, queue, event_log = load_rules("test_multiple_sources.yml")
+
+    queue.put_nowait(dict(range2=dict(i=0)))
+    queue.put_nowait(dict(range2=dict(i=1)))
+    queue.put_nowait(dict(i=0))
+    queue.put_nowait(dict(i=1))
+    queue.put_nowait(dict(range2=dict(i=2)))
+    queue.put_nowait(dict(range2=dict(i=3)))
+    queue.put_nowait(dict(range2=dict(i=4)))
+    queue.put_nowait(Shutdown())
+    queue.put_nowait(dict(i=2))
+    queue.put_nowait(dict(i=3))
+    queue.put_nowait(dict(i=4))
+    queue.put_nowait(dict(i=5))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        2,
+        dict(),
+        dict(),
+    )
+
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "0"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "4"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "5"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "6"
+    assert event_log.get_nowait()["type"] == "EmptyEvent", "7"
+    assert event_log.get_nowait()["type"] == "Job", "8"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "9"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "10"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "11"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "12"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "13"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "14"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "15"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "16"
+    assert event_log.get_nowait()["type"] == "Shutdown", "17"
     assert event_log.empty()
