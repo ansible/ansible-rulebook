@@ -21,13 +21,11 @@ Options:
 """
 import argparse
 import asyncio
-import concurrent.futures
 import logging
 import os
 import sys
-from typing import Dict, List
+from typing import Any, Dict, List, Tuple
 
-import janus
 import yaml
 
 import ansible_events
@@ -39,9 +37,11 @@ from ansible_events.collection import (
 )
 from ansible_events.conf import settings
 from ansible_events.engine import run_rulesets, start_source
-from ansible_events.rule_types import RuleSet
+from ansible_events.rule_types import RuleSet, RuleSetQueue
 from ansible_events.util import load_inventory
 from ansible_events.websocket import send_event_log_to_websocket
+
+logger = logging.getLogger("ansible_events")
 
 
 def load_vars(parsed_args) -> Dict[str, str]:
@@ -63,7 +63,6 @@ def load_vars(parsed_args) -> Dict[str, str]:
 
 
 def load_rules(parsed_args) -> List[RuleSet]:
-    logger = logging.getLogger()
     if not parsed_args.rules:
         logger.debug("Loading no rules")
         return []
@@ -78,6 +77,30 @@ def load_rules(parsed_args) -> List[RuleSet]:
         )
     else:
         raise Exception(f"Could not find ruleset {parsed_args.rules}")
+
+
+def spawn_sources(
+    rulesets: List[RuleSet],
+    variables: Dict[str, Any],
+    source_dirs: List[str],
+) -> Tuple[List[asyncio.Task], List[RuleSetQueue]]:
+    logger.info("Starting sources")
+    tasks = []
+    ruleset_queues = []
+    for ruleset in rulesets:
+        source_queue = asyncio.Queue()
+        for source in ruleset.sources:
+            task = asyncio.create_task(
+                start_source(
+                    source,
+                    source_dirs,
+                    variables,
+                    source_queue,
+                )
+            )
+            tasks.append(task)
+        ruleset_queues.append(RuleSetQueue(ruleset, source_queue))
+    return tasks, ruleset_queues
 
 
 def get_parser():
@@ -107,7 +130,6 @@ async def main(args):
         print(ansible_events.__version__)
         print(settings.identifier)
         return 0
-    logger = logging.getLogger()
     if parsed_args.debug:
         logging.basicConfig(level=logging.DEBUG)
     elif parsed_args.verbose:
@@ -121,33 +143,12 @@ async def main(args):
     else:
         inventory = {}
 
-    tasks = []
-    ruleset_queues = []
-
     event_log: asyncio.Queue = asyncio.Queue()
 
-    loop = asyncio.get_running_loop()
-
-    source_pool = concurrent.futures.ThreadPoolExecutor()
-
     logger.info("Starting sources")
-
-    for ruleset in rulesets:
-        sources = ruleset.sources
-        source_queue = janus.Queue()
-
-        for source in sources:
-            tasks.append(
-                loop.run_in_executor(
-                    source_pool,
-                    start_source,
-                    source,
-                    [parsed_args.source_dir],
-                    variables,
-                    source_queue.sync_q,
-                )
-            )
-        ruleset_queues.append((ruleset, source_queue.async_q))
+    tasks, ruleset_queues = spawn_sources(
+        rulesets, variables, [parsed_args.source_dir]
+    )
 
     logger.info("Starting rules")
 
@@ -168,6 +169,11 @@ async def main(args):
         parsed_args.redis_host_name,
         parsed_args.redis_port,
     )
+
+    logger.info("Cancelling event source tasks")
+    for task in tasks:
+        task.cancel()
+    await asyncio.gather(*tasks)
 
     logger.info("Main complete")
     await event_log.put(dict(type="Exit"))
