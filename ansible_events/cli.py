@@ -183,7 +183,6 @@ async def main(args):
 
 def entry_point() -> None:
     asyncio.run(main(sys.argv[1:]))
-    print("asyncio.run exit")
 
 
 if __name__ == "__main__":

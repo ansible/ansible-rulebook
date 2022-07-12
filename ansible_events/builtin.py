@@ -101,9 +101,9 @@ async def post_event(
     variables: Dict,
     facts: Dict,
     ruleset: str,
-    fact: Dict,
+    event: Dict,
 ):
-    durable.lang.post(ruleset, fact)
+    durable.lang.post(ruleset, event)
 
 
 async def run_playbook(

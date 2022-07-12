@@ -30,7 +30,7 @@
       action:
         post_event:
           ruleset: Test host rules
-          fact:
+          event:
             j: 4
     - name:
       condition: +event.j
