@@ -4,8 +4,7 @@ import os
 import runpy
 import traceback
 from pprint import pformat
-from queue import Queue
-from typing import Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
 import durable.lang
 
@@ -32,22 +31,22 @@ from ansible_events.util import json_count, substitute_variables
 
 
 class FilteredQueue:
-    def __init__(self, filters, queue):
+    def __init__(self, filters, queue: asyncio.Queue):
         self.filters = filters
         self.queue = queue
 
-    def put(self, data):
+    async def put(self, data):
         for f, kwargs in self.filters:
             kwargs = kwargs or {}
             data = f(data, **kwargs)
-        self.queue.put(data)
+        await self.queue.put(data)
 
 
-def start_source(
+async def start_source(
     source: EventSource,
     source_dirs: List[str],
-    variables: Dict,
-    queue: Queue,
+    variables: Dict[str, Any],
+    queue: asyncio.Queue,
 ) -> None:
 
     logger = logging.getLogger()
@@ -112,14 +111,31 @@ def start_source(
             for k, v in source.source_args.items()
         }
         fqueue = FilteredQueue(source_filters, queue)
-        logger.info(f"calling main in {source.source_name}")
-        module["main"](fqueue, args)
+        logger.info(f"Calling main in {source.source_name}")
+
+        try:
+            entrypoint = module["main"]
+        except KeyError:
+            # FIXME(cutwater): Replace with custom exception class
+            raise Exception(
+                "Entrypoint missing. Source module must have function 'main'."
+            )
+
+        # NOTE(cutwater): This check may be unnecessary.
+        if not asyncio.iscoroutinefunction(entrypoint):
+            # FIXME(cutwater): Replace with custom exception class
+            raise Exception("Entrypoint is not a coroutine function.")
+
+        await entrypoint(fqueue, args)
+
     except KeyboardInterrupt:
         pass
+    except asyncio.CancelledError:
+        logger.info("Task cancelled")
     except BaseException as e:
         logger.error(f"Source error {e}")
     finally:
-        queue.put(Shutdown())
+        await queue.put(Shutdown())
 
 
 async def call_action(
