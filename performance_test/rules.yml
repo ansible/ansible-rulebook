@@ -27,7 +27,7 @@
       condition: event.i == 4
       action:
         post_event:
-          fact:
+          event:
             j: 4
     - name:
       condition: +event.j

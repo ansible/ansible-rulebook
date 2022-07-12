@@ -37,7 +37,7 @@
       action:
         post_event:
           ruleset: Test rules4
-          fact:
+          event:
             j: 4
 - name: Test rules4 Staging
   hosts: all
@@ -70,5 +70,5 @@
       action:
         post_event:
           ruleset: Test rules4
-          fact:
+          event:
             j: 4
