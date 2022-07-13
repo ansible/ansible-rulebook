@@ -1,0 +1,12 @@
+---
+- name: 09 Greater Than or Equal To
+  hosts: all
+  sources:
+    - range:
+        limit: 5
+  rules:
+    - name:
+      condition: event.i >= 2
+      action:
+        debug:
+

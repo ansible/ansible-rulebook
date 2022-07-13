@@ -1,0 +1,13 @@
+---
+- name: 14 Subtract
+  hosts: all
+  sources:
+    - nested:
+        i_limit: 5
+        j_limit: 5
+  rules:
+    - name:
+      condition: event.nested.i == event.nested.j - 1
+      action:
+        debug:
+

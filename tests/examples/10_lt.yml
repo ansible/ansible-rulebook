@@ -1,0 +1,12 @@
+---
+- name: 10 Less Than
+  hosts: all
+  sources:
+    - range:
+        limit: 5
+  rules:
+    - name:
+      condition: event.i < 2
+      action:
+        debug:
+
