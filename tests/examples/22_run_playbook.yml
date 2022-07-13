@@ -1,0 +1,22 @@
+---
+- name: 22 run playbook
+  hosts: all
+  sources:
+    - range2:
+        limit: 5
+  rules:
+    - name:
+      condition: event.range2.i == 1
+      action:
+        run_playbook:
+          name: playbooks/hello.yml
+          var_root: range2
+
+
+
+
+
+
+
+
+
