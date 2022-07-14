@@ -30,8 +30,9 @@ def matches_exclude_keys(exclude_keys, s):
     return False
 
 
-# FIXME(cutwater): Mutable instances are used as a default value of a function.
-def main(event, exclude_keys=[], include_keys=[]):
+def main(event, exclude_keys=None, include_keys=None):
+    exclude_keys = exclude_keys or []
+    include_keys = include_keys or []
     q = []
     q.append(event)
     while q:
