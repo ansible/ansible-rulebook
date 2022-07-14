@@ -96,6 +96,47 @@ Ready to contribute? Here's how to set up `ansible_events` for local development
 
 7. Submit a pull request through the GitHub website.
 
+Git pre-commit hooks (optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To automatically run linters and code formatter you may use
+`git pre-commit hooks <https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks>`_.
+This project provides a configuration for `pre-commit <https://pre-commit.com/>`_
+framework to automatically setup hooks for you.
+
+1. First install the ``pre-commit`` tool:
+
+  a. Into your virtual environment:
+
+     .. code-block:: console
+
+         (venv) $ pip install pre-commit
+
+  b. Into your user directory:
+
+     .. code-block:: console
+
+         $ pip install --user pre-commit
+
+  c. Via ``pipx`` tool:
+
+     .. code-block:: console
+
+         $ pipx install pre-commit
+
+2. Then generate git pre-commit hooks:
+
+  .. code-block:: console
+
+      $ pre-commit install
+
+You may run pre-commit manually on all tracked files by calling:
+
+.. code-block:: console
+
+    $ pre-commit run --all-files
+
+
 Pull Request Guidelines
 -----------------------
 
