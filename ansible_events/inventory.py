@@ -15,7 +15,7 @@ def matches_host(subpattern, host):
 def matching_hosts(inventory, pattern):
     subpatterns = parse_inventory_pattern(pattern)
     hosts = []
-    for groupname, group in inventory.items():
+    for group in inventory.values():
         for host in group.get("hosts").keys():
             for sp in subpatterns:
                 if matches_host(sp, host):

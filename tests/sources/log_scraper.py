@@ -12,7 +12,7 @@ def main(queue, args):
     }
     log_file_locs = {log_file: 0 for log_file in log_file_patterns}
 
-    for log_file, loc in log_file_locs.items():
+    for log_file in log_file_locs:
         with open(log_file) as f:
             f.seek(0, os.SEEK_END)
             log_file_locs[log_file] = f.tell()

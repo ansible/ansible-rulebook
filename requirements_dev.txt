@@ -1,4 +1,5 @@
 -r requirements_test.txt
+-r requirements_lint.txt
 
 bump2version
 
@@ -9,11 +10,6 @@ build
 # Testing
 tox
 coverage
-
-# Linters
-flake8
-black
-isort
 
 # Docs
 Sphinx
