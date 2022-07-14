@@ -1,7 +1,8 @@
 import asyncio
+from typing import Any, Dict
 
 
-async def main(queue, args):
+async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     delay = args.get("delay", 0)
 
     for i in range(int(args["limit"])):
@@ -12,7 +13,7 @@ async def main(queue, args):
 if __name__ == "__main__":
 
     class MockQueue:
-        def put(self, event):
+        async def put(self, event):
             print(event)
 
     asyncio.run(main(MockQueue(), dict(limit=5)))
