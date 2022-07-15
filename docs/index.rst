@@ -8,6 +8,14 @@ Welcome to ansible-events's documentation!
    readme
    installation
    usage
+   rules
+   conditions
+   actions
+   sources
+   filters
+   runner
+   collections
+   environments
    contributing
    authors
    history

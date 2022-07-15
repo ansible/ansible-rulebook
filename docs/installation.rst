@@ -13,6 +13,7 @@ To install ansible-events, run this command in your terminal:
 .. code-block:: console
 
     $ pip install ansible_events
+    $ ansible-galaxy collection install benthomasson.eda
 
 This is the preferred method to install ansible-events, as it will always install the most recent stable release.
 
