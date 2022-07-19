@@ -10,8 +10,25 @@ Example::
 
    condition:
      all:
+      - event.i == 1
+      - event.i == 2
+
+The variables passed into the playbook would have the following values::
+
+     'variables': {'events': {'m_0': {'i': 1}, 'm_1': {'i': 2}},
+                   'facts':  {'m_0': {'i': 1}, 'm_1': {'i': 2}}}}
+
+Example with assignments::
+
+   condition:
+     all:
       - events.first << event.i == 1
       - events.second << event.i == 2
+
+The variables passed into the playbook would have the following values::
+
+     'variables': {'events': {'first': {'i': 1}, 'second': {'i': 2}},
+                   'facts':  {'first': {'i': 1}, 'second': {'i': 2}}}}
 
 
 The following caveats apply:
