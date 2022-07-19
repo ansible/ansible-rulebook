@@ -35,10 +35,10 @@ The following caveats apply:
 
 1. The same event expression cannot be used more than once In the case below event.i == 1 has been used twice so it wont match anything::
    
-   condition:
-     all:
-      - events.first << event.i == 1
-      - event.i == 1
+       condition:
+         all:
+          - events.first << event.i == 1
+          - event.i == 1
 
 
 In the below case event.i == 2 has been used twice so it wont match anything::
@@ -64,8 +64,8 @@ Once an event matches it is removed and wont match any subsequent conditions. Th
 
 4. Currently there is no time constraint when satisfying multiple event conditions. We are planning on implementing a **within** syntax which will be aking to all with the added time constraint::
    
-   condition:
-     within(10):
-      - events.first << event.i == 1
-      - events.second << event.i == 2
+       condition:
+         within(10):
+          - events.first << event.i == 1
+          - events.second << event.i == 2
 
