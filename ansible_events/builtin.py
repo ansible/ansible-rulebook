@@ -62,10 +62,13 @@ async def print_event(
     print_fn: Callable = print
     if pretty:
         print_fn = pprint
+    var_name = 'event'
+    if 'events' in variables:
+      var_name = 'events'
     if var_root:
-        print_fn(dpath.util.get(variables["event"], var_root, separator="."))
+        print_fn(dpath.util.get(variables[var_name], var_root, separator="."))
     else:
-        print_fn(variables["event"])
+        print_fn(variables[var_name])
     sys.stdout.flush()
     await event_log.put(dict(type="Action", action="print_event"))
 
