@@ -62,9 +62,9 @@ async def print_event(
     print_fn: Callable = print
     if pretty:
         print_fn = pprint
-    var_name = 'event'
-    if 'events' in variables:
-      var_name = 'events'
+    var_name = "event"
+    if "events" in variables:
+        var_name = "events"
     if var_root:
         print_fn(dpath.util.get(variables[var_name], var_root, separator="."))
     else:
