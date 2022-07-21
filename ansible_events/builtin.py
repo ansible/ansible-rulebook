@@ -124,6 +124,7 @@ async def run_playbook(
     verbosity: int = 0,
     var_root: Optional[str] = None,
     copy_files: Optional[bool] = False,
+    json_mode: Optional[bool] = False,
     **kwargs,
 ):
     logger = logging.getLogger()
@@ -190,6 +191,7 @@ async def run_playbook(
             limit=host_limit,
             verbosity=verbosity,
             event_handler=event_callback,
+            json_mode=json_mode,
         ),
     )
 
