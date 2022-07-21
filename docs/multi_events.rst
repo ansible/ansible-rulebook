@@ -31,9 +31,9 @@ The variables passed into the playbook would have the following values::
                    'facts':  {'first': {'i': 1}, 'second': {'i': 2}}}}
 
 
-The following caveats apply:
+Notes:
 
-1. The same event expression cannot be used more than once In the case below event.i == 1 has been used twice so it wont match anything::
+The same event expression cannot be used more than once In the case below event.i == 1 has been used twice so it wont match anything::
    
        condition:
          all:
@@ -55,17 +55,3 @@ Once an event matches it is removed and wont match any subsequent conditions. Th
         all:
           - events.saveme << event.i == 2 and event.i > 0
           - event.i == 0
-
-2. var_root is used to extract a subset of the event data. This is
-   currently unsupported for multiple events.
-
-3. The action: print_event doesn't handle multiple events since it is
-   looking for the key **event**
-
-4. Currently there is no time constraint when satisfying multiple event conditions. We are planning on implementing a **within** syntax which will be aking to all with the added time constraint::
-   
-       condition:
-         within(10):
-          - events.first << event.i == 1
-          - events.second << event.i == 2
-
