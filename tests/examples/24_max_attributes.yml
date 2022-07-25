@@ -1,0 +1,21 @@
+---
+- name: 24 max attributes
+  hosts: all
+  sources:
+    - replay:
+        directory: examples/replays/24_max_attributes
+  rules:
+    - name:
+      condition: event.attr_1 == 1
+      action:
+        debug:
+
+
+
+
+
+
+
+
+
+

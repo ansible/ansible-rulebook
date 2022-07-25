@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from ansible_events.engine import run_rulesets
@@ -562,4 +564,88 @@ async def test_21_run_playbook():
     assert event["type"] == "ProcessedEvent", "7"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "8"
+    assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_23_nested_data():
+    ruleset_queues, queue, event_log = load_rules(
+        "examples/23_nested_data.yml"
+    )
+
+    queue.put_nowait(dict(root=dict(nested=dict(i=0))))
+    queue.put_nowait(dict(root=dict(nested=dict(i=1))))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        dict(),
+    )
+
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "0"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "2"
+    assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_24_max_attributes():
+    ruleset_queues, queue, event_log = load_rules(
+        "examples/24_max_attributes.yml"
+    )
+
+    with open("examples/replays/24_max_attributes/00.json") as f:
+        data = json.loads(f.read())
+
+    queue.put_nowait(data)
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        dict(),
+    )
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "2"
+    assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_25_max_attributes_nested():
+    ruleset_queues, queue, event_log = load_rules(
+        "examples/25_max_attributes_nested.yml"
+    )
+
+    with open("examples/replays/25_max_attributes_nested/00.json") as f:
+        data = json.loads(f.read())
+
+    queue.put_nowait(data)
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        dict(),
+    )
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "2"
     assert event_log.empty()
