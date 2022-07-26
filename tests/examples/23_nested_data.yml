@@ -1,0 +1,21 @@
+---
+- name: 23 run playbook
+  hosts: all
+  sources:
+    - replay:
+        directory: examples/replays/23_nested_data
+  rules:
+    - name:
+      condition: event.root.nested.i == 1
+      action:
+        debug:
+
+
+
+
+
+
+
+
+
+

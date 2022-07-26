@@ -14,8 +14,17 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     if not directory:
         logger.error("No replay directory")
         return
+    if not os.path.exists(directory):
+        logger.error(f"Could not find replay directory {directory}")
+        return
 
-    for replay_file in sorted(glob.glob(os.path.join(directory, "*.json"))):
+    replays = sorted(glob.glob(os.path.join(directory, "*.json")))
+
+    if not replays:
+        logger.error(f"Could not find any replays in directory {directory}")
+        return
+
+    for replay_file in replays:
         with open(replay_file) as f:
             await queue.put(json.loads(f.read()))
             await asyncio.sleep(delay)

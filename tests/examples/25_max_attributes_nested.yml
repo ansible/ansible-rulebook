@@ -1,0 +1,21 @@
+---
+- name: 25 max attributes nested
+  hosts: all
+  sources:
+    - replay:
+        directory: examples/replays/25_max_attributes_nested
+  rules:
+    - name:
+      condition: event.branch_0.branch_0.branch_0.leaf_1 == 1
+      action:
+        debug:
+
+
+
+
+
+
+
+
+
+
