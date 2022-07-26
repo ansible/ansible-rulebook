@@ -12,6 +12,8 @@
         assert_fact:
           fact:
             msg: hello world
+            alpha: 1
+            beta: 2
     - name:
       condition: event.msg == "hello world"
       action:

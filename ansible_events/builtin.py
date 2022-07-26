@@ -67,7 +67,23 @@ async def print_event(
     else:
         print_fn(variables["event"])
     sys.stdout.flush()
-    await event_log.put(dict(type="Action", action="print_event"))
+
+    if "pytest" in sys.modules:
+        await event_log.put(
+            dict(
+                type="Action",
+                action="print_event",
+                variables=variables,
+                facts=facts,
+            )
+        )
+    else:
+        await event_log.put(
+            dict(
+                type="Action",
+                action="print_event",
+            )
+        )
 
 
 async def assert_fact(

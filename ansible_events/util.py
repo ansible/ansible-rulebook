@@ -26,6 +26,7 @@ def render_string_or_return_value(value: Any, context: Dict) -> Any:
             return dpath.util.get(context, value[2:-2], separator=".")
         else:
             return render_string(value, context)
+    return value
 
 
 def substitute_variables(

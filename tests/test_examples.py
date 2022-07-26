@@ -104,6 +104,8 @@ async def test_04_assert_fact():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "3"
     assert event["action"] == "print_event", "4"
+    assert event["variables"]["fact"]["msg"] == "hello world"
+    assert event["variables"]["fact"]["beta"] == 2
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "5"
     event = event_log.get_nowait()
