@@ -12,7 +12,11 @@
         assert_fact:
           fact:
             msg: hello world
-    - name:
+    - name: matches the new fact
       condition: event.msg == "hello world"
       action:
         print_event:
+    - name: facts fire all rules that match
+      condition: event.msg == "hello world"
+      action:
+        debug:
