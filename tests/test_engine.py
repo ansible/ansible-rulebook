@@ -362,3 +362,46 @@ async def test_run_rulesets_on_hosts():
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "6"
     assert event_log.get_nowait()["type"] == "Shutdown", "7"
     assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_run_assert_facts():
+    ruleset_queues, queue, event_log = load_rules("test_assert_facts.yml")
+    inventory = dict(
+        all=dict(hosts=dict(localhost=dict(ansible_connection="local")))
+    )
+    queue.put_nowait(dict())
+    queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
+    queue.put_nowait(Shutdown())
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        inventory,
+    )
+
+    assert event_log.get_nowait()["type"] == "EmptyEvent", "0"
+    assert event_log.get_nowait()["type"] == "Action", "0.1"
+    assert event_log.get_nowait()["type"] == "Job", "1.0"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.2"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.3"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.4"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.5"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.6"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.7"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.8"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.9"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.10"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.11"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.12"
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "2.1"
+    assert event["action"] == "run_playbook", "2.2"
+    assert event["rc"] == 0, "2.3"
+    assert event["status"] == "successful", "2.4"
+
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
+    assert event_log.get_nowait()["type"] == "Shutdown", "4"
+    assert event_log.empty()

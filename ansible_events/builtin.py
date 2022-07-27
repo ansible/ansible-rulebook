@@ -67,23 +67,7 @@ async def print_event(
     else:
         print_fn(variables["event"])
     sys.stdout.flush()
-
-    if "pytest" in sys.modules:
-        await event_log.put(
-            dict(
-                type="Action",
-                action="print_event",
-                variables=variables,
-                facts=facts,
-            )
-        )
-    else:
-        await event_log.put(
-            dict(
-                type="Action",
-                action="print_event",
-            )
-        )
+    await event_log.put(dict(type="Action", action="print_event"))
 
 
 async def assert_fact(
@@ -211,6 +195,16 @@ async def run_playbook(
         ),
     )
 
+    for rc_file in glob.glob(os.path.join(temp, "artifacts", "*", "rc")):
+        with open(rc_file, "r") as f:
+            rc = int(f.read())
+
+    for status_file in glob.glob(
+        os.path.join(temp, "artifacts", "*", "status")
+    ):
+        with open(status_file, "r") as f:
+            status = f.read()
+
     if assert_facts or post_events:
         logger.debug("assert_facts")
         for host_facts in glob.glob(
@@ -223,7 +217,9 @@ async def run_playbook(
                 durable.lang.assert_fact(ruleset, fact)
             if post_events:
                 durable.lang.post(ruleset, fact)
-    await event_log.put(dict(type="Action", action="run_playbook"))
+    await event_log.put(
+        dict(type="Action", action="run_playbook", rc=rc, status=status)
+    )
 
 
 async def shutdown(
