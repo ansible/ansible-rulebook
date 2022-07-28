@@ -64,7 +64,7 @@ async def test_run_rulesets():
         event_log,
         ruleset_queues,
         dict(),
-        dict(),
+        load_inventory('inventory.yml'),
     )
 
     assert event_log.get_nowait()["type"] == "EmptyEvent", "0"
@@ -72,11 +72,9 @@ async def test_run_rulesets():
     assert event_log.get_nowait()["type"] == "Action", "0.2"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
     assert event_log.get_nowait()["type"] == "Job", "1.0"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.2"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.3"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.4"
-    assert event_log.get_nowait()["type"] == "Action", "1.5"
+    for i in range(9):
+       assert event_log.get_nowait()["type"] == "AnsibleEvent", f"1.{i}"
+    assert event_log.get_nowait()["type"] == "Action", "1.9"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
     assert event_log.get_nowait()["type"] == "Action", "2.1"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
