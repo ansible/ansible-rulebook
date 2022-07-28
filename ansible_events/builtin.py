@@ -125,6 +125,7 @@ async def run_playbook(
     var_root: Optional[str] = None,
     copy_files: Optional[bool] = False,
     json_mode: Optional[bool] = False,
+    ignore_errors: Optional[bool] = False,
     **kwargs,
 ):
     logger = logging.getLogger()
@@ -204,6 +205,11 @@ async def run_playbook(
     ):
         with open(status_file, "r") as f:
             status = f.read()
+
+    if rc != 0 and not ignore_errors:
+        raise Exception(
+            f"Playbook {name} failed execution rc:{rc} status:{status}"
+        )
 
     if assert_facts or post_events:
         logger.debug("assert_facts")

@@ -17,7 +17,7 @@
       condition: event.i == 2
       action:
         run_playbook:
-          name: hello_playbook.yml
+          name: hello_playbook1.yml
     - name:
       condition: event.i == 3
       action:

@@ -1,0 +1,13 @@
+---
+- name: raise exception after running a playbook fails
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name:
+      condition: event.i == 1
+      action:
+        run_playbook:
+          name: fail_playbook.yml
