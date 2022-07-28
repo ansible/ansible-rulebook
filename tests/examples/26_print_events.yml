@@ -1,5 +1,5 @@
 ---
-- name: 22 Print events
+- name: 26 Print events
   hosts: all
   sources:
     - name: range
