@@ -2,9 +2,9 @@ import asyncio
 import os
 from queue import Queue
 
-import durable.lang
 import pytest
 import yaml
+from durable import lang
 from durable.lang import assert_fact, c, m, post, rule, ruleset, when_all
 
 from ansible_events.rule_generator import generate_rulesets
@@ -67,15 +67,15 @@ def test_ruleset():
     some_rules = ruleset("test_rules")
 
     assert some_rules
-    assert durable.lang._rulesets
-    assert durable.lang._rulesets["test_rules"] == some_rules
+    assert lang._rulesets
+    assert lang._rulesets["test_rules"] == some_rules
 
-    assert len(durable.lang._ruleset_stack) == 0
+    assert len(lang._ruleset_stack) == 0
 
     with some_rules:
-        assert durable.lang._ruleset_stack[-1] == some_rules
+        assert lang._ruleset_stack[-1] == some_rules
 
-    assert len(durable.lang._ruleset_stack) == 0
+    assert len(lang._ruleset_stack) == 0
 
     assert some_rules.define() == ("test_rules", {})
 
@@ -85,13 +85,13 @@ def test_rules():
     some_rules = ruleset("test_rules1")
 
     assert some_rules
-    assert durable.lang._rulesets
-    assert durable.lang._rulesets["test_rules1"] == some_rules
+    assert lang._rulesets
+    assert lang._rulesets["test_rules1"] == some_rules
 
-    assert len(durable.lang._ruleset_stack) == 0
+    assert len(lang._ruleset_stack) == 0
 
     with some_rules:
-        assert durable.lang._ruleset_stack[-1] == some_rules
+        assert lang._ruleset_stack[-1] == some_rules
 
         def x(c):
             print("c")
@@ -99,7 +99,7 @@ def test_rules():
         # when_all(m.x == 5)(x)
         rule("all", True, m.x == 5)(x)
 
-    assert len(durable.lang._ruleset_stack) == 0
+    assert len(lang._ruleset_stack) == 0
 
     assert some_rules.define() == (
         "test_rules1",
