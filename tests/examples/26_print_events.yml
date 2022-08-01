@@ -1,0 +1,15 @@
+---
+- name: 26 Print events
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name:
+      condition: 
+        all:
+          - event.i == 1
+          - event.i == 2
+      action:
+        print_event:
