@@ -138,6 +138,8 @@ async def run_playbook(
     logger.debug(f"facts {facts}")
 
     variables["facts"] = facts
+    for k, v in kwargs.items():
+        variables[k] = v
 
     if var_root:
         o = dpath.util.get(variables["event"], var_root, separator=".")

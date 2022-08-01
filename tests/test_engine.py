@@ -383,18 +383,8 @@ async def test_run_assert_facts():
     assert event_log.get_nowait()["type"] == "EmptyEvent", "0"
     assert event_log.get_nowait()["type"] == "Action", "0.1"
     assert event_log.get_nowait()["type"] == "Job", "1.0"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.2"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.3"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.4"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.5"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.6"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.7"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.8"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.9"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.10"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.11"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.12"
+    for i in range(41):
+        assert event_log.get_nowait()["type"] == "AnsibleEvent", f"1.{i}"
 
     event = event_log.get_nowait()
     assert event["type"] == "Action", "2.1"
