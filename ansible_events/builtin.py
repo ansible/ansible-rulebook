@@ -14,8 +14,8 @@ from typing import Callable, Dict, List, Optional
 
 import ansible_runner
 import dpath.util
-import durable.lang
 import yaml
+from durable import lang
 
 from .collection import find_playbook, has_playbook, split_collection_name
 from .conf import settings
@@ -37,10 +37,10 @@ async def none(
 async def debug(event_log, **kwargs):
     print(get_horizontal_rule("="))
     print("context:")
-    pprint(durable.lang.c.__dict__)
+    pprint(lang.c.__dict__)
     print(get_horizontal_rule("="))
     print("facts:")
-    pprint(durable.lang.get_facts(kwargs["ruleset"]))
+    pprint(lang.get_facts(kwargs["ruleset"]))
     print(get_horizontal_rule("="))
     print("kwargs:")
     pprint(kwargs)
@@ -81,7 +81,7 @@ async def assert_fact(
 ):
     logger = logging.getLogger()
     logger.debug(f"assert_fact {ruleset} {fact}")
-    durable.lang.assert_fact(ruleset, fact)
+    lang.assert_fact(ruleset, fact)
     await event_log.put(dict(type="Action", action="assert_fact"))
 
 
@@ -94,7 +94,7 @@ async def retract_fact(
     ruleset: str,
     fact: Dict,
 ):
-    durable.lang.retract_fact(ruleset, fact)
+    lang.retract_fact(ruleset, fact)
     await event_log.put(dict(type="Action", action="retract_fact"))
 
 
@@ -107,7 +107,7 @@ async def post_event(
     ruleset: str,
     event: Dict,
 ):
-    durable.lang.post(ruleset, event)
+    lang.post(ruleset, event)
     await event_log.put(dict(type="Action", action="post_event"))
 
 
@@ -214,9 +214,9 @@ async def run_playbook(
                 fact = json.loads(f.read())
             logger.debug(f"fact {fact}")
             if assert_facts:
-                durable.lang.assert_fact(ruleset, fact)
+                lang.assert_fact(ruleset, fact)
             if post_events:
-                durable.lang.post(ruleset, fact)
+                lang.post(ruleset, fact)
     await event_log.put(
         dict(type="Action", action="run_playbook", rc=rc, status=status)
     )
