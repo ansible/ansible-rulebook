@@ -1,0 +1,30 @@
+---
+- name: Test rules simple
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name:
+      condition: event.i == 0
+      action:
+        print_event:
+          pretty: true
+          var_root: i
+    - name:
+      condition: event.i == 1
+      action:
+        print_event:
+    - name:
+      condition: event.i == 2
+      action:
+        run_playbook:
+          name: playbooks/hello_world_set_fact.yml
+          var_root: i
+          post_events: true
+    - name:
+      condition: event.msg is defined
+      action:
+        print_event:d
+
