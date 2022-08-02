@@ -13,7 +13,7 @@
           - j == 2
       action:
         run_playbooks:
-          - name: hello_playbook.yml
+          - name: playbooks/hello_world_set_fact.yml
     - name: hello2
       condition:
         all:
@@ -21,4 +21,4 @@
           - j == 2
       action:
         run_playbooks:
-          - name: hello_playbook.yml
+          - name: playbooks/hello_world_set_fact.yml

@@ -1,0 +1,17 @@
+---
+- name: Playbook to check if the facts are correct
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Fail if the value is missing
+      ansible.builtin.fail:
+        msg: "Failing because hello world fact does not match"
+      when: fact.msg != "hello world"
+    - name: Fail if the alpha is missing
+      ansible.builtin.fail:
+        msg: "Failing because alpha fact does not match"
+      when: fact.alpha != 1
+    - name: Fail if the beta.location doesn't match
+      ansible.builtin.fail:
+        msg: "Failing because beta.location fact does not match"
+      when: fact.beta.location != "Naboo"

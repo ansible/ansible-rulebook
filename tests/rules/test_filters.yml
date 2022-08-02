@@ -1,10 +1,12 @@
 ---
-- name: Test rules simple
+- name: Test rule filters
   hosts: all
   sources:
     - name: range
       range:
         limit: 5
+      filters:
+        - noop:
   rules:
     - name:
       condition: event.i == 0
@@ -20,7 +22,7 @@
       condition: event.i == 2
       action:
         run_playbook:
-          name: hello_playbook.yml
+          name: playbooks/hello_world_set_fact.yml
           var_root: i
           post_events: true
     - name:

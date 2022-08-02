@@ -20,6 +20,7 @@
       condition: event.msg == "hello world"
       action:
         run_playbook:
+<<<<<<< HEAD:tests/test_assert_facts.yml
           name: playbooks/validate_args_playbook.yml
           validate_args:
              fact.msg: hello world
@@ -28,3 +29,6 @@
              fact.beta.location: Naboo
           copy_files: True
 
+=======
+          name: playbooks/check_facts_playbook.yml
+>>>>>>> 27a8cc2 (Restructure tests directory):tests/rules/test_assert_facts.yml

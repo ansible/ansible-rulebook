@@ -130,7 +130,7 @@ def test_assert_facts():
 
 def test_parse_rules():
     os.chdir(HERE)
-    with open("rules.yml") as f:
+    with open("rules/rules.yml") as f:
         data = yaml.safe_load(f.read())
 
     parse_rule_sets(data)
@@ -139,9 +139,9 @@ def test_parse_rules():
 @pytest.mark.asyncio
 async def test_generate_rules():
     os.chdir(HERE)
-    with open("rules.yml") as f:
+    with open("rules/rules.yml") as f:
         data = yaml.safe_load(f.read())
-    with open("inventory.yml") as f:
+    with open("playbooks/inventory.yml") as f:
         inventory = yaml.safe_load(f.read())
 
     rulesets = parse_rule_sets(data)
@@ -165,9 +165,9 @@ async def test_generate_rules():
 @pytest.mark.asyncio
 async def test_generate_rules_multiple_conditions_any():
     os.chdir(HERE)
-    with open("rules_with_multiple_conditions.yml") as f:
+    with open("rules/rules_with_multiple_conditions.yml") as f:
         data = yaml.safe_load(f.read())
-    with open("inventory.yml") as f:
+    with open("playbooks/inventory.yml") as f:
         inventory = yaml.safe_load(f.read())
 
     rulesets = parse_rule_sets(data)
@@ -190,9 +190,9 @@ async def test_generate_rules_multiple_conditions_any():
 @pytest.mark.asyncio
 async def test_generate_rules_multiple_conditions_all():
     os.chdir(HERE)
-    with open("rules_with_multiple_conditions2.yml") as f:
+    with open("rules/rules_with_multiple_conditions2.yml") as f:
         data = yaml.safe_load(f.read())
-    with open("inventory.yml") as f:
+    with open("playbooks/inventory.yml") as f:
         inventory = yaml.safe_load(f.read())
 
     rulesets = parse_rule_sets(data)
@@ -216,9 +216,9 @@ async def test_generate_rules_multiple_conditions_all():
 @pytest.mark.asyncio
 async def test_generate_rules_multiple_conditions_all_3():
     os.chdir(HERE)
-    with open("rules_with_multiple_conditions3.yml") as f:
+    with open("rules/rules_with_multiple_conditions3.yml") as f:
         data = yaml.safe_load(f.read())
-    with open("inventory.yml") as f:
+    with open("playbooks/inventory.yml") as f:
         inventory = yaml.safe_load(f.read())
 
     rulesets = parse_rule_sets(data)
