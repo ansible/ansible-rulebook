@@ -1,10 +1,12 @@
 ---
-- name: Test rules simple
+- name: Test rule filters
   hosts: all
   sources:
     - name: range
       range:
         limit: 5
+      filters:
+        - noop:
   rules:
     - name:
       condition: event.i == 0
@@ -26,5 +28,5 @@
     - name:
       condition: event.msg is defined
       action:
-        print_event:d
+        print_event:
 

@@ -50,7 +50,7 @@ async def test_start_source():
 @pytest.mark.asyncio
 async def test_run_rulesets():
 
-    ruleset_queues, queue, event_log = load_rules("test_rules.yml")
+    ruleset_queues, queue, event_log = load_rules("rules/test_rules.yml")
 
     queue.put_nowait(dict())
     queue.put_nowait(dict(i=1))
@@ -91,7 +91,9 @@ async def test_run_rulesets():
 
 @pytest.mark.asyncio
 async def test_run_rules_with_assignment():
-    ruleset_queues, queue, event_log = load_rules("rules_with_assignment.yml")
+    ruleset_queues, queue, event_log = load_rules(
+        "rules/rules_with_assignment.yml"
+    )
 
     queue.put_nowait(dict(i=0))
     queue.put_nowait(dict(i=1))
@@ -114,7 +116,9 @@ async def test_run_rules_with_assignment():
 
 @pytest.mark.asyncio
 async def test_run_rules_with_assignment2():
-    ruleset_queues, queue, event_log = load_rules("rules_with_assignment2.yml")
+    ruleset_queues, queue, event_log = load_rules(
+        "rules/rules_with_assignment2.yml"
+    )
 
     queue.put_nowait(dict(i=0))
     queue.put_nowait(dict(i=1))
@@ -137,7 +141,7 @@ async def test_run_rules_with_assignment2():
 
 @pytest.mark.asyncio
 async def test_run_rules_simple():
-    ruleset_queues, queue, event_log = load_rules("test_simple.yml")
+    ruleset_queues, queue, event_log = load_rules("rules/test_simple.yml")
 
     queue.put_nowait(dict(i=0))
     queue.put_nowait(dict(i=1))
@@ -169,7 +173,7 @@ async def test_run_rules_simple():
 @pytest.mark.asyncio
 async def test_run_multiple_hosts():
     ruleset_queues, queue, event_log = load_rules(
-        "test_rules_multiple_hosts.yml"
+        "rules/test_rules_multiple_hosts.yml"
     )
 
     queue.put_nowait(dict(i=0))
@@ -184,7 +188,7 @@ async def test_run_multiple_hosts():
         event_log,
         ruleset_queues,
         dict(),
-        load_inventory("inventory1.yml"),
+        load_inventory("playbooks/inventory1.yml"),
     )
 
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '0'
@@ -222,7 +226,7 @@ async def test_run_multiple_hosts():
 @pytest.mark.asyncio
 async def test_run_multiple_hosts2():
     ruleset_queues, queue, event_log = load_rules(
-        "test_rules_multiple_hosts2.yml"
+        "rules/test_rules_multiple_hosts2.yml"
     )
 
     queue.put_nowait(dict(i=0))
@@ -237,7 +241,7 @@ async def test_run_multiple_hosts2():
         event_log,
         ruleset_queues,
         dict(),
-        load_inventory("inventory1.yml"),
+        load_inventory("playbooks/inventory1.yml"),
     )
 
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '0'
@@ -259,7 +263,7 @@ async def test_run_multiple_hosts2():
 @pytest.mark.asyncio
 async def test_run_multiple_hosts3():
     ruleset_queues, queue, event_log = load_rules(
-        "test_rules_multiple_hosts3.yml"
+        "rules/test_rules_multiple_hosts3.yml"
     )
 
     queue.put_nowait(dict(i=0))
@@ -274,7 +278,7 @@ async def test_run_multiple_hosts3():
         event_log,
         ruleset_queues,
         dict(),
-        load_inventory("inventory.yml"),
+        load_inventory("playbooks/inventory.yml"),
     )
 
     # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '0'
@@ -296,7 +300,7 @@ async def test_run_multiple_hosts3():
 
 @pytest.mark.asyncio
 async def test_filters():
-    ruleset_queues, queue, event_log = load_rules("test_filters.yml")
+    ruleset_queues, queue, event_log = load_rules("rules/test_filters.yml")
 
     queue.put_nowait(dict(i=0))
     queue.put_nowait(dict(i=1))
@@ -327,7 +331,7 @@ async def test_filters():
 
 @pytest.mark.asyncio
 async def test_run_rulesets_on_hosts():
-    ruleset_queues, queue, event_log = load_rules("test_host_rules.yml")
+    ruleset_queues, queue, event_log = load_rules("rules/test_host_rules.yml")
 
     queue.put_nowait(dict())
     queue.put_nowait(dict(i=1, meta=dict(hosts="localhost0")))
@@ -366,7 +370,9 @@ async def test_run_rulesets_on_hosts():
 
 @pytest.mark.asyncio
 async def test_run_assert_facts():
-    ruleset_queues, queue, event_log = load_rules("test_assert_facts.yml")
+    ruleset_queues, queue, event_log = load_rules(
+        "rules/test_assert_facts.yml"
+    )
     inventory = dict(
         all=dict(hosts=dict(localhost=dict(ansible_connection="local")))
     )
