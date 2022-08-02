@@ -677,3 +677,39 @@ async def test_26_print_events():
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "7"
     assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_27_var_root():
+    ruleset_queues, queue, event_log = load_rules("examples/27_var_root.yml")
+
+    queue.put_nowait(
+        dict(
+            webhook=dict(
+                payload=dict(url="http://www.example.com", action="merge")
+            )
+        )
+    )
+    queue.put_nowait(
+        dict(kafka=dict(message=dict(topic="testing", channel="red")))
+    )
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        dict(),
+    )
+
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "0"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "print_event", "2"
+
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "6"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "7"
+    assert event_log.empty()
