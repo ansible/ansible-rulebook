@@ -4,8 +4,15 @@ from queue import Queue
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
     from ansible_events.drools.vendor import lang
-    from ansible_events.drools.vendor.lang import assert_fact, c, m, \
-        post, rule, ruleset, when_all
+    from ansible_events.drools.vendor.lang import (
+        assert_fact,
+        c,
+        m,
+        post,
+        rule,
+        ruleset,
+        when_all,
+    )
 else:
     from durable import lang
     from durable.lang import assert_fact, c, m, post, rule, ruleset, when_all
