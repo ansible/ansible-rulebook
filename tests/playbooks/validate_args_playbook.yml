@@ -1,0 +1,11 @@
+---
+- name: Playbook to check if the passed in values in validate_args are correct
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Convert vars to json so we can use nested keys
+      set_fact:
+        vars_json: "{{ vars | to_json }}"
+    - name: compare value
+      include_tasks: compare_value.yml
+      loop: "{{ validate_args | dict2items }}"

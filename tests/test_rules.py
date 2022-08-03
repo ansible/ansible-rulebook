@@ -2,9 +2,9 @@ import asyncio
 import os
 from queue import Queue
 
-import durable.lang
 import pytest
 import yaml
+from durable import lang
 from durable.lang import assert_fact, c, m, post, rule, ruleset, when_all
 
 from ansible_events.rule_generator import generate_rulesets
@@ -67,15 +67,15 @@ def test_ruleset():
     some_rules = ruleset("test_rules")
 
     assert some_rules
-    assert durable.lang._rulesets
-    assert durable.lang._rulesets["test_rules"] == some_rules
+    assert lang._rulesets
+    assert lang._rulesets["test_rules"] == some_rules
 
-    assert len(durable.lang._ruleset_stack) == 0
+    assert len(lang._ruleset_stack) == 0
 
     with some_rules:
-        assert durable.lang._ruleset_stack[-1] == some_rules
+        assert lang._ruleset_stack[-1] == some_rules
 
-    assert len(durable.lang._ruleset_stack) == 0
+    assert len(lang._ruleset_stack) == 0
 
     assert some_rules.define() == ("test_rules", {})
 
@@ -85,13 +85,13 @@ def test_rules():
     some_rules = ruleset("test_rules1")
 
     assert some_rules
-    assert durable.lang._rulesets
-    assert durable.lang._rulesets["test_rules1"] == some_rules
+    assert lang._rulesets
+    assert lang._rulesets["test_rules1"] == some_rules
 
-    assert len(durable.lang._ruleset_stack) == 0
+    assert len(lang._ruleset_stack) == 0
 
     with some_rules:
-        assert durable.lang._ruleset_stack[-1] == some_rules
+        assert lang._ruleset_stack[-1] == some_rules
 
         def x(c):
             print("c")
@@ -99,7 +99,7 @@ def test_rules():
         # when_all(m.x == 5)(x)
         rule("all", True, m.x == 5)(x)
 
-    assert len(durable.lang._ruleset_stack) == 0
+    assert len(lang._ruleset_stack) == 0
 
     assert some_rules.define() == (
         "test_rules1",
@@ -130,7 +130,7 @@ def test_assert_facts():
 
 def test_parse_rules():
     os.chdir(HERE)
-    with open("rules.yml") as f:
+    with open("rules/rules.yml") as f:
         data = yaml.safe_load(f.read())
 
     parse_rule_sets(data)
@@ -139,9 +139,9 @@ def test_parse_rules():
 @pytest.mark.asyncio
 async def test_generate_rules():
     os.chdir(HERE)
-    with open("rules.yml") as f:
+    with open("rules/rules.yml") as f:
         data = yaml.safe_load(f.read())
-    with open("inventory.yml") as f:
+    with open("playbooks/inventory.yml") as f:
         inventory = yaml.safe_load(f.read())
 
     rulesets = parse_rule_sets(data)
@@ -165,9 +165,9 @@ async def test_generate_rules():
 @pytest.mark.asyncio
 async def test_generate_rules_multiple_conditions_any():
     os.chdir(HERE)
-    with open("rules_with_multiple_conditions.yml") as f:
+    with open("rules/rules_with_multiple_conditions.yml") as f:
         data = yaml.safe_load(f.read())
-    with open("inventory.yml") as f:
+    with open("playbooks/inventory.yml") as f:
         inventory = yaml.safe_load(f.read())
 
     rulesets = parse_rule_sets(data)
@@ -190,9 +190,9 @@ async def test_generate_rules_multiple_conditions_any():
 @pytest.mark.asyncio
 async def test_generate_rules_multiple_conditions_all():
     os.chdir(HERE)
-    with open("rules_with_multiple_conditions2.yml") as f:
+    with open("rules/rules_with_multiple_conditions2.yml") as f:
         data = yaml.safe_load(f.read())
-    with open("inventory.yml") as f:
+    with open("playbooks/inventory.yml") as f:
         inventory = yaml.safe_load(f.read())
 
     rulesets = parse_rule_sets(data)
@@ -216,9 +216,9 @@ async def test_generate_rules_multiple_conditions_all():
 @pytest.mark.asyncio
 async def test_generate_rules_multiple_conditions_all_3():
     os.chdir(HERE)
-    with open("rules_with_multiple_conditions3.yml") as f:
+    with open("rules/rules_with_multiple_conditions3.yml") as f:
         data = yaml.safe_load(f.read())
-    with open("inventory.yml") as f:
+    with open("playbooks/inventory.yml") as f:
         inventory = yaml.safe_load(f.read())
 
     rulesets = parse_rule_sets(data)

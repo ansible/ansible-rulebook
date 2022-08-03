@@ -5,6 +5,7 @@ requests
 ansible
 ansible-core
 ansible-runner
+jmespath
 
 pytest
 pytest-asyncio

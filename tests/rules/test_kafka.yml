@@ -24,7 +24,7 @@
       condition: i == 2
       action:
         run_playbook:
-          name: hello_playbook.yml
+          name: playbooks/hello_world_set_fact.yml
     - name:
       condition: i == 3
       action:
@@ -57,7 +57,7 @@
       condition: i == 2
       action:
         run_playbook:
-          name: hello_playbook.yml
+          name: playbooks/hello_world_set_fact.yml
     - name:
       condition: i == 3
       action:

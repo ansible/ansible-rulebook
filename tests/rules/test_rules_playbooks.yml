@@ -10,4 +10,4 @@
       condition: i == 2 and j == 2
       action:
         run_playbooks:
-          - name: hello_playbook.yml
+          - name: playbooks/hello_world_set_fact.yml

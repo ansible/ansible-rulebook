@@ -649,3 +649,31 @@ async def test_25_max_attributes_nested():
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "2"
     assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_26_print_events():
+    ruleset_queues, queue, event_log = load_rules(
+        "examples/26_print_events.yml"
+    )
+
+    queue.put_nowait(dict(i=1))
+    queue.put_nowait(dict(i=2))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        dict(),
+    )
+
+    event_log.get_nowait()
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "print_event", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "7"
+    assert event_log.empty()

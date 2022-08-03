@@ -1,6 +1,6 @@
 ---
-- name: Test rules4
-  hosts: all
+- name: Test rules multiple hosts
+  hosts: localhost0, localhost1
   sources:
     - name: range
       range:
@@ -10,26 +10,26 @@
       condition: event.i == 1
       action:
         assert_fact:
-          ruleset: Test rules4
+          ruleset: Test rules multiple hosts
           fact:
             j: 1
     - name:
       condition: event.i == 2
       action:
         run_playbook:
-          name: hello_playbook.yml
+          name: playbooks/hello_events.yml
     - name:
       condition: event.i == 3
       action:
         retract_fact:
-          ruleset: Test rules4
+          ruleset: Test rules multiple hosts
           fact:
             j: 3
     - name:
       condition: event.i == 4
       action:
         post_event:
-          ruleset: Test rules4
+          ruleset: Test rules multiple hosts
           event:
             j: 4
     - name:
