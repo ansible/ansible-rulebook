@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 
 import requests
 
@@ -112,8 +113,8 @@ class error(Exception):
 
 
 # exported methods
-
-_instance = DurableRulesEngine("http://localhost:8080")
+_instance = DurableRulesEngine(
+    os.environ.get("ANSIBLE_EVENTS_DROOLS_HOST", "http://localhost:8080"))
 
 
 def abandon_action(*args, **kwargs):  # real signature unknown
