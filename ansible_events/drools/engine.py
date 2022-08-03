@@ -1,15 +1,11 @@
-import json
-import copy
-import threading
-import inspect
-import random
-import time
 import datetime
-import os
+import inspect
+import json
 import sys
+import threading
 import traceback
 
-from . import logger, durable_rules_engine
+from . import durable_rules_engine, logger
 
 
 def _unix_now():
@@ -20,19 +16,20 @@ def _unix_now():
 
 
 class MessageNotHandledException(Exception):
-
     def __init__(self, message):
-        self.message = 'Could not handle message: {0}'.format(json.dumps(message, ensure_ascii=False))
+        self.message = "Could not handle message: {0}".format(
+            json.dumps(message, ensure_ascii=False)
+        )
 
 
 class MessageObservedException(Exception):
-
     def __init__(self, message):
-        self.message = 'Message has already been observed: {0}'.format(json.dumps(message, ensure_ascii=False))
+        self.message = "Message has already been observed: {0}".format(
+            json.dumps(message, ensure_ascii=False)
+        )
 
 
 class Closure(object):
-
     def __init__(self, host, ruleset, state, message, handle):
         self.host = host
         self.s = Content(state)
@@ -46,15 +43,15 @@ class Closure(object):
         else:
             self.m = []
             for one_message in message:
-                if ('m' in one_message) and len(one_message) == 1:
-                    one_message = one_message['m']
+                if ("m" in one_message) and len(one_message) == 1:
+                    one_message = one_message["m"]
 
                 self.m.append(Content(one_message))
 
     def post(self, ruleset_name, message=None):
         if message:
-            if not 'sid' in message:
-                message['sid'] = self.s.sid
+            if "sid" not in message:
+                message["sid"] = self.s.sid
 
             if isinstance(message, Content):
                 message = message._d
@@ -62,8 +59,8 @@ class Closure(object):
             self.host.assert_event(ruleset_name, message)
         else:
             message = ruleset_name
-            if not 'sid' in message:
-                message['sid'] = self.s.sid
+            if "sid" not in message:
+                message["sid"] = self.s.sid
 
             if isinstance(message, Content):
                 message = message._d
@@ -72,8 +69,8 @@ class Closure(object):
 
     def assert_fact(self, ruleset_name, fact=None):
         if fact:
-            if not 'sid' in fact:
-                fact['sid'] = self.s.sid
+            if "sid" not in fact:
+                fact["sid"] = self.s.sid
 
             if isinstance(fact, Content):
                 fact = fact._d
@@ -81,8 +78,8 @@ class Closure(object):
             self.host.assert_fact(ruleset_name, fact)
         else:
             fact = ruleset_name
-            if not 'sid' in fact:
-                fact['sid'] = self.s.sid
+            if "sid" not in fact:
+                fact["sid"] = self.s.sid
 
             if isinstance(fact, Content):
                 fact = fact._d
@@ -91,8 +88,8 @@ class Closure(object):
 
     def retract_fact(self, ruleset_name, fact=None):
         if fact:
-            if not 'sid' in fact:
-                fact['sid'] = self.s.sid
+            if "sid" not in fact:
+                fact["sid"] = self.s.sid
 
             if isinstance(fact, Content):
                 fact = fact._d
@@ -100,8 +97,8 @@ class Closure(object):
             self.host.retract_fact(ruleset_name, fact)
         else:
             fact = ruleset_name
-            if not 'sid' in fact:
-                fact['sid'] = self.s.sid
+            if "sid" not in fact:
+                fact["sid"] = self.s.sid
 
             if isinstance(fact, Content):
                 fact = fact._d
@@ -109,7 +106,9 @@ class Closure(object):
             self._ruleset.retract_fact(fact)
 
     def start_timer(self, timer_name, duration, manual_reset=False):
-        self._ruleset.start_timer(self.s.sid, timer_name, duration, manual_reset)
+        self._ruleset.start_timer(
+            self.s.sid, timer_name, duration, manual_reset
+        )
 
     def cancel_timer(self, timer_name):
         self._ruleset.cancel_timer(self.s.sid, timer_name)
@@ -140,7 +139,7 @@ class Closure(object):
         return self._deleted
 
     def __getattr__(self, name):
-        if name == '_m':
+        if name == "_m":
             return None
 
         if name in self._m:
@@ -150,7 +149,6 @@ class Closure(object):
 
 
 class Content(object):
-
     def items(self):
         return self._d.items()
 
@@ -168,7 +166,7 @@ class Content(object):
             return None
 
     def __setitem__(self, key, value):
-        if value == None:
+        if value is None:
             del self._d[key]
         elif isinstance(value, Content):
             self._d[key] = value._d
@@ -185,8 +183,8 @@ class Content(object):
         return self.__getitem__(name)
 
     def __setattr__(self, name, value):
-        if name == '_d':
-            self.__dict__['_d'] = value
+        if name == "_d":
+            self.__dict__["_d"] = value
         else:
             self.__setitem__(name, value)
 
@@ -198,7 +196,6 @@ class Content(object):
 
 
 class Promise(object):
-
     def __init__(self, func):
         self._func = func
         self._next = None
@@ -213,15 +210,15 @@ class Promise(object):
         if arg_count == 2:
             self._sync = False
         elif arg_count != 1:
-            raise Exception('Invalid function signature')
+            raise Exception("Invalid function signature")
 
-    def continue_with(self, next):
-        if (isinstance(next, Promise)):
-            self._next = next
-        elif (hasattr(next, '__call__')):
-            self._next = Promise(next)
+    def continue_with(self, arg):
+        if isinstance(arg, Promise):
+            self._next = arg
+        elif callable(arg):
+            self._next = Promise(arg)
         else:
-            raise Exception('Unexpected Promise Type')
+            raise Exception("Unexpected Promise Type")
 
         self._next.root = self.root
         return self._next
@@ -229,7 +226,7 @@ class Promise(object):
     def run(self, c, complete):
         def timeout(max_time):
             if _unix_now() > max_time:
-                c.s.exception = 'timeout expired'
+                c.s.exception = "timeout expired"
                 complete(None)
             else:
                 c.renew_action_lease()
@@ -242,9 +239,11 @@ class Promise(object):
                 self._func(c)
             except BaseException as error:
                 t, v, tb = sys.exc_info()
-                c.s.exception = 'exception caught {0}, traceback {1}'.format(str(error), traceback.format_tb(tb))
-            except:
-                c.s.exception = 'unknown exception'
+                c.s.exception = "exception caught {0}, traceback {1}".format(
+                    str(error), traceback.format_tb(tb)
+                )
+            except Exception:
+                c.s.exception = "unknown exception"
 
             if self._next:
                 self._next.run(c, complete)
@@ -252,6 +251,7 @@ class Promise(object):
                 complete(None)
         else:
             try:
+
                 def callback(e):
                     if self._timer:
                         self._timer.cancel()
@@ -267,20 +267,23 @@ class Promise(object):
 
                 time_left = self._func(c, callback)
                 if time_left:
-                    self._timer = threading.Timer(5, timeout, (_unix_now() + time_left,))
+                    self._timer = threading.Timer(
+                        5, timeout, (_unix_now() + time_left,)
+                    )
                     self._timer.daemon = True
                     self._timer.start()
             except BaseException as error:
                 t, v, tb = sys.exc_info()
-                c.s.exception = 'exception caught {0}, traceback {1}'.format(str(error), traceback.format_tb(tb))
+                c.s.exception = "exception caught {0}, traceback {1}".format(
+                    str(error), traceback.format_tb(tb)
+                )
                 complete(None)
-            except:
-                c.s.exception = 'unknown exception'
+            except Exception:
+                c.s.exception = "unknown exception"
                 complete(None)
 
 
 class To(Promise):
-
     def __init__(self, from_state, to_state, assert_state):
         super(To, self).__init__(self._execute)
         self._from_state = from_state
@@ -298,30 +301,31 @@ class To(Promise):
                         c.retract_fact(c.chart_context)
 
                 if self._assert_state:
-                    c.assert_fact({'label': self._to_state, 'chart': 1})
+                    c.assert_fact({"label": self._to_state, "chart": 1})
                 else:
-                    c.post({'label': self._to_state, 'chart': 1})
+                    c.post({"label": self._to_state, "chart": 1})
             except MessageNotHandledException:
                 pass
 
 
 class Ruleset(object):
-
     def __init__(self, name, host, ruleset_definition):
         self._actions = {}
         self._name = name
         self._host = host
         for rule_name, rule in ruleset_definition.items():
-            action = rule['run']
-            del rule['run']
+            action = rule["run"]
+            del rule["run"]
             if isinstance(action, str):
                 self._actions[rule_name] = Promise(host.get_action(action))
             elif isinstance(action, Promise):
                 self._actions[rule_name] = action.root
-            elif (hasattr(action, '__call__')):
+            elif callable(action):
                 self._actions[rule_name] = Promise(action)
 
-        self._handle = durable_rules_engine.create_ruleset(name, json.dumps(ruleset_definition, ensure_ascii=False))
+        self._handle = durable_rules_engine.create_ruleset(
+            name, json.dumps(ruleset_definition, ensure_ascii=False)
+        )
         self._definition = ruleset_definition
 
     def _handle_result(self, result, message):
@@ -336,71 +340,99 @@ class Ruleset(object):
 
     def assert_event(self, message):
         return self._handle_result(
-            durable_rules_engine.assert_event(self._handle, json.dumps(message, ensure_ascii=False)), message)
+            durable_rules_engine.assert_event(
+                self._handle, json.dumps(message, ensure_ascii=False)
+            ),
+            message,
+        )
 
     def assert_events(self, messages):
         return self._handle_result(
-            durable_rules_engine.assert_events(self._handle, json.dumps(messages, ensure_ascii=False)), messages)
+            durable_rules_engine.assert_events(
+                self._handle, json.dumps(messages, ensure_ascii=False)
+            ),
+            messages,
+        )
 
     def assert_fact(self, fact):
-        return self._handle_result(durable_rules_engine.assert_fact(self._handle, json.dumps(fact, ensure_ascii=False)),
-                                   fact)
+        return self._handle_result(
+            durable_rules_engine.assert_fact(
+                self._handle, json.dumps(fact, ensure_ascii=False)
+            ),
+            fact,
+        )
 
     def assert_facts(self, facts):
         return self._handle_result(
-            durable_rules_engine.assert_facts(self._handle, json.dumps(facts, ensure_ascii=False)), facts)
+            durable_rules_engine.assert_facts(
+                self._handle, json.dumps(facts, ensure_ascii=False)
+            ),
+            facts,
+        )
 
     def retract_fact(self, fact):
         return self._handle_result(
-            durable_rules_engine.retract_fact(self._handle, json.dumps(fact, ensure_ascii=False)), fact)
+            durable_rules_engine.retract_fact(
+                self._handle, json.dumps(fact, ensure_ascii=False)
+            ),
+            fact,
+        )
 
     def retract_facts(self, facts):
         return self._handle_result(
-            durable_rules_engine.retract_facts(self._handle, json.dumps(facts, ensure_ascii=False)), facts)
+            durable_rules_engine.retract_facts(
+                self._handle, json.dumps(facts, ensure_ascii=False)
+            ),
+            facts,
+        )
 
     def start_timer(self, sid, timer, timer_duration, manual_reset):
-        if sid != None:
+        if sid is not None:
             sid = str(sid)
 
-        durable_rules_engine.start_timer(self._handle, timer_duration, manual_reset, timer, sid)
+        durable_rules_engine.start_timer(
+            self._handle, timer_duration, manual_reset, timer, sid
+        )
 
     def cancel_timer(self, sid, timer_name):
-        if sid != None:
+        if sid is not None:
             sid = str(sid)
 
         durable_rules_engine.cancel_timer(self._handle, sid, timer_name)
 
     def update_state(self, state):
-        state['$s'] = 1
-        return durable_rules_engine.update_state(self._handle, json.dumps(state, ensure_ascii=False))
+        state["$s"] = 1
+        return durable_rules_engine.update_state(
+            self._handle, json.dumps(state, ensure_ascii=False)
+        )
 
     def get_state(self, sid):
-        if sid != None:
+        if sid is not None:
             sid = str(sid)
 
         return json.loads(durable_rules_engine.get_state(self._handle, sid))
 
     def delete_state(self, sid):
-        if sid != None:
+        if sid is not None:
             sid = str(sid)
 
         durable_rules_engine.delete_state(self._handle, sid)
 
     def renew_action_lease(self, sid):
-        if sid != None:
+        if sid is not None:
             sid = str(sid)
 
         durable_rules_engine.renew_action_lease(self._handle, sid)
 
     def get_facts(self, sid):
-        if sid != None:
+        if sid is not None:
             sid = str(sid)
 
         facts = durable_rules_engine.get_facts(self._handle, sid)
         return json.loads(facts)
 
     def get_pending_events(self, sid):
-        if sid != None:
+        if sid is not None:
             sid = str(sid)
 
         return json.loads(durable_rules_engine.get_events(self._handle, sid))
@@ -415,25 +447,33 @@ class Ruleset(object):
         durable_rules_engine.set_queue_message_callback(self._handle, func)
 
     def set_get_stored_messages_callback(self, func):
-        durable_rules_engine.set_get_stored_messages_callback(self._handle, func)
+        durable_rules_engine.set_get_stored_messages_callback(
+            self._handle, func
+        )
 
     def set_get_queued_messages_callback(self, func):
-        durable_rules_engine.set_get_queued_messages_callback(self._handle, func)
+        durable_rules_engine.set_get_queued_messages_callback(
+            self._handle, func
+        )
 
     def complete_get_queued_messages(self, sid, queued_messages):
-        if sid != None:
+        if sid is not None:
             sid = str(sid)
 
-        durable_rules_engine.complete_get_queued_messages(self._handle, sid, queued_messages)
+        durable_rules_engine.complete_get_queued_messages(
+            self._handle, sid, queued_messages
+        )
 
     def set_get_idle_state_callback(self, func):
         durable_rules_engine.set_get_idle_state_callback(self._handle, func)
 
     def complete_get_idle_state(self, sid, stored_messages):
-        if sid != None:
+        if sid is not None:
             sid = str(sid)
 
-        durable_rules_engine.complete_get_idle_state(self._handle, sid, stored_messages)
+        durable_rules_engine.complete_get_idle_state(
+            self._handle, sid, stored_messages
+        )
 
     def get_definition(self):
         return self._definition
@@ -442,11 +482,11 @@ class Ruleset(object):
     def create_rulesets(host, ruleset_definitions):
         branches = {}
         for name, definition in ruleset_definitions.items():
-            if name.rfind('$state') != -1:
-                name = name[:name.rfind('$state')]
+            if name.rfind("$state") != -1:
+                name = name[: name.rfind("$state")]
                 branches[name] = Statechart(name, host, definition)
-            elif name.rfind('$flow') != -1:
-                name = name[:name.rfind('$flow')]
+            elif name.rfind("$flow") != -1:
+                name = name[: name.rfind("$flow")]
                 branches[name] = Flowchart(name, host, definition)
             else:
                 branches[name] = Ruleset(name, host, definition)
@@ -457,56 +497,81 @@ class Ruleset(object):
         return durable_rules_engine.assert_timers(self._handle)
 
     def _flush_actions(self, state, result_container, state_offset, complete):
-        while 'message' in result_container:
+        while "message" in result_container:
             print("RES", result_container)
             action_name = None
-            for action_name, message in result_container['message'].items():
+            # TODO: Discuss this line
+            for action_name, message in result_container["message"].items():
                 break
 
-            del (result_container['message'])
+            del result_container["message"]
             c = Closure(self._host, self, state, message, state_offset)
 
-            def action_callback(e):
+            def action_callback(e, c=c):
                 if c._has_completed():
                     return
 
                 if e:
-                    durable_rules_engine.abandon_action(self._handle, c._handle)
+                    durable_rules_engine.abandon_action(
+                        self._handle, c._handle
+                    )
                     complete(e, None)
                 else:
                     try:
-                        j = json.dumps(c.s._d, ensure_ascii=False);
+                        j = json.dumps(c.s._d, ensure_ascii=False)
                         print("HANDLE", self._handle)
                         print("JSON", j)
 
-                        next = durable_rules_engine.update_state(self._handle, j)
+                        next = durable_rules_engine.update_state(
+                            self._handle, j
+                        )
 
                         print("NEXT_STATE", next)
 
-                        new_result = durable_rules_engine.complete_and_start_action(self._handle, c._handle)
-                        print("NEW_RESULT", self._handle, c._handle, new_result)
+                        new_result = (
+                            durable_rules_engine.complete_and_start_action(
+                                self._handle, c._handle
+                            )
+                        )
+                        print(
+                            "NEW_RESULT", self._handle, c._handle, new_result
+                        )
 
                         if new_result:
-                            result_container['message'] = json.loads(new_result)
+                            result_container["message"] = json.loads(
+                                new_result
+                            )
                         else:
                             complete(None, state)
 
                     except BaseException as error:
                         t, v, tb = sys.exc_info()
-                        logger.exception('base exception type %s, value %s, traceback %s', t, str(v),
-                                         traceback.format_tb(tb))
-                        durable_rules_engine.abandon_action(self._handle, c._handle)
+                        logger.exception(
+                            "base exception type %s, value %s, traceback %s",
+                            t,
+                            str(v),
+                            traceback.format_tb(tb),
+                        )
+                        durable_rules_engine.abandon_action(
+                            self._handle, c._handle
+                        )
                         complete(error, None)
-                    except:
-                        logger.exception('unknown exception type %s, value %s, traceback %s', t, str(v),
-                                         traceback.format_tb(tb))
-                        durable_rules_engine.abandon_action(self._handle, c._handle)
-                        complete('unknown error', None)
+                    except Exception:
+                        logger.exception(
+                            "unknown exception type %s, value %s, traceback %s",
+                            t,
+                            str(v),
+                            traceback.format_tb(tb),
+                        )
+                        durable_rules_engine.abandon_action(
+                            self._handle, c._handle
+                        )
+                        complete("unknown error", None)
 
                     if c._is_deleted():
                         try:
-                            self.delete_state(c.s['sid'])
-                        except:
+                            self.delete_state(c.s["sid"])
+                        except Exception:
                             pass
 
             print("ACTION", action_name)
@@ -514,11 +579,18 @@ class Ruleset(object):
 
     def do_actions(self, state_handle, complete):
         try:
-            result = durable_rules_engine.start_action_for_state(self._handle, state_handle)
+            result = durable_rules_engine.start_action_for_state(
+                self._handle, state_handle
+            )
             if not result:
                 complete(None, None)
             else:
-                self._flush_actions(json.loads(result[0]), {'message': json.loads(result[1])}, state_handle, complete)
+                self._flush_actions(
+                    json.loads(result[0]),
+                    {"message": json.loads(result[1])},
+                    state_handle,
+                    complete,
+                )
         except BaseException as error:
             complete(error, None)
 
@@ -528,11 +600,15 @@ class Ruleset(object):
 
         result = durable_rules_engine.start_action(self._handle)
         if result:
-            self._flush_actions(json.loads(result[0]), {'message': json.loads(result[1])}, result[2], callback)
+            self._flush_actions(
+                json.loads(result[0]),
+                {"message": json.loads(result[1])},
+                result[2],
+                callback,
+            )
 
 
 class Statechart(Ruleset):
-
     def __init__(self, name, host, chart_definition):
         self._name = name
         self._host = host
@@ -540,116 +616,174 @@ class Statechart(Ruleset):
         self._transform(None, None, None, chart_definition, ruleset_definition)
         super(Statechart, self).__init__(name, host, ruleset_definition)
         self._definition = chart_definition
-        self._definition['$type'] = 'stateChart'
+        self._definition["$type"] = "stateChart"
 
-    def _transform(self, parent_name, parent_triggers, parent_start_state, chart_definition, rules):
+    def _transform(
+        self,
+        parent_name,
+        parent_triggers,
+        parent_start_state,
+        chart_definition,
+        rules,
+    ):
         start_state = {}
         reflexive_states = {}
 
         for state_name, state in chart_definition.items():
             qualified_name = state_name
             if parent_name:
-                qualified_name = '{0}.{1}'.format(parent_name, state_name)
+                qualified_name = "{0}.{1}".format(parent_name, state_name)
 
             start_state[qualified_name] = True
 
-            for trigger_name, trigger in state.items():
-                if ('to' in trigger and trigger['to'] == state_name) or 'count' in trigger or 'cap' in trigger:
+            for _trigger_name, trigger in state.items():
+                if (
+                    ("to" in trigger and trigger["to"] == state_name)
+                    or "count" in trigger
+                    or "cap" in trigger
+                ):
                     reflexive_states[qualified_name] = True
 
         for state_name, state in chart_definition.items():
             qualified_name = state_name
             if parent_name:
-                qualified_name = '{0}.{1}'.format(parent_name, state_name)
+                qualified_name = "{0}.{1}".format(parent_name, state_name)
 
             triggers = {}
             if parent_triggers:
                 for parent_trigger_name, trigger in parent_triggers.items():
-                    triggers['{0}.{1}'.format(qualified_name, parent_trigger_name)] = trigger
+                    triggers[
+                        "{0}.{1}".format(qualified_name, parent_trigger_name)
+                    ] = trigger
 
             for trigger_name, trigger in state.items():
-                if trigger_name != '$chart':
-                    if ('to' in trigger) and parent_name:
-                        trigger['to'] = '{0}.{1}'.format(parent_name, trigger['to'])
+                if trigger_name != "$chart":
+                    if ("to" in trigger) and parent_name:
+                        trigger["to"] = "{0}.{1}".format(
+                            parent_name, trigger["to"]
+                        )
 
-                    triggers['{0}.{1}'.format(qualified_name, trigger_name)] = trigger
+                    triggers[
+                        "{0}.{1}".format(qualified_name, trigger_name)
+                    ] = trigger
 
-            if '$chart' in state:
-                self._transform(qualified_name, triggers, start_state, state['$chart'], rules)
+            if "$chart" in state:
+                self._transform(
+                    qualified_name,
+                    triggers,
+                    start_state,
+                    state["$chart"],
+                    rules,
+                )
             else:
                 for trigger_name, trigger in triggers.items():
                     rule = {}
-                    state_test = {'chart_context': {'$and': [{'label': qualified_name}, {'chart': 1}]}}
-                    if 'pri' in trigger:
-                        rule['pri'] = trigger['pri']
+                    state_test = {
+                        "chart_context": {
+                            "$and": [{"label": qualified_name}, {"chart": 1}]
+                        }
+                    }
+                    if "pri" in trigger:
+                        rule["pri"] = trigger["pri"]
 
-                    if 'count' in trigger:
-                        rule['count'] = trigger['count']
+                    if "count" in trigger:
+                        rule["count"] = trigger["count"]
 
-                    if 'cap' in trigger:
-                        rule['cap'] = trigger['cap']
+                    if "cap" in trigger:
+                        rule["cap"] = trigger["cap"]
 
-                    if 'all' in trigger:
-                        rule['all'] = list(trigger['all'])
-                        rule['all'].append(state_test)
-                    elif 'any' in trigger:
-                        rule['all'] = [state_test, {'m$any': trigger['any']}]
+                    if "all" in trigger:
+                        rule["all"] = list(trigger["all"])
+                        rule["all"].append(state_test)
+                    elif "any" in trigger:
+                        rule["all"] = [state_test, {"m$any": trigger["any"]}]
                     else:
-                        rule['all'] = [state_test]
+                        rule["all"] = [state_test]
 
-                    if 'run' in trigger:
-                        if isinstance(trigger['run'], str):
-                            rule['run'] = Promise(self._host.get_action(trigger['run']))
-                        elif isinstance(trigger['run'], Promise):
-                            rule['run'] = trigger['run']
-                        elif hasattr(trigger['run'], '__call__'):
-                            rule['run'] = Promise(trigger['run'])
+                    if "run" in trigger:
+                        if isinstance(trigger["run"], str):
+                            rule["run"] = Promise(
+                                self._host.get_action(trigger["run"])
+                            )
+                        elif isinstance(trigger["run"], Promise):
+                            rule["run"] = trigger["run"]
+                        elif callable(trigger["run"]):
+                            rule["run"] = Promise(trigger["run"])
 
-                    if 'to' in trigger:
+                    if "to" in trigger:
                         from_state = None
                         if qualified_name in reflexive_states:
                             from_state = qualified_name
 
-                        to_state = trigger['to']
+                        to_state = trigger["to"]
                         assert_state = False
                         if to_state in reflexive_states:
                             assert_state = True
 
-                        if 'run' in rule:
-                            rule['run'].continue_with(To(from_state, to_state, assert_state))
+                        if "run" in rule:
+                            rule["run"].continue_with(
+                                To(from_state, to_state, assert_state)
+                            )
                         else:
-                            rule['run'] = To(from_state, to_state, assert_state)
+                            rule["run"] = To(
+                                from_state, to_state, assert_state
+                            )
 
                         if to_state in start_state:
                             del start_state[to_state]
 
-                        if parent_start_state and to_state in parent_start_state:
+                        if (
+                            parent_start_state
+                            and to_state in parent_start_state
+                        ):
                             del parent_start_state[to_state]
                     else:
-                        raise Exception('Trigger {0} destination not defined'.format(trigger_name))
+                        raise Exception(
+                            "Trigger {0} destination not defined".format(
+                                trigger_name
+                            )
+                        )
 
-                    rules[trigger_name] = rule;
+                    rules[trigger_name] = rule
 
         started = False
         for state_name in start_state.keys():
             if started:
-                raise Exception('Chart {0} has more than one start state {1}'.format(self._name, state_name))
+                raise Exception(
+                    "Chart {0} has more than one start state {1}".format(
+                        self._name, state_name
+                    )
+                )
 
             started = True
             if parent_name:
-                rules[parent_name + '$start'] = {
-                    'all': [{'chart_context': {'$and': [{'label': parent_name}, {'chart': 1}]}}],
-                    'run': To(None, state_name, False)};
+                rules[parent_name + "$start"] = {
+                    "all": [
+                        {
+                            "chart_context": {
+                                "$and": [{"label": parent_name}, {"chart": 1}]
+                            }
+                        }
+                    ],
+                    "run": To(None, state_name, False),
+                }
             else:
-                rules['$start'] = {'all': [{'chart_context': {'$and': [{'$nex': {'running': 1}}, {'$s': 1}]}}],
-                                   'run': To(None, state_name, False)};
+                rules["$start"] = {
+                    "all": [
+                        {
+                            "chart_context": {
+                                "$and": [{"$nex": {"running": 1}}, {"$s": 1}]
+                            }
+                        }
+                    ],
+                    "run": To(None, state_name, False),
+                }
 
         if not started:
-            raise Exception('Chart {0} has no start state'.format(self._name))
+            raise Exception("Chart {0} has no start state".format(self._name))
 
 
 class Flowchart(Ruleset):
-
     def __init__(self, name, host, chart_definition):
         self._name = name
         self._host = host
@@ -657,118 +791,174 @@ class Flowchart(Ruleset):
         self._transform(chart_definition, ruleset_definition)
         super(Flowchart, self).__init__(name, host, ruleset_definition)
         self._definition = chart_definition
-        self._definition['$type'] = 'flowChart'
+        self._definition["$type"] = "flowChart"
 
     def _transform(self, chart_definition, rules):
         visited = {}
         reflexive_stages = {}
 
         for stage_name, stage in chart_definition.items():
-            if 'to' in stage:
-                if isinstance(stage['to'], str):
-                    if stage['to'] == stage_name:
+            if "to" in stage:
+                if isinstance(stage["to"], str):
+                    if stage["to"] == stage_name:
                         reflexive_stages[stage_name] = True
                 else:
-                    for transition_name, transition in stage['to'].items():
-                        if transition_name == stage_name or 'count' in transition or 'cap' in transition:
+                    for transition_name, transition in stage["to"].items():
+                        if (
+                            transition_name == stage_name
+                            or "count" in transition
+                            or "cap" in transition
+                        ):
                             reflexive_stages[stage_name] = True
 
         for stage_name, stage in chart_definition.items():
-            stage_test = {'chart_context': {'$and': [{'label': stage_name}, {'chart': 1}]}}
+            stage_test = {
+                "chart_context": {
+                    "$and": [{"label": stage_name}, {"chart": 1}]
+                }
+            }
             from_stage = None
             if stage_name in reflexive_stages:
                 from_stage = stage_name
 
-            if 'to' in stage:
-                if isinstance(stage['to'], str):
+            if "to" in stage:
+                if isinstance(stage["to"], str):
                     next_stage = None
-                    rule = {'all': [stage_test]}
-                    if stage['to'] in chart_definition:
-                        next_stage = chart_definition[stage['to']]
+                    rule = {"all": [stage_test]}
+                    if stage["to"] in chart_definition:
+                        next_stage = chart_definition[stage["to"]]
                     else:
-                        raise Exception('Stage {0} not found'.format(stage['to']))
+                        raise Exception(
+                            "Stage {0} not found".format(stage["to"])
+                        )
 
                     assert_stage = False
-                    if stage['to'] in reflexive_stages:
+                    if stage["to"] in reflexive_stages:
                         assert_stage = True
 
-                    if not 'run' in next_stage:
-                        rule['run'] = To(from_stage, stage['to'], assert_stage)
+                    if "run" not in next_stage:
+                        rule["run"] = To(from_stage, stage["to"], assert_stage)
                     else:
-                        if isinstance(next_stage['run'], str):
-                            rule['run'] = To(from_stage, stage['to'], assert_stage).continue_with(
-                                Promise(self._host.get_action(next_stage['run'])))
-                        elif isinstance(next_stage['run'], Promise) or hasattr(next_stage['run'], '__call__'):
-                            rule['run'] = To(from_stage, stage['to'], assert_stage).continue_with(next_stage['run'])
+                        if isinstance(next_stage["run"], str):
+                            rule["run"] = To(
+                                from_stage, stage["to"], assert_stage
+                            ).continue_with(
+                                Promise(
+                                    self._host.get_action(next_stage["run"])
+                                )
+                            )
+                        elif isinstance(
+                            next_stage["run"], Promise
+                        ) or callable(next_stage["run"]):
+                            rule["run"] = To(
+                                from_stage, stage["to"], assert_stage
+                            ).continue_with(next_stage["run"])
 
-                    rules['{0}.{1}'.format(stage_name, stage['to'])] = rule
-                    visited[stage['to']] = True
+                    rules["{0}.{1}".format(stage_name, stage["to"])] = rule
+                    visited[stage["to"]] = True
                 else:
-                    for transition_name, transition in stage['to'].items():
+                    for transition_name, transition in stage["to"].items():
                         rule = {}
                         next_stage = None
 
-                        if 'pri' in transition:
-                            rule['pri'] = transition['pri']
+                        if "pri" in transition:
+                            rule["pri"] = transition["pri"]
 
-                        if 'count' in transition:
-                            rule['count'] = transition['count']
+                        if "count" in transition:
+                            rule["count"] = transition["count"]
 
-                        if 'cap' in transition:
-                            rule['cap'] = transition['cap']
+                        if "cap" in transition:
+                            rule["cap"] = transition["cap"]
 
-                        if 'all' in transition:
-                            rule['all'] = list(transition['all'])
-                            rule['all'].append(stage_test)
-                        elif 'any' in transition:
-                            rule['all'] = [stage_test, {'m$any': transition['any']}]
+                        if "all" in transition:
+                            rule["all"] = list(transition["all"])
+                            rule["all"].append(stage_test)
+                        elif "any" in transition:
+                            rule["all"] = [
+                                stage_test,
+                                {"m$any": transition["any"]},
+                            ]
                         else:
-                            rule['all'] = [stage_test]
+                            rule["all"] = [stage_test]
 
                         if transition_name in chart_definition:
                             next_stage = chart_definition[transition_name]
                         else:
-                            raise Exception('Stage {0} not found'.format(transition_name))
+                            raise Exception(
+                                "Stage {0} not found".format(transition_name)
+                            )
 
                         assert_stage = False
                         if transition_name in reflexive_stages:
                             assert_stage = True
 
-                        if not 'run' in next_stage:
-                            rule['run'] = To(from_stage, transition_name, assert_stage)
+                        if "run" not in next_stage:
+                            rule["run"] = To(
+                                from_stage, transition_name, assert_stage
+                            )
                         else:
-                            if isinstance(next_stage['run'], str):
-                                rule['run'] = To(from_stage, transition_name, assert_stage).continue_with(
-                                    Promise(self._host.get_action(next_stage['run'])))
-                            elif isinstance(next_stage['run'], Promise) or hasattr(next_stage['run'], '__call__'):
-                                rule['run'] = To(from_stage, transition_name, assert_stage).continue_with(
-                                    next_stage['run'])
+                            if isinstance(next_stage["run"], str):
+                                rule["run"] = To(
+                                    from_stage, transition_name, assert_stage
+                                ).continue_with(
+                                    Promise(
+                                        self._host.get_action(
+                                            next_stage["run"]
+                                        )
+                                    )
+                                )
+                            elif isinstance(
+                                next_stage["run"], Promise
+                            ) or callable(next_stage["run"]):
+                                rule["run"] = To(
+                                    from_stage, transition_name, assert_stage
+                                ).continue_with(next_stage["run"])
 
-                        rules['{0}.{1}'.format(stage_name, transition_name)] = rule
+                        rules[
+                            "{0}.{1}".format(stage_name, transition_name)
+                        ] = rule
                         visited[transition_name] = True
 
         started = False
         for stage_name, stage in chart_definition.items():
-            if not stage_name in visited:
+            if stage_name not in visited:
                 if started:
-                    raise Exception('Chart {0} has more than one start state'.format(self._name))
+                    raise Exception(
+                        "Chart {0} has more than one start state".format(
+                            self._name
+                        )
+                    )
 
-                rule = {'all': [{'chart_context': {'$and': [{'$nex': {'running': 1}}, {'$s': 1}]}}]}
-                if not 'run' in stage:
-                    rule['run'] = To(None, stage_name, False)
+                rule = {
+                    "all": [
+                        {
+                            "chart_context": {
+                                "$and": [{"$nex": {"running": 1}}, {"$s": 1}]
+                            }
+                        }
+                    ]
+                }
+                if "run" not in stage:
+                    rule["run"] = To(None, stage_name, False)
                 else:
-                    if isinstance(stage['run'], str):
-                        rule['run'] = To(None, stage_name, False).continue_with(
-                            Promise(self._host.get_action(stage['run'])))
-                    elif isinstance(stage['run'], Promise) or hasattr(stage['run'], '__call__'):
-                        rule['run'] = To(None, stage_name, False).continue_with(stage['run'])
+                    if isinstance(stage["run"], str):
+                        rule["run"] = To(
+                            None, stage_name, False
+                        ).continue_with(
+                            Promise(self._host.get_action(stage["run"]))
+                        )
+                    elif isinstance(stage["run"], Promise) or callable(
+                        stage["run"]
+                    ):
+                        rule["run"] = To(
+                            None, stage_name, False
+                        ).continue_with(stage["run"])
 
-                rules['$start.{0}'.format(stage_name)] = rule
+                rules["$start.{0}".format(stage_name)] = rule
                 started = True
 
 
 class Host(object):
-
     def __init__(self, ruleset_definitions=None):
         self._ruleset_directory = {}
         self._ruleset_list = []
@@ -785,10 +975,10 @@ class Host(object):
         self._run()
 
     def get_action(self, action_name):
-        raise Exception('Action with name {0} not found'.format(action_name))
+        raise Exception("Action with name {0} not found".format(action_name))
 
     def load_ruleset(self, ruleset_name):
-        raise Exception('Ruleset with name {0} not found'.format(ruleset_name))
+        raise Exception("Ruleset with name {0} not found".format(ruleset_name))
 
     def save_ruleset(self, ruleset_name, ruleset_definition):
         return
@@ -831,11 +1021,15 @@ class Host(object):
             return self.post_batch(ruleset_name, message)
 
         rules = self.get_ruleset(ruleset_name)
-        return self._handle_function(rules, rules.assert_event, message, complete)
+        return self._handle_function(
+            rules, rules.assert_event, message, complete
+        )
 
     def post_batch(self, ruleset_name, messages, complete=None):
         rules = self.get_ruleset(ruleset_name)
-        return self._handle_function(rules, rules.assert_events, messages, complete)
+        return self._handle_function(
+            rules, rules.assert_events, messages, complete
+        )
 
     def assert_fact(self, ruleset_name, fact, complete=None):
         if isinstance(fact, list):
@@ -846,7 +1040,9 @@ class Host(object):
 
     def assert_facts(self, ruleset_name, facts, complete=None):
         rules = self.get_ruleset(ruleset_name)
-        return self._handle_function(rules, rules.assert_facts, facts, complete)
+        return self._handle_function(
+            rules, rules.assert_facts, facts, complete
+        )
 
     def retract_fact(self, ruleset_name, fact, complete=None):
         rules = self.get_ruleset(ruleset_name)
@@ -854,7 +1050,9 @@ class Host(object):
 
     def retract_facts(self, ruleset_name, facts, complete=None):
         rules = self.get_ruleset(ruleset_name)
-        return self._handle_function(rules, rules.retract_facts, facts, complete)
+        return self._handle_function(
+            rules, rules.retract_facts, facts, complete
+        )
 
     def update_state(self, ruleset_name, state, complete=None):
         rules = self.get_ruleset(ruleset_name)
@@ -900,7 +1098,9 @@ class Host(object):
             ruleset.set_get_queued_messages_callback(func)
 
     def complete_get_queued_messages(self, ruleset_name, sid, queued_messages):
-        self.get_ruleset(ruleset_name).complete_get_queued_messages(sid, queued_messages)
+        self.get_ruleset(ruleset_name).complete_get_queued_messages(
+            sid, queued_messages
+        )
 
     def set_get_idle_state_callback(self, func):
         self.get_idle_state_callback = func
@@ -909,39 +1109,56 @@ class Host(object):
             ruleset.set_get_idle_state_callback(func)
 
     def complete_get_idle_state(self, ruleset_name, sid, stored_messages):
-        self.get_ruleset(ruleset_name).complete_get_idle_state(sid, stored_messages)
+        self.get_ruleset(ruleset_name).complete_get_idle_state(
+            sid, stored_messages
+        )
 
     def register_rulesets(self, ruleset_definitions):
         rulesets = Ruleset.create_rulesets(self, ruleset_definitions)
         for ruleset_name, ruleset in rulesets.items():
             if ruleset_name in self._ruleset_directory:
-                raise Exception('Ruleset with name {0} already registered'.format(ruleset_name))
+                raise Exception(
+                    "Ruleset with name {0} already registered".format(
+                        ruleset_name
+                    )
+                )
             else:
                 self._ruleset_directory[ruleset_name] = ruleset
                 self._ruleset_list.append(ruleset)
 
                 if self.store_message_callback:
-                    ruleset.set_store_message_callback(self.store_message_callback)
+                    ruleset.set_store_message_callback(
+                        self.store_message_callback
+                    )
 
                 if self.delete_message_callback:
-                    ruleset.set_delete_message_callback(self.delete_message_callback)
+                    ruleset.set_delete_message_callback(
+                        self.delete_message_callback
+                    )
 
                 if self.queue_message_callback:
-                    ruleset.set_queue_message_callback(self.queue_message_callback)
+                    ruleset.set_queue_message_callback(
+                        self.queue_message_callback
+                    )
 
                 if self.get_stored_messages_callback:
-                    ruleset.set_get_stored_messages_callback(self.get_stored_messages_callback)
+                    ruleset.set_get_stored_messages_callback(
+                        self.get_stored_messages_callback
+                    )
 
                 if self.get_queued_messages_callback:
-                    ruleset.set_get_queued_messages_callback(self.get_queued_messages_callback)
+                    ruleset.set_get_queued_messages_callback(
+                        self.get_queued_messages_callback
+                    )
 
                 if self.get_idle_state_callback:
-                    ruleset.set_get_idle_state_callback(self.get_idle_state_callback)
+                    ruleset.set_get_idle_state_callback(
+                        self.get_idle_state_callback
+                    )
 
         return list(rulesets.keys())
 
     def _run(self):
-
         def dispatch_ruleset(index):
             if not len(self._ruleset_list):
                 self._d_timer = threading.Timer(0.5, dispatch_ruleset, (0,))
@@ -951,14 +1168,18 @@ class Host(object):
                 ruleset = self._ruleset_list[index]
                 try:
                     ruleset.dispatch()
-                except BaseException as e:
-                    logger.exception('Error dispatching ruleset')
+                except BaseException:
+                    logger.exception("Error dispatching ruleset")
 
                 timeout = 0
-                if (index == (len(self._ruleset_list) - 1)):
+                if index == (len(self._ruleset_list) - 1):
                     timeout = 0.2
 
-                self._d_timer = threading.Timer(timeout, dispatch_ruleset, ((index + 1) % len(self._ruleset_list),))
+                self._d_timer = threading.Timer(
+                    timeout,
+                    dispatch_ruleset,
+                    ((index + 1) % len(self._ruleset_list),),
+                )
                 self._d_timer.daemon = True
                 self._d_timer.start()
 
@@ -971,14 +1192,18 @@ class Host(object):
                 ruleset = self._ruleset_list[index]
                 try:
                     ruleset.dispatch_timers()
-                except BaseException as e:
-                    logger.exception('Error dispatching timers')
+                except BaseException:
+                    logger.exception("Error dispatching timers")
 
                 timeout = 0
-                if (index == (len(self._ruleset_list) - 1)):
+                if index == (len(self._ruleset_list) - 1):
                     timeout = 0.2
 
-                self._t_timer = threading.Timer(timeout, dispatch_timers, ((index + 1) % len(self._ruleset_list),))
+                self._t_timer = threading.Timer(
+                    timeout,
+                    dispatch_timers,
+                    ((index + 1) % len(self._ruleset_list),),
+                )
                 self._t_timer.daemon = True
                 self._t_timer.start()
 
@@ -988,5 +1213,3 @@ class Host(object):
         self._t_timer = threading.Timer(0.1, dispatch_timers, (0,))
         self._t_timer.daemon = True
         self._t_timer.start()
-
-
