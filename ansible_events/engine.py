@@ -6,7 +6,10 @@ import traceback
 from pprint import pformat
 from typing import Any, Dict, List, Optional, cast
 
-import durable.lang
+if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+    from ansible_events.drools import engine, lang
+else:
+    from durable import engine, lang
 
 import ansible_events.rule_generator as rule_generator
 from ansible_events.builtin import actions as builtin_actions
@@ -186,8 +189,8 @@ async def call_action(
             }
             logger.info(action_args)
             if facts is None:
-                facts = durable.lang.get_facts(ruleset)
-            logger.info(f"facts: {durable.lang.get_facts(ruleset)}")
+                facts = lang.get_facts(ruleset)
+            logger.info(f"facts: {lang.get_facts(ruleset)}")
             if "ruleset" not in action_args:
                 action_args["ruleset"] = ruleset
             result = await builtin_actions[action](
@@ -201,10 +204,10 @@ async def call_action(
         except KeyError as e:
             logger.error(f"{e}\n{pformat(variables_copy)}")
             raise
-        except durable.engine.MessageNotHandledException as e:
+        except engine.MessageNotHandledException as e:
             logger.error(f"MessageNotHandledException: {action_args}")
             result = dict(error=e)
-        except durable.engine.MessageObservedException as e:
+        except engine.MessageObservedException as e:
             logger.info(f"MessageObservedException: {action_args}")
             result = dict(error=e)
         except ShutdownException:
@@ -232,11 +235,8 @@ async def run_rulesets(
     logger = logging.getLogger()
 
     logger.info("run_ruleset")
-
     if redis_host_name and redis_port:
-        provide_durability(
-            durable.lang.get_host(), redis_host_name, redis_port
-        )
+        provide_durability(lang.get_host(), redis_host_name, redis_port)
 
     ansible_ruleset_queue_plans = [
         RuleSetQueuePlan(ruleset, queue, asyncio.Queue())
@@ -279,13 +279,13 @@ async def run_rulesets(
                 logger.info("Asserting event")
                 try:
                     logger.debug(data)
-                    durable.lang.post(ruleset.name, data)
-                except durable.engine.MessageObservedException:
+                    lang.post(ruleset.name, data)
+                except engine.MessageObservedException:
                     logger.debug(f"MessageObservedException: {data}")
-                except durable.engine.MessageNotHandledException:
+                except engine.MessageNotHandledException:
                     logger.debug(f"MessageNotHandledException: {data}")
                 finally:
-                    logger.debug(durable.lang.get_pending_events(ruleset.name))
+                    logger.debug(lang.get_pending_events(ruleset.name))
                 while not plan.empty():
                     item = cast(ActionContext, await plan.get())
                     logger.debug(item)
@@ -295,7 +295,7 @@ async def run_rulesets(
                 await event_log.put(
                     dict(type="ProcessedEvent", results=results)
                 )
-            except durable.engine.MessageNotHandledException:
+            except engine.MessageNotHandledException:
                 logger.info(f"MessageNotHandledException: {data}")
                 await event_log.put(dict(type="MessageNotHandled"))
             except ShutdownException:
