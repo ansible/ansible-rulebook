@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 class DurableRulesEngine:
-
     def __init__(self, host):
         self._host = host
         self._last_response = None
@@ -116,7 +115,8 @@ class error(Exception):
 
 # exported methods
 _instance = DurableRulesEngine(
-    os.environ.get("ANSIBLE_EVENTS_DROOLS_HOST", "http://localhost:8080"))
+    os.environ.get("ANSIBLE_EVENTS_DROOLS_HOST", "http://localhost:8080")
+)
 
 
 def abandon_action(*args, **kwargs):  # real signature unknown
