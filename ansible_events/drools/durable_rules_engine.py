@@ -66,7 +66,7 @@ class DurableRulesEngine:
         return ('{ "sid":"0", "id":"sid-0", "$s":1}', json.dumps(resp), handle)
 
     def complete_and_start_action(self, handle):  # real signature unknown
-        _logger.info("complete_and_start_action: %d", handle)
+        _logger.info("complete_and_start_action: %s", handle)
 
         if self._last_response:
             resp = self._last_response.pop()
