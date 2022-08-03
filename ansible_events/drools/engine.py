@@ -499,13 +499,13 @@ class Ruleset(object):
     def _flush_actions(self, state, result_container, state_offset, complete):
         while "message" in result_container:
             print("RES", result_container)
-            action_name = None
+            _action_name = None
             # TODO: Discuss this line
-            for action_name, message in result_container["message"].items():
+            for _action_name, _message in result_container["message"].items():
                 break
 
             del result_container["message"]
-            c = Closure(self._host, self, state, message, state_offset)
+            c = Closure(self._host, self, state, _message, state_offset)
 
             def action_callback(e, c=c):
                 if c._has_completed():
@@ -547,7 +547,8 @@ class Ruleset(object):
                     except BaseException as error:
                         t, v, tb = sys.exc_info()
                         logger.exception(
-                            "base exception type %s, value %s, traceback %s",
+                            "base exception type %s, value %s, "
+                            "traceback %s",
                             t,
                             str(v),
                             traceback.format_tb(tb),
@@ -558,7 +559,8 @@ class Ruleset(object):
                         complete(error, None)
                     except Exception:
                         logger.exception(
-                            "unknown exception type %s, value %s, traceback %s",
+                            "unknown exception type %s, value %s, "
+                            "traceback %s",
                             t,
                             str(v),
                             traceback.format_tb(tb),
@@ -574,8 +576,8 @@ class Ruleset(object):
                         except Exception:
                             pass
 
-            print("ACTION", action_name)
-            self._actions[action_name].run(c, action_callback)
+            print("ACTION", _action_name)
+            self._actions[_action_name].run(c, action_callback)
 
     def do_actions(self, state_handle, complete):
         try:
