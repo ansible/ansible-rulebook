@@ -4,8 +4,19 @@ from queue import Queue
 
 import pytest
 import yaml
-from durable import lang
-from durable.lang import assert_fact, c, m, post, rule, ruleset, when_all
+
+
+if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+    import ansible_events.drools as durable
+    from ansible_events.drools import lang
+    from ansible_events.drools.lang import assert_fact, c, m, post, rule, ruleset, when_all
+else:
+    import durable
+    from durable import lang
+    from durable.lang import assert_fact, c, m, post, rule, ruleset, when_all
+
+import pytest
+import yaml
 
 from ansible_events.rule_generator import generate_rulesets
 from ansible_events.rules_parser import parse_rule_sets
