@@ -7,7 +7,7 @@ from pprint import pformat
 from typing import Any, Dict, List, Optional, cast
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
-    from ansible_events.drools import engine, lang
+    from ansible_events.drools.vendor import engine, lang
 else:
     from durable import engine, lang
 

@@ -5,7 +5,8 @@ import sys
 import threading
 import traceback
 
-from . import durable_rules_engine, logger
+from .. import durable_rules_engine
+from . import logger
 
 
 def _unix_now():

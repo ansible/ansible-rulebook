@@ -2,16 +2,11 @@ import asyncio
 import os
 from queue import Queue
 
-import pytest
-import yaml
-
-
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
-    import ansible_events.drools as durable
-    from ansible_events.drools import lang
-    from ansible_events.drools.lang import assert_fact, c, m, post, rule, ruleset, when_all
+    from ansible_events.drools.vendor import lang
+    from ansible_events.drools.vendor.lang import assert_fact, c, m, \
+        post, rule, ruleset, when_all
 else:
-    import durable
     from durable import lang
     from durable.lang import assert_fact, c, m, post, rule, ruleset, when_all
 

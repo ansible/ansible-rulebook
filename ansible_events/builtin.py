@@ -17,7 +17,7 @@ import dpath.util
 import yaml
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
-    from ansible_events.drools import lang
+    from ansible_events.drools.vendor import lang
 else:
     from durable import lang
 
