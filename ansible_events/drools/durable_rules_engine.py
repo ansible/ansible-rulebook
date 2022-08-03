@@ -8,58 +8,59 @@ _logger = logging.getLogger(__name__)
 
 
 class DurableRulesEngine:
-    _host = None
-    _last_resp = None
 
     def __init__(self, host):
         self._host = host
+        self._last_response = None
 
     def create_ruleset(self, ruleset_name, ruleset_string):
-        req = {ruleset_name: json.loads(ruleset_string)}
+        request = {ruleset_name: json.loads(ruleset_string)}
 
-        r = requests.post(
-            self._host + "/create-durable-rules-executor", json=req
+        response = requests.post(
+            self._host + "/create-durable-rules-executor", json=request
         )
-        if r.status_code != 200:
+        if response.status_code != 200:
             raise Exception(
-                f"Invalid status code: {r.status_code} - {r.reason}\n"
-                + json.loads(r.content)["details"]
+                "Invalid status code: "
+                f"{response.status_code} - {response.reason}\n"
+                + json.loads(response.content)["details"]
             )
 
-        id = r.text
-        return id
+        return response.text
 
     def assert_event(self, session_id, serialized_fact):
         _logger.warning("assert_event not yet implemented: using assert_fact")
         return self.assert_fact(session_id, serialized_fact)
 
     def assert_fact(self, session_id, serialized_fact):
-        d = json.loads(serialized_fact)
+        fact = json.loads(serialized_fact)
         if "j" in serialized_fact:
-            d["j"] = 1
+            fact["j"] = 1
 
-        serialized_fact = json.dumps(d)
+        serialized_fact = json.dumps(fact)
 
-        r = requests.post(
+        response = requests.post(
             f"{self._host}/rules-durable-executors/{session_id}/process",
             json=json.loads(serialized_fact),
         )
 
-        if r.status_code != 200:
+        if response.status_code != 200:
             raise Exception(
-                f"Invalid status code: {r.status_code} - {r.reason}\n"
-                + json.loads(r.content)["details"]
+                "Invalid status code: "
+                f"{response.status_code} - {response.reason}\n"
+                + json.loads(response.content)["details"]
             )
 
-        self._last_resp = r.json()
-        self._last_resp.reverse()
+        self._last_response = response.json()
+        # drools returns the list in the opposite order
+        self._last_response.reverse()
 
         return (0, session_id)
 
     def start_action_for_state(self, handle):  # real signature unknown
 
-        if self._last_resp:
-            resp = self._last_resp.pop()
+        if self._last_response:
+            resp = self._last_response.pop()
         else:
             return None
 
@@ -68,22 +69,23 @@ class DurableRulesEngine:
     def complete_and_start_action(self, handle):  # real signature unknown
         _logger.info("complete_and_start_action: %d", handle)
 
-        if self._last_resp:
-            resp = self._last_resp.pop()
+        if self._last_response:
+            resp = self._last_response.pop()
         else:
             return None
 
         return json.dumps(resp)
 
     def retract_fact(self, session_id, serialized_fact):
-        r = requests.post(
+        response = requests.post(
             f"{self._host}/rules-durable-executors/{session_id}/retract-fact",
             json=json.loads(serialized_fact),
         )
-        if r.status_code != 200:
+        if response.status_code != 200:
             raise Exception(
-                f"Invalid status code: {r.status_code} - {r.reason}\n"
-                + json.loads(r.content)["details"]
+                "Invalid status code: "
+                f"{response.status_code} - {response.reason}\n"
+                + json.loads(response.content)["details"]
             )
 
         return (0, session_id)
