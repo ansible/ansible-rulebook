@@ -5,6 +5,7 @@ import requests
 
 _logger = logging.getLogger(__name__)
 
+
 class DurableRulesEngine:
     __host = None
     __last_resp = None
@@ -12,7 +13,9 @@ class DurableRulesEngine:
     def __init__(self, host):
         self.__host = host
 
-    def create_ruleset(self, ruleset_name, ruleset_string):  # real signature unknown
+    def create_ruleset(
+        self, ruleset_name, ruleset_string
+    ):  # real signature unknown
         # {
         #   "sid": "0",
         #   "id": "sid-0",
@@ -21,10 +24,14 @@ class DurableRulesEngine:
 
         req = {ruleset_name: json.loads(ruleset_string)}
 
-        r = requests.post(self.__host + '/create-durable-rules-executor', json=req)
+        r = requests.post(
+            self.__host + "/create-durable-rules-executor", json=req
+        )
         if r.status_code != 200:
-            raise Exception(f"Invalid status code: {r.status_code} - {r.reason}\n"
-                            + json.loads(r.content)['details'])
+            raise Exception(
+                f"Invalid status code: {r.status_code} - {r.reason}\n"
+                + json.loads(r.content)["details"]
+            )
 
         id = r.text
         return id
@@ -35,18 +42,21 @@ class DurableRulesEngine:
 
     def assert_fact(self, session_id, serialized_fact):
         d = json.loads(serialized_fact)
-        if 'j' in serialized_fact:
-            d['j'] = 1
+        if "j" in serialized_fact:
+            d["j"] = 1
 
         serialized_fact = json.dumps(d)
 
-        r = requests.post(f"{self.__host}/rules-durable-executors/{session_id}/process",
-                          json=json.loads(serialized_fact))
+        r = requests.post(
+            f"{self.__host}/rules-durable-executors/{session_id}/process",
+            json=json.loads(serialized_fact),
+        )
 
         if r.status_code != 200:
             raise Exception(
                 f"Invalid status code: {r.status_code} - {r.reason}\n"
-                + json.loads(r.content)['details'])
+                + json.loads(r.content)["details"]
+            )
 
         self.__last_resp = r.json()
         self.__last_resp.reverse()
@@ -62,7 +72,7 @@ class DurableRulesEngine:
     def start_action_for_state(self, handle):  # real signature unknown
         try:
             resp = self.__last_resp.pop()
-        except:
+        except Exception:
             return None
 
         return ('{ "sid":"0", "id":"sid-0", "$s":1}', json.dumps(resp), handle)
@@ -71,33 +81,39 @@ class DurableRulesEngine:
         _logger.info("complete_and_start_action: %d", handle)
         try:
             resp = self.__last_resp.pop()
-        except:
+        except Exception:
             return None
 
         return json.dumps(resp)
 
     def retract_fact(self, session_id, serialized_fact):
-        r = requests.post(f"{self.__host}/rules-durable-executors/{session_id}/retract-fact",
-                          json=json.loads(serialized_fact))
+        r = requests.post(
+            f"{self.__host}/rules-durable-executors/{session_id}/retract-fact",
+            json=json.loads(serialized_fact),
+        )
         if r.status_code != 200:
             raise Exception(
                 f"Invalid status code: {r.status_code} - {r.reason}\n"
-                + json.loads(r.content)['details'])
+                + json.loads(r.content)["details"]
+            )
 
-        #self.__last_resp = r.json()
-        #self.__last_resp.reverse()
+        # self.__last_resp = r.json()
+        # self.__last_resp.reverse()
 
         return (0, session_id)
 
     def get_facts(self, session_id, _sid):
-        r = requests.post(f"{self.__host}/rules-durable-executors/{session_id}/get-all-facts")
+        r = requests.post(
+            f"{self.__host}/rules-durable-executors/{session_id}/get-all-facts"
+        )
         if r.status_code != 200:
             raise Exception(
                 f"Invalid status code: {r.status_code} - {r.reason}\n"
-                + json.loads(r.content)['details'])
+                + json.loads(r.content)["details"]
+            )
 
-        #self.__last_resp = r.json()
-        #self.__last_resp.reverse()
+        # self.__last_resp = r.json()
+        # self.__last_resp.reverse()
 
         return r.content
 
@@ -107,7 +123,9 @@ class error(Exception):
     def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
-    __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
+    __weakref__ = property(
+        lambda self: object(), lambda self, v: None, lambda self: None
+    )  # default
     """list of weak references to the object (if defined)"""
 
 
@@ -172,6 +190,7 @@ def get_events(*args, **kwargs):  # real signature unknown
 def get_facts(handle, session_id):  # real signature unknown
     return __instance.get_facts(handle, session_id)
 
+
 def get_state(*args, **kwargs):  # real signature unknown
     pass
 
@@ -196,7 +215,9 @@ def set_get_idle_state_callback(*args, **kwargs):  # real signature unknown
     pass
 
 
-def set_get_queued_messages_callback(*args, **kwargs):  # real signature unknown
+def set_get_queued_messages_callback(
+    *args, **kwargs
+):  # real signature unknown
     pass
 
 
