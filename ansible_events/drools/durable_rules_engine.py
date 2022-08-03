@@ -13,15 +13,7 @@ class DurableRulesEngine:
     def __init__(self, host):
         self.__host = host
 
-    def create_ruleset(
-        self, ruleset_name, ruleset_string
-    ):  # real signature unknown
-        # {
-        #   "sid": "0",
-        #   "id": "sid-0",
-        #   "$s": 1
-        # }
-
+    def create_ruleset(self, ruleset_name, ruleset_string):
         req = {ruleset_name: json.loads(ruleset_string)}
 
         r = requests.post(
@@ -61,12 +53,6 @@ class DurableRulesEngine:
         self.__last_resp = r.json()
         self.__last_resp.reverse()
 
-        # {
-        #   "sid": "0",
-        #   "id": "sid-0",
-        #   "$s": 1
-        # }
-
         return (0, session_id)
 
     def start_action_for_state(self, handle):  # real signature unknown
@@ -97,9 +83,6 @@ class DurableRulesEngine:
                 + json.loads(r.content)["details"]
             )
 
-        # self.__last_resp = r.json()
-        # self.__last_resp.reverse()
-
         return (0, session_id)
 
     def get_facts(self, session_id, _sid):
@@ -111,9 +94,6 @@ class DurableRulesEngine:
                 f"Invalid status code: {r.status_code} - {r.reason}\n"
                 + json.loads(r.content)["details"]
             )
-
-        # self.__last_resp = r.json()
-        # self.__last_resp.reverse()
 
         return r.content
 
