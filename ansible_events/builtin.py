@@ -15,7 +15,6 @@ from typing import Callable, Dict, List, Optional
 import ansible_runner
 import dpath.util
 import yaml
-from durable import lang
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
     from ansible_events.drools import lang
