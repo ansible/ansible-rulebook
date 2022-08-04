@@ -1,0 +1,9 @@
+---
+- name: A playbook that always fails
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name:
+      ansible.builtin.fail:
+        msg: 'Intentionally failing test'
+      when: 1 != 0

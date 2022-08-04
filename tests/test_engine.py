@@ -64,7 +64,7 @@ async def test_run_rulesets():
         event_log,
         ruleset_queues,
         dict(),
-        dict(),
+        load_inventory("playbooks/inventory.yml"),
     )
 
     assert event_log.get_nowait()["type"] == "EmptyEvent", "0"
@@ -72,11 +72,9 @@ async def test_run_rulesets():
     assert event_log.get_nowait()["type"] == "Action", "0.2"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
     assert event_log.get_nowait()["type"] == "Job", "1.0"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.2"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.3"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.4"
-    assert event_log.get_nowait()["type"] == "Action", "1.5"
+    for i in range(9):
+        assert event_log.get_nowait()["type"] == "AnsibleEvent", f"1.{i}"
+    assert event_log.get_nowait()["type"] == "Action", "1.9"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
     assert event_log.get_nowait()["type"] == "Action", "2.1"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
@@ -345,7 +343,7 @@ async def test_run_rulesets_on_hosts():
         event_log,
         ruleset_queues,
         dict(),
-        dict(),
+        load_inventory("playbooks/inventory1.yml"),
     )
 
     assert event_log.get_nowait()["type"] == "EmptyEvent", "0"
@@ -353,9 +351,10 @@ async def test_run_rulesets_on_hosts():
     assert event_log.get_nowait()["type"] == "Action", "0.2"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
     assert event_log.get_nowait()["type"] == "Job", "1.0"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1"
-    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.2"
-    assert event_log.get_nowait()["type"] == "Action", "1.3"
+    for i in range(9):
+        assert event_log.get_nowait()["type"] == "AnsibleEvent", f"1.{i}"
+
+    assert event_log.get_nowait()["type"] == "Action", "1.9"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
     assert event_log.get_nowait()["type"] == "Action", "2.1"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
@@ -399,5 +398,74 @@ async def test_run_assert_facts():
     assert event["status"] == "successful", "2.4"
 
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
+    assert event_log.get_nowait()["type"] == "Shutdown", "4"
+    assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_run_fail_playbook():
+    ruleset_queues, queue, event_log = load_rules(
+        "rules/test_rules_fail_playbook.yml"
+    )
+    inventory = dict(
+        all=dict(hosts=dict(localhost=dict(ansible_connection="local")))
+    )
+    queue.put_nowait(dict())
+    queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
+    queue.put_nowait(Shutdown())
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        inventory,
+    )
+
+    assert event_log.get_nowait()["type"] == "EmptyEvent", "0"
+    assert event_log.get_nowait()["type"] == "Job", "1.0"
+    for i in range(6):
+        assert event_log.get_nowait()["type"] == "AnsibleEvent", f"1.{i}"
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "2.1"
+    assert event["action"] == "run_playbook", "2.2"
+    assert event["rc"] == 2, "2.3"
+    assert event["status"] == "failed", "2.4"
+
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
+    assert event_log.get_nowait()["type"] == "Shutdown", "4"
+    assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_run_exception_playbook():
+    ruleset_queues, queue, event_log = load_rules(
+        "rules/test_rules_exception_playbook.yml"
+    )
+    inventory = dict(
+        all=dict(hosts=dict(localhost=dict(ansible_connection="local")))
+    )
+    queue.put_nowait(dict())
+    queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
+    queue.put_nowait(Shutdown())
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        inventory,
+    )
+
+    assert event_log.get_nowait()["type"] == "EmptyEvent", "0"
+    assert event_log.get_nowait()["type"] == "Job", "1.0"
+    for i in range(6):
+        assert event_log.get_nowait()["type"] == "AnsibleEvent", f"1.{i}"
+
+    event = event_log.get_nowait()
+
+    assert event["type"] == "ProcessedEvent", "3"
+    assert (
+        str(event["results"][0]["error"])
+        == "Playbook playbooks/fail_playbook.yml failed "
+        + "execution rc:2 status:failed"
+    ), "3.1"
     assert event_log.get_nowait()["type"] == "Shutdown", "4"
     assert event_log.empty()
