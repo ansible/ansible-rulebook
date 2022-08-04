@@ -6,7 +6,10 @@ import traceback
 from pprint import pformat
 from typing import Any, Dict, List, Optional, cast
 
-from durable import engine, lang
+if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+    from ansible_events.drools.vendor import engine, lang
+else:
+    from durable import engine, lang
 
 import ansible_events.rule_generator as rule_generator
 from ansible_events.builtin import actions as builtin_actions
@@ -232,7 +235,6 @@ async def run_rulesets(
     logger = logging.getLogger()
 
     logger.info("run_ruleset")
-
     if redis_host_name and redis_port:
         provide_durability(lang.get_host(), redis_host_name, redis_port)
 

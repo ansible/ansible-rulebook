@@ -15,7 +15,11 @@ from typing import Callable, Dict, List, Optional
 import ansible_runner
 import dpath.util
 import yaml
-from durable import lang
+
+if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+    from ansible_events.drools.vendor import lang
+else:
+    from durable import lang
 
 from .collection import find_playbook, has_playbook, split_collection_name
 from .conf import settings
