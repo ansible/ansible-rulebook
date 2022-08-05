@@ -135,6 +135,30 @@ inside the collection benthomasson.eda.
 
 
 
+How to install
+--------------
+
+Via PyPi:
+#########
+
+.. code-block:: shell-session
+
+    pip install ansible-events
+
+Via Docker:
+###########
+
+.. code-block:: shell-session
+
+    docker build -t ansible-events .
+
+
+Usage
+--------------
+
+.. code-block:: shell-session
+
+    ansible-events --help
 
 
 Credits
