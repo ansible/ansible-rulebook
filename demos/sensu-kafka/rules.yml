@@ -1,0 +1,15 @@
+---
+- name: sensu-kafka demo rules
+  hosts: localhost
+  sources:
+    - name: kafka
+      benthomasson.eda.kafka:
+        topic: sensu-events
+        host: broker
+        port: 9092
+  rules:
+    - name: recover fake-app outage
+      condition: event.check.metadata.name == "check-fake-app" and event.check.status == 2
+      action:
+        run_playbook:
+          name: recover-fake-app.yml
