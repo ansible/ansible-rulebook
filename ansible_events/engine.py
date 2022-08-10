@@ -21,7 +21,10 @@ from ansible_events.collection import (
     split_collection_name,
 )
 from ansible_events.durability import provide_durability
-from ansible_events.exception import ShutdownException
+from ansible_events.exception import (
+    PlaybookFailureException,
+    ShutdownException,
+)
 from ansible_events.messages import Shutdown
 from ansible_events.rule_types import (
     ActionContext,
@@ -212,6 +215,9 @@ async def call_action(
             result = dict(error=e)
         except ShutdownException:
             raise
+        except PlaybookFailureException as e:
+            logger.error(e)
+            result = dict(error=e)
         except Exception as e:
             logger.error(
                 f"Error calling {action}: {e}\n {traceback.format_exc()}"

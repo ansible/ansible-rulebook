@@ -23,7 +23,7 @@ else:
 
 from .collection import find_playbook, has_playbook, split_collection_name
 from .conf import settings
-from .exception import ShutdownException
+from .exception import PlaybookFailureException, ShutdownException
 from .util import get_horizontal_rule
 
 
@@ -216,7 +216,7 @@ async def run_playbook(
             status = f.read()
 
     if rc != 0 and not ignore_errors:
-        raise Exception(
+        raise PlaybookFailureException(
             f"Playbook {name} failed execution rc:{rc} status:{status}"
         )
 
