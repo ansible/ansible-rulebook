@@ -56,7 +56,7 @@ async def print_event(
     variables: Dict,
     facts: Dict,
     ruleset: str,
-    var_root: Union[str, List[str], None] = None,
+    var_root: Union[str, Dict, None] = None,
     pretty: Optional[str] = None,
 ):
     print_fn: Callable = print
@@ -127,7 +127,7 @@ async def run_playbook(
     assert_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
     verbosity: int = 0,
-    var_root: Union[str, List[str], None] = None,
+    var_root: Union[str, Dict, None] = None,
     copy_files: Optional[bool] = False,
     json_mode: Optional[bool] = False,
     **kwargs,
@@ -252,22 +252,22 @@ actions: Dict[str, Callable] = dict(
 )
 
 
-def update_variables(variables: Dict, var_root: Union[str, List[str]]):
-    var_roots = [var_root] if isinstance(var_root, str) else var_root
+def update_variables(variables: Dict, var_root: Union[str, Dict]):
+    var_roots = {var_root: var_root} if isinstance(var_root, str) else var_root
     if "event" in variables:
-        for name in var_roots:
+        for key, _new_key in var_roots.items():
             new_value = dpath.util.get(
-                variables["event"], name, separator=".", default=None
+                variables["event"], key, separator=".", default=None
             )
             if new_value:
                 variables["event"] = new_value
                 break
     elif "events" in variables:
-        for k, v in variables["events"].items():
-            for name in var_roots:
+        for _k, v in variables["events"].items():
+            for old_key, new_key in var_roots.items():
                 new_value = dpath.util.get(
-                    v, name, separator=".", default=None
+                    v, old_key, separator=".", default=None
                 )
                 if new_value:
-                    variables["events"][k] = new_value
+                    variables["events"][new_key] = new_value
                     break

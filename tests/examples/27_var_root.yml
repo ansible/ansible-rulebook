@@ -12,6 +12,6 @@
       action:
         print_event:
           var_root:
-            - webhook.payload
-            - kafka.message
+            webhook.payload: webhook
+            kafka.message: kafka
 
