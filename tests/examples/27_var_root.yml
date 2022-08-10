@@ -1,0 +1,17 @@
+---
+- name: 27 multiple events all with var_root
+  hosts: all
+  sources:
+    - non_existent:
+  rules:
+    - name:
+      condition:
+        all:
+          - events.webhook << event.webhook.payload.url == "http://www.example.com"
+          - events.kafka << event.kafka.message.channel == "red"
+      action:
+        print_event:
+          var_root:
+            webhook.payload: webhook
+            kafka.message: kafka
+

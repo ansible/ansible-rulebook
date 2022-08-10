@@ -10,7 +10,7 @@ import tempfile
 import uuid
 from functools import partial
 from pprint import pprint
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 import ansible_runner
 import dpath.util
@@ -60,19 +60,21 @@ async def print_event(
     variables: Dict,
     facts: Dict,
     ruleset: str,
-    var_root: Optional[str] = None,
+    var_root: Union[str, Dict, None] = None,
     pretty: Optional[str] = None,
 ):
     print_fn: Callable = print
     if pretty:
         print_fn = pprint
+
+    if var_root:
+        update_variables(variables, var_root)
+
     var_name = "event"
     if "events" in variables:
         var_name = "events"
-    if var_root:
-        print_fn(dpath.util.get(variables[var_name], var_root, separator="."))
-    else:
-        print_fn(variables[var_name])
+
+    print_fn(variables[var_name])
     sys.stdout.flush()
     await event_log.put(dict(type="Action", action="print_event"))
 
@@ -129,7 +131,7 @@ async def run_playbook(
     assert_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
     verbosity: int = 0,
-    var_root: Optional[str] = None,
+    var_root: Union[str, Dict, None] = None,
     copy_files: Optional[bool] = False,
     json_mode: Optional[bool] = False,
     **kwargs,
@@ -146,8 +148,7 @@ async def run_playbook(
         variables[k] = v
 
     if var_root:
-        o = dpath.util.get(variables["event"], var_root, separator=".")
-        variables["event"] = o
+        update_variables(variables, var_root)
 
     os.mkdir(os.path.join(temp, "env"))
     with open(os.path.join(temp, "env", "extravars"), "w") as f:
@@ -253,3 +254,24 @@ actions: Dict[str, Callable] = dict(
     run_playbook=run_playbook,
     shutdown=shutdown,
 )
+
+
+def update_variables(variables: Dict, var_root: Union[str, Dict]):
+    var_roots = {var_root: var_root} if isinstance(var_root, str) else var_root
+    if "event" in variables:
+        for key, _new_key in var_roots.items():
+            new_value = dpath.util.get(
+                variables["event"], key, separator=".", default=None
+            )
+            if new_value:
+                variables["event"] = new_value
+                break
+    elif "events" in variables:
+        for _k, v in variables["events"].items():
+            for old_key, new_key in var_roots.items():
+                new_value = dpath.util.get(
+                    v, old_key, separator=".", default=None
+                )
+                if new_value:
+                    variables["events"][new_key] = new_value
+                    break
