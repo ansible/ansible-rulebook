@@ -41,9 +41,6 @@ class RestDurableRulesEngine:
             raise Exception("Unknown command " + command)
 
         fact = json.loads(serialized_fact)
-        if "j" in serialized_fact:
-            fact["j"] = 1
-
         serialized_fact = json.dumps(fact)
 
         response = requests.post(

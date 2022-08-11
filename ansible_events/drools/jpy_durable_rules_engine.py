@@ -53,9 +53,6 @@ class JpyDurableRulesEngine:
 
     def _process_message(self, session_id, serialized_fact, command):
         fact = json.loads(serialized_fact)
-        if "j" in serialized_fact:
-            fact["j"] = 1
-
         serialized_fact = json.dumps(fact)
 
         result = command(serialized_fact)
