@@ -713,3 +713,31 @@ async def test_27_var_root():
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "7"
     assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_28_right_side_condition_template():
+    ruleset_queues, queue, event_log = load_rules(
+        "examples/28_right_side_condition_template.yml"
+    )
+
+    queue.put_nowait({"i": 1})
+    queue.put_nowait({"i": 2})
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        {"custom": {"expected_index": 2}},
+        dict(),
+    )
+
+    event_log.get_nowait()
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "debug", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "7"
+    assert event_log.empty()

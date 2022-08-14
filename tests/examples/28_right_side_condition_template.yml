@@ -1,0 +1,12 @@
+---
+- name: 28 test jinja templating on the right side of the condition
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name:
+      condition: event.i == "{{ custom.expected_index }}"
+      action:
+        debug:
