@@ -2,7 +2,6 @@ import os
 from pprint import pprint
 from typing import Any, Dict, List, Union
 
-import dpath.util
 import jinja2
 import yaml
 
@@ -22,10 +21,7 @@ def render_string(value: str, context: Dict) -> str:
 
 def render_string_or_return_value(value: Any, context: Dict) -> Any:
     if isinstance(value, str):
-        if value.startswith("{{") and value.endswith("}}"):
-            return dpath.util.get(context, value[2:-2], separator=".")
-        else:
-            return render_string(value, context)
+        return render_string(value, context)
     return value
 
 
