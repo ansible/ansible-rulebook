@@ -1,0 +1,17 @@
+- hosts: localhost
+  gather_facts: false
+  vars:
+    app_host: fake-app
+    app_port: 5080
+  tasks:
+    - name: Fix fake app
+      ansible.builtin.uri:
+        url: "http://{{ app_host }}:{{ app_port }}/up"
+      register: response
+      failed_when: response.status != 200
+
+    - name: check the app is running again
+      ansible.builtin.uri:
+        url: "http://{{ app_host }}:{{ app_port }}/health"
+      register: response
+      failed_when: response.status != 200

@@ -1,0 +1,16 @@
+---
+type: CheckConfig
+api_version: core/v2
+metadata:
+  name: check-fake-app
+  namespace: default
+spec:
+  command: http-check --url http://fake-app:5080/health
+  subscriptions:
+    - webserver
+  handlers:
+    - sensu-kafka-handler
+  interval: 5
+  runtime_assets:
+    - sensu/http-checks
+  publish: true
