@@ -52,9 +52,6 @@ class JpyDurableRulesEngine:
         return self._process_message(session_id, serialized_fact, command)
 
     def _process_message(self, session_id, serialized_fact, command):
-        fact = json.loads(serialized_fact)
-        serialized_fact = json.dumps(fact)
-
         result = command(serialized_fact)
 
         self._last_response = json.loads(
