@@ -28,10 +28,19 @@ class DurableRulesEngine:
         return response.text
 
     def assert_event(self, session_id, serialized_fact):
-        _logger.warning("assert_event not yet implemented: using assert_fact")
-        return self.assert_fact(session_id, serialized_fact)
+        return self._process_message(
+            session_id, serialized_fact, "process-events"
+        )
 
     def assert_fact(self, session_id, serialized_fact):
+        return self._process_message(
+            session_id, serialized_fact, "process-facts"
+        )
+
+    def _process_message(self, session_id, serialized_fact, command):
+        if command not in ["process-events", "process-facts"]:
+            raise Exception("Unknown command " + command)
+
         fact = json.loads(serialized_fact)
         if "j" in serialized_fact:
             fact["j"] = 1
@@ -39,7 +48,7 @@ class DurableRulesEngine:
         serialized_fact = json.dumps(fact)
 
         response = requests.post(
-            f"{self._host}/rules-durable-executors/{session_id}/process",
+            f"{self._host}/rules-durable-executors/{session_id}/{command}",
             json=json.loads(serialized_fact),
         )
 
@@ -124,7 +133,7 @@ def abandon_action(*args, **kwargs):  # real signature unknown
 
 
 def assert_event(session_id, serialized_fact):
-    return _instance.assert_fact(session_id, serialized_fact)
+    return _instance.assert_event(session_id, serialized_fact)
 
 
 def assert_events(*args, **kwargs):  # real signature unknown
