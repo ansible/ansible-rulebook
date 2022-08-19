@@ -138,8 +138,142 @@ async def run_playbook(
 ):
     logger = logging.getLogger()
 
-    temp = tempfile.mkdtemp(prefix="run_playbook")
-    logger.debug(f"temp {temp}")
+    temp, playbook_name, job_id = await pre_process_runner(
+        event_log,
+        inventory,
+        variables,
+        facts,
+        ruleset,
+        name,
+        "run_playbook",
+        var_root,
+        copy_files,
+        True,
+        **kwargs,
+    )
+    logger.info("Calling Ansible runner")
+    await call_runner(
+        event_log,
+        job_id,
+        temp,
+        dict(playbook=playbook_name),
+        hosts,
+        verbosity,
+        json_mode,
+    )
+    await post_process_runner(
+        event_log, temp, ruleset, "run_playbook", assert_facts, post_events
+    )
+
+
+async def run_module(
+    event_log,
+    inventory: Dict,
+    hosts: List,
+    variables: Dict,
+    facts: Dict,
+    ruleset: str,
+    name: str,
+    assert_facts: Optional[bool] = None,
+    post_events: Optional[bool] = None,
+    verbosity: int = 0,
+    var_root: Union[str, Dict, None] = None,
+    copy_files: Optional[bool] = False,
+    json_mode: Optional[bool] = False,
+    module_args: Union[Dict, None] = None,
+    **kwargs,
+):
+    logger = logging.getLogger()
+
+    temp, module_name, job_id = await pre_process_runner(
+        event_log,
+        inventory,
+        variables,
+        facts,
+        ruleset,
+        name,
+        "run_module",
+        var_root,
+        copy_files,
+        False,
+        **kwargs,
+    )
+    logger.info("Calling Ansible runner")
+    module_args_str = ""
+    if module_args:
+        for k, v in module_args.items():
+            if len(module_args_str) > 0:
+                module_args_str += " "
+            module_args_str += f"{k}={v}"
+
+    await call_runner(
+        event_log,
+        job_id,
+        temp,
+        dict(
+            module=module_name,
+            host_pattern=",".join(hosts),
+            module_args=module_args_str,
+        ),
+        hosts,
+        verbosity,
+        json_mode,
+    )
+    await post_process_runner(
+        event_log, temp, ruleset, "run_module", assert_facts, post_events
+    )
+
+
+async def call_runner(
+    event_log,
+    job_id: str,
+    private_data_dir: str,
+    runner_args: Dict,
+    hosts: List,
+    verbosity: int = 0,
+    json_mode: Optional[bool] = False,
+):
+
+    host_limit = ",".join(hosts)
+
+    def event_callback(event, *args, **kwargs):
+        event["job_id"] = job_id
+        event["ansible_events_id"] = settings.identifier
+        event_log.put_nowait(dict(type="AnsibleEvent", event=event))
+
+    loop = asyncio.get_running_loop()
+    task_pool = concurrent.futures.ThreadPoolExecutor()
+    await loop.run_in_executor(
+        task_pool,
+        partial(
+            ansible_runner.run,
+            private_data_dir=private_data_dir,
+            limit=host_limit,
+            verbosity=verbosity,
+            event_handler=event_callback,
+            json_mode=json_mode,
+            **runner_args,
+        ),
+    )
+
+
+async def pre_process_runner(
+    event_log,
+    inventory: Dict,
+    variables: Dict,
+    facts: Dict,
+    ruleset: str,
+    name: str,
+    action: str,
+    var_root: Union[str, Dict, None] = None,
+    copy_files: Optional[bool] = False,
+    check_files: Optional[bool] = True,
+    **kwargs,
+):
+
+    logger = logging.getLogger()
+    private_data_dir = tempfile.mkdtemp(prefix=action)
+    logger.debug(f"private data dir {private_data_dir}")
     logger.debug(f"variables {variables}")
     logger.debug(f"facts {facts}")
 
@@ -150,67 +284,67 @@ async def run_playbook(
     if var_root:
         update_variables(variables, var_root)
 
-    os.mkdir(os.path.join(temp, "env"))
-    with open(os.path.join(temp, "env", "extravars"), "w") as f:
-        f.write(yaml.dump(variables))
-    os.mkdir(os.path.join(temp, "inventory"))
-    with open(os.path.join(temp, "inventory", "hosts"), "w") as f:
-        f.write(yaml.dump(inventory))
-    os.mkdir(os.path.join(temp, "project"))
+    playbook_name = name
+    if True:
+        os.mkdir(os.path.join(private_data_dir, "env"))
+        with open(
+            os.path.join(private_data_dir, "env", "extravars"), "w"
+        ) as f:
+            f.write(yaml.dump(variables))
+        os.mkdir(os.path.join(private_data_dir, "inventory"))
+        with open(
+            os.path.join(private_data_dir, "inventory", "hosts"), "w"
+        ) as f:
+            f.write(yaml.dump(inventory))
+        os.mkdir(os.path.join(private_data_dir, "project"))
 
-    if os.path.exists(name):
-        playbook_name = os.path.basename(name)
-        shutil.copy(name, os.path.join(temp, "project", playbook_name))
-        if copy_files:
-            shutil.copytree(
-                os.path.dirname(os.path.abspath(name)),
-                os.path.join(temp, "project"),
-                dirs_exist_ok=True,
+    if check_files:
+        if os.path.exists(name):
+            playbook_name = os.path.basename(name)
+            shutil.copy(
+                name, os.path.join(private_data_dir, "project", playbook_name)
             )
-    elif has_playbook(*split_collection_name(name)):
-        playbook_name = name
-        shutil.copy(
-            find_playbook(*split_collection_name(name)),
-            os.path.join(temp, "project", name),
-        )
-    else:
-        raise Exception(f"Could not find a playbook for {name}")
-
-    host_limit = ",".join(hosts)
+            if copy_files:
+                shutil.copytree(
+                    os.path.dirname(os.path.abspath(name)),
+                    os.path.join(private_data_dir, "project"),
+                    dirs_exist_ok=True,
+                )
+        elif has_playbook(*split_collection_name(name)):
+            playbook_name = name
+            shutil.copy(
+                find_playbook(*split_collection_name(name)),
+                os.path.join(private_data_dir, "project", name),
+            )
+        else:
+            raise Exception(f"Could not find a playbook for {name}")
 
     job_id = str(uuid.uuid4())
 
     await event_log.put(
         dict(type="Job", job_id=job_id, ansible_events_id=settings.identifier)
     )
+    return (private_data_dir, playbook_name, job_id)
 
-    def event_callback(event, *args, **kwargs):
-        event["job_id"] = job_id
-        event["ansible_events_id"] = settings.identifier
-        event_log.put_nowait(dict(type="AnsibleEvent", event=event))
 
-    loop = asyncio.get_running_loop()
-    task_pool = concurrent.futures.ThreadPoolExecutor()
+async def post_process_runner(
+    event_log,
+    private_data_dir: str,
+    ruleset: str,
+    action: str,
+    assert_facts: Optional[bool] = None,
+    post_events: Optional[bool] = None,
+):
 
-    await loop.run_in_executor(
-        task_pool,
-        partial(
-            ansible_runner.run,
-            playbook=playbook_name,
-            private_data_dir=temp,
-            limit=host_limit,
-            verbosity=verbosity,
-            event_handler=event_callback,
-            json_mode=json_mode,
-        ),
-    )
-
-    for rc_file in glob.glob(os.path.join(temp, "artifacts", "*", "rc")):
+    logger = logging.getLogger()
+    for rc_file in glob.glob(
+        os.path.join(private_data_dir, "artifacts", "*", "rc")
+    ):
         with open(rc_file, "r") as f:
             rc = int(f.read())
 
     for status_file in glob.glob(
-        os.path.join(temp, "artifacts", "*", "status")
+        os.path.join(private_data_dir, "artifacts", "*", "status")
     ):
         with open(status_file, "r") as f:
             status = f.read()
@@ -218,7 +352,7 @@ async def run_playbook(
     if assert_facts or post_events:
         logger.debug("assert_facts")
         for host_facts in glob.glob(
-            os.path.join(temp, "artifacts", "*", "fact_cache", "*")
+            os.path.join(private_data_dir, "artifacts", "*", "fact_cache", "*")
         ):
             with open(host_facts) as f:
                 fact = json.loads(f.read())
@@ -228,7 +362,7 @@ async def run_playbook(
             if post_events:
                 lang.post(ruleset, fact)
     await event_log.put(
-        dict(type="Action", action="run_playbook", rc=rc, status=status)
+        dict(type="Action", action=action, rc=rc, status=status)
     )
 
 
@@ -252,6 +386,7 @@ actions: Dict[str, Callable] = dict(
     retract_fact=retract_fact,
     post_event=post_event,
     run_playbook=run_playbook,
+    run_module=run_module,
     shutdown=shutdown,
 )
 
