@@ -1,0 +1,22 @@
+---
+- name: 29 run module
+  hosts: all
+  sources:
+    - range:
+        limit: 5
+  rules:
+    - name:
+      condition: event.i == 1
+      action:
+        run_module:
+          name: benthomasson.eda.upcase
+          module_args:
+              name: Fred Flintstone
+
+
+
+
+
+
+
+

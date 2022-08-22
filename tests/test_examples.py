@@ -741,3 +741,137 @@ async def test_28_right_side_condition_template():
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "7"
     assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_29_run_module():
+    ruleset_queues, queue, event_log = load_rules("examples/29_run_module.yml")
+
+    queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        dict(),
+    )
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Job", "0"
+    for i in range(4):
+        assert event_log.get_nowait()["type"] == "AnsibleEvent", f"0.{i}"
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "run_module", "2"
+
+    assert event["rc"] == 0, "2.1"
+    assert event["status"] == "successful", "2.2"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "7"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "8"
+    assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_30_run_module_missing():
+    ruleset_queues, queue, event_log = load_rules(
+        "examples/30_run_module_missing.yml"
+    )
+
+    queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        dict(),
+    )
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Job", "0"
+    for i in range(4):
+        assert event_log.get_nowait()["type"] == "AnsibleEvent", f"0.{i}"
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "run_module", "2"
+
+    assert event["rc"] == 2, "2.1"
+    assert event["status"] == "failed", "2.2"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "7"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "8"
+    assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_31_run_module_missing_args():
+    ruleset_queues, queue, event_log = load_rules(
+        "examples/31_run_module_missing_args.yml"
+    )
+
+    queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        dict(),
+    )
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Job", "0"
+    for i in range(4):
+        assert event_log.get_nowait()["type"] == "AnsibleEvent", f"0.{i}"
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "run_module", "2"
+
+    assert event["rc"] == 2, "2.1"
+    assert event["status"] == "failed", "2.2"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "7"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "8"
+    assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_32_run_module_fail():
+    ruleset_queues, queue, event_log = load_rules(
+        "examples/32_run_module_fail.yml"
+    )
+
+    queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        dict(),
+    )
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Job", "0"
+    for i in range(4):
+        assert event_log.get_nowait()["type"] == "AnsibleEvent", f"0.{i}"
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "run_module", "2"
+
+    assert event["rc"] == 2, "2.1"
+    assert event["status"] == "failed", "2.2"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "7"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "8"
+    assert event_log.empty()
