@@ -11,7 +11,7 @@
         run_module:
           name: benthomasson.eda.upcase
           module_args:
-              name: fred
+              name: Fred Flintstone
 
 
 
