@@ -7,7 +7,7 @@ import websockets
 
 async def send_event_log_to_websocket(event_log, websocket_address):
     logger = logging.getLogger("ansible_events.websocket")
-    logger.info(f"websocket {websocket_address} connecting")
+    logger.info(f"websocket %s connecting", websocket_address)
     async for websocket in websockets.connect(websocket_address):
         logger.info(f"websocket {websocket_address} connected")
         event = None
