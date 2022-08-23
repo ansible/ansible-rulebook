@@ -4,6 +4,9 @@ ARG USER_ID=${USER_ID:-1001}
 WORKDIR $HOME
 
 USER 0
+RUN dnf install -y java-11-openjdk-devel maven
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk
+ENV PIP_NO_BINARY=jpy
 RUN pip install -U pip \
     && pip install ansible \
     ansible-runner \
@@ -13,6 +16,7 @@ RUN pip install -U pip \
     aiokafka \
     watchdog \
     azure-servicebus \
+    drools_jpy \
     && ansible-galaxy collection install benthomasson.eda
 
 COPY . $WORKDIR

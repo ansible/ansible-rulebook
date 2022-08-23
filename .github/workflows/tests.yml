@@ -42,4 +42,4 @@ jobs:
       - name: Run tests via Drools
         run: pytest
         env:
-          RULES_ENGINE=drools
+          RULES_ENGINE: drools
