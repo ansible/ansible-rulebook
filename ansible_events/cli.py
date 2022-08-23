@@ -122,6 +122,8 @@ def main(args: List[str] = None) -> int:
 
     try:
         asyncio.run(app.run(args))
+    except KeyboardInterrupt:
+        return 0
     except Exception:
         logger.exception("Unexpected exception")
         return 1
