@@ -4,7 +4,7 @@ import os
 from typing import Callable, Dict, List
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
-    from ansible_events.drools.vendor.lang import c, m, none, rule, ruleset
+    from drools.vendor.lang import c, m, none, rule, ruleset
 else:
     from durable.lang import c, m, none, rule, ruleset
 

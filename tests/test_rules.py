@@ -3,8 +3,8 @@ import os
 from queue import Queue
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
-    from ansible_events.drools.vendor import lang
-    from ansible_events.drools.vendor.lang import (
+    from drools.vendor import lang
+    from drools.vendor.lang import (
         assert_fact,
         c,
         m,
