@@ -8,12 +8,14 @@ import shutil
 import sys
 import tempfile
 import uuid
+from asyncio.exceptions import CancelledError
 from functools import partial
 from pprint import pprint
 from typing import Callable, Dict, List, Optional, Union
 
 import ansible_runner
 import dpath.util
+import janus
 import yaml
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
@@ -25,6 +27,8 @@ from .collection import find_playbook, has_playbook, split_collection_name
 from .conf import settings
 from .exception import ShutdownException
 from .util import get_horizontal_rule
+
+logger = logging.getLogger()
 
 
 async def none(
@@ -88,7 +92,6 @@ async def assert_fact(
     ruleset: str,
     fact: Dict,
 ):
-    logger = logging.getLogger()
     logger.debug(f"assert_fact {ruleset} {fact}")
     lang.assert_fact(ruleset, fact)
     await event_log.put(dict(type="Action", action="assert_fact"))
@@ -136,7 +139,6 @@ async def run_playbook(
     json_mode: Optional[bool] = False,
     **kwargs,
 ):
-    logger = logging.getLogger()
 
     temp, playbook_name, job_id = await pre_process_runner(
         event_log,
@@ -183,7 +185,6 @@ async def run_module(
     module_args: Union[Dict, None] = None,
     **kwargs,
 ):
-    logger = logging.getLogger()
 
     temp, module_name, job_id = await pre_process_runner(
         event_log,
@@ -236,25 +237,54 @@ async def call_runner(
 
     host_limit = ",".join(hosts)
 
+    loop = asyncio.get_running_loop()
+
+    queue = janus.Queue()
+
+    # The event_callback is called from the ansible-runner thread
+    # It needs a thread-safe synchronous queue.
+    # Janus provides a sync queue connected to an async queue
+    # Here we push the event into the sync side of janus
     def event_callback(event, *args, **kwargs):
         event["job_id"] = job_id
         event["ansible_events_id"] = settings.identifier
-        event_log.put_nowait(dict(type="AnsibleEvent", event=event))
+        logger.debug("event_callback")
+        queue.sync_q.put(dict(type="AnsibleEvent", event=event))
 
-    loop = asyncio.get_running_loop()
-    task_pool = concurrent.futures.ThreadPoolExecutor()
-    await loop.run_in_executor(
-        task_pool,
-        partial(
-            ansible_runner.run,
-            private_data_dir=private_data_dir,
-            limit=host_limit,
-            verbosity=verbosity,
-            event_handler=event_callback,
-            json_mode=json_mode,
-            **runner_args,
-        ),
-    )
+    # Here we read the async side and push it into the event queue
+    # which is also async.
+    # We do this until cancelled at the end of the ansible runner call.
+    # We might need to drain the queue here before ending.
+    async def read_queue():
+        try:
+            while True:
+                val = await queue.async_q.get()
+                await event_log.put(val)
+        except CancelledError:
+            pass
+
+    tasks = []
+
+    tasks.append(asyncio.create_task(read_queue()))
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as task_pool:
+        await loop.run_in_executor(
+            task_pool,
+            partial(
+                ansible_runner.run,
+                private_data_dir=private_data_dir,
+                limit=host_limit,
+                verbosity=verbosity,
+                event_handler=event_callback,
+                json_mode=json_mode,
+                **runner_args,
+            ),
+        )
+
+    # Cancel the queue reading task
+    for task in tasks:
+        task.cancel()
+    await asyncio.gather(*tasks)
 
 
 async def pre_process_runner(
@@ -271,7 +301,6 @@ async def pre_process_runner(
     **kwargs,
 ):
 
-    logger = logging.getLogger()
     private_data_dir = tempfile.mkdtemp(prefix=action)
     logger.debug(f"private data dir {private_data_dir}")
     logger.debug(f"variables {variables}")
@@ -336,7 +365,6 @@ async def post_process_runner(
     post_events: Optional[bool] = None,
 ):
 
-    logger = logging.getLogger()
     for rc_file in glob.glob(
         os.path.join(private_data_dir, "artifacts", "*", "rc")
     ):
