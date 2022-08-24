@@ -16,7 +16,6 @@ RUN pip install -U pip \
     aiokafka \
     watchdog \
     azure-servicebus \
-    drools_jpy \
     && ansible-galaxy collection install benthomasson.eda
 
 COPY . $WORKDIR

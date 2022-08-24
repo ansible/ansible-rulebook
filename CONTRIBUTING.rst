@@ -66,14 +66,16 @@ Ready to contribute? Here's how to set up `ansible_events` for local development
 
 3. We use a rules engine called Drools which is written in Java. From our python code
    we directly call the Drools Java classes using JPY. JPY needs Java to be installed on
-   the machine. There are wheel distribution for JPY but they might not match your hardware
+   the machine. There are wheel distributions for JPY but they might not match your hardware
    so you would have to compile the JPY from source to get the package and shared object appropriate
    for your machine.
    To compile from Source you would need to set the following env var
    export PIP_NO_BINARY=jpy
 
-   You would also need to install Java and Maven and set the JAVA_HOME environment variable
-   export JAVA_HOME=.....
+   * Java 11+ installed
+   * Environment variable JAVA_HOME set accordingly
+   * Maven 3.8.1+ installed, might come bundled in some Java installs
+
 
 4. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 
