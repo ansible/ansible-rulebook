@@ -103,7 +103,10 @@
                         "assert_facts": { "type": "boolean" },
                         "verbosity": {"type": "integer" },
                         "var_root": {"type": "string" },
-                        "json_mode": { "type": "boolean" }
+                        "json_mode": { "type": "boolean" },
+                        "retry": { "type": "boolean" },
+                        "retries": { "type": "integer" },
+                        "delay": { "type": "integer" }
                     },
                     "required": [
                         "name"
