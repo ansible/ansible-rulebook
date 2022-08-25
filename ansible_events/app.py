@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+from asyncio.exceptions import CancelledError
 from typing import Any, Dict, List, Tuple
 
 import yaml
@@ -14,18 +15,29 @@ from ansible_events.collection import (
 from ansible_events.engine import run_rulesets, start_source
 from ansible_events.rule_types import RuleSet, RuleSetQueue
 from ansible_events.util import load_inventory
-from ansible_events.websocket import send_event_log_to_websocket
+from ansible_events.websocket import (
+    request_workload,
+    send_event_log_to_websocket,
+)
 
 logger = logging.getLogger("ansible_events")
 
 
 # FIXME(cutwater): Replace parsed_args with clear interface
 async def run(parsed_args) -> None:
-    inventory = {}
-    variables = load_vars(parsed_args)
-    rulesets = load_rules(parsed_args)
-    if parsed_args.inventory:
-        inventory = load_inventory(parsed_args.inventory)
+
+    if parsed_args.worker and parsed_args.websocket_address and parsed_args.id:
+        logger.info("Starting worker mode")
+
+        inventory, variables, rulesets = await request_workload(
+            int(parsed_args.id), parsed_args.websocket_address
+        )
+    else:
+        inventory = {}
+        variables = load_vars(parsed_args)
+        rulesets = load_rules(parsed_args)
+        if parsed_args.inventory:
+            inventory = load_inventory(parsed_args.inventory)
 
     event_log = asyncio.Queue()
 
@@ -57,7 +69,10 @@ async def run(parsed_args) -> None:
     logger.info("Cancelling event source tasks")
     for task in tasks:
         task.cancel()
-    await asyncio.gather(*tasks)
+    exceptions = await asyncio.gather(*tasks, return_exceptions=True)
+    for exception in exceptions:
+        if not isinstance(exception, CancelledError):
+            logger.error(exception)
 
     logger.info("Main complete")
     await event_log.put(dict(type="Exit"))

@@ -369,7 +369,9 @@ async def pre_process_runner(
                 os.path.join(private_data_dir, "project", name),
             )
         else:
-            raise Exception(f"Could not find a playbook for {name}")
+            raise Exception(
+                f"Could not find a playbook for {name} from {os.getcwd()}"
+            )
 
     job_id = str(uuid.uuid4())
 
