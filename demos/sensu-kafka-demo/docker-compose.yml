@@ -31,24 +31,7 @@ services:
       test: nc -vz broker 9092
       interval: 5s
       timeout: 3s
-      retries: 6
-
-  broker-topic-creator:
-    image: docker.io/confluentinc/cp-kafka:7.0.1
-    depends_on:
-      broker:
-        condition: service_healthy
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092,PLAINTEXT_INTERNAL://broker:29092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-    command: >-
-      kafka-topics --bootstrap-server broker:9092
-      --create --topic sensu-events
+      retries: 20
 
   sensu-backend:
     image: docker.io/sensu/sensu:latest
@@ -64,7 +47,7 @@ services:
       test: wget -q -O- http://127.0.0.1:8080/health
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
     depends_on:
       broker:
         condition: service_healthy
@@ -84,9 +67,9 @@ services:
         condition: service_healthy
 
   sensu-cli:
-    image: docker.io/sensu/sensu:latest
-    volumes:
-      - "./sensu-assets:/sensu-assets:z"
+    image: ae-sensu-demo-cli
+    build:
+      context: ./sensu-cli
     environment:
       SENSU_API_URL: http://sensu-backend:8080
     command: >-
@@ -100,14 +83,12 @@ services:
         condition: service_healthy
 
   ansible-events:
-    image: quay.io/aizquier/ansible-events-dev:latest
-    volumes:
-      - ./rules.yml:/data/rules.yml:z
-      - ./recover-fake-app.yml:/data/recover-fake-app.yml:z
-      - ./inventory.yml:/data/inventory.yml:z
+    image: ae-sensu-demo-ansible-events
+    build:
+      context: ./ansible-events
     command: bash -c "cd /data && ansible-events --rules rules.yml -i inventory.yml"
     depends_on:
       sensu-backend:
         condition: service_healthy
-      broker-topic-creator:
+      sensu-cli:
         condition: service_completed_successfully

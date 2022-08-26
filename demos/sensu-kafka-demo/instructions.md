@@ -11,11 +11,15 @@ when the web application is down to recover it.
 ## Requirements
 
 - [docker](https://docs.docker.com/engine/install/) or [podman](https://podman.io/getting-started/installation) engine
-- [docker-compose](https://docs.docker.com/compose/install/)
+- [docker-compose]
+
+```
+pip install -U docker-compose
+```
 
 ## Usage
 
-First, we will deploy the whole stack. From `demos/sensu-kafka` dir, run:
+First, we will deploy the whole stack. From `demos/sensu-kafka-demo` dir, run:
 
 ```sh
 docker-compose up -d
