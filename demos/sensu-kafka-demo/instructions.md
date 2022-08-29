@@ -17,6 +17,13 @@ when the web application is down to recover it.
 pip install -U docker-compose
 ```
 
+Mac users with podman must create a link from podman binary to docker, to allow docker-compose to build images.
+Assuming that podman was installed with brew:
+
+```
+ln -s /opt/homebrew/bin/podman /opt/homebrew/bin/docker
+```
+
 ## Usage
 
 First, we will deploy the whole stack. From `demos/sensu-kafka-demo` dir, run:
