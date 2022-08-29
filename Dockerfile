@@ -13,7 +13,7 @@ RUN pip install -U pip \
     aiokafka \
     watchdog \
     azure-servicebus \
-    && ansible-galaxy collection install benthomasson.eda
+    && ansible-galaxy collection install git+https://github.com/benthomasson/benthomasson-eda.git#benthomasson/eda/
 
 COPY . $WORKDIR
 RUN chown -R $USER_ID ./
