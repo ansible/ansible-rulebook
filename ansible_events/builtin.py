@@ -19,7 +19,7 @@ import janus
 import yaml
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
-    from ansible_events.drools.vendor import lang
+    from drools.vendor import lang
 else:
     from durable import lang
 
