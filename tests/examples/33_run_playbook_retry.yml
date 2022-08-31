@@ -1,5 +1,5 @@
 ---
-- name: 32 run module fail
+- name: 33 run playbook and retry after an interval
   hosts: all
   sources:
     - range:
@@ -8,8 +8,7 @@
     - name:
       condition: event.i == 1
       action:
-        run_module:
-          name: benthomasson.eda.upcase
-          module_args:
-              name: fail
+        run_playbook:
+          name: playbooks/fail_and_succeed.yml
           retry: True
+          delay: 1

@@ -137,6 +137,9 @@ async def run_playbook(
     var_root: Union[str, Dict, None] = None,
     copy_files: Optional[bool] = False,
     json_mode: Optional[bool] = False,
+    retries: Optional[int] = 0,
+    retry: Optional[bool] = False,
+    delay: Optional[int] = 0,
     **kwargs,
 ):
 
@@ -154,15 +157,24 @@ async def run_playbook(
         **kwargs,
     )
     logger.info("Calling Ansible runner")
-    await call_runner(
-        event_log,
-        job_id,
-        temp,
-        dict(playbook=playbook_name),
-        hosts,
-        verbosity,
-        json_mode,
-    )
+
+    if retry:
+        retries = max(retries, 1)
+    for i in range(retries + 1):
+        if i > 0 and delay > 0:
+            await asyncio.sleep(delay)
+        await call_runner(
+            event_log,
+            job_id,
+            temp,
+            dict(playbook=playbook_name),
+            hosts,
+            verbosity,
+            json_mode,
+        )
+        if get_status(temp) != "failed":
+            break
+
     await post_process_runner(
         event_log, temp, ruleset, "run_playbook", assert_facts, post_events
     )
@@ -183,6 +195,9 @@ async def run_module(
     copy_files: Optional[bool] = False,
     json_mode: Optional[bool] = False,
     module_args: Union[Dict, None] = None,
+    retries: Optional[int] = 0,
+    retry: Optional[bool] = False,
+    delay: Optional[int] = 0,
     **kwargs,
 ):
 
@@ -207,19 +222,27 @@ async def run_module(
                 module_args_str += " "
             module_args_str += f'{k}="{v}"'
 
-    await call_runner(
-        event_log,
-        job_id,
-        temp,
-        dict(
-            module=module_name,
-            host_pattern=",".join(hosts),
-            module_args=module_args_str,
-        ),
-        hosts,
-        verbosity,
-        json_mode,
-    )
+    if retry:
+        retries = max(retries, 1)
+    for i in range(retries + 1):
+        if i > 0 and delay > 0:
+            await asyncio.sleep(delay)
+        await call_runner(
+            event_log,
+            job_id,
+            temp,
+            dict(
+                module=module_name,
+                host_pattern=",".join(hosts),
+                module_args=module_args_str,
+            ),
+            hosts,
+            verbosity,
+            json_mode,
+        )
+        if get_status(temp) != "failed":
+            break
+
     await post_process_runner(
         event_log, temp, ruleset, "run_module", assert_facts, post_events
     )
@@ -371,11 +394,7 @@ async def post_process_runner(
         with open(rc_file, "r") as f:
             rc = int(f.read())
 
-    for status_file in glob.glob(
-        os.path.join(private_data_dir, "artifacts", "*", "status")
-    ):
-        with open(status_file, "r") as f:
-            status = f.read()
+    status = get_status(private_data_dir)
 
     if assert_facts or post_events:
         logger.debug("assert_facts")
@@ -389,6 +408,7 @@ async def post_process_runner(
                 lang.assert_fact(ruleset, fact)
             if post_events:
                 lang.post(ruleset, fact)
+
     await event_log.put(
         dict(type="Action", action=action, rc=rc, status=status)
     )
@@ -438,3 +458,13 @@ def update_variables(variables: Dict, var_root: Union[str, Dict]):
                 if new_value:
                     variables["events"][new_key] = new_value
                     break
+
+
+def get_status(private_data_dir: str):
+    status_files = glob.glob(
+        os.path.join(private_data_dir, "artifacts", "*", "status")
+    )
+    status_files.sort(key=os.path.getmtime, reverse=True)
+    with open(status_files[0], "r") as f:
+        status = f.read()
+    return status

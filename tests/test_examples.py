@@ -537,11 +537,17 @@ async def test_20_is_not_defined():
     assert event_log.empty()
 
 
+PLAYBOOK_RULES = [
+    "examples/21_run_playbook.yml",
+    "examples/33_run_playbook_retry.yml",
+    "examples/34_run_playbook_retries.yml",
+]
+
+
 @pytest.mark.asyncio
-async def test_21_run_playbook():
-    ruleset_queues, queue, event_log = load_rules(
-        "examples/21_run_playbook.yml"
-    )
+@pytest.mark.parametrize("rule", PLAYBOOK_RULES)
+async def test_21_run_playbook(rule):
+    ruleset_queues, queue, event_log = load_rules(rule)
 
     queue.put_nowait(dict(i=1))
     queue.put_nowait(Shutdown())
@@ -861,7 +867,7 @@ async def test_32_run_module_fail():
 
     event = event_log.get_nowait()
     assert event["type"] == "Job", "0"
-    for i in range(4):
+    for i in range(8):
         assert event_log.get_nowait()["type"] == "AnsibleEvent", f"0.{i}"
 
     event = event_log.get_nowait()

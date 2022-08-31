@@ -1,0 +1,31 @@
+---
+- name: Playbook to fail the first run and succeed the second run
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Define a temp file
+      ansible.builtin.set_fact:
+        my_path: "/tmp/ansible_event-fail_and_succeed"
+
+    - name: Check that the temp file exists
+      ansible.builtin.stat:
+        path: "{{ my_path }}"
+      register: my_file
+      
+
+    - name: Create the file
+      ansible.builtin.file:
+        path: "{{ my_path }}"
+        state: touch
+      when: not my_file.stat.exists
+
+    - name: Fail if the file does not exist
+      ansible.builtin.fail:
+        msg: "Failing because the test file does not exist"
+      when: not my_file.stat.exists
+
+    - name: Delete the file
+      ansible.builtin.file:
+        path: "{{ my_path }}"
+        state: absent
+      when: my_file.stat.exists
