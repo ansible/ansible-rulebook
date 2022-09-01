@@ -21,6 +21,7 @@ from ansible_events.condition_types import (
 from ansible_events.rule_types import (
     ActionContext,
     Condition as RuleCondition,
+    EngineRuleSetQueuePlan,
     RuleSetQueuePlan,
 )
 from ansible_events.util import substitute_variables
@@ -211,6 +212,6 @@ def generate_rulesets(
                         *generate_condition(ansible_rule.condition, variables),
                     )(fn)
                     logger.info(r.define())
-        rulesets.append((a_ruleset, [], queue, plan))
+        rulesets.append(EngineRuleSetQueuePlan(a_ruleset, queue, plan))
 
     return rulesets
