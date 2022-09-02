@@ -136,6 +136,9 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
         else:
             raise Exception(f"Unhandled token {parsed_condition}")
     elif isinstance(parsed_condition, ExistsExpression):
+        if parsed_condition.operator == "+":
+            raise Exception("Please use is defined instead of +")
+
         return visit_condition(parsed_condition.value, variables).__pos__()
     else:
         raise Exception(f"Unhandled token {parsed_condition}")

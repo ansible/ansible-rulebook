@@ -110,7 +110,7 @@ def test_parse_condition():
     print(visit_condition(result, {}).define())
     assert visit_condition(result, {}).define() == (m.i == 1).define()
 
-    result = parse_condition("+event.i")[0]
+    result = parse_condition("event.i is defined")[0]
     print(result)
     print(visit_condition(result, {}).define())
     assert visit_condition(result, {}).define() == (+m.i).define()
