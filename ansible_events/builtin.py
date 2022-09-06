@@ -17,6 +17,7 @@ import ansible_runner
 import dpath.util
 import janus
 import yaml
+from datetime import datetime
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
     from drools.vendor import lang
@@ -39,7 +40,14 @@ async def none(
     facts: Dict,
     ruleset: str,
 ):
-    await event_log.put(dict(type="Action", action="noop"))
+    await event_log.put(
+        dict(
+            type="Action",
+            action="noop",
+            activation_id=settings.identifier,
+            run_at=str(datetime.utcnow()),
+        )
+    )
 
 
 async def debug(event_log, **kwargs):
@@ -54,7 +62,14 @@ async def debug(event_log, **kwargs):
     pprint(kwargs)
     print(get_horizontal_rule("="))
     sys.stdout.flush()
-    await event_log.put(dict(type="Action", action="debug"))
+    await event_log.put(
+        dict(
+            type="Action",
+            action="debug",
+            activation_id=settings.identifier,
+            run_at=str(datetime.utcnow()),
+        )
+    )
 
 
 async def print_event(
@@ -80,7 +95,14 @@ async def print_event(
 
     print_fn(variables[var_name])
     sys.stdout.flush()
-    await event_log.put(dict(type="Action", action="print_event"))
+    await event_log.put(
+        dict(
+            type="Action",
+            action="print_event",
+            activation_id=settings.identifier,
+            run_at=str(datetime.utcnow()),
+        )
+    )
 
 
 async def assert_fact(
@@ -94,7 +116,14 @@ async def assert_fact(
 ):
     logger.debug(f"assert_fact {ruleset} {fact}")
     lang.assert_fact(ruleset, fact)
-    await event_log.put(dict(type="Action", action="assert_fact"))
+    await event_log.put(
+        dict(
+            type="Action",
+            action="assert_fact",
+            activation_id=settings.identifier,
+            run_at=str(datetime.utcnow()),
+        )
+    )
 
 
 async def retract_fact(
@@ -107,7 +136,14 @@ async def retract_fact(
     fact: Dict,
 ):
     lang.retract_fact(ruleset, fact)
-    await event_log.put(dict(type="Action", action="retract_fact"))
+    await event_log.put(
+        dict(
+            type="Action",
+            action="retract_fact",
+            activation_id=settings.identifier,
+            run_at=str(datetime.utcnow()),
+        )
+    )
 
 
 async def post_event(
@@ -120,7 +156,15 @@ async def post_event(
     event: Dict,
 ):
     lang.post(ruleset, event)
-    await event_log.put(dict(type="Action", action="post_event"))
+
+    await event_log.put(
+        dict(
+            type="Action",
+            action="post_event",
+            activation_id=settings.identifier,
+            run_at=str(datetime.utcnow()),
+        )
+    )
 
 
 async def run_playbook(
@@ -163,6 +207,8 @@ async def run_playbook(
     for i in range(retries + 1):
         if i > 0 and delay > 0:
             await asyncio.sleep(delay)
+
+        run_at = str(datetime.utcnow())
         await call_runner(
             event_log,
             job_id,
@@ -176,7 +222,15 @@ async def run_playbook(
             break
 
     await post_process_runner(
-        event_log, temp, ruleset, "run_playbook", assert_facts, post_events
+        event_log,
+        temp,
+        ruleset,
+        settings.identifier,
+        "run_playbook",
+        job_id,
+        run_at,
+        assert_facts,
+        post_events,
     )
 
 
@@ -227,6 +281,8 @@ async def run_module(
     for i in range(retries + 1):
         if i > 0 and delay > 0:
             await asyncio.sleep(delay)
+
+        run_at = str(datetime.utcnow())
         await call_runner(
             event_log,
             job_id,
@@ -244,7 +300,15 @@ async def run_module(
             break
 
     await post_process_runner(
-        event_log, temp, ruleset, "run_module", assert_facts, post_events
+        event_log,
+        temp,
+        ruleset,
+        settings.identifier,
+        "run_module",
+        job_id,
+        run_at,
+        assert_facts,
+        post_events,
     )
 
 
@@ -282,6 +346,8 @@ async def call_runner(
         try:
             while True:
                 val = await queue.async_q.get()
+                event_data = val.get("event", {})
+                val["run_at"] = event_data.get("created")
                 await event_log.put(val)
         except CancelledError:
             pass
@@ -385,7 +451,10 @@ async def post_process_runner(
     event_log,
     private_data_dir: str,
     ruleset: str,
+    activation_id: str,
     action: str,
+    job_id: str,
+    run_at: str,
     assert_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
 ):
@@ -397,6 +466,19 @@ async def post_process_runner(
             rc = int(f.read())
 
     status = get_status(private_data_dir)
+
+    await event_log.put(
+        dict(
+            type="Action",
+            action=action,
+            activation_id=activation_id,
+            job_id=job_id,
+            ruleset=ruleset,
+            rc=rc,
+            status=status,
+            run_at=run_at,
+        )
+    )
 
     if assert_facts or post_events:
         logger.debug("assert_facts")
@@ -411,10 +493,6 @@ async def post_process_runner(
             if post_events:
                 lang.post(ruleset, fact)
 
-    await event_log.put(
-        dict(type="Action", action=action, rc=rc, status=status)
-    )
-
 
 async def shutdown(
     event_log,
@@ -424,7 +502,14 @@ async def shutdown(
     facts: Dict,
     ruleset: str,
 ):
-    await event_log.put(dict(type="Action", action="shutdown"))
+    await event_log.put(
+        dict(
+            type="Action",
+            action="shutdown",
+            activation_id=settings.identifier,
+            run_at=str(datetime.utcnow()),
+        )
+    )
     raise ShutdownException()
 
 
