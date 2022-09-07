@@ -33,6 +33,6 @@
           event:
             j: 4
     - name:
-      condition: +event.j
+      condition: event.j is defined
       action:
         none:
