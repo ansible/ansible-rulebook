@@ -18,6 +18,7 @@ Options:
     --version                   Show the version and exit
     --websocket-address=<w>     Connect the event log to a websocket
     --id=<i>                    Identifier
+    --worker                    Enable worker mode
 """
 import argparse
 import asyncio
@@ -85,9 +86,11 @@ def get_parser() -> argparse.ArgumentParser:
         "--websocket-address",
         help="Connect the event log to a websocket",
     )
+    parser.add_argument("--id", help="Identifier", type=int)
     parser.add_argument(
-        "--id",
-        help="Identifier",
+        "--worker",
+        action="store_true",
+        help="Enable worker mode",
     )
     return parser
 
