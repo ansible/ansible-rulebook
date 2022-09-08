@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 from typing import Callable, Dict, List
@@ -22,7 +21,8 @@ from ansible_events.rule_types import (
     ActionContext,
     Condition as RuleCondition,
     EngineRuleSetQueuePlan,
-    RuleSetQueuePlan,
+    Plan,
+    RuleSetQueue,
 )
 from ansible_events.util import substitute_variables
 
@@ -35,10 +35,10 @@ def add_to_plan(
     inventory: Dict,
     hosts: List,
     facts: Dict,
-    plan: asyncio.Queue,
+    plan: Plan,
     c,
 ) -> None:
-    plan.put_nowait(
+    plan.queue.put_nowait(
         ActionContext(
             ruleset, action, action_args, variables, inventory, hosts, facts, c
         )
@@ -163,7 +163,7 @@ def make_fn(
     inventory: Dict,
     hosts: List,
     facts: Dict,
-    plan: asyncio.Queue,
+    plan: Plan,
 ) -> Callable:
     def fn(c):
         logger = logging.getLogger()
@@ -184,16 +184,18 @@ def make_fn(
 
 
 def generate_rulesets(
-    ansible_ruleset_queue_plans: List[RuleSetQueuePlan],
+    ruleset_queues: List[RuleSetQueue],
     variables: Dict,
     inventory: Dict,
-):
+) -> List[EngineRuleSetQueuePlan]:
 
     logger = logging.getLogger()
     rulesets = []
 
-    for ansible_ruleset, queue, plan in ansible_ruleset_queue_plans:
+    for ansible_ruleset, queue in ruleset_queues:
         a_ruleset = ruleset(ansible_ruleset.name)
+        # plan queue will be provided when the ruleset is used by each event
+        plan = Plan(queue=None)
         with a_ruleset:
             for ansible_rule in ansible_ruleset.rules:
                 if ansible_rule.enabled:

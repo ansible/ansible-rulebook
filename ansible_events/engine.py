@@ -30,7 +30,6 @@ from ansible_events.rule_types import (
     EngineRuleSetQueuePlan,
     EventSource,
     RuleSetQueue,
-    RuleSetQueuePlan,
 )
 from ansible_events.rules_parser import parse_hosts
 from ansible_events.util import json_count, substitute_variables
@@ -254,13 +253,8 @@ async def run_rulesets(
     if redis_host_name and redis_port:
         provide_durability(lang.get_host(), redis_host_name, redis_port)
 
-    ansible_ruleset_queue_plans = [
-        RuleSetQueuePlan(ruleset, queue, asyncio.Queue())
-        for ruleset, queue in ruleset_queues
-    ]
-
     rulesets_queue_plans = rule_generator.generate_rulesets(
-        ansible_ruleset_queue_plans, variables, inventory
+        ruleset_queues, variables, inventory
     )
 
     if not rulesets_queue_plans:
@@ -294,6 +288,9 @@ async def run_ruleset(
         if not data:
             await event_log.put(dict(type="EmptyEvent"))
             continue
+
+        logger.debug(str(data))
+        ruleset_queue_plan.plan.queue = asyncio.Queue()
         results = []
         try:
             try:
@@ -305,8 +302,10 @@ async def run_ruleset(
             finally:
                 logger.debug(lang.get_pending_events(name))
 
-            while not ruleset_queue_plan.plan.empty():
-                item = cast(ActionContext, await ruleset_queue_plan.plan.get())
+            while not ruleset_queue_plan.plan.queue.empty():
+                item = cast(
+                    ActionContext, await ruleset_queue_plan.plan.queue.get()
+                )
                 result = await call_action(*item, event_log=event_log)
                 results.append(result)
 

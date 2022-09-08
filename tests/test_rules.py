@@ -159,20 +159,17 @@ async def test_generate_rules():
 
     rulesets = parse_rule_sets(data)
     print(rulesets)
-    ruleset_queue_plans = [
-        (ruleset, Queue(), asyncio.Queue()) for ruleset in rulesets
-    ]
-    durable_rulesets = generate_rulesets(
-        ruleset_queue_plans, dict(), inventory
-    )
+    ruleset_queues = [(ruleset, Queue()) for ruleset in rulesets]
+    durable_rulesets = generate_rulesets(ruleset_queues, dict(), inventory)
 
-    print(durable_rulesets[0][0].define())
+    durable_rulesets[0].plan.queue = asyncio.Queue()
+    print(durable_rulesets[0].ruleset.define())
 
     assert_fact("Demo rules", {"payload": {"text": "hello"}})
 
-    assert ruleset_queue_plans[0][2].get_nowait()[1] == "slack"
-    assert ruleset_queue_plans[0][2].get_nowait()[1] == "assert_fact"
-    assert ruleset_queue_plans[0][2].get_nowait()[1] == "log"
+    assert durable_rulesets[0].plan.queue.get_nowait()[1] == "slack"
+    assert durable_rulesets[0].plan.queue.get_nowait()[1] == "assert_fact"
+    assert durable_rulesets[0].plan.queue.get_nowait()[1] == "log"
 
 
 @pytest.mark.asyncio
@@ -185,19 +182,16 @@ async def test_generate_rules_multiple_conditions_any():
 
     rulesets = parse_rule_sets(data)
     print(rulesets)
-    ruleset_queue_plans = [
-        (ruleset, Queue(), asyncio.Queue()) for ruleset in rulesets
-    ]
-    durable_rulesets = generate_rulesets(
-        ruleset_queue_plans, dict(), inventory
-    )
+    ruleset_queues = [(ruleset, Queue()) for ruleset in rulesets]
+    durable_rulesets = generate_rulesets(ruleset_queues, dict(), inventory)
 
-    print(durable_rulesets[0][0].define())
+    durable_rulesets[0].plan.queue = asyncio.Queue()
+    print(durable_rulesets[0].ruleset.define())
 
     post("Demo rules multiple conditions any", {"i": 0})
-    assert ruleset_queue_plans[0][2].get_nowait()[1] == "debug"
+    assert durable_rulesets[0].plan.queue.get_nowait()[1] == "debug"
     post("Demo rules multiple conditions any", {"i": 1})
-    assert ruleset_queue_plans[0][2].get_nowait()[1] == "debug"
+    assert durable_rulesets[0].plan.queue.get_nowait()[1] == "debug"
 
 
 @pytest.mark.asyncio
@@ -210,20 +204,17 @@ async def test_generate_rules_multiple_conditions_all():
 
     rulesets = parse_rule_sets(data)
     print(rulesets)
-    ruleset_queue_plans = [
-        (ruleset, Queue(), asyncio.Queue()) for ruleset in rulesets
-    ]
-    durable_rulesets = generate_rulesets(
-        ruleset_queue_plans, dict(), inventory
-    )
+    ruleset_queues = [(ruleset, Queue()) for ruleset in rulesets]
+    durable_rulesets = generate_rulesets(ruleset_queues, dict(), inventory)
 
-    print(durable_rulesets[0][0].define())
+    durable_rulesets[0].plan.queue = asyncio.Queue()
+    print(durable_rulesets[0].ruleset.define())
 
     post("Demo rules multiple conditions all", {"i": 0})
-    assert ruleset_queue_plans[0][2].qsize() == 0
+    assert durable_rulesets[0].plan.queue.qsize() == 0
     post("Demo rules multiple conditions all", {"i": 1})
-    assert ruleset_queue_plans[0][2].qsize() == 1
-    assert ruleset_queue_plans[0][2].get_nowait()[1] == "debug"
+    assert durable_rulesets[0].plan.queue.qsize() == 1
+    assert durable_rulesets[0].plan.queue.get_nowait()[1] == "debug"
 
 
 @pytest.mark.asyncio
@@ -236,19 +227,16 @@ async def test_generate_rules_multiple_conditions_all_3():
 
     rulesets = parse_rule_sets(data)
     print(rulesets)
-    ruleset_queue_plans = [
-        (ruleset, Queue(), asyncio.Queue()) for ruleset in rulesets
-    ]
-    durable_rulesets = generate_rulesets(
-        ruleset_queue_plans, dict(), inventory
-    )
+    ruleset_queues = [(ruleset, Queue()) for ruleset in rulesets]
+    durable_rulesets = generate_rulesets(ruleset_queues, dict(), inventory)
 
-    print(durable_rulesets[0][0].define())
+    durable_rulesets[0].plan.queue = asyncio.Queue()
+    print(durable_rulesets[0].ruleset.define())
 
     post("Demo rules multiple conditions reference assignment", {"i": 0})
-    assert ruleset_queue_plans[0][2].qsize() == 0
+    assert durable_rulesets[0].plan.queue.qsize() == 0
     post("Demo rules multiple conditions reference assignment", {"i": 1})
-    assert ruleset_queue_plans[0][2].qsize() == 0
+    assert durable_rulesets[0].plan.queue.qsize() == 0
     post("Demo rules multiple conditions reference assignment", {"i": 2})
-    assert ruleset_queue_plans[0][2].qsize() == 1
-    assert ruleset_queue_plans[0][2].get_nowait()[1] == "debug"
+    assert durable_rulesets[0].plan.queue.qsize() == 1
+    assert durable_rulesets[0].plan.queue.get_nowait()[1] == "debug"
