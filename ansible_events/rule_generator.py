@@ -26,7 +26,8 @@ from ansible_events.rule_types import (
     ActionContext,
     Condition as RuleCondition,
     EngineRuleSetQueuePlan,
-    RuleSetQueuePlan,
+    Plan,
+    RuleSetQueue,
 )
 from ansible_events.util import substitute_variables
 
@@ -41,10 +42,10 @@ def add_to_plan(
     inventory: Dict,
     hosts: List,
     facts: Dict,
-    plan: asyncio.Queue,
+    plan: Plan,
     c,
 ) -> None:
-    plan.put_nowait(
+    plan.queue.put_nowait(
         ActionContext(
             ruleset, action, action_args, variables, inventory, hosts, facts, c
         )
@@ -168,7 +169,7 @@ def make_fn(
     inventory: Dict,
     hosts: List,
     facts: Dict,
-    plan: asyncio.Queue,
+    plan: Plan,
 ) -> Callable:
     def fn(c):
         logger.info("calling %s", ansible_rule.name)
@@ -190,14 +191,15 @@ def make_fn(
 if os.environ.get("RULES_ENGINE", "drools") == "durable_rules":
 
     def generate_rulesets(
-        ansible_ruleset_queue_plans: List[RuleSetQueuePlan],
+        ruleset_queues: List[RuleSetQueue],
         variables: Dict,
         inventory: Dict,
-    ):
+    ) -> List[EngineRuleSetQueuePlan]:
         rulesets = []
 
-        for ansible_ruleset, queue, plan in ansible_ruleset_queue_plans:
+        for ansible_ruleset, queue in ruleset_queues:
             a_ruleset = ruleset(ansible_ruleset.name)
+            plan = Plan(queue=asyncio.Queue())
             with a_ruleset:
                 for ansible_rule in ansible_ruleset.rules:
                     if ansible_rule.enabled:
@@ -225,19 +227,20 @@ if os.environ.get("RULES_ENGINE", "drools") == "durable_rules":
 else:
 
     def generate_rulesets(
-        ansible_ruleset_queue_plans: List[RuleSetQueuePlan],
+        ruleset_queues: List[RuleSetQueue],
         variables: Dict,
         inventory: Dict,
-    ):
+    ) -> List[EngineRuleSetQueuePlan]:
 
         rulesets = []
 
-        for ansible_ruleset, queue, plan in ansible_ruleset_queue_plans:
+        for ansible_ruleset, queue in ruleset_queues:
             ruleset_ast = visit_ruleset(ansible_ruleset, variables)
             drools_ruleset = DroolsRuleset(
                 name=ansible_ruleset.name,
                 serialized_ruleset=json.dumps(ruleset_ast["RuleSet"]),
             )
+            plan = Plan(queue=asyncio.Queue())
             index = 0
             for ansible_rule in ansible_ruleset.rules:
                 if ansible_rule.name:
