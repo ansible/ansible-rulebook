@@ -66,6 +66,7 @@ async def debug(event_log, **kwargs):
         dict(
             type="Action",
             action="debug",
+            playbook_name=kwargs.get("name"),
             activation_id=settings.identifier,
             run_at=str(datetime.utcnow()),
         )
@@ -79,6 +80,7 @@ async def print_event(
     variables: Dict,
     facts: Dict,
     ruleset: str,
+    name: Optional[str] = None,
     var_root: Union[str, Dict, None] = None,
     pretty: Optional[str] = None,
 ):
@@ -100,6 +102,7 @@ async def print_event(
             type="Action",
             action="print_event",
             activation_id=settings.identifier,
+            playbook_name=name,
             run_at=str(datetime.utcnow()),
         )
     )
@@ -113,6 +116,7 @@ async def assert_fact(
     facts: Dict,
     ruleset: str,
     fact: Dict,
+    name: Optional[str] = None,
 ):
     logger.debug(f"assert_fact {ruleset} {fact}")
     lang.assert_fact(ruleset, fact)
@@ -121,6 +125,7 @@ async def assert_fact(
             type="Action",
             action="assert_fact",
             activation_id=settings.identifier,
+            playbook_name=name,
             run_at=str(datetime.utcnow()),
         )
     )
@@ -134,6 +139,7 @@ async def retract_fact(
     facts: Dict,
     ruleset: str,
     fact: Dict,
+    name: Optional[str] = None,
 ):
     lang.retract_fact(ruleset, fact)
     await event_log.put(
@@ -141,6 +147,7 @@ async def retract_fact(
             type="Action",
             action="retract_fact",
             activation_id=settings.identifier,
+            playbook_name=name,
             run_at=str(datetime.utcnow()),
         )
     )
@@ -187,6 +194,7 @@ async def run_playbook(
     **kwargs,
 ):
 
+    logger.info(f"running Ansible playbook: {name}")
     temp, playbook_name, job_id = await pre_process_runner(
         event_log,
         inventory,
@@ -221,11 +229,12 @@ async def run_playbook(
         if get_status(temp) != "failed":
             break
 
-    await post_process_runner(
+    return await post_process_runner(
         event_log,
         temp,
         ruleset,
         settings.identifier,
+        name,
         "run_playbook",
         job_id,
         run_at,
@@ -299,11 +308,12 @@ async def run_module(
         if get_status(temp) != "failed":
             break
 
-    await post_process_runner(
+    return await post_process_runner(
         event_log,
         temp,
         ruleset,
         settings.identifier,
+        name,
         "run_module",
         job_id,
         run_at,
@@ -435,7 +445,7 @@ async def pre_process_runner(
                 os.path.join(private_data_dir, "project", name),
             )
         else:
-            raise Exception(
+            logger.error(
                 f"Could not find a playbook for {name} from {os.getcwd()}"
             )
 
@@ -452,6 +462,7 @@ async def post_process_runner(
     private_data_dir: str,
     ruleset: str,
     activation_id: str,
+    name: str,
     action: str,
     job_id: str,
     run_at: str,
@@ -467,18 +478,18 @@ async def post_process_runner(
 
     status = get_status(private_data_dir)
 
-    await event_log.put(
-        dict(
-            type="Action",
-            action=action,
-            activation_id=activation_id,
-            job_id=job_id,
-            ruleset=ruleset,
-            rc=rc,
-            status=status,
-            run_at=run_at,
-        )
+    result = dict(
+        type="Action",
+        action=action,
+        activation_id=activation_id,
+        playbook_name=name,
+        job_id=job_id,
+        ruleset=ruleset,
+        rc=rc,
+        status=status,
+        run_at=run_at,
     )
+    await event_log.put(result)
 
     if assert_facts or post_events:
         logger.debug("assert_facts")
@@ -492,6 +503,8 @@ async def post_process_runner(
                 lang.assert_fact(ruleset, fact)
             if post_events:
                 lang.post(ruleset, fact)
+
+    return result
 
 
 async def shutdown(

@@ -3,6 +3,7 @@ import logging
 import os
 import runpy
 import traceback
+from datetime import datetime
 from pprint import pformat
 from typing import Any, Dict, List, Optional, cast
 
@@ -11,6 +12,7 @@ if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
 else:
     from durable import engine, lang
 
+from ansible_events.conf import settings
 import ansible_events.rule_generator as rule_generator
 from ansible_events.builtin import actions as builtin_actions
 from ansible_events.collection import (
@@ -53,8 +55,6 @@ async def start_source(
 ) -> None:
 
     logger = logging.getLogger()
-
-    logger.info("start_source")
 
     try:
         logger.info("load source")
@@ -182,18 +182,24 @@ async def call_action(
                             )
                 if new_hosts:
                     hosts = new_hosts
-            logger.info(f"substitute_variables {action_args} {variables_copy}")
+
+            logger.info(
+                f"substitute_variables [{action_args}] [{variables_copy}]"
+            )
             action_args = {
                 k: substitute_variables(v, variables_copy)
                 for k, v in action_args.items()
             }
-            logger.info(action_args)
+            logger.info(f"action args: {action_args}")
+
             if facts is None:
                 facts = lang.get_facts(ruleset)
-            logger.info(f"facts: {lang.get_facts(ruleset)}")
+                logger.info(f"facts: {facts}")
+
             if "ruleset" not in action_args:
                 action_args["ruleset"] = ruleset
-            result = await builtin_actions[action](
+
+            return await builtin_actions[action](
                 event_log=event_log,
                 inventory=inventory,
                 hosts=hosts,
@@ -202,8 +208,8 @@ async def call_action(
                 **action_args,
             )
         except KeyError as e:
-            logger.error(f"{e}\n{pformat(variables_copy)}")
-            raise
+            logger.error(f"KeyError: {e}\n{pformat(variables_copy)}")
+            result = dict(error=e)
         except engine.MessageNotHandledException as e:
             logger.error(f"MessageNotHandledException: {action_args}")
             result = dict(error=e)
@@ -218,7 +224,19 @@ async def call_action(
             )
             result = dict(error=e)
     else:
-        raise Exception(f"Action {action} not supported")
+        logger.error(f"Action {action} not supported")
+        result = dict(error=f"Action {action} not supported")
+
+    await event_log.put(
+        dict(
+            type="Action",
+            action=action,
+            activation_id=settings.identifier,
+            playbook_name=action_args.get("name"),
+            status="failed",
+            run_at=str(datetime.utcnow()),
+        )
+    )
 
     return result
 
@@ -248,7 +266,7 @@ async def run_rulesets(
     )
     for rulesets_list in rulesets_queue_plans:
         for rulesets in rulesets_list[1]:
-            logger.debug(rulesets.define())
+            logger.info("rulesets define: %s", rulesets.define())
 
     if not rulesets_queue_plans:
         return
@@ -269,16 +287,12 @@ async def run_rulesets(
             if isinstance(data, Shutdown):
                 await event_log.put(dict(type="Shutdown"))
                 return
-            logger.info(str(data))
             if not data:
                 await event_log.put(dict(type="EmptyEvent"))
                 continue
-            logger.info(str(data))
             results = []
             try:
-                logger.info("Asserting event")
                 try:
-                    logger.debug(data)
                     lang.post(ruleset.name, data)
                 except engine.MessageObservedException:
                     logger.debug(f"MessageObservedException: {data}")
@@ -286,10 +300,12 @@ async def run_rulesets(
                     logger.debug(f"MessageNotHandledException: {data}")
                 finally:
                     logger.debug(lang.get_pending_events(ruleset.name))
+
                 while not plan.empty():
                     item = cast(ActionContext, await plan.get())
-                    logger.debug(item)
+                    logger.debug(f"item: {item}")
                     result = await call_action(*item, event_log=event_log)
+                    logger.debug(f"call_action result: {result}")
                     results.append(result)
 
                 await event_log.put(
@@ -300,4 +316,7 @@ async def run_rulesets(
                 await event_log.put(dict(type="MessageNotHandled"))
             except ShutdownException:
                 await event_log.put(dict(type="Shutdown"))
-                return
+            except Exception as e:
+                logger.error(
+                    f"Error calling {data}: {e}\n {traceback.format_exc()}"
+                )
