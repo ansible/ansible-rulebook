@@ -7,6 +7,6 @@
         limit: 1000
   rules:
     - name:
-      condition: +event.i
+      condition: event.i is defined
       action:
         none:
