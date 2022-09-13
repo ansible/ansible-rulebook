@@ -71,7 +71,7 @@ async def run(parsed_args) -> None:
         task.cancel()
     exceptions = await asyncio.gather(*tasks, return_exceptions=True)
     for exception in exceptions:
-        if not isinstance(exception, CancelledError):
+        if exception and not isinstance(exception, CancelledError):
             logger.error(exception)
 
     logger.info("Main complete")
