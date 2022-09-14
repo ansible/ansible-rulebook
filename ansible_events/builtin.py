@@ -9,6 +9,7 @@ import sys
 import tempfile
 import uuid
 from asyncio.exceptions import CancelledError
+from datetime import datetime
 from functools import partial
 from pprint import pprint
 from typing import Callable, Dict, List, Optional, Union
@@ -17,7 +18,6 @@ import ansible_runner
 import dpath.util
 import janus
 import yaml
-from datetime import datetime
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
     from drools.vendor import lang

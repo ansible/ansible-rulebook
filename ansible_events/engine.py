@@ -12,7 +12,6 @@ if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
 else:
     from durable import engine, lang
 
-from ansible_events.conf import settings
 import ansible_events.rule_generator as rule_generator
 from ansible_events.builtin import actions as builtin_actions
 from ansible_events.collection import (
@@ -22,6 +21,7 @@ from ansible_events.collection import (
     has_source_filter,
     split_collection_name,
 )
+from ansible_events.conf import settings
 from ansible_events.durability import provide_durability
 from ansible_events.exception import ShutdownException
 from ansible_events.messages import Shutdown
