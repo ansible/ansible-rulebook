@@ -69,10 +69,12 @@ async def run(parsed_args) -> None:
     logger.info("Cancelling event source tasks")
     for task in tasks:
         task.cancel()
-    exceptions = await asyncio.gather(*tasks, return_exceptions=True)
-    for exception in exceptions:
-        if not isinstance(exception, CancelledError):
-            logger.error(exception)
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    for result in results:
+        if isinstance(result, Exception) and not isinstance(
+            result, CancelledError
+        ):
+            logger.error(result)
 
     logger.info("Main complete")
     await event_log.put(dict(type="Exit"))
