@@ -1,13 +1,7 @@
-import asyncio
 import os
-from queue import Queue
-
-import pytest
-import yaml
 
 from ansible_events.condition_parser import parse_condition
 from ansible_events.json_generator import generate_condition
-from ansible_events.rules_parser import parse_rule_sets
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -27,3 +21,27 @@ def test_parse_condition():
     assert {
         "EqualsExpression": {"lhs": {"Fact": "range.i"}, "rhs": {"Integer": 1}}
     } == generate_condition(parse_condition("fact.range.i == 1"), {})
+    assert {
+        "GreaterThanExpression": {"lhs": {"Fact": "range.i"}, "rhs": {"Integer": 1}}
+    } == generate_condition(parse_condition("fact.range.i > 1"), {})
+    assert {
+        "LessThanExpression": {"lhs": {"Fact": "range.i"}, "rhs": {"Integer": 1}}
+    } == generate_condition(parse_condition("fact.range.i < 1"), {})
+    assert {
+        "LessThanOrEqualToExpression": {"lhs": {"Fact": "range.i"}, "rhs": {"Integer": 1}}
+    } == generate_condition(parse_condition("fact.range.i <= 1"), {})
+    assert {
+        "GreaterThanOrEqualToExpression": {"lhs": {"Fact": "range.i"}, "rhs": {"Integer": 1}}
+    } == generate_condition(parse_condition("fact.range.i >= 1"), {})
+    assert {
+        "EqualsExpression": {"lhs": {"Fact": "range.i"}, "rhs": {"String": "Hello"}}
+    } == generate_condition(parse_condition("fact.range.i == 'Hello'"), {})
+    assert {
+        "AssignmentExpression": { "lhs": {"Events": "first"}, "rhs": {"EqualsExpression": {"lhs": {"Fact": "range.i"}, "rhs": {"String": "Hello"}}}}
+    } == generate_condition(parse_condition("events.first << fact.range.i == 'Hello'"), {})
+    assert {
+        "IsDefinedExpression": {"Fact": "range.i"}
+    } == generate_condition(parse_condition("fact.range.i is defined"), {})
+    assert {
+        "IsNotDefinedExpression": {"Fact": "range.i"}
+    } == generate_condition(parse_condition("fact.range.i is not defined"), {})
