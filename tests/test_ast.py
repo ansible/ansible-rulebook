@@ -1,5 +1,6 @@
 import os
 
+import pytest
 import yaml
 
 from ansible_events.condition_parser import parse_condition
@@ -184,188 +185,39 @@ def test_parse_condition():
     )
 
 
-def test_generate_dict_ruleset():
+@pytest.mark.parametrize(
+    "rulebook",
+    [
+        "rules.yml",
+        "rules_with_assignment.yml",
+        "rules_with_assignment2.yml",
+        "rules_with_multiple_conditions.yml",
+        "rules_with_multiple_conditions2.yml",
+        "rules_with_multiple_conditions3.yml",
+        "rules_with_time.yml",
+        "rules_with_timestamp.yml",
+        "rules_with_vars.yml",
+        "rules_without_assignment.yml",
+        "test_assert_facts.yml",
+        "test_filters.yml",
+        "test_host_rules.yml",
+        "test_rules.yml",
+        "test_rules_multiple_hosts.yml",
+        "test_rules_multiple_hosts2.yml",
+        "test_rules_multiple_hosts3.yml",
+        "test_simple.yml",
+    ],
+)
+def test_generate_dict_ruleset(rulebook):
 
     os.chdir(HERE)
-    with open("rules/rules.yml") as f:
+    with open(os.path.join("rules", rulebook)) as f:
         data = yaml.safe_load(f.read())
 
-    print(parse_rule_sets(data))
     ruleset = generate_dict_rulesets(parse_rule_sets(data), {})
-    assert ruleset == [
-        {
-            "RuleSet": {
-                "hosts": ["localhost"],
-                "name": "Demo rules",
-                "rules": [
-                    {
-                        "Rule": {
-                            "action": {
-                                "Action": {
-                                    "action": "slack",
-                                    "action_args": {
-                                        "color": "good",
-                                        "msg": "Deployment "
-                                        "success "
-                                        "at "
-                                        "{{event.payload.eventTime}}: "
-                                        "{{management_url}}"
-                                        "{{event.payload.applicationId}}",
-                                        "token": "{{token}}",
-                                    },
-                                }
-                            },
-                            "condition": [
-                                {
-                                    "EqualsExpression": {
-                                        "lhs": {
-                                            "Event": "payload.provisioningState"
-                                        },
-                                        "rhs": {"String": "Succeeded"},
-                                    }
-                                }
-                            ],
-                            "enabled": True,
-                            "name": "send to slack3",
-                        }
-                    },
-                    {
-                        "Rule": {
-                            "action": {
-                                "Action": {
-                                    "action": "slack",
-                                    "action_args": {
-                                        "color": "warning",
-                                        "msg": "Deployment "
-                                        "deleted "
-                                        "at "
-                                        "{{event.payload.eventTime}}: "
-                                        "{{management_url}}"
-                                        "{{event.payload.applicationId}}",
-                                        "token": "{{token}}",
-                                    },
-                                }
-                            },
-                            "condition": [
-                                {
-                                    "EqualsExpression": {
-                                        "lhs": {
-                                            "Event": "payload.provisioningState"
-                                        },
-                                        "rhs": {"String": "Deleted"},
-                                    }
-                                }
-                            ],
-                            "enabled": True,
-                            "name": "send to slack4",
-                        }
-                    },
-                    {
-                        "Rule": {
-                            "action": {
-                                "Action": {
-                                    "action": "slack",
-                                    "action_args": {
-                                        "msg": "{{event}}",
-                                        "token": "{{token}}",
-                                    },
-                                }
-                            },
-                            "condition": [
-                                {
-                                    "NotEqualsExpression": {
-                                        "lhs": {"Event": "payload.eventType"},
-                                        "rhs": {"String": "GET"},
-                                    }
-                                }
-                            ],
-                            "enabled": True,
-                            "name": "send to slack5",
-                        }
-                    },
-                    {
-                        "Rule": {
-                            "action": {
-                                "Action": {
-                                    "action": "slack",
-                                    "action_args": {
-                                        "msg": "{{event}}",
-                                        "token": "{{token}}",
-                                    },
-                                }
-                            },
-                            "condition": [
-                                {
-                                    "NotEqualsExpression": {
-                                        "lhs": {"Event": "payload.text"},
-                                        "rhs": {"String": ""},
-                                    }
-                                }
-                            ],
-                            "enabled": True,
-                            "name": "send to slack6",
-                        }
-                    },
-                    {
-                        "Rule": {
-                            "action": {
-                                "Action": {
-                                    "action": "assert_fact",
-                                    "action_args": {
-                                        "fact": {"received_greeting": True},
-                                        "ruleset": "Demo " "rules",
-                                    },
-                                }
-                            },
-                            "condition": [
-                                {
-                                    "NotEqualsExpression": {
-                                        "lhs": {"Event": "payload.text"},
-                                        "rhs": {"String": ""},
-                                    }
-                                }
-                            ],
-                            "enabled": True,
-                            "name": "assert fact",
-                        }
-                    },
-                    {
-                        "Rule": {
-                            "action": {
-                                "Action": {"action": "log", "action_args": {}}
-                            },
-                            "condition": [
-                                {
-                                    "NotEqualsExpression": {
-                                        "lhs": {"Event": "payload.text"},
-                                        "rhs": {"String": ""},
-                                    }
-                                }
-                            ],
-                            "enabled": True,
-                            "name": "log event",
-                        }
-                    },
-                ],
-                "sources": [
-                    {
-                        "EventSource": {
-                            "name": "azure_service_bus",
-                            "source_args": {
-                                "conn_str": "{{connection_str}}",
-                                "queue_name": "{{queue_name}}",
-                            },
-                            "source_filters": [],
-                        }
-                    },
-                    {
-                        "EventSource": {
-                            "name": "local_events",
-                            "source_args": {},
-                            "source_filters": [],
-                        }
-                    },
-                ],
-            }
-        }
-    ]
+    print(yaml.dump(ruleset))
+
+    with open(os.path.join("asts", rulebook)) as f:
+        ast = yaml.safe_load(f.read())
+
+    assert ruleset == ast

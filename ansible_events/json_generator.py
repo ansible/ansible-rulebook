@@ -182,6 +182,7 @@ def visit_source(parsed_source: EventSource, variables: Dict):
     return {
         "EventSource": {
             "name": parsed_source.name,
+            "source_name": parsed_source.source_name,
             "source_args": parsed_source.source_args,
             "source_filters": [
                 visit_source_filter(f, variables)
