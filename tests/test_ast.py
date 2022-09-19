@@ -114,7 +114,8 @@ def test_parse_condition():
     print(
         generate_condition(
             parse_condition(
-                "(fact.range.i is not defined) and (fact.range.i is defined) and (fact.range.i == 1)"
+                "(fact.range.i is not defined) and (fact.range.i is defined)"
+                " and (fact.range.i == 1)"
             ),
             {},
         )
@@ -136,7 +137,8 @@ def test_parse_condition():
         }
     } == generate_condition(
         parse_condition(
-            "(fact.range.i is not defined) and (fact.range.i is defined) and (fact.range.i == 1)"
+            "(fact.range.i is not defined) and (fact.range.i is defined) "
+            "and (fact.range.i == 1)"
         ),
         {},
     )
@@ -157,7 +159,8 @@ def test_parse_condition():
         }
     } == generate_condition(
         parse_condition(
-            "(fact.range.i is not defined) and (fact.range.i is defined) or (fact.range.i == 1)"
+            "(fact.range.i is not defined) and (fact.range.i is defined) "
+            "or (fact.range.i == 1)"
         ),
         {},
     )
@@ -179,7 +182,8 @@ def test_parse_condition():
         }
     } == generate_condition(
         parse_condition(
-            "(fact.range.i is not defined) and ((fact.range.i is defined) or (fact.range.i == 1))"
+            "(fact.range.i is not defined) and "
+            "((fact.range.i is defined) or (fact.range.i == 1))"
         ),
         {},
     )

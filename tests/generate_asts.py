@@ -12,7 +12,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def main():
-    for root, dirs, files in os.walk(os.path.join(HERE, "rules")):
+    for root, _, files in os.walk(os.path.join(HERE, "rules")):
         for file in files:
             if file.endswith(".yml"):
                 print(os.path.join(root, file))
