@@ -77,6 +77,112 @@ def test_parse_condition():
         "IsNotDefinedExpression": {"Fact": "range.i"}
     } == generate_condition(parse_condition("fact.range.i is not defined"), {})
 
+    assert {
+        "IsNotDefinedExpression": {"Fact": "range.i"}
+    } == generate_condition(
+        parse_condition("(fact.range.i is not defined)"), {}
+    )
+
+    assert {
+        "IsNotDefinedExpression": {"Fact": "range.i"}
+    } == generate_condition(
+        parse_condition("(((fact.range.i is not defined)))"), {}
+    )
+    assert {
+        "OrExpression": {
+            "lhs": {"IsNotDefinedExpression": {"Fact": "range.i"}},
+            "rhs": {"IsDefinedExpression": {"Fact": "range.i"}},
+        }
+    } == generate_condition(
+        parse_condition(
+            "(fact.range.i is not defined) or (fact.range.i is defined)"
+        ),
+        {},
+    )
+    assert {
+        "AndExpression": {
+            "lhs": {"IsNotDefinedExpression": {"Fact": "range.i"}},
+            "rhs": {"IsDefinedExpression": {"Fact": "range.i"}},
+        }
+    } == generate_condition(
+        parse_condition(
+            "(fact.range.i is not defined) and (fact.range.i is defined)"
+        ),
+        {},
+    )
+    print(
+        generate_condition(
+            parse_condition(
+                "(fact.range.i is not defined) and (fact.range.i is defined) and (fact.range.i == 1)"
+            ),
+            {},
+        )
+    )
+    assert {
+        "AndExpression": {
+            "lhs": {
+                "AndExpression": {
+                    "lhs": {"IsNotDefinedExpression": {"Fact": "range.i"}},
+                    "rhs": {"IsDefinedExpression": {"Fact": "range.i"}},
+                }
+            },
+            "rhs": {
+                "EqualsExpression": {
+                    "lhs": {"Fact": "range.i"},
+                    "rhs": {"Integer": 1},
+                }
+            },
+        }
+    } == generate_condition(
+        parse_condition(
+            "(fact.range.i is not defined) and (fact.range.i is defined) and (fact.range.i == 1)"
+        ),
+        {},
+    )
+    assert {
+        "OrExpression": {
+            "lhs": {
+                "AndExpression": {
+                    "lhs": {"IsNotDefinedExpression": {"Fact": "range.i"}},
+                    "rhs": {"IsDefinedExpression": {"Fact": "range.i"}},
+                }
+            },
+            "rhs": {
+                "EqualsExpression": {
+                    "lhs": {"Fact": "range.i"},
+                    "rhs": {"Integer": 1},
+                }
+            },
+        }
+    } == generate_condition(
+        parse_condition(
+            "(fact.range.i is not defined) and (fact.range.i is defined) or (fact.range.i == 1)"
+        ),
+        {},
+    )
+
+    assert {
+        "AndExpression": {
+            "lhs": {"IsNotDefinedExpression": {"Fact": "range.i"}},
+            "rhs": {
+                "OrExpression": {
+                    "lhs": {"IsDefinedExpression": {"Fact": "range.i"}},
+                    "rhs": {
+                        "EqualsExpression": {
+                            "lhs": {"Fact": "range.i"},
+                            "rhs": {"Integer": 1},
+                        }
+                    },
+                }
+            },
+        }
+    } == generate_condition(
+        parse_condition(
+            "(fact.range.i is not defined) and ((fact.range.i is defined) or (fact.range.i == 1))"
+        ),
+        {},
+    )
+
 
 def test_generate_dict_ruleset():
 
