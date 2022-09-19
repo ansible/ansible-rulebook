@@ -12,37 +12,38 @@
               second: '{{events.second}}'
               third: '{{events.third}}'
         condition:
-        - AssignmentExpression:
-            lhs:
-              Events: first
-            rhs:
-              EqualsExpression:
-                lhs:
-                  Event: i
-                rhs:
-                  Integer: 0
-        - AssignmentExpression:
-            lhs:
-              Events: second
-            rhs:
-              EqualsExpression:
-                lhs:
-                  Event: i
-                rhs:
-                  Integer: 1
-        - AssignmentExpression:
-            lhs:
-              Events: third
-            rhs:
-              EqualsExpression:
-                lhs:
-                  Event: i
-                rhs:
-                  AdditionExpression:
-                    lhs:
-                      Events: first.i
-                    rhs:
-                      Integer: 2
+          AllCondition:
+          - AssignmentExpression:
+              lhs:
+                Events: first
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Event: i
+                  rhs:
+                    Integer: 0
+          - AssignmentExpression:
+              lhs:
+                Events: second
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Event: i
+                  rhs:
+                    Integer: 1
+          - AssignmentExpression:
+              lhs:
+                Events: third
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Event: i
+                  rhs:
+                    AdditionExpression:
+                      lhs:
+                        Events: first.i
+                      rhs:
+                        Integer: 2
         enabled: true
         name: multiple conditions
     sources:

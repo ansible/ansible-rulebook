@@ -10,15 +10,16 @@
             action_args:
               events_event: '{{events.first}}'
         condition:
-        - AssignmentExpression:
-            lhs:
-              Facts: first
-            rhs:
-              EqualsExpression:
-                lhs:
-                  Fact: i
-                rhs:
-                  Integer: 0
+          AllCondition:
+          - AssignmentExpression:
+              lhs:
+                Facts: first
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Fact: i
+                  rhs:
+                    Integer: 0
         enabled: true
         name: assignment
     sources:

@@ -12,11 +12,12 @@
                 j: 1
               ruleset: Test rules multiple hosts
         condition:
-        - EqualsExpression:
-            lhs:
-              Event: i
-            rhs:
-              Integer: 1
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
         enabled: true
         name: null
     - Rule:
@@ -26,11 +27,12 @@
             action_args:
               name: playbooks/hello_events.yml
         condition:
-        - EqualsExpression:
-            lhs:
-              Event: i
-            rhs:
-              Integer: 2
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 2
         enabled: true
         name: null
     - Rule:
@@ -42,11 +44,12 @@
                 j: 3
               ruleset: Test rules multiple hosts
         condition:
-        - EqualsExpression:
-            lhs:
-              Event: i
-            rhs:
-              Integer: 3
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 3
         enabled: true
         name: null
     - Rule:
@@ -58,11 +61,12 @@
                 j: 4
               ruleset: Test rules multiple hosts
         condition:
-        - EqualsExpression:
-            lhs:
-              Event: i
-            rhs:
-              Integer: 4
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 4
         enabled: true
         name: null
     - Rule:
@@ -71,8 +75,9 @@
             action: none
             action_args: {}
         condition:
-        - IsDefinedExpression:
-            Event: j
+          AllCondition:
+          - IsDefinedExpression:
+              Event: j
         enabled: true
         name: null
     sources:

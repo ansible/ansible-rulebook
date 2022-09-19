@@ -9,11 +9,12 @@
             action: debug
             action_args: {}
         condition:
-        - EqualsExpression:
-            lhs:
-              Event: i
-            rhs:
-              Integer: 1
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
         enabled: true
         name: null
     sources:

@@ -15,11 +15,12 @@
                   name: R2D2
                 msg: hello world
         condition:
-        - EqualsExpression:
-            lhs:
-              Event: i
-            rhs:
-              Integer: 1
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
         enabled: true
         name: null
     - Rule:
@@ -35,11 +36,12 @@
                 fact.beta.name: R2D2
                 fact.msg: hello world
         condition:
-        - EqualsExpression:
-            lhs:
-              Event: msg
-            rhs:
-              String: hello world
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: msg
+              rhs:
+                String: hello world
         enabled: true
         name: null
     sources:

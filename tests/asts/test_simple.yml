@@ -11,11 +11,12 @@
               pretty: true
               var_root: i
         condition:
-        - EqualsExpression:
-            lhs:
-              Event: i
-            rhs:
-              Integer: 0
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 0
         enabled: true
         name: null
     - Rule:
@@ -24,11 +25,12 @@
             action: print_event
             action_args: {}
         condition:
-        - EqualsExpression:
-            lhs:
-              Event: i
-            rhs:
-              Integer: 1
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
         enabled: true
         name: null
     - Rule:
@@ -40,11 +42,12 @@
               post_events: true
               var_root: i
         condition:
-        - EqualsExpression:
-            lhs:
-              Event: i
-            rhs:
-              Integer: 2
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 2
         enabled: true
         name: null
     - Rule:
@@ -53,8 +56,9 @@
             action: print_event
             action_args: {}
         condition:
-        - IsDefinedExpression:
-            Event: msg
+          AllCondition:
+          - IsDefinedExpression:
+              Event: msg
         enabled: true
         name: null
     sources:

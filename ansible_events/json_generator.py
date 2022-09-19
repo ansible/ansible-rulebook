@@ -205,7 +205,12 @@ def visit_source_filter(parsed_source: EventSourceFilter, variables: Dict):
 def generate_condition(ansible_condition: RuleCondition, variables: Dict):
     """Generate the condition AST."""
     condition = visit_condition(ansible_condition.value, variables)
-    return condition
+    if ansible_condition.when == "any":
+        return {"AnyCondition": condition}
+    elif ansible_condition.when == "all":
+        return {"AllCondition": condition}
+    else:
+        return {"AllCondition": condition}
 
 
 def visit_ruleset(ruleset: RuleSet, variables: Dict):

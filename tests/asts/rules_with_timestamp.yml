@@ -11,8 +11,9 @@
               fact:
                 current_time: '{{event.timestamp.unix_timestamp}}'
         condition:
-        - IsDefinedExpression:
-            Event: timestamp.unix_timestamp
+          AllCondition:
+          - IsDefinedExpression:
+              Event: timestamp.unix_timestamp
         enabled: true
         name: promote timestamp.unix_timestamp to current_time fact
     - Rule:
@@ -23,14 +24,15 @@
               fact:
                 initial_time: '{{facts.time.current_time}}'
         condition:
-        - AssignmentExpression:
-            lhs:
-              Facts: time
-            rhs:
-              IsDefinedExpression:
-                Fact: current_time
-        - IsNotDefinedExpression:
-            Event: initial_time
+          AllCondition:
+          - AssignmentExpression:
+              lhs:
+                Facts: time
+              rhs:
+                IsDefinedExpression:
+                  Fact: current_time
+          - IsNotDefinedExpression:
+              Event: initial_time
         enabled: true
         name: set the initial time
     - Rule:
@@ -41,8 +43,9 @@
               fact:
                 current_time: '{{fact.current_time}}'
         condition:
-        - IsDefinedExpression:
-            Fact: current_time
+          AllCondition:
+          - IsDefinedExpression:
+              Fact: current_time
         enabled: true
         name: retract current_time fact
     - Rule:
@@ -51,8 +54,9 @@
             action: debug
             action_args: {}
         condition:
-        - IsDefinedExpression:
-            Fact: initial_time
+          AllCondition:
+          - IsDefinedExpression:
+              Fact: initial_time
         enabled: true
         name: debug
     - Rule:
@@ -61,21 +65,22 @@
             action: shutdown
             action_args: {}
         condition:
-        - AssignmentExpression:
-            lhs:
-              Facts: a
-            rhs:
-              IsDefinedExpression:
-                Fact: initial_time
-        - GreaterThanOrEqualToExpression:
-            lhs:
-              Fact: current_time
-            rhs:
-              AdditionExpression:
-                lhs:
-                  Facts: a.initial_time
-                rhs:
-                  Integer: 5
+          AllCondition:
+          - AssignmentExpression:
+              lhs:
+                Facts: a
+              rhs:
+                IsDefinedExpression:
+                  Fact: initial_time
+          - GreaterThanOrEqualToExpression:
+              lhs:
+                Fact: current_time
+              rhs:
+                AdditionExpression:
+                  lhs:
+                    Facts: a.initial_time
+                  rhs:
+                    Integer: 5
         enabled: true
         name: shutdown
     sources:

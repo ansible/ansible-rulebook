@@ -9,24 +9,25 @@
             action: debug
             action_args: {}
         condition:
-        - AssignmentExpression:
-            lhs:
-              Events: event
-            rhs:
-              EqualsExpression:
-                lhs:
-                  Event: i
-                rhs:
-                  Integer: 0
-        - AssignmentExpression:
-            lhs:
-              Events: event
-            rhs:
-              EqualsExpression:
-                lhs:
-                  Event: i
-                rhs:
-                  Integer: 1
+          AnyCondition:
+          - AssignmentExpression:
+              lhs:
+                Events: event
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Event: i
+                  rhs:
+                    Integer: 0
+          - AssignmentExpression:
+              lhs:
+                Events: event
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Event: i
+                  rhs:
+                    Integer: 1
         enabled: true
         name: multiple conditions
     sources:

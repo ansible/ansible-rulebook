@@ -12,11 +12,12 @@
               msg: 'Deployment success at {{event.payload.eventTime}}: {{management_url}}{{event.payload.applicationId}}'
               token: '{{token}}'
         condition:
-        - EqualsExpression:
-            lhs:
-              Event: payload.provisioningState
-            rhs:
-              String: Succeeded
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: payload.provisioningState
+              rhs:
+                String: Succeeded
         enabled: true
         name: send to slack3
     - Rule:
@@ -28,11 +29,12 @@
               msg: 'Deployment deleted at {{event.payload.eventTime}}: {{management_url}}{{event.payload.applicationId}}'
               token: '{{token}}'
         condition:
-        - EqualsExpression:
-            lhs:
-              Event: payload.provisioningState
-            rhs:
-              String: Deleted
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: payload.provisioningState
+              rhs:
+                String: Deleted
         enabled: true
         name: send to slack4
     - Rule:
@@ -43,11 +45,12 @@
               msg: '{{event}}'
               token: '{{token}}'
         condition:
-        - NotEqualsExpression:
-            lhs:
-              Event: payload.eventType
-            rhs:
-              String: GET
+          AllCondition:
+          - NotEqualsExpression:
+              lhs:
+                Event: payload.eventType
+              rhs:
+                String: GET
         enabled: true
         name: send to slack5
     - Rule:
@@ -58,11 +61,12 @@
               msg: '{{event}}'
               token: '{{token}}'
         condition:
-        - NotEqualsExpression:
-            lhs:
-              Event: payload.text
-            rhs:
-              String: ''
+          AllCondition:
+          - NotEqualsExpression:
+              lhs:
+                Event: payload.text
+              rhs:
+                String: ''
         enabled: true
         name: send to slack6
     - Rule:
@@ -74,11 +78,12 @@
                 received_greeting: true
               ruleset: Demo rules
         condition:
-        - NotEqualsExpression:
-            lhs:
-              Event: payload.text
-            rhs:
-              String: ''
+          AllCondition:
+          - NotEqualsExpression:
+              lhs:
+                Event: payload.text
+              rhs:
+                String: ''
         enabled: true
         name: assert fact
     - Rule:
@@ -87,11 +92,12 @@
             action: log
             action_args: {}
         condition:
-        - NotEqualsExpression:
-            lhs:
-              Event: payload.text
-            rhs:
-              String: ''
+          AllCondition:
+          - NotEqualsExpression:
+              lhs:
+                Event: payload.text
+              rhs:
+                String: ''
         enabled: true
         name: log event
     sources:

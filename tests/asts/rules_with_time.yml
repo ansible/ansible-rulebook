@@ -11,8 +11,9 @@
               fact:
                 current_time: '{{event.time.tick}}'
         condition:
-        - IsDefinedExpression:
-            Event: time.tick
+          AllCondition:
+          - IsDefinedExpression:
+              Event: time.tick
         enabled: true
         name: promote time.tick to current_time fact
     - Rule:
@@ -23,8 +24,9 @@
               fact:
                 current_time: '{{event.current_time}}'
         condition:
-        - IsDefinedExpression:
-            Fact: current_time
+          AllCondition:
+          - IsDefinedExpression:
+              Fact: current_time
         enabled: true
         name: retract current_time fact
     - Rule:
@@ -33,8 +35,9 @@
             action: debug
             action_args: {}
         condition:
-        - IsDefinedExpression:
-            Fact: current_time
+          AllCondition:
+          - IsDefinedExpression:
+              Fact: current_time
         enabled: true
         name: matches current_time fact before it is retracted since facts fire all
           matching rules
@@ -44,11 +47,12 @@
             action: shutdown
             action_args: {}
         condition:
-        - GreaterThanOrEqualToExpression:
-            lhs:
-              Fact: current_time
-            rhs:
-              Integer: 5
+          AllCondition:
+          - GreaterThanOrEqualToExpression:
+              lhs:
+                Fact: current_time
+              rhs:
+                Integer: 5
         enabled: true
         name: shutdown after 5 ticks
     sources:

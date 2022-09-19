@@ -10,11 +10,12 @@
             action_args:
               event: '{{event}}'
         condition:
-        - EqualsExpression:
-            lhs:
-              Fact: i
-            rhs:
-              Integer: 0
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Fact: i
+              rhs:
+                Integer: 0
         enabled: true
         name: assignment
     sources:
