@@ -1,0 +1,29 @@
+---
+- name: 36 multiple rulesets 1
+  hosts: all
+  sources:
+    - range:
+        limit: 5
+  rules:
+    - name:
+      condition: event.i == 1
+      action:
+        assert_fact:
+          fact:
+            fire_rule: True
+          ruleset: 36 multiple rulesets 2
+    - name: Will not fire, fact in other ruleset
+      condition: event.fire_rule == True
+      action:
+        print_event:
+- name: 36 multiple rulesets 2
+  hosts: all
+  sources:
+    - range:
+        limit: 5
+  rules:
+    - name:
+      condition: event.fire_rule == True
+      action:
+        debug:
+          msg: Should run
