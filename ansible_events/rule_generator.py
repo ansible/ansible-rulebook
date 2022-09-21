@@ -26,6 +26,8 @@ from ansible_events.rule_types import (
 )
 from ansible_events.util import substitute_variables
 
+logger = logging.getLogger(__name__)
+
 
 def add_to_plan(
     ruleset: str,
@@ -147,10 +149,9 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
 
 def generate_condition(ansible_condition: RuleCondition, variables: Dict):
     condition = visit_condition(ansible_condition.value, variables)
-    logger = logging.getLogger()
     for i in condition:
         if i:
-            logger.debug(f"{i.define()}")
+            logger.debug("%s", i.define())
         else:
             logger.debug("None")
     return condition
@@ -166,8 +167,7 @@ def make_fn(
     plan: asyncio.Queue,
 ) -> Callable:
     def fn(c):
-        logger = logging.getLogger()
-        logger.info(f"calling {ansible_rule.name}")
+        logger.info("calling %s", ansible_rule.name)
         add_to_plan(
             ruleset,
             ansible_rule.action.action,
@@ -189,7 +189,6 @@ def generate_rulesets(
     inventory: Dict,
 ):
 
-    logger = logging.getLogger()
     rulesets = []
 
     for ansible_ruleset, queue, plan in ansible_ruleset_queue_plans:

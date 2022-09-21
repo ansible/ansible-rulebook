@@ -9,7 +9,7 @@ import yaml
 from ansible_events import rules_parser as rules_parser
 from ansible_events.key import install_private_key
 
-logger = logging.getLogger("ansible_events.websocket")
+logger = logging.getLogger(__name__)
 
 
 async def request_workload(activation_id, websocket_address):
@@ -74,5 +74,5 @@ async def send_event_log_to_websocket(event_log, websocket_address):
         except CancelledError:
             logger.info("closing websocket due to task cancelled")
             return
-        except BaseException as e:
-            logger.error(f"websocket error {type(e)} {e} on {event}")
+        except BaseException:
+            logger.exception("websocket error on %s", event)
