@@ -1,0 +1,31 @@
+- RuleSet:
+    hosts:
+    - localhost
+    name: Demo rules with assignment2
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args:
+              events_event: '{{events.first}}'
+        condition:
+          AllCondition:
+          - AssignmentExpression:
+              lhs:
+                Facts: first
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Fact: i
+                  rhs:
+                    Integer: 0
+        enabled: true
+        name: assignment
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range

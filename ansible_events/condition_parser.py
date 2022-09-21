@@ -47,8 +47,21 @@ string2 = (
     QuotedString('"').copy().add_parse_action(lambda toks: String(toks[0]))
 )
 
-# REVIEW(cutwater): The expression `lambda toks: OperatorExpression(*toks[0])`
-#   is duplicated 8 times here. Can it be a function?
+
+def OperatorExpressionFactory(tokens):
+    return_value = None
+    while tokens:
+        if return_value is None:
+            return_value = OperatorExpression(tokens[0], tokens[1], tokens[2])
+            tokens = tokens[3:]
+        else:
+            return_value = OperatorExpression(
+                return_value, tokens[0], tokens[1]
+            )
+            tokens = tokens[2:]
+    return return_value
+
+
 condition = infix_notation(
     integer | boolean | varname | string1 | string2,
     [
@@ -58,29 +71,74 @@ condition = infix_notation(
             one_of("* /"),
             2,
             OpAssoc.LEFT,
-            lambda toks: OperatorExpression(*toks[0]),
+            lambda toks: OperatorExpressionFactory(toks[0]),
         ),
         (
             one_of("+ -"),
             2,
             OpAssoc.LEFT,
-            lambda toks: OperatorExpression(*toks[0]),
+            lambda toks: OperatorExpressionFactory(toks[0]),
         ),
-        (">=", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
-        ("<=", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
+        (
+            ">=",
+            2,
+            OpAssoc.LEFT,
+            lambda toks: OperatorExpressionFactory(toks[0]),
+        ),
+        (
+            "<=",
+            2,
+            OpAssoc.LEFT,
+            lambda toks: OperatorExpressionFactory(toks[0]),
+        ),
         (
             one_of("< >"),
             2,
             OpAssoc.LEFT,
-            lambda toks: OperatorExpression(*toks[0]),
+            lambda toks: OperatorExpressionFactory(toks[0]),
         ),
-        ("!=", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
-        ("==", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
-        ("is not", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
-        ("is", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
-        ("and", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
-        ("or", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
-        ("<<", 2, OpAssoc.LEFT, lambda toks: OperatorExpression(*toks[0])),
+        (
+            "!=",
+            2,
+            OpAssoc.LEFT,
+            lambda toks: OperatorExpressionFactory(toks[0]),
+        ),
+        (
+            "==",
+            2,
+            OpAssoc.LEFT,
+            lambda toks: OperatorExpressionFactory(toks[0]),
+        ),
+        (
+            "is not",
+            2,
+            OpAssoc.LEFT,
+            lambda toks: OperatorExpressionFactory(toks[0]),
+        ),
+        (
+            "is",
+            2,
+            OpAssoc.LEFT,
+            lambda toks: OperatorExpressionFactory(toks[0]),
+        ),
+        (
+            "and",
+            2,
+            OpAssoc.LEFT,
+            lambda toks: OperatorExpressionFactory(toks[0]),
+        ),
+        (
+            "or",
+            2,
+            OpAssoc.LEFT,
+            lambda toks: OperatorExpressionFactory(toks[0]),
+        ),
+        (
+            "<<",
+            2,
+            OpAssoc.LEFT,
+            lambda toks: OperatorExpressionFactory(toks[0]),
+        ),
     ],
 ).add_parse_action(lambda toks: Condition(toks[0]))
 

@@ -1,0 +1,55 @@
+- RuleSet:
+    hosts:
+    - localhost
+    name: Demo rules multiple conditions reference assignment
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args:
+              first: '{{events.first}}'
+              second: '{{events.second}}'
+              third: '{{events.third}}'
+        condition:
+          AllCondition:
+          - AssignmentExpression:
+              lhs:
+                Events: first
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Event: i
+                  rhs:
+                    Integer: 0
+          - AssignmentExpression:
+              lhs:
+                Events: second
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Event: i
+                  rhs:
+                    Integer: 1
+          - AssignmentExpression:
+              lhs:
+                Events: third
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Event: i
+                  rhs:
+                    AdditionExpression:
+                      lhs:
+                        Events: first.i
+                      rhs:
+                        Integer: 2
+        enabled: true
+        name: multiple conditions
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range

@@ -1,0 +1,115 @@
+- RuleSet:
+    hosts:
+    - localhost
+    name: Demo rules
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: slack
+            action_args:
+              color: good
+              msg: 'Deployment success at {{event.payload.eventTime}}: {{management_url}}{{event.payload.applicationId}}'
+              token: '{{token}}'
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: payload.provisioningState
+              rhs:
+                String: Succeeded
+        enabled: true
+        name: send to slack3
+    - Rule:
+        action:
+          Action:
+            action: slack
+            action_args:
+              color: warning
+              msg: 'Deployment deleted at {{event.payload.eventTime}}: {{management_url}}{{event.payload.applicationId}}'
+              token: '{{token}}'
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: payload.provisioningState
+              rhs:
+                String: Deleted
+        enabled: true
+        name: send to slack4
+    - Rule:
+        action:
+          Action:
+            action: slack
+            action_args:
+              msg: '{{event}}'
+              token: '{{token}}'
+        condition:
+          AllCondition:
+          - NotEqualsExpression:
+              lhs:
+                Event: payload.eventType
+              rhs:
+                String: GET
+        enabled: true
+        name: send to slack5
+    - Rule:
+        action:
+          Action:
+            action: slack
+            action_args:
+              msg: '{{event}}'
+              token: '{{token}}'
+        condition:
+          AllCondition:
+          - NotEqualsExpression:
+              lhs:
+                Event: payload.text
+              rhs:
+                String: ''
+        enabled: true
+        name: send to slack6
+    - Rule:
+        action:
+          Action:
+            action: assert_fact
+            action_args:
+              fact:
+                received_greeting: true
+              ruleset: Demo rules
+        condition:
+          AllCondition:
+          - NotEqualsExpression:
+              lhs:
+                Event: payload.text
+              rhs:
+                String: ''
+        enabled: true
+        name: assert fact
+    - Rule:
+        action:
+          Action:
+            action: log
+            action_args: {}
+        condition:
+          AllCondition:
+          - NotEqualsExpression:
+              lhs:
+                Event: payload.text
+              rhs:
+                String: ''
+        enabled: true
+        name: log event
+    sources:
+    - EventSource:
+        name: azure
+        source_args:
+          conn_str: '{{connection_str}}'
+          queue_name: '{{queue_name}}'
+        source_filters: []
+        source_name: azure_service_bus
+    - EventSource:
+        name: local
+        source_args: {}
+        source_filters: []
+        source_name: local_events

@@ -1,0 +1,91 @@
+- RuleSet:
+    hosts:
+    - localhost
+    name: Demo rules with timestamp
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: assert_fact
+            action_args:
+              fact:
+                current_time: '{{event.timestamp.unix_timestamp}}'
+        condition:
+          AllCondition:
+          - IsDefinedExpression:
+              Event: timestamp.unix_timestamp
+        enabled: true
+        name: promote timestamp.unix_timestamp to current_time fact
+    - Rule:
+        action:
+          Action:
+            action: assert_fact
+            action_args:
+              fact:
+                initial_time: '{{facts.time.current_time}}'
+        condition:
+          AllCondition:
+          - AssignmentExpression:
+              lhs:
+                Facts: time
+              rhs:
+                IsDefinedExpression:
+                  Fact: current_time
+          - IsNotDefinedExpression:
+              Event: initial_time
+        enabled: true
+        name: set the initial time
+    - Rule:
+        action:
+          Action:
+            action: retract_fact
+            action_args:
+              fact:
+                current_time: '{{fact.current_time}}'
+        condition:
+          AllCondition:
+          - IsDefinedExpression:
+              Fact: current_time
+        enabled: true
+        name: retract current_time fact
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args: {}
+        condition:
+          AllCondition:
+          - IsDefinedExpression:
+              Fact: initial_time
+        enabled: true
+        name: debug
+    - Rule:
+        action:
+          Action:
+            action: shutdown
+            action_args: {}
+        condition:
+          AllCondition:
+          - AssignmentExpression:
+              lhs:
+                Facts: a
+              rhs:
+                IsDefinedExpression:
+                  Fact: initial_time
+          - GreaterThanOrEqualToExpression:
+              lhs:
+                Fact: current_time
+              rhs:
+                AdditionExpression:
+                  lhs:
+                    Facts: a.initial_time
+                  rhs:
+                    Integer: 5
+        enabled: true
+        name: shutdown
+    sources:
+    - EventSource:
+        name: timestamp
+        source_args: {}
+        source_filters: []
+        source_name: timestamp

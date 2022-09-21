@@ -1,0 +1,63 @@
+- RuleSet:
+    hosts:
+    - localhost
+    name: Demo rules with time
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: assert_fact
+            action_args:
+              fact:
+                current_time: '{{event.time.tick}}'
+        condition:
+          AllCondition:
+          - IsDefinedExpression:
+              Event: time.tick
+        enabled: true
+        name: promote time.tick to current_time fact
+    - Rule:
+        action:
+          Action:
+            action: retract_fact
+            action_args:
+              fact:
+                current_time: '{{event.current_time}}'
+        condition:
+          AllCondition:
+          - IsDefinedExpression:
+              Fact: current_time
+        enabled: true
+        name: retract current_time fact
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args: {}
+        condition:
+          AllCondition:
+          - IsDefinedExpression:
+              Fact: current_time
+        enabled: true
+        name: matches current_time fact before it is retracted since facts fire all
+          matching rules
+    - Rule:
+        action:
+          Action:
+            action: shutdown
+            action_args: {}
+        condition:
+          AllCondition:
+          - GreaterThanOrEqualToExpression:
+              lhs:
+                Fact: current_time
+              rhs:
+                Integer: 5
+        enabled: true
+        name: shutdown after 5 ticks
+    sources:
+    - EventSource:
+        name: tick
+        source_args: {}
+        source_filters: []
+        source_name: tick

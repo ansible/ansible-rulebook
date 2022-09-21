@@ -1,0 +1,39 @@
+- RuleSet:
+    hosts:
+    - localhost
+    name: Demo rules multiple conditions all
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args: {}
+        condition:
+          AllCondition:
+          - AssignmentExpression:
+              lhs:
+                Events: first
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Event: i
+                  rhs:
+                    Integer: 0
+          - AssignmentExpression:
+              lhs:
+                Events: second
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Event: i
+                  rhs:
+                    Integer: 1
+        enabled: true
+        name: multiple conditions
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range

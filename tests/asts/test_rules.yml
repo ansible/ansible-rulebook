@@ -1,0 +1,89 @@
+- RuleSet:
+    hosts:
+    - all
+    name: Test rules4
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: assert_fact
+            action_args:
+              fact:
+                j: 1
+              ruleset: Test rules4
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
+        enabled: true
+        name: null
+    - Rule:
+        action:
+          Action:
+            action: run_playbook
+            action_args:
+              name: playbooks/hello_world_set_fact.yml
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 2
+        enabled: true
+        name: null
+    - Rule:
+        action:
+          Action:
+            action: retract_fact
+            action_args:
+              fact:
+                j: 3
+              ruleset: Test rules4
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 3
+        enabled: true
+        name: null
+    - Rule:
+        action:
+          Action:
+            action: post_event
+            action_args:
+              event:
+                j: 4
+              ruleset: Test rules4
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 4
+        enabled: true
+        name: null
+    - Rule:
+        action:
+          Action:
+            action: none
+            action_args: {}
+        condition:
+          AllCondition:
+          - IsDefinedExpression:
+              Event: j
+        enabled: true
+        name: null
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range

@@ -1,0 +1,70 @@
+- RuleSet:
+    hosts:
+    - all
+    name: Test rules simple
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: print_event
+            action_args:
+              pretty: true
+              var_root: i
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 0
+        enabled: true
+        name: null
+    - Rule:
+        action:
+          Action:
+            action: print_event
+            action_args: {}
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
+        enabled: true
+        name: null
+    - Rule:
+        action:
+          Action:
+            action: run_playbook
+            action_args:
+              name: playbooks/hello_world_set_fact.yml
+              post_events: true
+              var_root: i
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 2
+        enabled: true
+        name: null
+    - Rule:
+        action:
+          Action:
+            action: print_event
+            action_args: {}
+        condition:
+          AllCondition:
+          - IsDefinedExpression:
+              Event: msg
+        enabled: true
+        name: null
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range
