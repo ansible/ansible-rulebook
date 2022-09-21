@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 import asyncio
-from queue import Queue
+import os
 from typing import Any, Dict, List, NamedTuple, Union
 
 import ansible_events.condition_types as ct
+
+if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+    from drools.vendor.lang import ruleset as EngineRuleSet
+else:
+    from durable.lang import ruleset as EngineRuleSet
 
 
 class EventSourceFilter(NamedTuple):
@@ -55,17 +60,18 @@ class ActionContext(NamedTuple):
     c: Any
 
 
-class RuleSetPlan(NamedTuple):
-    ruleset: RuleSet
-    plan: asyncio.Queue
-
-
 class RuleSetQueue(NamedTuple):
     ruleset: RuleSet
-    queue: Queue
+    queue: asyncio.Queue
 
 
 class RuleSetQueuePlan(NamedTuple):
     ruleset: RuleSet
-    queue: Queue
+    queue: asyncio.Queue
+    plan: asyncio.Queue
+
+
+class EngineRuleSetQueuePlan(NamedTuple):
+    ruleset: EngineRuleSet
+    queue: asyncio.Queue
     plan: asyncio.Queue

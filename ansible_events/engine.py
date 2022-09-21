@@ -27,12 +27,15 @@ from ansible_events.exception import ShutdownException
 from ansible_events.messages import Shutdown
 from ansible_events.rule_types import (
     ActionContext,
+    EngineRuleSetQueuePlan,
     EventSource,
     RuleSetQueue,
     RuleSetQueuePlan,
 )
 from ansible_events.rules_parser import parse_hosts
 from ansible_events.util import json_count, substitute_variables
+
+logger = logging.getLogger()
 
 
 class FilteredQueue:
@@ -53,8 +56,6 @@ async def start_source(
     variables: Dict[str, Any],
     queue: asyncio.Queue,
 ) -> None:
-
-    logger = logging.getLogger()
 
     try:
         logger.info("load source")
@@ -153,7 +154,6 @@ async def call_action(
     event_log,
 ) -> Dict:
 
-    logger = logging.getLogger()
     logger.info(f"call_action {action}")
 
     if action in builtin_actions:
@@ -250,8 +250,6 @@ async def run_rulesets(
     redis_port: Optional[int] = None,
 ):
 
-    logger = logging.getLogger()
-
     logger.info("run_ruleset")
     if redis_host_name and redis_port:
         provide_durability(lang.get_host(), redis_host_name, redis_port)
@@ -264,59 +262,62 @@ async def run_rulesets(
     rulesets_queue_plans = rule_generator.generate_rulesets(
         ansible_ruleset_queue_plans, variables, inventory
     )
-    for rulesets_list in rulesets_queue_plans:
-        for rulesets in rulesets_list[1]:
-            logger.info("rulesets define: %s", rulesets.define())
 
     if not rulesets_queue_plans:
         return
 
-    while True:
-        logger.info("Waiting for event")
-        queue_tasks = {
-            asyncio.create_task(rqp[2].get()): rqp
-            for rqp in rulesets_queue_plans
-        }
-        done, pending = await asyncio.wait(
-            list(queue_tasks.keys()), return_when=asyncio.FIRST_COMPLETED
+    for ruleset_queue_plan in rulesets_queue_plans:
+        logger.info("ruleset define: %s", ruleset_queue_plan.ruleset.define())
+
+    ruleset_tasks = []
+    for ruleset_queue_plan in rulesets_queue_plans:
+        ruleset_task = asyncio.create_task(
+            run_ruleset(event_log, ruleset_queue_plan)
         )
-        for queue_reader in done:
-            ruleset, _, queue, plan = queue_tasks[queue_reader]
-            data = queue_reader.result()
-            json_count(data)
-            if isinstance(data, Shutdown):
-                await event_log.put(dict(type="Shutdown"))
-                return
-            if not data:
-                await event_log.put(dict(type="EmptyEvent"))
-                continue
-            results = []
+        ruleset_tasks.append(ruleset_task)
+
+    await asyncio.wait(ruleset_tasks, return_when=asyncio.FIRST_COMPLETED)
+
+
+async def run_ruleset(
+    event_log: asyncio.Queue, ruleset_queue_plan: EngineRuleSetQueuePlan
+):
+
+    name = ruleset_queue_plan.ruleset.name
+    logger.info(f"Waiting for event from {name}")
+    while True:
+        data = await ruleset_queue_plan.queue.get()
+        json_count(data)
+        if isinstance(data, Shutdown):
+            await event_log.put(dict(type="Shutdown"))
+            return
+        if not data:
+            await event_log.put(dict(type="EmptyEvent"))
+            continue
+        results = []
+        try:
             try:
-                try:
-                    lang.post(ruleset.name, data)
-                except engine.MessageObservedException:
-                    logger.debug(f"MessageObservedException: {data}")
-                except engine.MessageNotHandledException:
-                    logger.debug(f"MessageNotHandledException: {data}")
-                finally:
-                    logger.debug(lang.get_pending_events(ruleset.name))
-
-                while not plan.empty():
-                    item = cast(ActionContext, await plan.get())
-                    logger.debug(f"item: {item}")
-                    result = await call_action(*item, event_log=event_log)
-                    logger.debug(f"call_action result: {result}")
-                    results.append(result)
-
-                await event_log.put(
-                    dict(type="ProcessedEvent", results=results)
-                )
+                lang.post(name, data)
+            except engine.MessageObservedException:
+                logger.debug(f"MessageObservedException: {data}")
             except engine.MessageNotHandledException:
-                logger.info(f"MessageNotHandledException: {data}")
-                await event_log.put(dict(type="MessageNotHandled"))
-            except ShutdownException:
-                await event_log.put(dict(type="Shutdown"))
-            except Exception as e:
-                logger.error(
-                    f"Error calling {data}: {e}\n {traceback.format_exc()}"
-                )
+                logger.debug(f"MessageNotHandledException: {data}")
+            finally:
+                logger.debug(lang.get_pending_events(name))
+
+            while not ruleset_queue_plan.plan.empty():
+                item = cast(ActionContext, await ruleset_queue_plan.plan.get())
+                result = await call_action(*item, event_log=event_log)
+                results.append(result)
+
+            await event_log.put(dict(type="ProcessedEvent", results=results))
+        except engine.MessageNotHandledException:
+            logger.info(f"MessageNotHandledException: {data}")
+            await event_log.put(dict(type="MessageNotHandled"))
+        except ShutdownException:
+            await event_log.put(dict(type="Shutdown"))
+            return
+        except Exception as e:
+            logger.error(
+                f"Error calling {data}: {e}\n {traceback.format_exc()}"
+            )
