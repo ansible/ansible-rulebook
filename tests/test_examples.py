@@ -976,7 +976,9 @@ def validate_events(event_log, **kwargs):
             shutdown_events += 1
 
     assert event_log.empty()
-    assert kwargs["actions"] == actions
-    assert kwargs["processed_events"] == processed_events
-    if kwargs["shutdown_events"]:
+    if "actions" in kwargs:
+        assert kwargs["actions"] == actions
+    if "processed_events" in kwargs:
+        assert kwargs["processed_events"] == processed_events
+    if "shutdown_events" in kwargs:
         assert kwargs["shutdown_events"] == shutdown_events
