@@ -15,7 +15,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/benthomasson/ansible_events/issues.
+Report bugs at https://github.com/ansible/ansible-rulebook/issues.
 
 If you are reporting a bug, please include:
 
@@ -45,7 +45,7 @@ articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/benthomasson/ansible_events/issues.
+The best way to send feedback is to file an issue at https://github.com/ansible/ansible-rulebook/issues.
 
 If you are proposing a feature:
 
@@ -62,7 +62,7 @@ Ready to contribute? Here's how to set up `ansible_events` for local development
 1. Fork the `ansible_events` repo on GitHub.
 2. Clone your fork locally::
 
-    $ git clone git@github.com:your_name_here/ansible_events.git
+    $ git clone git@github.com:your_name_here/ansible-rulebook.git
 
 3. We use a rules engine called Drools which is written in Java. From our python code
    we directly call the Drools Java classes using JPY. JPY needs Java to be installed on
@@ -108,6 +108,24 @@ Ready to contribute? Here's how to set up `ansible_events` for local development
     $ git push origin name-of-your-bugfix-or-feature
 
 8. Submit a pull request through the GitHub website.
+
+
+
+Building the container image
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The dockerfile points to the required collection_ of ansible which provides source plugins.
+Currently this repository is private, you must `generate a personal token`_ and export it:
+
+.. _collection: https://github.com/ansible/event-driven-ansible
+.. _`generate a personal token`: https://docs.github.com/en/enterprise-server@3.4/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
+
+    .. code-block:: console
+
+        export GITHUB_TOKEN=your token
+        docker build -t localhost/ansible-rulebook:dev  --build-arg GITHUB_TOKEN=$GITHUB_TOKEN .
+
+
 
 Git pre-commit hooks (optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
