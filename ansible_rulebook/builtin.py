@@ -201,7 +201,7 @@ async def run_playbook(
 ):
 
     logger.info("running Ansible playbook: %s", name)
-    temp, playbook_name, job_id = await pre_process_runner(
+    temp, playbook_name = await pre_process_runner(
         event_log,
         inventory,
         variables,
@@ -215,6 +215,22 @@ async def run_playbook(
         project_data_file,
         **kwargs,
     )
+
+    job_id = str(uuid.uuid4())
+
+    await event_log.put(
+        dict(
+            type="Job",
+            job_id=job_id,
+            ansible_events_id=settings.identifier,
+            name=playbook_name,
+            ruleset=ruleset,
+            hosts=",".join(hosts),
+            action="run_playbook",
+            inventory=yaml.dump(inventory),
+        )
+    )
+
     logger.info("Calling Ansible runner")
 
     if retry:
@@ -274,7 +290,7 @@ async def run_module(
     **kwargs,
 ):
 
-    temp, module_name, job_id = await pre_process_runner(
+    temp, module_name = await pre_process_runner(
         event_log,
         inventory,
         variables,
@@ -287,6 +303,21 @@ async def run_module(
         False,
         **kwargs,
     )
+    job_id = str(uuid.uuid4())
+
+    await event_log.put(
+        dict(
+            type="Job",
+            job_id=job_id,
+            ansible_events_id=settings.identifier,
+            name=module_name,
+            ruleset=ruleset,
+            hosts=",".join(hosts),
+            action="run_module",
+            inventory=yaml.dump(inventory),
+        )
+    )
+
     logger.info("Calling Ansible runner")
     module_args_str = ""
     if module_args:
@@ -357,7 +388,6 @@ async def call_runner(
     def event_callback(event, *args, **kwargs):
         event["job_id"] = job_id
         event["ansible_rulebook_id"] = settings.identifier
-        logger.debug("event_callback")
         queue.sync_q.put(dict(type="AnsibleEvent", event=event))
 
     # Here we read the async side and push it into the event queue
@@ -448,14 +478,14 @@ async def pre_process_runner(
     project_dir = os.path.join(private_data_dir, "project")
 
     playbook_name = name
-    if True:
-        os.mkdir(env_dir)
-        with open(os.path.join(env_dir, "extravars"), "w") as f:
-            f.write(yaml.dump(variables))
-        os.mkdir(inventory_dir)
-        with open(os.path.join(inventory_dir, "hosts"), "w") as f:
-            f.write(yaml.dump(inventory))
-        os.mkdir(project_dir)
+
+    os.mkdir(os.path.join(private_data_dir, "env"))
+    with open(os.path.join(private_data_dir, "env", "extravars"), "w") as f:
+        f.write(yaml.dump(variables))
+    os.mkdir(os.path.join(private_data_dir, "inventory"))
+    with open(os.path.join(private_data_dir, "inventory", "hosts"), "w") as f:
+        f.write(yaml.dump(inventory))
+    os.mkdir(os.path.join(private_data_dir, "project"))
 
     logger.debug("project_data_file: %s", project_data_file)
     if project_data_file:
@@ -483,14 +513,7 @@ async def pre_process_runner(
                 "Could not find a playbook for %s from %s", name, os.getcwd()
             )
 
-    job_id = str(uuid.uuid4())
-
-    await event_log.put(
-        dict(
-            type="Job", job_id=job_id, ansible_rulebook_id=settings.identifier
-        )
-    )
-    return (private_data_dir, playbook_name, job_id)
+    return (private_data_dir, playbook_name)
 
 
 async def post_process_runner(
