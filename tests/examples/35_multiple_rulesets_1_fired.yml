@@ -1,0 +1,29 @@
+---
+- name: 35 multiple rulesets 1
+  hosts: all
+  sources:
+    - range:
+        limit: 5
+  rules:
+    - name:
+      condition: event.i == 1
+      action:
+        assert_fact:
+          fact:
+            do_not_fire_rule: True
+          ruleset: 35 multiple rulesets 1
+    - name:
+      condition: event.do_not_fire_rule == True
+      action:
+        none:
+- name: 35 multiple rulesets 2
+  hosts: all
+  sources:
+    - range:
+        limit: 5
+  rules:
+    - name:
+      condition: event.do_not_fire_rule == True
+      action:
+        debug:
+          msg: Should not run
