@@ -906,7 +906,6 @@ async def test_35_multiple_rulesets_1_fired():
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
-    queue.put_nowait(Shutdown())
 
     queue = ruleset_queues[1][1]
     queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
@@ -921,9 +920,9 @@ async def test_35_multiple_rulesets_1_fired():
     )
 
     checks = {
-        "max_events": 6,
+        "max_events": 5,
         "processed_events": 2,
-        "shutdown_events": 2,
+        "shutdown_events": 1,
         "actions": ["assert_fact", "noop"],
     }
     validate_events(event_log, **checks)
@@ -938,7 +937,6 @@ async def test_36_multiple_rulesets_both_fired():
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
     queue.put_nowait(dict(i=2, meta=dict(hosts="localhost")))
-    queue.put_nowait(Shutdown())
 
     queue = ruleset_queues[1][1]
     queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
@@ -952,9 +950,9 @@ async def test_36_multiple_rulesets_both_fired():
         dict(),
     )
     checks = {
-        "max_events": 7,
+        "max_events": 6,
         "processed_events": 3,
-        "shutdown_events": 2,
+        "shutdown_events": 1,
         "actions": ["assert_fact", "debug"],
     }
     validate_events(event_log, **checks)
