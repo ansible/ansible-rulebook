@@ -5,7 +5,7 @@ import logging
 import os
 from typing import Any, Dict
 
-logger = logging.getLogger("replay")
+logger = logging.getLogger(__name__)
 
 
 async def main(queue: asyncio.Queue, args: Dict[str, Any]):
@@ -15,13 +15,13 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
         logger.error("No replay directory")
         return
     if not os.path.exists(directory):
-        logger.error(f"Could not find replay directory {directory}")
+        logger.error("Could not find replay directory %s", directory)
         return
 
     replays = sorted(glob.glob(os.path.join(directory, "*.json")))
 
     if not replays:
-        logger.error(f"Could not find any replays in directory {directory}")
+        logger.error("Could not find any replays in directory %s", directory)
         return
 
     for replay_file in replays:

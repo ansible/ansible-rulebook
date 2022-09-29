@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import runpy
-import traceback
 from datetime import datetime
 from pprint import pformat
 from typing import Any, Dict, List, Optional, cast
@@ -35,7 +34,7 @@ from ansible_events.rule_types import (
 from ansible_events.rules_parser import parse_hosts
 from ansible_events.util import json_count, substitute_variables
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class FilteredQueue:
@@ -82,7 +81,7 @@ async def start_source(
 
         logger.info("load source filters")
         for source_filter in source.source_filters:
-            logger.info(f"loading {source_filter.filter_name}")
+            logger.info("loading %s", source_filter.filter_name)
             if os.path.exists(
                 os.path.join(
                     "event_filters", source_filter.filter_name + ".py"
@@ -115,7 +114,7 @@ async def start_source(
             for k, v in source.source_args.items()
         }
         fqueue = FilteredQueue(source_filters, queue)
-        logger.info(f"Calling main in {source.source_name}")
+        logger.info("Calling main in %s", source.source_name)
 
         try:
             entrypoint = module["main"]
@@ -136,8 +135,8 @@ async def start_source(
         pass
     except asyncio.CancelledError:
         logger.info("Task cancelled")
-    except BaseException as e:
-        logger.error(f"Source error {e}")
+    except BaseException:
+        logger.exception("Source error")
     finally:
         await queue.put(Shutdown())
 
@@ -154,7 +153,7 @@ async def call_action(
     event_log,
 ) -> Dict:
 
-    logger.info(f"call_action {action}")
+    logger.info("call_action %s", action)
 
     if action in builtin_actions:
         try:
@@ -184,17 +183,17 @@ async def call_action(
                     hosts = new_hosts
 
             logger.info(
-                f"substitute_variables [{action_args}] [{variables_copy}]"
+                "substitute_variables [%s] [%s]", action_args, variables_copy
             )
             action_args = {
                 k: substitute_variables(v, variables_copy)
                 for k, v in action_args.items()
             }
-            logger.info(f"action args: {action_args}")
+            logger.info("action args: %s", action_args)
 
             if facts is None:
                 facts = lang.get_facts(ruleset)
-                logger.info(f"facts: {facts}")
+                logger.info("facts: %s", facts)
 
             if "ruleset" not in action_args:
                 action_args["ruleset"] = ruleset
@@ -208,23 +207,23 @@ async def call_action(
                 **action_args,
             )
         except KeyError as e:
-            logger.error(f"KeyError: {e}\n{pformat(variables_copy)}")
+            logger.exception(
+                "KeyError with variables %s", pformat(variables_copy)
+            )
             result = dict(error=e)
         except engine.MessageNotHandledException as e:
-            logger.error(f"MessageNotHandledException: {action_args}")
+            logger.exception("Message cannot be handled: %s", action_args)
             result = dict(error=e)
         except engine.MessageObservedException as e:
-            logger.info(f"MessageObservedException: {action_args}")
+            logger.info("MessageObservedException: %s", action_args)
             result = dict(error=e)
         except ShutdownException:
             raise
         except Exception as e:
-            logger.error(
-                f"Error calling {action}: {e}\n {traceback.format_exc()}"
-            )
+            logger.exception("Error calling %s", action)
             result = dict(error=e)
     else:
-        logger.error(f"Action {action} not supported")
+        logger.error("Action %s not supported", action)
         result = dict(error=f"Action {action} not supported")
 
     await event_log.put(
@@ -284,7 +283,7 @@ async def run_ruleset(
 ):
 
     name = ruleset_queue_plan.ruleset.name
-    logger.info(f"Waiting for event from {name}")
+    logger.info("Waiting for event from %s", name)
     while True:
         data = await ruleset_queue_plan.queue.get()
         json_count(data)
@@ -299,9 +298,9 @@ async def run_ruleset(
             try:
                 lang.post(name, data)
             except engine.MessageObservedException:
-                logger.debug(f"MessageObservedException: {data}")
+                logger.debug("MessageObservedException: %s", data)
             except engine.MessageNotHandledException:
-                logger.debug(f"MessageNotHandledException: {data}")
+                logger.debug("MessageNotHandledException: %s", data)
             finally:
                 logger.debug(lang.get_pending_events(name))
 
@@ -312,12 +311,10 @@ async def run_ruleset(
 
             await event_log.put(dict(type="ProcessedEvent", results=results))
         except engine.MessageNotHandledException:
-            logger.info(f"MessageNotHandledException: {data}")
+            logger.info("MessageNotHandledException: %s", data)
             await event_log.put(dict(type="MessageNotHandled"))
         except ShutdownException:
             await event_log.put(dict(type="Shutdown"))
             return
-        except Exception as e:
-            logger.error(
-                f"Error calling {data}: {e}\n {traceback.format_exc()}"
-            )
+        except Exception:
+            logger.exception("Error calling %s", data)

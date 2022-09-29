@@ -19,7 +19,7 @@ import sys
 import yaml
 from docopt import docopt
 
-logger = logging.getLogger("generate_inventory")
+logger = logging.getLogger(__name__)
 
 
 def main(args=None):

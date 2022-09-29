@@ -3,7 +3,7 @@ import logging
 
 import redis
 
-logger = logging.getLogger("durability")
+logger = logging.getLogger(__name__)
 
 
 def unix_time(dt):
@@ -49,8 +49,8 @@ def provide_durability(host, redis_host_name="localhost", port=6379):
                 mid,
                 format_message(action_type, content),
             )
-        except BaseException as e:
-            logger.error(e)
+        except BaseException:
+            logger.exception("BaseException encountered")
             return 601
 
         return 0
@@ -58,8 +58,8 @@ def provide_durability(host, redis_host_name="localhost", port=6379):
     def delete_message_callback(ruleset, sid, mid):
         try:
             r.hdel(get_hset_name(ruleset, sid), mid)
-        except BaseException as e:
-            logger.error(e)
+        except BaseException:
+            logger.exception("BaseException encountered")
             return 602
 
         return 0
@@ -77,8 +77,8 @@ def provide_durability(host, redis_host_name="localhost", port=6379):
                 get_list_name(ruleset, sid),
                 format_message(action_type, content),
             )
-        except BaseException as e:
-            logger.error(e)
+        except BaseException:
+            logger.exception("BaseException encountered")
             return 603
 
         return 0
@@ -95,8 +95,8 @@ def provide_durability(host, redis_host_name="localhost", port=6379):
                 host.complete_get_queued_messages(
                     ruleset, sid, format_messages(messages)
                 )
-        except BaseException as e:
-            logger.error(e)
+        except BaseException:
+            logger.exception("BaseException encountered")
             return 604
 
         return 0
@@ -112,8 +112,8 @@ def provide_durability(host, redis_host_name="localhost", port=6379):
                 host.complete_get_idle_state(
                     ruleset, sid, format_messages(messages)
                 )
-        except BaseException as e:
-            logger.error(e)
+        except BaseException:
+            logger.exception("BaseException encountered")
             return 606
 
         return 0

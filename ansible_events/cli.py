@@ -30,7 +30,7 @@ import ansible_events
 from ansible_events import app
 from ansible_events.conf import settings
 
-logger = logging.getLogger("ansible_events")
+logger = logging.getLogger(__name__)
 
 
 def get_parser() -> argparse.ArgumentParser:

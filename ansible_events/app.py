@@ -20,7 +20,7 @@ from ansible_events.websocket import (
     send_event_log_to_websocket,
 )
 
-logger = logging.getLogger("ansible_events")
+logger = logging.getLogger(__name__)
 
 
 # FIXME(cutwater): Replace parsed_args with clear interface
@@ -105,11 +105,13 @@ def load_rules(parsed_args) -> List[RuleSet]:
         logger.debug("Loading no rules")
         return []
     elif os.path.exists(parsed_args.rules):
-        logger.debug(f"Loading rules from the file system {parsed_args.rules}")
+        logger.debug(
+            "Loading rules from the file system %s", parsed_args.rules
+        )
         with open(parsed_args.rules) as f:
             return rules_parser.parse_rule_sets(yaml.safe_load(f.read()))
     elif has_rules(*split_collection_name(parsed_args.rules)):
-        logger.debug(f"Loading rules from a collection {parsed_args.rules}")
+        logger.debug("Loading rules from a collection %s", parsed_args.rules)
         return rules_parser.parse_rule_sets(
             collection_load_rules(*split_collection_name(parsed_args.rules))
         )
@@ -122,7 +124,6 @@ def spawn_sources(
     variables: Dict[str, Any],
     source_dirs: List[str],
 ) -> Tuple[List[asyncio.Task], List[RuleSetQueue]]:
-    logger.info("Starting sources")
     tasks = []
     ruleset_queues = []
     for ruleset in rulesets:

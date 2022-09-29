@@ -29,7 +29,7 @@ from .conf import settings
 from .exception import ShutdownException
 from .util import get_horizontal_rule
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 async def none(
@@ -118,7 +118,7 @@ async def assert_fact(
     fact: Dict,
     name: Optional[str] = None,
 ):
-    logger.debug(f"assert_fact {ruleset} {fact}")
+    logger.debug("assert_fact %s %s", ruleset, fact)
     lang.assert_fact(ruleset, fact)
     await event_log.put(
         dict(
@@ -194,7 +194,7 @@ async def run_playbook(
     **kwargs,
 ):
 
-    logger.info(f"running Ansible playbook: {name}")
+    logger.info("running Ansible playbook: %s", name)
     temp, playbook_name, job_id = await pre_process_runner(
         event_log,
         inventory,
@@ -401,9 +401,9 @@ async def pre_process_runner(
 ):
 
     private_data_dir = tempfile.mkdtemp(prefix=action)
-    logger.debug(f"private data dir {private_data_dir}")
-    logger.debug(f"variables {variables}")
-    logger.debug(f"facts {facts}")
+    logger.debug("private data dir %s", private_data_dir)
+    logger.debug("variables %s", variables)
+    logger.debug("facts %s", facts)
 
     variables["facts"] = facts
     for k, v in kwargs.items():
@@ -446,7 +446,7 @@ async def pre_process_runner(
             )
         else:
             logger.error(
-                f"Could not find a playbook for {name} from {os.getcwd()}"
+                "Could not find a playbook for %s from %s", name, os.getcwd()
             )
 
     job_id = str(uuid.uuid4())
@@ -498,7 +498,7 @@ async def post_process_runner(
         ):
             with open(host_facts) as f:
                 fact = json.loads(f.read())
-            logger.debug(f"fact {fact}")
+            logger.debug("fact %s", fact)
             if assert_facts:
                 lang.assert_fact(ruleset, fact)
             if post_events:

@@ -5,7 +5,7 @@ import shutil
 import stat
 import tempfile
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 ssh_add = shutil.which("ssh-add")
 

@@ -20,7 +20,7 @@ import time
 
 from docopt import docopt
 
-logger = logging.getLogger("perf_test")
+logger = logging.getLogger(__name__)
 
 
 def main(args=None):
