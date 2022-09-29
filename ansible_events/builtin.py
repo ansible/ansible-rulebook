@@ -215,6 +215,9 @@ async def run_playbook(
     for i in range(retries + 1):
         if i > 0 and delay > 0:
             await asyncio.sleep(delay)
+            logger.info(
+                "Previous run_playbook failed. Retry %d of %d", i, retries
+            )
 
         run_at = str(datetime.utcnow())
         await call_runner(
@@ -290,7 +293,9 @@ async def run_module(
     for i in range(retries + 1):
         if i > 0 and delay > 0:
             await asyncio.sleep(delay)
-
+            logger.info(
+                "Previous run_module failed. Retry %d of %d", i, retries
+            )
         run_at = str(datetime.utcnow())
         await call_runner(
             event_log,
