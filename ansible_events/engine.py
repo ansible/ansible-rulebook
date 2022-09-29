@@ -276,6 +276,9 @@ async def run_rulesets(
         ruleset_tasks.append(ruleset_task)
 
     await asyncio.wait(ruleset_tasks, return_when=asyncio.FIRST_COMPLETED)
+    logger.info("Canceling all ruleset tasks")
+    for task in ruleset_tasks:
+        task.cancel()
 
 
 async def run_ruleset(
