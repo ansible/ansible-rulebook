@@ -20,7 +20,7 @@ import janus
 import yaml
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
-    from drools.vendor import lang
+    from drools import ruleset as lang
 else:
     from durable import lang
 
@@ -52,8 +52,6 @@ async def none(
 
 async def debug(event_log, **kwargs):
     print(get_horizontal_rule("="))
-    print("context:")
-    pprint(lang.c.__dict__)
     print(get_horizontal_rule("="))
     print("facts:")
     pprint(lang.get_facts(kwargs["ruleset"]))

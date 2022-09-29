@@ -7,7 +7,7 @@ from typing import Any, Dict, List, NamedTuple, Union
 import ansible_events.condition_types as ct
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
-    from drools.vendor.lang import ruleset as EngineRuleSet
+    from drools.ruleset import Ruleset as EngineRuleSet
 else:
     from durable.lang import ruleset as EngineRuleSet
 

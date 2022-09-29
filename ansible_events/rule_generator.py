@@ -1,10 +1,14 @@
 import asyncio
+import json
 import logging
 import os
 from typing import Callable, Dict, List
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
-    from drools.vendor.lang import c, m, none, rule, ruleset
+    from drools.rule import Rule as DroolsRule
+    from drools.ruleset import Ruleset as DroolsRuleset
+
+    from ansible_events.json_generator import visit_ruleset
 else:
     from durable.lang import c, m, none, rule, ruleset
 
@@ -183,21 +187,67 @@ def make_fn(
     return fn
 
 
-def generate_rulesets(
-    ansible_ruleset_queue_plans: List[RuleSetQueuePlan],
-    variables: Dict,
-    inventory: Dict,
-):
+if os.environ.get("RULES_ENGINE", "durable_rules") == "durable_rules":
 
-    rulesets = []
+    def generate_rulesets(
+        ansible_ruleset_queue_plans: List[RuleSetQueuePlan],
+        variables: Dict,
+        inventory: Dict,
+    ):
+        rulesets = []
 
-    for ansible_ruleset, queue, plan in ansible_ruleset_queue_plans:
-        a_ruleset = ruleset(ansible_ruleset.name)
-        with a_ruleset:
+        for ansible_ruleset, queue, plan in ansible_ruleset_queue_plans:
+            a_ruleset = ruleset(ansible_ruleset.name)
+            with a_ruleset:
+                for ansible_rule in ansible_ruleset.rules:
+                    if ansible_rule.enabled:
+                        fn = make_fn(
+                            a_ruleset.name,
+                            ansible_rule,
+                            variables,
+                            inventory,
+                            ansible_ruleset.hosts,
+                            {},
+                            plan,
+                        )
+                        r = rule(
+                            ansible_rule.condition.when,
+                            True,
+                            *generate_condition(
+                                ansible_rule.condition, variables
+                            ),
+                        )(fn)
+                        logger.info(r.define())
+            rulesets.append(EngineRuleSetQueuePlan(a_ruleset, queue, plan))
+
+        return rulesets
+
+else:
+
+    def generate_rulesets(
+        ansible_ruleset_queue_plans: List[RuleSetQueuePlan],
+        variables: Dict,
+        inventory: Dict,
+    ):
+
+        rulesets = []
+
+        for ansible_ruleset, queue, plan in ansible_ruleset_queue_plans:
+            ruleset_ast = visit_ruleset(ansible_ruleset, variables)
+            drools_ruleset = DroolsRuleset(
+                name=ansible_ruleset.name,
+                serialized_ruleset=json.dumps(ruleset_ast["RuleSet"]),
+            )
+            index = 0
             for ansible_rule in ansible_ruleset.rules:
+                if ansible_rule.name:
+                    rule_name = ansible_rule.name
+                else:
+                    rule_name = f"r_{index}"
+                index += 1
                 if ansible_rule.enabled:
                     fn = make_fn(
-                        a_ruleset.name,
+                        ansible_ruleset.name,
                         ansible_rule,
                         variables,
                         inventory,
@@ -205,12 +255,11 @@ def generate_rulesets(
                         {},
                         plan,
                     )
-                    r = rule(
-                        ansible_rule.condition.when,
-                        True,
-                        *generate_condition(ansible_rule.condition, variables),
-                    )(fn)
-                    logger.info(r.define())
-        rulesets.append(EngineRuleSetQueuePlan(a_ruleset, queue, plan))
+                    drools_ruleset.add_rule(
+                        DroolsRule(name=rule_name, callback=fn)
+                    )
 
-    return rulesets
+            rulesets.append(
+                EngineRuleSetQueuePlan(drools_ruleset, queue, plan)
+            )
+        return rulesets

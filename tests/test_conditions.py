@@ -1,9 +1,18 @@
-from durable.lang import c, m, none
+import os
 
-from ansible_events.condition_parser import condition, parse_condition
-from ansible_events.rule_generator import visit_condition
+import pytest
+
+if os.environ.get("RULES_ENGINE", "durable_rules") == "durable_rules":
+    from durable.lang import c, m, none
+
+    from ansible_events.condition_parser import condition, parse_condition
+    from ansible_events.rule_generator import visit_condition
 
 
+@pytest.mark.skipif(
+    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
+    reason="durable rules only test",
+)
 def test_infix():
     condition.run_tests(
         """
@@ -26,6 +35,10 @@ def test_infix():
     )
 
 
+@pytest.mark.skipif(
+    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
+    reason="durable rules only test",
+)
 def test_m():
     assert m
     assert m.x
@@ -66,6 +79,10 @@ def test_m():
     assert visit_condition(result, {}).define() == (m.x != m.y).define()
 
 
+@pytest.mark.skipif(
+    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
+    reason="durable rules only test",
+)
 def test_parse_condition():
     assert m
     assert m.x

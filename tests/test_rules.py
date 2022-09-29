@@ -3,16 +3,7 @@ import os
 from queue import Queue
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
-    from drools.vendor import lang
-    from drools.vendor.lang import (
-        assert_fact,
-        c,
-        m,
-        post,
-        rule,
-        ruleset,
-        when_all,
-    )
+    from drools.ruleset import assert_fact, post
 else:
     from durable import lang
     from durable.lang import assert_fact, c, m, post, rule, ruleset, when_all
@@ -26,6 +17,10 @@ from ansible_events.rules_parser import parse_rule_sets
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
+@pytest.mark.skipif(
+    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
+    reason="durable rules only test",
+)
 def test_m():
     assert m
     assert m.x
@@ -75,6 +70,10 @@ def test_m():
     }
 
 
+@pytest.mark.skipif(
+    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
+    reason="durable rules only test",
+)
 def test_ruleset():
 
     some_rules = ruleset("test_rules")
@@ -93,6 +92,10 @@ def test_ruleset():
     assert some_rules.define() == ("test_rules", {})
 
 
+@pytest.mark.skipif(
+    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
+    reason="durable rules only test",
+)
 def test_rules():
 
     some_rules = ruleset("test_rules1")
@@ -121,6 +124,10 @@ def test_rules():
     post("test_rules1", {"x": 5})
 
 
+@pytest.mark.skipif(
+    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
+    reason="durable rules only test",
+)
 def test_assert_facts():
 
     some_rules = ruleset("test_assert_facts")
@@ -141,6 +148,10 @@ def test_assert_facts():
     )
 
 
+@pytest.mark.skipif(
+    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
+    reason="durable rules only test",
+)
 def test_parse_rules():
     os.chdir(HERE)
     with open("rules/rules.yml") as f:
@@ -149,6 +160,10 @@ def test_parse_rules():
     parse_rule_sets(data)
 
 
+@pytest.mark.skipif(
+    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
+    reason="implict checks on undefined attribute, not supported in drools",
+)
 @pytest.mark.asyncio
 async def test_generate_rules():
     os.chdir(HERE)
@@ -167,7 +182,6 @@ async def test_generate_rules():
     )
 
     print(durable_rulesets[0][0].define())
-
     assert_fact("Demo rules", {"payload": {"text": "hello"}})
 
     assert ruleset_queue_plans[0][2].get_nowait()[1] == "slack"
