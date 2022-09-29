@@ -118,6 +118,10 @@ def main(args: List[str] = None) -> int:
     if args.version:
         show_version()
 
+    if args.rules and not args.inventory:
+        print("Error: inventory is required")
+        return 1
+
     if args.id:
         settings.identifier = args.id
 
