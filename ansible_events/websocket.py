@@ -2,6 +2,7 @@ import base64
 import json
 import logging
 from asyncio.exceptions import CancelledError
+import os
 
 import websockets
 import yaml
@@ -25,8 +26,7 @@ async def request_workload(activation_id, websocket_address):
             rulebook = None
             extra_vars = None
             private_key = None
-            project_data_file = tempfile.mkstemp()
-            project_data_fh = open(project_data_file[1], "wb")
+            project_data_fh, project_data_file = tempfile.mkstemp()
             while (
                 inventory is None
                 or rulebook is None
@@ -38,10 +38,9 @@ async def request_workload(activation_id, websocket_address):
                 if data.get("type") == "ProjectData":
                     print(data)
                     if data.get("data") and data.get('more'):
-                        project_data_fh.write(base64.b64decode(data.get("data")))
-                        project_data_fh.flush()
+                        os.write(project_data_fh, base64.b64decode(data.get("data")))
                     if not data.get("data") and not data.get('more'):
-                        project_data_fh.close()
+                        os.close(project_data_fh)
                         print(project_data_file)
                 if data.get("type") == "Rulebook":
                     rulebook = rules_parser.parse_rule_sets(
