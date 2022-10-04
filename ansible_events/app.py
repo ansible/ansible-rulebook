@@ -29,7 +29,12 @@ async def run(parsed_args) -> None:
     if parsed_args.worker and parsed_args.websocket_address and parsed_args.id:
         logger.info("Starting worker mode")
 
-        inventory, variables, rulesets, project_data_file = await request_workload(
+        (
+            inventory,
+            variables,
+            rulesets,
+            project_data_file,
+        ) = await request_workload(
             int(parsed_args.id), parsed_args.websocket_address
         )
     else:
@@ -65,7 +70,7 @@ async def run(parsed_args) -> None:
         inventory,
         parsed_args.redis_host_name,
         parsed_args.redis_port,
-        project_data_file
+        project_data_file,
     )
 
     logger.info("Cancelling event source tasks")

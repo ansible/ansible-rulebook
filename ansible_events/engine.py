@@ -285,7 +285,9 @@ async def run_rulesets(
 
 
 async def run_ruleset(
-    event_log: asyncio.Queue, ruleset_queue_plan: EngineRuleSetQueuePlan, project_data_file: Optional[str] = None
+    event_log: asyncio.Queue,
+    ruleset_queue_plan: EngineRuleSetQueuePlan,
+    project_data_file: Optional[str] = None,
 ):
 
     name = ruleset_queue_plan.ruleset.name
@@ -312,7 +314,11 @@ async def run_ruleset(
 
             while not ruleset_queue_plan.plan.empty():
                 item = cast(ActionContext, await ruleset_queue_plan.plan.get())
-                result = await call_action(*item, event_log=event_log, project_data_file=project_data_file)
+                result = await call_action(
+                    *item,
+                    event_log=event_log,
+                    project_data_file=project_data_file,
+                )
                 results.append(result)
 
             await event_log.put(dict(type="ProcessedEvent", results=results))

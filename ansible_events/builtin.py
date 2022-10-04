@@ -452,14 +452,10 @@ async def pre_process_runner(
     playbook_name = name
     if True:
         os.mkdir(env_dir)
-        with open(
-            os.path.join(env_dir, "extravars"), "w"
-        ) as f:
+        with open(os.path.join(env_dir, "extravars"), "w") as f:
             f.write(yaml.dump(variables))
         os.mkdir(inventory_dir)
-        with open(
-            os.path.join(inventory_dir, "hosts"), "w"
-        ) as f:
+        with open(os.path.join(inventory_dir, "hosts"), "w") as f:
             f.write(yaml.dump(inventory))
         os.mkdir(project_dir)
 
@@ -471,9 +467,7 @@ async def pre_process_runner(
     if check_files:
         if os.path.exists(name):
             playbook_name = os.path.basename(name)
-            shutil.copy(
-                name, os.path.join(project_dir, playbook_name)
-            )
+            shutil.copy(name, os.path.join(project_dir, playbook_name))
             if copy_files:
                 shutil.copytree(
                     os.path.dirname(os.path.abspath(name)),

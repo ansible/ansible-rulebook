@@ -1,12 +1,12 @@
 import base64
 import json
 import logging
-from asyncio.exceptions import CancelledError
 import os
+import tempfile
+from asyncio.exceptions import CancelledError
 
 import websockets
 import yaml
-import tempfile
 
 from ansible_events import rules_parser as rules_parser
 from ansible_events.key import install_private_key
@@ -37,9 +37,11 @@ async def request_workload(activation_id, websocket_address):
                 data = json.loads(msg)
                 if data.get("type") == "ProjectData":
                     print(data)
-                    if data.get("data") and data.get('more'):
-                        os.write(project_data_fh, base64.b64decode(data.get("data")))
-                    if not data.get("data") and not data.get('more'):
+                    if data.get("data") and data.get("more"):
+                        os.write(
+                            project_data_fh, base64.b64decode(data.get("data"))
+                        )
+                    if not data.get("data") and not data.get("more"):
                         os.close(project_data_fh)
                         print(project_data_file)
                 if data.get("type") == "Rulebook":
