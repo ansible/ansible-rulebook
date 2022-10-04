@@ -29,7 +29,7 @@ async def run(parsed_args) -> None:
     if parsed_args.worker and parsed_args.websocket_address and parsed_args.id:
         logger.info("Starting worker mode")
 
-        inventory, variables, rulesets = await request_workload(
+        inventory, variables, rulesets, project_data_file = await request_workload(
             int(parsed_args.id), parsed_args.websocket_address
         )
     else:
@@ -38,6 +38,7 @@ async def run(parsed_args) -> None:
         rulesets = load_rules(parsed_args)
         if parsed_args.inventory:
             inventory = load_inventory(parsed_args.inventory)
+        project_data_file = parsed_args.project_tarball
 
     event_log = asyncio.Queue()
 
@@ -64,6 +65,7 @@ async def run(parsed_args) -> None:
         inventory,
         parsed_args.redis_host_name,
         parsed_args.redis_port,
+        project_data_file
     )
 
     logger.info("Cancelling event source tasks")

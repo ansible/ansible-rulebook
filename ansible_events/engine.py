@@ -151,6 +151,7 @@ async def call_action(
     facts: Dict,
     c,
     event_log,
+    project_data_file: Optional[str] = None,
 ) -> Dict:
 
     logger.info("call_action %s", action)
@@ -204,6 +205,7 @@ async def call_action(
                 hosts=hosts,
                 variables=variables_copy,
                 facts=facts,
+                project_data_file=project_data_file,
                 **action_args,
             )
         except KeyError as e:
@@ -247,6 +249,7 @@ async def run_rulesets(
     inventory: Dict,
     redis_host_name: Optional[str] = None,
     redis_port: Optional[int] = None,
+    project_data_file: Optional[str] = None,
 ):
 
     logger.info("run_ruleset")
@@ -271,7 +274,7 @@ async def run_rulesets(
     ruleset_tasks = []
     for ruleset_queue_plan in rulesets_queue_plans:
         ruleset_task = asyncio.create_task(
-            run_ruleset(event_log, ruleset_queue_plan)
+            run_ruleset(event_log, ruleset_queue_plan, project_data_file)
         )
         ruleset_tasks.append(ruleset_task)
 
@@ -282,7 +285,7 @@ async def run_rulesets(
 
 
 async def run_ruleset(
-    event_log: asyncio.Queue, ruleset_queue_plan: EngineRuleSetQueuePlan
+    event_log: asyncio.Queue, ruleset_queue_plan: EngineRuleSetQueuePlan, project_data_file: Optional[str] = None
 ):
 
     name = ruleset_queue_plan.ruleset.name
@@ -309,7 +312,7 @@ async def run_ruleset(
 
             while not ruleset_queue_plan.plan.empty():
                 item = cast(ActionContext, await ruleset_queue_plan.plan.get())
-                result = await call_action(*item, event_log=event_log)
+                result = await call_action(*item, event_log=event_log, project_data_file=project_data_file)
                 results.append(result)
 
             await event_log.put(dict(type="ProcessedEvent", results=results))

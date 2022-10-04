@@ -60,7 +60,7 @@ async def request_workload(activation_id, websocket_address):
                     await install_private_key(
                         base64.b64decode(data.get("data")).decode()
                     )
-            return inventory, extra_vars, rulebook
+            return inventory, extra_vars, rulebook, project_data_file
         except CancelledError:
             logger.info("closing websocket due to task cancelled")
             return
