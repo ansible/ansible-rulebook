@@ -5,6 +5,7 @@ from asyncio.exceptions import CancelledError
 
 import websockets
 import yaml
+import tempfile
 
 from ansible_events import rules_parser as rules_parser
 from ansible_events.key import install_private_key
@@ -24,6 +25,8 @@ async def request_workload(activation_id, websocket_address):
             rulebook = None
             extra_vars = None
             private_key = None
+            project_data_file = tempfile.mkstemp()
+            project_data_fh = open(project_data_file[1], "wb")
             while (
                 inventory is None
                 or rulebook is None
@@ -32,6 +35,14 @@ async def request_workload(activation_id, websocket_address):
             ):
                 msg = await websocket.recv()
                 data = json.loads(msg)
+                if data.get("type") == "ProjectData":
+                    print(data)
+                    if data.get("data") and data.get('more'):
+                        project_data_fh.write(base64.b64decode(data.get("data")))
+                        project_data_fh.flush()
+                    if not data.get("data") and not data.get('more'):
+                        project_data_fh.close()
+                        print(project_data_file)
                 if data.get("type") == "Rulebook":
                     rulebook = rules_parser.parse_rule_sets(
                         yaml.safe_load(base64.b64decode(data.get("data")))
