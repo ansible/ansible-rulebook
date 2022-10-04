@@ -36,14 +36,13 @@ async def request_workload(activation_id, websocket_address):
                 msg = await websocket.recv()
                 data = json.loads(msg)
                 if data.get("type") == "ProjectData":
-                    print(data)
                     if data.get("data") and data.get("more"):
                         os.write(
                             project_data_fh, base64.b64decode(data.get("data"))
                         )
                     if not data.get("data") and not data.get("more"):
                         os.close(project_data_fh)
-                        print(project_data_file)
+                        logger.debug("wrote %s", project_data_file)
                 if data.get("type") == "Rulebook":
                     rulebook = rules_parser.parse_rule_sets(
                         yaml.safe_load(base64.b64decode(data.get("data")))
