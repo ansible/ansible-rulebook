@@ -160,10 +160,6 @@ def test_parse_rules():
     parse_rule_sets(data)
 
 
-@pytest.mark.skipif(
-    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
-    reason="implict checks on undefined attribute, not supported in drools",
-)
 @pytest.mark.asyncio
 async def test_generate_rules():
     os.chdir(HERE)
