@@ -1,4 +1,5 @@
 import json
+import os
 
 import pytest
 
@@ -733,6 +734,10 @@ async def test_27_var_root():
     assert event_log.empty()
 
 
+@pytest.mark.skipif(
+    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
+    reason="durable rules only test, issues with jinja substitution",
+)
 @pytest.mark.asyncio
 async def test_28_right_side_condition_template():
     ruleset_queues, event_log = load_rules(

@@ -7,9 +7,17 @@ from pprint import pformat
 from typing import Any, Dict, List, Optional, cast
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
-    from drools.vendor import engine, lang
+    from drools import ruleset as lang
+    from drools.exceptions import (
+        MessageNotHandledException,
+        MessageObservedException,
+    )
 else:
-    from durable import engine, lang
+    from durable import lang
+    from durable.engine import (
+        MessageObservedException,
+        MessageNotHandledException,
+    )
 
 import ansible_events.rule_generator as rule_generator
 from ansible_events.builtin import actions as builtin_actions
@@ -149,7 +157,7 @@ async def call_action(
     inventory: Dict,
     hosts: List,
     facts: Dict,
-    c,
+    rules_engine_result,
     event_log,
 ) -> Dict:
 
@@ -157,21 +165,29 @@ async def call_action(
 
     if action in builtin_actions:
         try:
+            single_match = None
+            if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+                keys = list(rules_engine_result.data.keys())
+                if len(keys) == 1:
+                    single_match = rules_engine_result.data[keys[0]]
+                else:
+                    multi_match = rules_engine_result.data
+            else:
+                if rules_engine_result.m is not None:
+                    single_match = rules_engine_result.m._d
+                else:
+                    multi_match = rules_engine_result._m
             variables_copy = variables.copy()
-            if c.m is not None:
-                variables_copy[
-                    "event"
-                ] = c.m._d  # event data is stored in c.m._d
-                variables_copy[
-                    "fact"
-                ] = c.m._d  # event data is stored in c.m._d
-                event = c.m._d  # event data is stored in c.m._d
+            if single_match:
+                variables_copy["event"] = single_match
+                variables_copy["fact"] = single_match
+                event = single_match
                 if "meta" in event:
                     if "hosts" in event["meta"]:
                         hosts = parse_hosts(event["meta"]["hosts"])
             else:
-                variables_copy["events"] = c._m
-                variables_copy["facts"] = c._m
+                variables_copy["events"] = multi_match
+                variables_copy["facts"] = multi_match
                 new_hosts = []
                 for event in variables_copy["events"]:
                     if "meta" in event:
@@ -211,10 +227,10 @@ async def call_action(
                 "KeyError with variables %s", pformat(variables_copy)
             )
             result = dict(error=e)
-        except engine.MessageNotHandledException as e:
+        except MessageNotHandledException as e:
             logger.exception("Message cannot be handled: %s", action_args)
             result = dict(error=e)
-        except engine.MessageObservedException as e:
+        except MessageObservedException as e:
             logger.info("MessageObservedException: %s", action_args)
             result = dict(error=e)
         except ShutdownException:
@@ -292,6 +308,8 @@ async def run_ruleset(
         json_count(data)
         if isinstance(data, Shutdown):
             await event_log.put(dict(type="Shutdown"))
+            if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+                lang.end_session(name)
             return
         if not data:
             await event_log.put(dict(type="EmptyEvent"))
@@ -300,9 +318,9 @@ async def run_ruleset(
         try:
             try:
                 lang.post(name, data)
-            except engine.MessageObservedException:
+            except MessageObservedException:
                 logger.debug("MessageObservedException: %s", data)
-            except engine.MessageNotHandledException:
+            except MessageNotHandledException:
                 logger.debug("MessageNotHandledException: %s", data)
             finally:
                 logger.debug(lang.get_pending_events(name))
@@ -313,11 +331,13 @@ async def run_ruleset(
                 results.append(result)
 
             await event_log.put(dict(type="ProcessedEvent", results=results))
-        except engine.MessageNotHandledException:
+        except MessageNotHandledException:
             logger.info("MessageNotHandledException: %s", data)
             await event_log.put(dict(type="MessageNotHandled"))
         except ShutdownException:
             await event_log.put(dict(type="Shutdown"))
+            if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+                lang.end_session(name)
             return
         except Exception:
             logger.exception("Error calling %s", data)
