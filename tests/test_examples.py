@@ -985,3 +985,60 @@ def validate_events(event_log, **kwargs):
         assert kwargs["processed_events"] == processed_events
     if "shutdown_events" in kwargs:
         assert kwargs["shutdown_events"] == shutdown_events
+
+
+@pytest.mark.asyncio
+async def test_38_multiple_expressions_single_event():
+    ruleset_queues, event_log = load_rules(
+        "examples/38_multiple_matches_with_single_event.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    queue.put_nowait(dict(tracking_id=345, target_os="linux"))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        dict(),
+    )
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "debug", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "7"
+    assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_39_multiple_expressions_multiple_event():
+    ruleset_queues, event_log = load_rules(
+        "examples/39_multiple_matches_with_multiple_events.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    queue.put_nowait(dict(tracking_id=345))
+    queue.put_nowait(dict(target_os="linux"))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        dict(),
+    )
+
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "debug", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "7"
+    assert event_log.empty()

@@ -1,0 +1,14 @@
+---
+- name: single event multi condition
+  hosts: all
+  sources:
+    - range:
+        limit: 5
+  rules:
+    - name: "Rule1"
+      condition:
+        all:
+          - event.target_os == "linux"
+          - event.tracking_id == 345
+      action:
+        debug:
