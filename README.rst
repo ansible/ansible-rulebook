@@ -20,7 +20,7 @@ ansible-events
 Event driven automation for Ansible.
 
 
-The real world is fully of events that change the state of our software and systems.
+The real world is full of events that change the state of our software and systems.
 Our automation needs to be able to react to those events.  Ansible-events is a command
 line tool that allows you to recognize which events that you care about and react accordingly
 by running a playbook or other actions.
@@ -81,7 +81,11 @@ remediate the issue.
 Features
 --------
 
+* Connect to event streams and handle events in near real time.
 * Conditionally launch playbooks based on rules that match events in event streams.
+* Store facts about the world from data in events
+* Limit the hosts where playbooks run based on event data
+* Run smaller jobs that run more quickly by limiting the hosts where playbooks run based on event data
 
 
 
