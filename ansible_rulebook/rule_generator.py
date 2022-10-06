@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 def add_to_plan(
     ruleset: str,
+    rule: str,
     action: str,
     action_args: Dict,
     variables: Dict,
@@ -46,7 +47,15 @@ def add_to_plan(
 ) -> None:
     plan.put_nowait(
         ActionContext(
-            ruleset, action, action_args, variables, inventory, hosts, facts, c
+            ruleset,
+            rule,
+            action,
+            action_args,
+            variables,
+            inventory,
+            hosts,
+            facts,
+            c,
         )
     )
 
@@ -174,6 +183,7 @@ def make_fn(
         logger.info("calling %s", ansible_rule.name)
         add_to_plan(
             ruleset,
+            ansible_rule.name,
             ansible_rule.action.action,
             ansible_rule.action.action_args,
             variables,

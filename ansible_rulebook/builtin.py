@@ -41,6 +41,8 @@ async def none(
     variables: Dict,
     facts: Dict,
     project_data_file: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
     ruleset: str,
 ):
     await event_log.put(
@@ -81,6 +83,8 @@ async def print_event(
     variables: Dict,
     facts: Dict,
     project_data_file: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
     ruleset: str,
     name: Optional[str] = None,
     var_root: Union[str, Dict, None] = None,
@@ -118,6 +122,8 @@ async def set_fact(
     facts: Dict,
     project_data_file: str,
     ruleset: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
     fact: Dict,
     name: Optional[str] = None,
 ):
@@ -142,6 +148,8 @@ async def retract_fact(
     facts: Dict,
     project_data_file: str,
     ruleset: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
     fact: Dict,
     name: Optional[str] = None,
 ):
@@ -164,6 +172,8 @@ async def post_event(
     variables: Dict,
     project_data_file: str,
     facts: Dict,
+    source_ruleset_name: str,
+    source_rule_name: str,
     ruleset: str,
     event: Dict,
 ):
@@ -187,6 +197,8 @@ async def run_playbook(
     facts: Dict,
     project_data_file: str,
     ruleset: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
     name: str,
     set_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
@@ -206,7 +218,6 @@ async def run_playbook(
         inventory,
         variables,
         facts,
-        ruleset,
         name,
         "run_playbook",
         var_root,
@@ -224,10 +235,10 @@ async def run_playbook(
             job_id=job_id,
             ansible_events_id=settings.identifier,
             name=playbook_name,
-            ruleset=ruleset,
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
             hosts=",".join(hosts),
             action="run_playbook",
-            inventory=yaml.dump(inventory),
         )
     )
 
@@ -276,6 +287,8 @@ async def run_module(
     variables: Dict,
     facts: Dict,
     ruleset: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
     name: str,
     set_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
@@ -295,7 +308,6 @@ async def run_module(
         inventory,
         variables,
         facts,
-        ruleset,
         name,
         "run_module",
         var_root,
@@ -311,10 +323,10 @@ async def run_module(
             job_id=job_id,
             ansible_events_id=settings.identifier,
             name=module_name,
-            ruleset=ruleset,
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
             hosts=",".join(hosts),
             action="run_module",
-            inventory=yaml.dump(inventory),
         )
     )
 
@@ -451,7 +463,6 @@ async def pre_process_runner(
     inventory: Dict,
     variables: Dict,
     facts: Dict,
-    ruleset: str,
     name: str,
     action: str,
     var_root: Union[str, Dict, None] = None,
@@ -479,13 +490,13 @@ async def pre_process_runner(
 
     playbook_name = name
 
-    os.mkdir(os.path.join(private_data_dir, "env"))
-    with open(os.path.join(private_data_dir, "env", "extravars"), "w") as f:
+    os.mkdir(env_dir)
+    with open(os.path.join(env_dir, "extravars"), "w") as f:
         f.write(yaml.dump(variables))
-    os.mkdir(os.path.join(private_data_dir, "inventory"))
-    with open(os.path.join(private_data_dir, "inventory", "hosts"), "w") as f:
+    os.mkdir(inventory_dir)
+    with open(os.path.join(inventory_dir, "hosts"), "w") as f:
         f.write(yaml.dump(inventory))
-    os.mkdir(os.path.join(private_data_dir, "project"))
+    os.mkdir(project_dir)
 
     logger.debug("project_data_file: %s", project_data_file)
     if project_data_file:
@@ -573,6 +584,9 @@ async def shutdown(
     variables: Dict,
     facts: Dict,
     ruleset: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
+    project_data_file: str,
 ):
     await event_log.put(
         dict(
