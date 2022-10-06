@@ -5,6 +5,7 @@ import pytest
 
 from ansible_events.engine import run_rulesets
 from ansible_events.messages import Shutdown
+from ansible_events.util import load_inventory
 
 from .test_engine import load_rules
 
@@ -985,3 +986,33 @@ def validate_events(event_log, **kwargs):
         assert kwargs["processed_events"] == processed_events
     if "shutdown_events" in kwargs:
         assert kwargs["shutdown_events"] == shutdown_events
+
+
+@pytest.mark.skipif(
+    os.environ.get("RULES_ENGINE", "durable_rules") == "durable_rules",
+    reason="durable rules does not support more than 255 keys in facts",
+)
+@pytest.mark.asyncio
+async def test_37_hosts_facts():
+    ruleset_queues, event_log = load_rules("examples/37_hosts_facts.yml")
+
+    queue = ruleset_queues[0][1]
+    queue.put_nowait(dict(i=1))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "debug", "2"
+
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "7"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "8"
+    assert event_log.empty()

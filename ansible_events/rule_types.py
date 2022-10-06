@@ -47,6 +47,7 @@ class RuleSet(NamedTuple):
     hosts: Union[str, List[str]]
     sources: List[EventSource]
     rules: List[Rule]
+    gather_facts: bool
 
 
 class ActionContext(NamedTuple):

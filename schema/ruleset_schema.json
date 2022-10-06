@@ -10,6 +10,10 @@
                 "hosts": {
                     "type": "string"
                 },
+                "gather_facts": {
+                    "type": "boolean",
+                    "default": false
+                },
                 "name": {
                     "type": "string"
                 },
