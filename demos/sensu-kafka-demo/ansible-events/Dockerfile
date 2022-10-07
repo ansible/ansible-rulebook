@@ -1,3 +1,3 @@
-FROM quay.io/aizquier/ansible-events-dev:latest
+FROM quay.io/aizquier/ansible-rulebook-dev:latest
 
 COPY ./data/* /data/

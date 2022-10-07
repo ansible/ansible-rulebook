@@ -5,8 +5,8 @@ import pytest
 if os.environ.get("RULES_ENGINE", "durable_rules") == "durable_rules":
     from durable.lang import c, m, none
 
-    from ansible_events.condition_parser import condition, parse_condition
-    from ansible_events.rule_generator import visit_condition
+    from ansible_rulebook.condition_parser import condition, parse_condition
+    from ansible_rulebook.rule_generator import visit_condition
 
 
 @pytest.mark.skipif(

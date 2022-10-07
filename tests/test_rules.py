@@ -11,8 +11,8 @@ else:
 import pytest
 import yaml
 
-from ansible_events.rule_generator import generate_rulesets
-from ansible_events.rules_parser import parse_rule_sets
+from ansible_rulebook.rule_generator import generate_rulesets
+from ansible_rulebook.rules_parser import parse_rule_sets
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 

@@ -19,28 +19,28 @@ else:
         MessageNotHandledException,
     )
 
-import ansible_events.rule_generator as rule_generator
-from ansible_events.builtin import actions as builtin_actions
-from ansible_events.collection import (
+import ansible_rulebook.rule_generator as rule_generator
+from ansible_rulebook.builtin import actions as builtin_actions
+from ansible_rulebook.collection import (
     find_source,
     find_source_filter,
     has_source,
     has_source_filter,
     split_collection_name,
 )
-from ansible_events.conf import settings
-from ansible_events.durability import provide_durability
-from ansible_events.exception import ShutdownException
-from ansible_events.messages import Shutdown
-from ansible_events.rule_types import (
+from ansible_rulebook.conf import settings
+from ansible_rulebook.durability import provide_durability
+from ansible_rulebook.exception import ShutdownException
+from ansible_rulebook.messages import Shutdown
+from ansible_rulebook.rule_types import (
     ActionContext,
     EngineRuleSetQueuePlan,
     EventSource,
     RuleSetQueue,
     RuleSetQueuePlan,
 )
-from ansible_events.rules_parser import parse_hosts
-from ansible_events.util import json_count, substitute_variables
+from ansible_rulebook.rules_parser import parse_hosts
+from ansible_rulebook.util import json_count, substitute_variables
 
 logger = logging.getLogger(__name__)
 

@@ -4,7 +4,7 @@ import asyncio
 import os
 from typing import Any, Dict, List, NamedTuple, Union
 
-import ansible_events.condition_types as ct
+import ansible_rulebook.condition_types as ct
 
 if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
     from drools.ruleset import Ruleset as EngineRuleSet

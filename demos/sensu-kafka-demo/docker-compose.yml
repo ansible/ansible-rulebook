@@ -82,11 +82,11 @@ services:
       sensu-backend:
         condition: service_healthy
 
-  ansible-events:
-    image: ae-sensu-demo-ansible-events
+  ansible-rulebook:
+    image: ae-sensu-demo-ansible-rulebook
     build:
-      context: ./ansible-events
-    command: bash -c "cd /data && ansible-events --rules rules.yml -i inventory.yml"
+      context: ./ansible-rulebook
+    command: bash -c "cd /data && ansible-rulebook --rules rules.yml -i inventory.yml"
     depends_on:
       sensu-backend:
         condition: service_healthy

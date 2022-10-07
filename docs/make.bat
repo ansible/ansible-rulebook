@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
-set SPHINXPROJ=ansible_events
+set SPHINXPROJ=ansible_rulebook
 
 if "%1" == "" goto help
 

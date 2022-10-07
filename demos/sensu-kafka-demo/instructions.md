@@ -3,7 +3,7 @@
 ## Description
 
 In this demo we will deploy a stack based on a simple web application which is being monitored by a sensu instance.
-Sensu will forward the events to a topic in kafka and a rule set of ansible-events will listen those messages and react
+Sensu will forward the events to a topic in kafka and a rule set of ansible-rulebook will listen those messages and react
 when the web application is down to recover it.
 
 ![](diagram.jpg)
@@ -42,10 +42,10 @@ curl http://localhost:5080/health
 {"status": "RUNNING"}
 ```
 
-In another shell session we can see the output of our ansible-events instance, where we can not see any message yet.
+In another shell session we can see the output of our ansible-rulebook instance, where we can not see any message yet.
 
 ```sh
-docker-compose logs -f ansible-events
+docker-compose logs -f ansible-rulebook
 ```
 
 Now we will simulate an outage in our web application, open a new terminal session and run:
@@ -62,7 +62,7 @@ curl http://localhost:5080/health
 ```
 
 If you come back to the sensu UI you will see our entity in red state.
-If you see the output of the ansible-events pod you will see that ansible-events has received the event,
+If you see the output of the ansible-rulebook pod you will see that ansible-rulebook has received the event,
 matches the outage condition and as a consecuence has executed a playbook to fix our web application.
 
 After some seconds you will see that our web application is up and running again:

@@ -5,8 +5,8 @@ import traceback
 
 import yaml
 
-from ansible_events.json_generator import generate_dict_rulesets
-from ansible_events.rules_parser import parse_rule_sets
+from ansible_rulebook.json_generator import generate_dict_rulesets
+from ansible_rulebook.rules_parser import parse_rule_sets
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 

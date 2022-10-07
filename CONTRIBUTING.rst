@@ -38,8 +38,8 @@ and "help wanted" is open to whoever wants to implement it.
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
 
-ansible-events could always use more documentation, whether as part of the
-official ansible-events docs, in docstrings, or even on the web in blog posts,
+ansible-rulebook could always use more documentation, whether as part of the
+official ansible-rulebook docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 Submit Feedback
@@ -57,9 +57,9 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `ansible_events` for local development.
+Ready to contribute? Here's how to set up `ansible_rulebook` for local development.
 
-1. Fork the `ansible_events` repo on GitHub.
+1. Fork the `ansible_rulebook` repo on GitHub.
 2. Clone your fork locally::
 
     $ git clone git@github.com:your_name_here/ansible-rulebook.git
@@ -79,7 +79,7 @@ Ready to contribute? Here's how to set up `ansible_events` for local development
 
 4. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
 
-    $ cd ansible_events/
+    $ cd ansible_rulebook/
     $ python3.9 -m venv venv
     $ source venv/bin/activate
     $ pip install -e .
@@ -95,7 +95,7 @@ Ready to contribute? Here's how to set up `ansible_events` for local development
 6. When you're done making changes, check that your changes pass flake8 and the
    tests, including testing other Python versions with tox::
 
-    $ flake8 ansible_events tests
+    $ flake8 ansible_rulebook tests
     $ pytest
     $ tox
 
@@ -184,7 +184,7 @@ Tips
 
 To run a subset of tests::
 
-$ pytest tests.test_ansible_events
+$ pytest tests.test_ansible_rulebook
 
 
 Deploying

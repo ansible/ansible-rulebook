@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Tests for `ansible_events` package."""
+"""Tests for `ansible_rulebook` package."""
 
 import pytest
 

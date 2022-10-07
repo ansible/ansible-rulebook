@@ -8,11 +8,11 @@ if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
     from drools.rule import Rule as DroolsRule
     from drools.ruleset import Ruleset as DroolsRuleset
 
-    from ansible_events.json_generator import visit_ruleset
+    from ansible_rulebook.json_generator import visit_ruleset
 else:
     from durable.lang import c, m, none, rule, ruleset
 
-from ansible_events.condition_types import (
+from ansible_rulebook.condition_types import (
     Boolean,
     Condition,
     ConditionTypes,
@@ -22,13 +22,13 @@ from ansible_events.condition_types import (
     OperatorExpression,
     String,
 )
-from ansible_events.rule_types import (
+from ansible_rulebook.rule_types import (
     ActionContext,
     Condition as RuleCondition,
     EngineRuleSetQueuePlan,
     RuleSetQueuePlan,
 )
-from ansible_events.util import substitute_variables
+from ansible_rulebook.util import substitute_variables
 
 logger = logging.getLogger(__name__)
 

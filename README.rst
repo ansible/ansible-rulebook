@@ -1,20 +1,20 @@
 ==============
-ansible-events
+ansible-rulebook
 ==============
 
 
-.. image:: https://img.shields.io/pypi/v/ansible_events.svg
-        :target: https://pypi.python.org/pypi/ansible_events
+.. image:: https://img.shields.io/pypi/v/ansible_rulebook.svg
+        :target: https://pypi.python.org/pypi/ansible_rulebook
 
-.. image:: https://img.shields.io/travis/benthomasson/ansible_events.svg
-        :target: https://travis-ci.com/benthomasson/ansible_events
+.. image:: https://img.shields.io/travis/benthomasson/ansible_rulebook.svg
+        :target: https://travis-ci.com/benthomasson/ansible_rulebook
 
-.. image:: https://readthedocs.org/projects/ansible-events/badge/?version=latest
-        :target: https://ansible-events.readthedocs.io/en/latest/?version=latest
+.. image:: https://readthedocs.org/projects/ansible-rulebook/badge/?version=latest
+        :target: https://ansible-rulebook.readthedocs.io/en/latest/?version=latest
         :alt: Documentation Status
 
 * Free software: Apache Software License 2.0
-* Documentation: https://ansible-events.readthedocs.io.
+* Documentation: https://ansible-rulebook.readthedocs.io.
 
 
 Event driven automation for Ansible.
@@ -147,14 +147,14 @@ Via PyPi:
 
 .. code-block:: shell-session
 
-    pip install ansible-events
+    pip install ansible-rulebook
 
 Via Docker:
 ###########
 
 .. code-block:: shell-session
 
-    docker build -t ansible-events .
+    docker build -t ansible-rulebook .
 
 
 Usage
@@ -162,7 +162,7 @@ Usage
 
 .. code-block:: shell-session
 
-    ansible-events --help
+    ansible-rulebook --help
 
 
 Credits

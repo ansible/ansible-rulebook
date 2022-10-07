@@ -1,7 +1,7 @@
 """Generate condition AST from Ansible condition."""
 from typing import Dict, List
 
-from ansible_events.condition_types import (
+from ansible_rulebook.condition_types import (
     Boolean,
     Condition,
     ConditionTypes,
@@ -11,7 +11,7 @@ from ansible_events.condition_types import (
     OperatorExpression,
     String,
 )
-from ansible_events.rule_types import (
+from ansible_rulebook.rule_types import (
     Action,
     Condition as RuleCondition,
     EventSource,
@@ -19,7 +19,7 @@ from ansible_events.rule_types import (
     Rule,
     RuleSet,
 )
-from ansible_events.util import substitute_variables
+from ansible_rulebook.util import substitute_variables
 
 
 def visit_condition(parsed_condition: ConditionTypes, variables: Dict):

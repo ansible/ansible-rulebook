@@ -4,7 +4,7 @@
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = python -msphinx
-SPHINXPROJ    = ansible_events
+SPHINXPROJ    = ansible_rulebook
 SOURCEDIR     = .
 BUILDDIR      = _build
 
