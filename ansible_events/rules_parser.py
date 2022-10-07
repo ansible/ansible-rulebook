@@ -24,6 +24,7 @@ def parse_rule_sets(rule_sets: Dict) -> List[rt.RuleSet]:
                 hosts=parse_hosts(rule_set["hosts"]),
                 sources=parse_event_sources(rule_set["sources"]),
                 rules=parse_rules(rule_set.get("rules", {})),
+                gather_facts=rule_set.get("gather_facts", False),
             )
         )
     return rule_set_list
