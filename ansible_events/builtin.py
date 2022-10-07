@@ -356,7 +356,7 @@ async def call_runner(
     # Here we push the event into the sync side of janus
     def event_callback(event, *args, **kwargs):
         event["job_id"] = job_id
-        event["ansible_events_id"] = settings.identifier
+        event["ansible_rulebook_id"] = settings.identifier
         logger.debug("event_callback")
         queue.sync_q.put(dict(type="AnsibleEvent", event=event))
 
@@ -486,7 +486,7 @@ async def pre_process_runner(
     job_id = str(uuid.uuid4())
 
     await event_log.put(
-        dict(type="Job", job_id=job_id, ansible_events_id=settings.identifier)
+        dict(type="Job", job_id=job_id, ansible_rulebook_id=settings.identifier)
     )
     return (private_data_dir, playbook_name, job_id)
 

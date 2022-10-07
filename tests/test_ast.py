@@ -3,12 +3,12 @@ import os
 import pytest
 import yaml
 
-from ansible_events.condition_parser import parse_condition
-from ansible_events.json_generator import (
+from ansible_rulebook.condition_parser import parse_condition
+from ansible_rulebook.json_generator import (
     generate_dict_rulesets,
     visit_condition,
 )
-from ansible_events.rules_parser import parse_rule_sets
+from ansible_rulebook.rules_parser import parse_rule_sets
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 

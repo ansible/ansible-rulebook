@@ -1,3 +1,3 @@
-from ansible_events.cli import main
+from ansible_rulebook.cli import main
 
 main()

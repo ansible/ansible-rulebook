@@ -1,7 +1,7 @@
 """
 template.py
 
-An ansible-events event source plugin template.
+An ansible-rulebook event source plugin template.
 
 Arguments:
     - delay: seconds to wait between events

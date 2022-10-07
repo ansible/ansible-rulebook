@@ -1,4 +1,4 @@
-* ansible-events version:
+* ansible-rulebook version:
 * Python version:
 * Operating System:
 

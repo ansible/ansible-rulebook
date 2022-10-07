@@ -1,4 +1,4 @@
-from ansible_events.collection import (
+from ansible_rulebook.collection import (
     find_collection,
     find_source,
     load_rules,

@@ -8,14 +8,14 @@ Installation
 Stable release
 --------------
 
-To install ansible-events, run this command in your terminal:
+To install ansible-rulebook, run this command in your terminal:
 
 .. code-block:: console
 
-    $ pip install ansible_events
+    $ pip install ansible_rulebook
     $ ansible-galaxy collection install benthomasson.eda
 
-This is the preferred method to install ansible-events, as it will always install the most recent stable release.
+This is the preferred method to install ansible-rulebook, as it will always install the most recent stable release.
 
 If you don't have `pip`_ installed, this `Python installation guide`_ can guide
 you through the process.
@@ -27,19 +27,19 @@ you through the process.
 From sources
 ------------
 
-The sources for ansible-events can be downloaded from the `Github repo`_.
+The sources for ansible-rulebook can be downloaded from the `Github repo`_.
 
 You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/benthomasson/ansible_events
+    $ git clone git://github.com/benthomasson/ansible_rulebook
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/benthomasson/ansible_events/tarball/master
+    $ curl -OJL https://github.com/benthomasson/ansible_rulebook/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -48,5 +48,5 @@ Once you have a copy of the source, you can install it with:
     $ pip install .
 
 
-.. _Github repo: https://github.com/benthomasson/ansible_events
-.. _tarball: https://github.com/benthomasson/ansible_events/tarball/master
+.. _Github repo: https://github.com/benthomasson/ansible_rulebook
+.. _tarball: https://github.com/benthomasson/ansible_rulebook/tarball/master
