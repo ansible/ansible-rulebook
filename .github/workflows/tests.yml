@@ -39,7 +39,7 @@ jobs:
         run: ansible-galaxy collection install benthomasson.eda
       - name: Run tests via Durable rules
         run: pytest
+        env:
+          RULES_ENGINE: durable_rules
       - name: Run tests via Drools
         run: pytest
-        env:
-          RULES_ENGINE: drools

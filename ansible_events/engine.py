@@ -6,7 +6,7 @@ from datetime import datetime
 from pprint import pformat
 from typing import Any, Dict, List, Optional, cast
 
-if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+if os.environ.get("RULES_ENGINE", "drools") == "drools":
     from drools import ruleset as lang
     from drools.exceptions import (
         MessageNotHandledException,
@@ -167,7 +167,7 @@ async def call_action(
     if action in builtin_actions:
         try:
             single_match = None
-            if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+            if os.environ.get("RULES_ENGINE", "drools") == "drools":
                 keys = list(rules_engine_result.data.keys())
                 if len(keys) == 1:
                     single_match = rules_engine_result.data[keys[0]]
@@ -313,7 +313,7 @@ async def run_ruleset(
         json_count(data)
         if isinstance(data, Shutdown):
             await event_log.put(dict(type="Shutdown"))
-            if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+            if os.environ.get("RULES_ENGINE", "drools") == "drools":
                 lang.end_session(name)
             return
         if not data:
@@ -345,7 +345,7 @@ async def run_ruleset(
             await event_log.put(dict(type="MessageNotHandled"))
         except ShutdownException:
             await event_log.put(dict(type="Shutdown"))
-            if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+            if os.environ.get("RULES_ENGINE", "drools") == "drools":
                 lang.end_session(name)
             return
         except Exception:

@@ -735,7 +735,7 @@ async def test_27_var_root():
 
 
 @pytest.mark.skipif(
-    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
+    os.environ.get("RULES_ENGINE", "drools") == "drools",
     reason="durable rules only test, issues with jinja substitution",
 )
 @pytest.mark.asyncio
