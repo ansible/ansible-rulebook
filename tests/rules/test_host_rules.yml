@@ -6,33 +6,33 @@
       hosts:
         limit: 5
   rules:
-    - name:
+    - name: rule1
       condition: event.i == 1
       action:
         assert_fact:
           ruleset: Test host rules
           fact:
             j: 1
-    - name:
+    - name: rule2
       condition: event.i == 2
       action:
         run_playbook:
           name: playbooks/hello_events.yml
-    - name:
+    - name: rule3
       condition: event.i == 3
       action:
         retract_fact:
           ruleset: Test host rules
           fact:
             j: 3
-    - name:
+    - name: rule4
       condition: event.i == 4
       action:
         post_event:
           ruleset: Test host rules
           event:
             j: 4
-    - name:
+    - name: rule5
       condition: event.j is defined
       action:
         none:

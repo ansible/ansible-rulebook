@@ -5,13 +5,13 @@
     - range:
         limit: 5
   rules:
-    - name:
+    - name: rule1
       condition: event.i == 1
       action:
         assert_fact:
           fact:
             msg: hello
-    - name:
+    - name: rule2
       condition: event.msg is defined
       action:
         debug:

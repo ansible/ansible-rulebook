@@ -5,6 +5,8 @@ from ansible_events.condition_parser import (
     parse_condition as parse_condition_value,
 )
 
+from .exception import RulenameDuplicateException, RulenameEmptyException
+
 
 def parse_hosts(hosts):
     if isinstance(hosts, str):
@@ -63,8 +65,18 @@ def parse_source_filter(source_filter: Dict) -> rt.EventSourceFilter:
 
 def parse_rules(rules: Dict) -> List[rt.Rule]:
     rule_list = []
+    rule_names = []
     for rule in rules:
         name = rule.get("name")
+        if name is None:
+            raise RulenameEmptyException("Rule name not provided")
+
+        if name in rule_names:
+            raise RulenameDuplicateException(
+                f"Rule with name {name} defined multiple times"
+            )
+
+        rule_names.append(name)
         rule_list.append(
             rt.Rule(
                 name=name,

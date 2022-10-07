@@ -5,14 +5,14 @@
     - range:
         limit: 5
   rules:
-    - name:
+    - name: rule1
       condition: event.i == 1
       action:
         assert_fact:
           fact:
             do_not_fire_rule: True
           ruleset: 35 multiple rulesets 1
-    - name:
+    - name: rule2
       condition: event.do_not_fire_rule == True
       action:
         none:
@@ -22,7 +22,7 @@
     - range:
         limit: 5
   rules:
-    - name:
+    - name: rule1
       condition: event.do_not_fire_rule == True
       action:
         debug:

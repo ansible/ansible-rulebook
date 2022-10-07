@@ -22,7 +22,7 @@
               rhs:
                 Integer: 1
         enabled: true
-        name: null
+        name: rule1
     - Rule:
         action:
           Action:
@@ -43,7 +43,7 @@
               rhs:
                 String: hello world
         enabled: true
-        name: null
+        name: rule2
     sources:
     - EventSource:
         name: range

@@ -238,13 +238,7 @@ else:
                 name=ansible_ruleset.name,
                 serialized_ruleset=json.dumps(ruleset_ast["RuleSet"]),
             )
-            index = 0
             for ansible_rule in ansible_ruleset.rules:
-                if ansible_rule.name:
-                    rule_name = ansible_rule.name
-                else:
-                    rule_name = f"r_{index}"
-                index += 1
                 if ansible_rule.enabled:
                     fn = make_fn(
                         ansible_ruleset.name,
@@ -256,7 +250,7 @@ else:
                         plan,
                     )
                     drools_ruleset.add_rule(
-                        DroolsRule(name=rule_name, callback=fn)
+                        DroolsRule(name=ansible_rule.name, callback=fn)
                     )
 
             rulesets.append(
