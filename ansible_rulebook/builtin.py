@@ -486,7 +486,9 @@ async def pre_process_runner(
     job_id = str(uuid.uuid4())
 
     await event_log.put(
-        dict(type="Job", job_id=job_id, ansible_rulebook_id=settings.identifier)
+        dict(
+            type="Job", job_id=job_id, ansible_rulebook_id=settings.identifier
+        )
     )
     return (private_data_dir, playbook_name, job_id)
 
