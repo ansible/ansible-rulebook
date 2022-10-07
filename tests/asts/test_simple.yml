@@ -18,7 +18,7 @@
               rhs:
                 Integer: 0
         enabled: true
-        name: null
+        name: rule1
     - Rule:
         action:
           Action:
@@ -32,7 +32,7 @@
               rhs:
                 Integer: 1
         enabled: true
-        name: null
+        name: rule2
     - Rule:
         action:
           Action:
@@ -49,7 +49,7 @@
               rhs:
                 Integer: 2
         enabled: true
-        name: null
+        name: rule3
     - Rule:
         action:
           Action:
@@ -60,7 +60,7 @@
           - IsDefinedExpression:
               Event: msg
         enabled: true
-        name: null
+        name: rule4
     sources:
     - EventSource:
         name: range

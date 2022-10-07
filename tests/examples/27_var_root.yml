@@ -4,7 +4,7 @@
   sources:
     - non_existent:
   rules:
-    - name:
+    - name: rule1
       condition:
         all:
           - events.webhook << event.webhook.payload.url == "http://www.example.com"

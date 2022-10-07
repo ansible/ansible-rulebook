@@ -6,13 +6,13 @@
       range:
         limit: 5
   rules:
-    - name:
+    - name: rule1
       condition: event.i == 1
       action:
         post_event:
           event:
             msg: hello world
-    - name:
+    - name: rule2
       condition: event.msg == "hello world"
       action:
         print_event:

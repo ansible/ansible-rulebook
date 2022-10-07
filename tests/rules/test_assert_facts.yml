@@ -6,7 +6,7 @@
       range:
         limit: 5
   rules:
-    - name:
+    - name: rule1
       condition: event.i == 1
       action:
         assert_fact:
@@ -16,7 +16,7 @@
             beta: 
                name: R2D2
                location: Naboo
-    - name:
+    - name: rule2
       condition: event.msg == "hello world"
       action:
         run_playbook:

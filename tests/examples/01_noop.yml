@@ -6,7 +6,7 @@
       range:
         limit: 5
   rules:
-    - name:
+    - name: rule1
       condition: event.i == 1
       action:
         none:
