@@ -31,6 +31,8 @@ from .util import get_horizontal_rule
 
 logger = logging.getLogger(__name__)
 
+tar = shutil.which("tar")
+
 
 async def none(
     event_log,
@@ -38,6 +40,7 @@ async def none(
     hosts: List,
     variables: Dict,
     facts: Dict,
+    project_data_file: str,
     ruleset: str,
 ):
     await event_log.put(
@@ -77,6 +80,7 @@ async def print_event(
     hosts: List,
     variables: Dict,
     facts: Dict,
+    project_data_file: str,
     ruleset: str,
     name: Optional[str] = None,
     var_root: Union[str, Dict, None] = None,
@@ -112,6 +116,7 @@ async def assert_fact(
     hosts: List,
     variables: Dict,
     facts: Dict,
+    project_data_file: str,
     ruleset: str,
     fact: Dict,
     name: Optional[str] = None,
@@ -135,6 +140,7 @@ async def retract_fact(
     hosts: List,
     variables: Dict,
     facts: Dict,
+    project_data_file: str,
     ruleset: str,
     fact: Dict,
     name: Optional[str] = None,
@@ -156,6 +162,7 @@ async def post_event(
     inventory: Dict,
     hosts: List,
     variables: Dict,
+    project_data_file: str,
     facts: Dict,
     ruleset: str,
     event: Dict,
@@ -178,6 +185,7 @@ async def run_playbook(
     hosts: List,
     variables: Dict,
     facts: Dict,
+    project_data_file: str,
     ruleset: str,
     name: str,
     assert_facts: Optional[bool] = None,
@@ -204,6 +212,7 @@ async def run_playbook(
         var_root,
         copy_files,
         True,
+        project_data_file,
         **kwargs,
     )
     logger.info("Calling Ansible runner")
@@ -389,6 +398,24 @@ async def call_runner(
     await asyncio.gather(*tasks)
 
 
+async def untar_project(output_dir, project_data_file):
+
+    cmd = [tar, "zxvf", project_data_file]
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        cwd=output_dir,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+
+    stdout, stderr = await proc.communicate()
+
+    if stdout:
+        logger.debug(stdout.decode())
+    if stderr:
+        logger.debug(stderr.decode())
+
+
 async def pre_process_runner(
     event_log,
     inventory: Dict,
@@ -400,6 +427,7 @@ async def pre_process_runner(
     var_root: Union[str, Dict, None] = None,
     copy_files: Optional[bool] = False,
     check_files: Optional[bool] = True,
+    project_data_file: Optional[str] = None,
     **kwargs,
 ):
 
@@ -415,37 +443,40 @@ async def pre_process_runner(
     if var_root:
         update_variables(variables, var_root)
 
+    env_dir = os.path.join(private_data_dir, "env")
+    inventory_dir = os.path.join(private_data_dir, "inventory")
+    project_dir = os.path.join(private_data_dir, "project")
+
     playbook_name = name
     if True:
-        os.mkdir(os.path.join(private_data_dir, "env"))
-        with open(
-            os.path.join(private_data_dir, "env", "extravars"), "w"
-        ) as f:
+        os.mkdir(env_dir)
+        with open(os.path.join(env_dir, "extravars"), "w") as f:
             f.write(yaml.dump(variables))
-        os.mkdir(os.path.join(private_data_dir, "inventory"))
-        with open(
-            os.path.join(private_data_dir, "inventory", "hosts"), "w"
-        ) as f:
+        os.mkdir(inventory_dir)
+        with open(os.path.join(inventory_dir, "hosts"), "w") as f:
             f.write(yaml.dump(inventory))
-        os.mkdir(os.path.join(private_data_dir, "project"))
+        os.mkdir(project_dir)
+
+    logger.debug("project_data_file: %s", project_data_file)
+    if project_data_file:
+        if os.path.exists(project_data_file):
+            await untar_project(project_dir, project_data_file)
 
     if check_files:
         if os.path.exists(name):
             playbook_name = os.path.basename(name)
-            shutil.copy(
-                name, os.path.join(private_data_dir, "project", playbook_name)
-            )
+            shutil.copy(name, os.path.join(project_dir, playbook_name))
             if copy_files:
                 shutil.copytree(
                     os.path.dirname(os.path.abspath(name)),
-                    os.path.join(private_data_dir, "project"),
+                    project_dir,
                     dirs_exist_ok=True,
                 )
         elif has_playbook(*split_collection_name(name)):
             playbook_name = name
             shutil.copy(
                 find_playbook(*split_collection_name(name)),
-                os.path.join(private_data_dir, "project", name),
+                os.path.join(project_dir, name),
             )
         else:
             logger.error(

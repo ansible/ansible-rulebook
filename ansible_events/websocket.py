@@ -1,6 +1,8 @@
 import base64
 import json
 import logging
+import os
+import tempfile
 from asyncio.exceptions import CancelledError
 
 import websockets
@@ -24,6 +26,7 @@ async def request_workload(activation_id, websocket_address):
             rulebook = None
             extra_vars = None
             private_key = None
+            project_data_fh, project_data_file = tempfile.mkstemp()
             while (
                 inventory is None
                 or rulebook is None
@@ -32,6 +35,14 @@ async def request_workload(activation_id, websocket_address):
             ):
                 msg = await websocket.recv()
                 data = json.loads(msg)
+                if data.get("type") == "ProjectData":
+                    if data.get("data") and data.get("more"):
+                        os.write(
+                            project_data_fh, base64.b64decode(data.get("data"))
+                        )
+                    if not data.get("data") and not data.get("more"):
+                        os.close(project_data_fh)
+                        logger.debug("wrote %s", project_data_file)
                 if data.get("type") == "Rulebook":
                     rulebook = rules_parser.parse_rule_sets(
                         yaml.safe_load(base64.b64decode(data.get("data")))
@@ -49,7 +60,7 @@ async def request_workload(activation_id, websocket_address):
                     await install_private_key(
                         base64.b64decode(data.get("data")).decode()
                     )
-            return inventory, extra_vars, rulebook
+            return inventory, extra_vars, rulebook, project_data_file
         except CancelledError:
             logger.info("closing websocket due to task cancelled")
             return

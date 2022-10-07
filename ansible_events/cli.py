@@ -19,6 +19,7 @@ Options:
     --websocket-address=<w>     Connect the event log to a websocket
     --id=<i>                    Identifier
     --worker                    Enable worker mode
+    --project-tarball=<p>       Project tarball
 """
 import argparse
 import asyncio
@@ -91,6 +92,10 @@ def get_parser() -> argparse.ArgumentParser:
         "--worker",
         action="store_true",
         help="Enable worker mode",
+    )
+    parser.add_argument(
+        "--project-tarball",
+        help="A tarball of the project",
     )
     return parser
 
