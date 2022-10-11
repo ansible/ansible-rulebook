@@ -1,6 +1,6 @@
-==============
+================
 ansible-rulebook
-==============
+================
 
 
 .. image:: https://img.shields.io/pypi/v/ansible_rulebook.svg
