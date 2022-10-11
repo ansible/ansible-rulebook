@@ -19,25 +19,29 @@ Conditions
 | condition(s) can use information from
 
  * Event received 
- * Previously saved events
+ * Previously saved events within the rule
  * Longer term facts about the system
  * Variables provided by the user at startup saved as facts
 
 When writing conditions 
-  * use the event/events prefix when accessing data from the current event.
-  * use the fact/facts prefix when accessing data from the facts stored in the rule engine.
+  * use the **event** prefix when accessing data from the current event
+  * use the **fact** prefix when accessing data from the saved facts
+  * use the **events** prefix when assigning variables and accessing data within the rule
+  * use the **facts** prefix when assigning variables and accessing data within the rule
 
 
 The following is an example rule::
 
     name:  An automatic remediation rule
-    condition:  event.outage == True
+    condition:  event.outage == true
     action:
         run_playbook:
             name: remediate_outage.yml
 
-| This rule searches for a recent event with the data `outage` being `True`. If an event
+| This rule searches for a recent event with the data `outage` being `true`. If an event
 | with this condition is found then the `remediate_outage.yml` playbook is run.
+| After an event is matched it is immediately removed and will not be used in subsequent
+| rules.
 
 A condition can contain
  * One condition
@@ -51,7 +55,7 @@ Single condition
 ::
 
     name:  An automatic remediation rule
-    condition:  event.outage == True
+    condition:  event.outage == true
     action:
         run_playbook:
             name: remediate_outage.yml
@@ -69,6 +73,13 @@ Multiple conditions where **all** of them have to match
           - event.tracking_id == 345 
       action:
         debug:
+
+| As we receive events from the source plugins we send them to the appropriate 
+| rule set sessions running in the rule engine.
+| With multiple conditions the rule engine will keep track of the conditions that
+| have matched and wait for the next event to come in which might match other conditions.
+| Once all the conditions have been met, it will return you all the events that matched,
+| which can be used in action.
 
 Multiple conditions where **any** one of them has to match
 ----------------------------------------------------------
@@ -120,8 +131,8 @@ Logical or
 
 
 | When a condition is evaluated if the condition passes the matching event 
-| is stored in a well known attribute called **m**, **m_1**, **m_2**.....
-| You can optionally alias this attribute using the **<<** operator e.g
+| it is stored in well known attribute(s) called **m**, **m_1**, **m_2**.....
+| You can optionally alias these attribute(s) using the **<<** operator e.g
 
 Multiples condition with assignment
 -----------------------------------
@@ -142,8 +153,10 @@ Multiples condition with assignment
 | When using the assignment operator the attribute names should have the 
 | **events.** or **facts.** prefix. In the above example we are saving the
 | matching events per condition as events.first, events.second and events.third.
-| In the third condition we are using the saved event in events.first to do 
-| a comparison.
+| In the third condition we are accessing the saved event in events.first to do 
+| a comparison. **events** and **facts** have rule scope and are not available
+| outside of the rule. They can be used in assignments and accessing the saved
+| values in a condition or in action.
 
 Multiple condition with default assignments
 -------------------------------------------
@@ -175,7 +188,8 @@ Single condition assignment (Not supported)
 
 | Assignment **cannot** be used for rules that have a single condition, the 
 | matching event will always be called **event**. In the above example **event.first** 
-| is ignored and the matching event is stored as **event**
+| is ignored and the matching event is stored as **event**. Compare this to multiple
+| condition rules where the matching events are stored as **events**
 
 
 
@@ -183,7 +197,7 @@ Single condition assignment (Not supported)
 Actions
 *******
 
-When a rule matches the conditions, it fires the corresponding action for the rule.
+When a rule matches the condition(s), it fires the corresponding action for the rule.
 The following actions are supported
 
 .. list-table:: Actions
@@ -197,7 +211,7 @@ The following actions are supported
    * - run_module
      - Run an Ansible module from a collection or from the Ansible built in modules
    * - assert_fact
-     - Assert a fact to the rule set, will fire all matching rules 
+     - Assert a fact to the rule set, will fire all matching rules different from post_event 
    * - post_event
      - Assert an event to the rule set, will fire the first matching rule. An event is retracted after it matches.
    * - retract_fact
@@ -231,13 +245,13 @@ run_playbook
      - The name of the ruleset to post the event or assert the fact to, default is current rule set.
      - No
    * - retry
-     - If the playbook fails execution, retry it, boolean value true|false
+     - If the playbook fails execution, retry it once, boolean value true|false
      - No
    * - retries
      - If the playbook fails execution, the number of times to retry it. An integer value
      - No
    * - delay
-     - The retry interval, an integer value
+     - The retry interval, an integer value specified in seconds
      - No
    * - verbosity
      - Verbosity level when running the playbook, a value between 1-4
@@ -245,7 +259,7 @@ run_playbook
    * - var_root
      - If the event is a deeply nested dictionary, the var_root can specify the key name whose value should replace the matching event value. The var_root can take a dictionary to account for data when we have multiple matching events.
      - No
-   * - * (any other args)
+   * - `*` (any other args)
      - These will be passed to the playbook
      - No
 
@@ -263,6 +277,15 @@ run_module
      - Yes
    * - module_args
      - The arguments to pass into the Ansible Module
+     - No
+   * - retry
+     - If the module fails execution, retry it once, boolean value true|false. Default false
+     - No
+   * - retries
+     - If the module fails execution, the number of times to retry it. Integer value, default 0
+     - No
+   * - delay
+     - The retry interval, an integer value
      - No
    * - verbosity
      - Verbosity level when running the module, a value between 1-4
@@ -283,9 +306,6 @@ post_event
    * - ruleset
      - The name of the rule set to post the event, default is the current rule set name
      - No
-   * - var_root
-     - If the event is a deeply nested dictionary, the var_root can specify the key name whose value should replace the matching event value. The var_root can take a dictionary to account for data when we have multiple matching events.
-     - No
 
 Example::
 
@@ -294,6 +314,25 @@ Example::
           ruleset: Test rules4
           event:
             j: 4
+
+Example, using data saved with assignment
+::
+
+      name: multiple conditions
+      condition:
+        all:
+          - events.first << event.i == 0
+          - events.second << event.i == 1
+          - events.third << event.i == events.first.i + 2 
+      action:
+        post_event:
+          ruleset: Test rules4
+          event:
+            data: "{{events.third}}"
+
+
+| The events and facts prefixes have rule scope and cannot be accessed outside of
+| rules. Please note the use of Jinja substitution when accessing the event results.
 
 assert_fact
 ***********
@@ -310,17 +349,46 @@ assert_fact
    * - ruleset
      - The name of the rule set to post the fact, default is the current rule set name
      - No
-   * - var_root
-     - If the event is a deeply nested dictionary, the var_root can specify the key name whose value should replace the matching event value. The var_root can take a dictionary to account for data when we have multiple matching events.
-     - No
 
-Example::
+Example
+::
 
     action:
         assert_fact:
           ruleset: Test rules4
           fact:
             j: 1
+
+Example, using data saved with assignment in multiple condition
+::
+
+      name: multiple conditions
+      condition:
+        all:
+          - events.first << event.i == 0
+          - events.second << event.i == 1
+          - events.third << event.i == events.first.i + 2 
+      action:
+        assert_fact:
+          ruleset: Test rules4
+          fact:
+            data: "{{events.first}}"
+
+Example, using data saved with single condition
+::
+
+      name: single condition
+      condition: event.i == 23
+      action:
+        assert_fact:
+          fact:
+            myfact: "{{event.i}}"
+
+| A rulebook can have multiple rule sets, the assert_fact/retract_fact/post_event allow you
+| to target different rule sets within the rulebook. You currently cannot assert an event to
+| multiple rule sets, it can be asserted to a single rule set. The default being the current
+| rule set. Please not the use of Jinja substitution in the above examples  when accessing 
+| the event results in an action.
 
 retract_fact
 ************
@@ -336,9 +404,6 @@ retract_fact
      - Yes
    * - ruleset
      - The name of the rule set to retract the fact, default is the current rule set name
-     - No
-   * - var_root
-     - If the event is a deeply nested dictionary, the var_root can specify the key name whose value should replace the matching event value. The var_root can take a dictionary to account for data when we have multiple matching events.
      - No
 
 Example::
@@ -492,3 +557,44 @@ Multiple condition rule with both a fact and an event with assignment
 
     {'events': {'attr1': {'i': 8}, 'attr2': {'os': 'windows'}},
      'facts':  {'attr1': {'i': 8}, 'attr2': {'os': 'windows'}}}
+
+Supported Operators
+*******************
+
+The conditions use a subset of Jinja syntax, the following operators are
+currently supported
+
+.. list-table:: Operators
+   :widths: 25 150
+   :header-rows: 1
+
+   * - Name
+     - Description
+   * - ==
+     - The equality operator for strings and numbers
+   * - !=
+     - The non equality operator for strings and numbers
+   * - >
+     - The greater than operator for numbers
+   * - <
+     - The less than operator for numbers
+   * - >=
+     - The greater than equal to operator for numbers
+   * - <=
+     - The less than equal to operator for numbers
+   * - `+`
+     - The addition operator for numbers
+   * - `-`
+     - The subtraction operator for numbers
+   * - `*`
+     - The multiplication operator for numbers
+   * - and
+     - The conjunctive add, for making compound expressions
+   * - or
+     - The disjunctive or
+   * - is defined
+     - To check if a variable is defined
+   * - is not defined
+     - To check if a variable is not defined
+   * - `<<`
+     - Assignment operator, to save the matching events or facts with events or facts prefix
