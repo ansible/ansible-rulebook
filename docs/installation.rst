@@ -13,7 +13,7 @@ To install ansible-rulebook, run this command in your terminal:
 .. code-block:: console
 
     $ pip install ansible_rulebook
-    $ ansible-galaxy collection install benthomasson.eda
+    $ ansible-galaxy collection install ansible.eda
 
 This is the preferred method to install ansible-rulebook, as it will always install the most recent stable release.
 
@@ -33,13 +33,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/benthomasson/ansible_rulebook
+    $ git clone git://github.com/ansible/ansible_rulebook
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/benthomasson/ansible_rulebook/tarball/master
+    $ curl -OJL https://github.com/ansible/ansible_rulebook/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -48,5 +48,5 @@ Once you have a copy of the source, you can install it with:
     $ pip install .
 
 
-.. _Github repo: https://github.com/benthomasson/ansible_rulebook
-.. _tarball: https://github.com/benthomasson/ansible_rulebook/tarball/master
+.. _Github repo: https://github.com/ansible/ansible_rulebook
+.. _tarball: https://github.com/ansible/ansible_rulebook/tarball/master

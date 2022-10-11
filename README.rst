@@ -6,8 +6,8 @@ ansible-rulebook
 .. image:: https://img.shields.io/pypi/v/ansible_rulebook.svg
         :target: https://pypi.python.org/pypi/ansible_rulebook
 
-.. image:: https://img.shields.io/travis/benthomasson/ansible_rulebook.svg
-        :target: https://travis-ci.com/benthomasson/ansible_rulebook
+.. image:: https://img.shields.io/travis/ansible/ansible_rulebook.svg
+        :target: https://travis-ci.com/ansible/ansible_rulebook
 
 .. image:: https://readthedocs.org/projects/ansible-rulebook/badge/?version=latest
         :target: https://ansible-rulebook.readthedocs.io/en/latest/?version=latest
@@ -32,14 +32,14 @@ Let's get started with a simple hello world example to familiarize ourselves wit
     - name: Hello Events
       hosts: localhost
       sources:
-        - benthomasson.eda.range:
+        - ansible.eda.range:
             limit: 5
       rules:
         - name: Say Hello
           condition: event.i == 1
           action:
             run_playbook:
-              name: benthomasson.eda.hello
+              name: ansible.eda.hello
     ...
 
 
@@ -60,7 +60,7 @@ is a more complete example that accepts alerts from Alertmanager::
       hosts: all
       sources:
         - name: listen for alerts
-          benthomasson.eda.alertmanager:
+          ansible.eda.alertmanager:
             host: 0.0.0.0
             port: 8000
       rules:
@@ -68,7 +68,7 @@ is a more complete example that accepts alerts from Alertmanager::
           condition: event.alert.labels.job == "fastapi" and event.alert.status == "firing"
           action:
             run_playbook:
-              name: benthomasson.eda.start_app
+              name: ansible.eda.start_app
     ...
 
 
@@ -98,14 +98,14 @@ Rules are organized into rulesets using a syntax that is similar to ansible-play
     - name: Hello Events
       hosts: localhost
       sources:
-        - benthomasson.eda.range:
+        - ansible.eda.range:
             limit: 5
       rules:
         - name: Say Hello
           condition: event.i == 1
           action:
             run_playbook:
-              name: benthomasson.eda.hello
+              name: ansible.eda.hello
     ...
 
 Each ruleset defines: a set of hosts to pass to the playbook, a set of event sources,
@@ -117,10 +117,10 @@ assert facts, retract facts, and print information to the console.
 
 Let's look closer at the event source::
 
-        - benthomasson.eda.range:
+        - ansible.eda.range:
             limit: 5
 
-This section of YAML defines that an event source plugin from the benthomasson.eda should
+This section of YAML defines that an event source plugin from the ansible.eda should
 be loaded and given the arguments: limit=5.  This source will generate a range of numbers
 from zero to 4 and then exit.
 
@@ -130,12 +130,12 @@ The rules YAML structure looks like the following::
           condition: event.i == 1
           action:
             run_playbook:
-              name: benthomasson.eda.hello
+              name: ansible.eda.hello
 
 
 This block of YAML defines a rule with name "Say Hello", a condition that matches
 when an event has an value "i" that is equal to 1, and an action that runs a playbook
-inside the collection benthomasson.eda.
+inside the collection ansible.eda.
 
 
 

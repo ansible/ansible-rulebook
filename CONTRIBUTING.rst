@@ -84,7 +84,7 @@ Ready to contribute? Here's how to set up `ansible_rulebook` for local developme
     $ source venv/bin/activate
     $ pip install -e .
     $ pip install -r requirements_dev.txt
-    $ ansible-galaxy collection install benthomasson.eda
+    $ ansible-galaxy collection install ansible.eda
 
 5. Create a branch for local development::
 

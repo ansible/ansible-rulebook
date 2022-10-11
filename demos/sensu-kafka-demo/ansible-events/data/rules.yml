@@ -3,7 +3,7 @@
   hosts: localhost
   sources:
     - name: kafka
-      benthomasson.eda.kafka:
+      ansible.eda.kafka:
         topic: sensu-events
         host: broker
         port: 9092
