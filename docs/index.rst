@@ -1,4 +1,4 @@
-Welcome to ansible-events's documentation!
+Welcome to ansible-rulebook's documentation!
 ==========================================
 
 .. toctree::

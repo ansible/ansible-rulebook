@@ -12,7 +12,7 @@ from pyparsing import (
 
 ParserElement.enable_packrat()
 
-from ansible_events.condition_types import (  # noqa: E402
+from ansible_rulebook.condition_types import (  # noqa: E402
     Boolean,
     Condition,
     ExistsExpression,

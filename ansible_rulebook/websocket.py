@@ -8,8 +8,8 @@ from asyncio.exceptions import CancelledError
 import websockets
 import yaml
 
-from ansible_events import rules_parser as rules_parser
-from ansible_events.key import install_private_key
+from ansible_rulebook import rules_parser as rules_parser
+from ansible_rulebook.key import install_private_key
 
 logger = logging.getLogger(__name__)
 

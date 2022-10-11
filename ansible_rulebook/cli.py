@@ -1,6 +1,6 @@
 """
 Usage:
-    ansible-events [options]
+    ansible-rulebook [options]
 
 Options:
     -h, --help                  Show this page
@@ -27,9 +27,9 @@ import logging
 import sys
 from typing import List, NoReturn
 
-import ansible_events
-from ansible_events import app
-from ansible_events.conf import settings
+import ansible_rulebook
+from ansible_rulebook import app
+from ansible_rulebook.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +101,7 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def show_version() -> NoReturn:
-    print(ansible_events.__version__)
+    print(ansible_rulebook.__version__)
     print(settings.identifier)
     sys.exit(0)
 

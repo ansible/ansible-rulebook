@@ -9,7 +9,7 @@
       condition: event.i == 1
       action:
         run_module:
-          name: benthomasson.eda.upcase
+          name: ansible.eda.upcase
           module_args:
               un_name: fred
 

@@ -3,8 +3,8 @@ import os
 
 import pytest
 
-from ansible_events.engine import run_rulesets
-from ansible_events.messages import Shutdown
+from ansible_rulebook.engine import run_rulesets
+from ansible_rulebook.messages import Shutdown
 
 from .test_engine import load_rules
 

@@ -6,16 +6,16 @@ from typing import Any, Dict, List, Tuple
 
 import yaml
 
-from ansible_events import rules_parser as rules_parser
-from ansible_events.collection import (
+from ansible_rulebook import rules_parser as rules_parser
+from ansible_rulebook.collection import (
     has_rules,
     load_rules as collection_load_rules,
     split_collection_name,
 )
-from ansible_events.engine import run_rulesets, start_source
-from ansible_events.rule_types import RuleSet, RuleSetQueue
-from ansible_events.util import load_inventory
-from ansible_events.websocket import (
+from ansible_rulebook.engine import run_rulesets, start_source
+from ansible_rulebook.rule_types import RuleSet, RuleSetQueue
+from ansible_rulebook.util import load_inventory
+from ansible_rulebook.websocket import (
     request_workload,
     send_event_log_to_websocket,
 )

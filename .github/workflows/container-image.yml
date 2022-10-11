@@ -30,4 +30,4 @@ jobs:
       - name: Push image
         run: |
           docker login -u=$QUAY_USERNAME -p=$QUAY_PASSWORD quay.io
-          docker image push quay.io/aizquier/ansible-rulebook:latest
+          docker image push quay.io/aizquier/ansible-events:latest

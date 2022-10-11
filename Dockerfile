@@ -17,7 +17,7 @@ RUN pip install -U pip \
     aiokafka \
     watchdog \
     azure-servicebus \
-    && ansible-galaxy collection install git+https://$GITHUB_TOKEN@github.com/ansible/event-driven-ansible.git#benthomasson/eda/
+    && ansible-galaxy collection install git+https://$GITHUB_TOKEN@github.com/ansible/event-driven-ansible.git
 
 COPY . $WORKDIR
 RUN chown -R $USER_ID ./

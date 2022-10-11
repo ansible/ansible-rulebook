@@ -5,11 +5,11 @@ from pprint import pprint
 import pytest
 import yaml
 
-from ansible_events.engine import run_rulesets, start_source
-from ansible_events.messages import Shutdown
-from ansible_events.rule_types import EventSource, EventSourceFilter
-from ansible_events.rules_parser import parse_rule_sets
-from ansible_events.util import load_inventory
+from ansible_rulebook.engine import run_rulesets, start_source
+from ansible_rulebook.messages import Shutdown
+from ansible_rulebook.rule_types import EventSource, EventSourceFilter
+from ansible_rulebook.rules_parser import parse_rule_sets
+from ansible_rulebook.util import load_inventory
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 

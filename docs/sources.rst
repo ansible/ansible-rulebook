@@ -3,7 +3,7 @@ Event Source Plugins
 ====================
 
 Events come from event sources.  Event driven automtion supports many event sources using a plugin
-system.  Event source plugins are distributed via collections.  `benthomasson.eda` is a collection
+system.  Event source plugins are distributed via collections.  `ansible.eda` is a collection
 that our initial set of event source plugins.  These include:
 
 * webhook - a basic webhook plugin

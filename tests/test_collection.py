@@ -1,4 +1,4 @@
-from ansible_events.collection import (
+from ansible_rulebook.collection import (
     find_collection,
     find_source,
     load_rules,
@@ -12,15 +12,15 @@ def test_find_collection():
 
 
 def test_find_collection_eda():
-    location = find_collection("benthomasson.eda")
+    location = find_collection("ansible.eda")
     assert location is not None
 
 
 def test_find_source():
-    location = find_source(*split_collection_name("benthomasson.eda.range"))
+    location = find_source(*split_collection_name("ansible.eda.range"))
     assert location is not None
 
 
 def test_load_rules():
-    rules = load_rules(*split_collection_name("benthomasson.eda.hello_events"))
+    rules = load_rules(*split_collection_name("ansible.eda.hello_events"))
     assert rules is not None

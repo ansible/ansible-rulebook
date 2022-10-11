@@ -1,1 +1,1 @@
-"""Unit test package for ansible_events."""
+"""Unit test package for ansible_rulebook."""
