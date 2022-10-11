@@ -21,10 +21,26 @@ Event driven automation for Ansible.
 
 
 The real world is full of events that change the state of our software and systems.
-Our automation needs to be able to react to those events.  Ansible-rulebook is a command
-line tool that allows you to recognize which events that you care about and react accordingly
+Our automation needs to be able to react to those events. Introducing *ansible-rulebook*; a command
+line tool that allows you to recognize events that you care about and react accordingly
 by running a playbook or other actions.
 
+============
+Installation
+============
+
+Head over to the `Installation`_ page for details on how to install *ansible-rulebook*. Once installed,
+continue with the **Getting started** section below to begin writing your first rulesets.
+
+.. _Installation: docs/installation.rst
+
+===============
+Getting started
+===============
+
+**Important:** Running *ansible-rulebook* requires setting the *JAVA_HOME* environment variable. On Fedora-like systems, this will be::
+
+    $ export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 
 Let's get started with a simple hello world example to familiarize ourselves with the concepts::
 
@@ -137,32 +153,9 @@ This block of YAML defines a rule with name "Say Hello", a condition that matche
 when an event has an value "i" that is equal to 1, and an action that runs a playbook
 inside the collection ansible.eda.
 
+For more information on usage and examples, please refer to the `Usage`_ guide.
 
-
-How to install
---------------
-
-Via PyPi:
-#########
-
-.. code-block:: shell-session
-
-    pip install ansible-rulebook
-
-Via Docker:
-###########
-
-.. code-block:: shell-session
-
-    docker build -t ansible-rulebook .
-
-
-Usage
---------------
-
-.. code-block:: shell-session
-
-    ansible-rulebook --help
+.. _Usage: docs/usage.rst
 
 
 Credits
