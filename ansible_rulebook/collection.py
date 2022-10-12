@@ -58,16 +58,16 @@ def find_object(collection, name, object_type, extension):
     return location
 
 
-def has_rules(collection, rules):
-    return has_object(collection, rules, "rules", ".yml")
+def has_rulebook(collection, rulebook):
+    return has_object(collection, rulebook, "rulebooks", ".yml")
 
 
-def load_rules(collection, rules):
-    location = find_object(collection, rules, "rules", ".yml")
+def load_rulebook(collection, rulebook):
+    location = find_object(collection, rulebook, "rulebooks", ".yml")
     if not location:
         return False
     with open(location) as f:
-        print(f"Loading rules from {location}")
+        print(f"Loading rulebook from {location}")
         return yaml.safe_load(f.read())
 
 
