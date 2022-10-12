@@ -11,11 +11,11 @@ To get help from `ansible-rulebook` run the following::
 
 The normal method for running `ansible-rulebook` is the following::
 
-    ansible-rulebook --inventory inventory.yml --rules rules.yml
+    ansible-rulebook --inventory inventory.yml --rulebook rules.yml
 
 If you are using custom event source plugins use the following::
 
 
-    ansible-rulebook --inventory inventory.yml --rules rules.yml -S sources/
+    ansible-rulebook --inventory inventory.yml --rulebook rules.yml -S sources/
 
 Here `sources` is a directory containing your event source plugins.

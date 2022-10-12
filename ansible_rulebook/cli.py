@@ -6,7 +6,7 @@ Options:
     -h, --help                  Show this page
     -v, --vars=<v>              Variables file
     -i, --inventory=<i>         Inventory
-    --rules=<r>                 The rules file or rules from a collection
+    --rulebook=<r>              The rulebook file or rulebook from a collection
     -S=<S>, --source_dir=<S>    Source dir
     --vars=<v>                  A vars file
     --env-vars=<e>              Comma separated list of variables to import
@@ -38,8 +38,8 @@ logger = logging.getLogger(__name__)
 def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--rules",
-        help="The rules file or rules from a collection",
+        "--rulebook",
+        help="The rulebook file or rulebook from a collection",
     )
     parser.add_argument(
         "--vars",
@@ -132,7 +132,7 @@ def main(args: List[str] = None) -> int:
     if args.version:
         show_version()
 
-    if args.rules and not args.inventory:
+    if args.rulebook and not args.inventory:
         print("Error: inventory is required")
         return 1
 

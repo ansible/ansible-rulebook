@@ -6,6 +6,6 @@ for t in rules.yml null_rules.yml 1k_event_rules.yml 10k_event_rules.yml 100k_ev
 do
 for n in 1 10 100
 do
-./perf_test.py "ansible-rulebook -i inventory${n}.yml -S sources --rules ${t}" ansible-rulebook ${t} ${n} --no-header
+./perf_test.py "ansible-rulebook -i inventory${n}.yml -S sources --rulebook ${t}" ansible-rulebook ${t} ${n} --no-header
 done
 done
