@@ -60,6 +60,12 @@ class FilteredQueue:
             data = f(data, **kwargs)
         await self.queue.put(data)
 
+    def put_nowait(self, data):
+        for f, kwargs in self.filters:
+            kwargs = kwargs or {}
+            data = f(data, **kwargs)
+        self.queue.put_nowait(data)
+
 
 async def start_source(
     source: EventSource,
