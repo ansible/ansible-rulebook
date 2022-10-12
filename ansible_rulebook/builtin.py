@@ -388,6 +388,7 @@ async def call_runner(
                 verbosity=verbosity,
                 event_handler=event_callback,
                 json_mode=json_mode,
+                rotate_artifacts=1,
                 **runner_args,
             ),
         )
@@ -600,7 +601,6 @@ def get_status(private_data_dir: str):
     status_files = glob.glob(
         os.path.join(private_data_dir, "artifacts", "*", "status")
     )
-    status_files.sort(key=os.path.getmtime, reverse=True)
     with open(status_files[0], "r") as f:
         status = f.read()
     return status
