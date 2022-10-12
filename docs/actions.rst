@@ -5,7 +5,7 @@ Actions
 Event driven automation supports several built-in actions that can be run from rules.  These are:
 
     * run_playbook - run a playbook using ansible-runner
-    * assert_fact - set a long term fact
+    * set_fact - set a long term fact
     * retract_fact - remove a long term fact
     * post_event - send a new short term event to the rule engine
     * debug - print the current event and facts along with any variables and arguments to the action

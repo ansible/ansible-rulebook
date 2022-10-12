@@ -376,7 +376,7 @@ async def test_run_rulesets_on_hosts():
 
 @pytest.mark.asyncio
 async def test_run_assert_facts():
-    ruleset_queues, event_log = load_rulebook("rules/test_assert_facts.yml")
+    ruleset_queues, event_log = load_rulebook("rules/test_set_facts.yml")
     inventory = dict(
         all=dict(hosts=dict(localhost=dict(ansible_connection="local")))
     )

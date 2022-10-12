@@ -7,7 +7,7 @@
     - name: promote timestamp.unix_timestamp to current_time fact
       condition: event.timestamp.unix_timestamp is defined
       action:
-        assert_fact:
+        set_fact:
           fact:
             current_time: "{{event.timestamp.unix_timestamp}}"
     - name: set the initial time
@@ -16,7 +16,7 @@
           - facts.time << fact.current_time is defined
           - event.initial_time is not defined
       action:
-        assert_fact:
+        set_fact:
           fact:
             initial_time: "{{facts.time.current_time}}"
     - name: retract current_time fact

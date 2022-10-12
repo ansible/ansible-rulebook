@@ -187,7 +187,7 @@ def test_parse_condition():
         "rules_with_timestamp.yml",
         "rules_with_vars.yml",
         "rules_without_assignment.yml",
-        "test_assert_facts.yml",
+        "test_set_facts.yml",
         "test_filters.yml",
         "test_host_rules.yml",
         "test_rules.yml",

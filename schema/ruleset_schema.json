@@ -65,7 +65,7 @@
                     "anyOf": [
                         {"$ref": "#/$defs/run-playbook-action"},
                         {"$ref": "#/$defs/post-event-action"},
-                        {"$ref": "#/$defs/assert-fact-action"},
+                        {"$ref": "#/$defs/set-fact-action"},
                         {"$ref": "#/$defs/retract-fact-action"},
                         {"$ref": "#/$defs/print-event-action"},
                         {"$ref": "#/$defs/debug-action"},
@@ -104,7 +104,7 @@
                         "copy_files": { "type": "boolean" },
                         "name": {"type": "string" },
                         "post_events": { "type": "boolean" },
-                        "assert_facts": { "type": "boolean" },
+                        "set_facts": { "type": "boolean" },
                         "verbosity": {"type": "integer" },
                         "var_root": {"type": "string" },
                         "json_mode": { "type": "boolean" },
@@ -131,10 +131,10 @@
                 }
             }
         },
-        "assert-fact-action": {
+        "set-fact-action": {
             "type": "object",
             "properties": {
-                "assert_fact": {
+                "set_fact": {
                     "type": "object",
                     "properties": {
                         "ruleset": {"type": "string" },

@@ -39,7 +39,7 @@
     - name: assert fact
       condition: event.payload.text != ''
       action:
-        assert_fact:
+        set_fact:
           ruleset: Demo rules
           fact:
             received_greeting: True

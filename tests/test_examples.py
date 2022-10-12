@@ -86,8 +86,8 @@ async def test_03_print_event():
 
 
 @pytest.mark.asyncio
-async def test_04_assert_fact():
-    ruleset_queues, event_log = load_rulebook("examples/04_assert_fact.yml")
+async def test_04_set_fact():
+    ruleset_queues, event_log = load_rulebook("examples/04_set_fact.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=1))
@@ -102,7 +102,7 @@ async def test_04_assert_fact():
 
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
-    assert event["action"] == "assert_fact", "2"
+    assert event["action"] == "set_fact", "2"
     event = event_log.get_nowait()
     assert event["type"] == "Action", "3"
     assert event["action"] == "print_event", "4"
@@ -158,7 +158,7 @@ async def test_06_retract_fact():
 
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
-    assert event["action"] == "assert_fact", "2"
+    assert event["action"] == "set_fact", "2"
     event = event_log.get_nowait()
     assert event["type"] == "Action", "3"
     assert event["action"] == "retract_fact", "4"
@@ -509,7 +509,7 @@ async def test_19_is_defined():
 
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
-    assert event["action"] == "assert_fact", "2"
+    assert event["action"] == "set_fact", "2"
     event = event_log.get_nowait()
     assert event["type"] == "Action", "3"
     assert event["action"] == "debug", "4"
@@ -537,7 +537,7 @@ async def test_20_is_not_defined():
 
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
-    assert event["action"] == "assert_fact", "2"
+    assert event["action"] == "set_fact", "2"
     event = event_log.get_nowait()
     assert event["type"] == "Action", "3"
     assert event["action"] == "retract_fact", "4"
@@ -931,7 +931,7 @@ async def test_35_multiple_rulesets_1_fired():
         "max_events": 5,
         "processed_events": 2,
         "shutdown_events": 1,
-        "actions": ["assert_fact", "noop"],
+        "actions": ["set_fact", "noop"],
     }
     validate_events(event_log, **checks)
 
@@ -961,7 +961,7 @@ async def test_36_multiple_rulesets_both_fired():
         "max_events": 6,
         "processed_events": 3,
         "shutdown_events": 1,
-        "actions": ["assert_fact", "debug"],
+        "actions": ["set_fact", "debug"],
     }
     validate_events(event_log, **checks)
 
