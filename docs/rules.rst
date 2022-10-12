@@ -210,8 +210,8 @@ The following actions are supported
      - Run an Ansible playbook from a collection
    * - run_module
      - Run an Ansible module from a collection or from the Ansible built in modules
-   * - assert_fact
-     - Assert a fact to the rule set, will fire all matching rules different from post_event 
+   * - set_fact
+     - Set a fact for the rule set, will fire all matching rules different from post_event 
    * - post_event
      - Assert an event to the rule set, will fire the first matching rule. An event is retracted after it matches.
    * - retract_fact
@@ -237,7 +237,7 @@ run_playbook
    * - name
      - The name of the playbook, using the FQCN (fully qualified collection name)
      - Yes
-   * - assert_facts
+   * - set_facts
      - The artifacts from the playbook execution are inserted back into the rule set as facts
      - No
    * - post_events
@@ -336,8 +336,8 @@ Example, using data saved with assignment
 | The events and facts prefixes have rule scope and cannot be accessed outside of
 | rules. Please note the use of Jinja substitution when accessing the event results.
 
-assert_fact
-***********
+set_fact
+********
 .. list-table:: Post a fact to the running rule set in the rules engine
    :widths: 25 150 10
    :header-rows: 1
@@ -356,7 +356,7 @@ Example
 ::
 
     action:
-        assert_fact:
+        set_fact:
           ruleset: Test rules4
           fact:
             j: 1
@@ -371,7 +371,7 @@ Example, using data saved with assignment in multiple condition
           - events.second << event.i == 1
           - events.third << event.i == events.first.i + 2 
       action:
-        assert_fact:
+        set_fact:
           ruleset: Test rules4
           fact:
             data: "{{events.first}}"
@@ -382,11 +382,11 @@ Example, using data saved with single condition
       name: single condition
       condition: event.i == 23
       action:
-        assert_fact:
+        set_fact:
           fact:
             myfact: "{{event.i}}"
 
-| A rulebook can have multiple rule sets, the assert_fact/retract_fact/post_event allow you
+| A rulebook can have multiple rule sets, the set_fact/retract_fact/post_event allow you
 | to target different rule sets within the rulebook. You currently cannot assert an event to
 | multiple rule sets, it can be asserted to a single rule set. The default being the current
 | rule set. Please note the use of Jinja substitution in the above examples  when accessing 
@@ -672,6 +672,6 @@ Example::
       name: rule2
       condition: fact.msg is not defined
       action:
-        assert_fact:
+        set_fact:
           fact:
             msg: Hello World

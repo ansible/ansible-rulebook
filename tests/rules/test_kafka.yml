@@ -16,7 +16,7 @@
     - name:
       condition: sensu.i == 1 and datadog.i == 2
       action:
-        assert_fact:
+        set_fact:
           ruleset: Test rules4
           fact:
             j: 1
@@ -49,7 +49,7 @@
     - name:
       condition: i == 1
       action:
-        assert_fact:
+        set_fact:
           ruleset: Test rules4
           fact:
             j: 1

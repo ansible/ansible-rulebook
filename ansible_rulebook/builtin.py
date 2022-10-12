@@ -110,7 +110,7 @@ async def print_event(
     )
 
 
-async def assert_fact(
+async def set_fact(
     event_log,
     inventory: Dict,
     hosts: List,
@@ -121,12 +121,12 @@ async def assert_fact(
     fact: Dict,
     name: Optional[str] = None,
 ):
-    logger.debug("assert_fact %s %s", ruleset, fact)
+    logger.debug("set_fact %s %s", ruleset, fact)
     lang.assert_fact(ruleset, fact)
     await event_log.put(
         dict(
             type="Action",
-            action="assert_fact",
+            action="set_fact",
             activation_id=settings.identifier,
             playbook_name=name,
             run_at=str(datetime.utcnow()),
@@ -188,7 +188,7 @@ async def run_playbook(
     project_data_file: str,
     ruleset: str,
     name: str,
-    assert_facts: Optional[bool] = None,
+    set_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
     verbosity: int = 0,
     var_root: Union[str, Dict, None] = None,
@@ -248,7 +248,7 @@ async def run_playbook(
         "run_playbook",
         job_id,
         run_at,
-        assert_facts,
+        set_facts,
         post_events,
     )
 
@@ -261,7 +261,7 @@ async def run_module(
     facts: Dict,
     ruleset: str,
     name: str,
-    assert_facts: Optional[bool] = None,
+    set_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
     verbosity: int = 0,
     var_root: Union[str, Dict, None] = None,
@@ -329,7 +329,7 @@ async def run_module(
         "run_module",
         job_id,
         run_at,
-        assert_facts,
+        set_facts,
         post_events,
     )
 
@@ -503,7 +503,7 @@ async def post_process_runner(
     action: str,
     job_id: str,
     run_at: str,
-    assert_facts: Optional[bool] = None,
+    set_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
 ):
 
@@ -528,15 +528,15 @@ async def post_process_runner(
     )
     await event_log.put(result)
 
-    if assert_facts or post_events:
-        logger.debug("assert_facts")
+    if set_facts or post_events:
+        logger.debug("set_facts")
         for host_facts in glob.glob(
             os.path.join(private_data_dir, "artifacts", "*", "fact_cache", "*")
         ):
             with open(host_facts) as f:
                 fact = json.loads(f.read())
             logger.debug("fact %s", fact)
-            if assert_facts:
+            if set_facts:
                 lang.assert_fact(ruleset, fact)
             if post_events:
                 lang.post(ruleset, fact)
@@ -567,7 +567,7 @@ actions: Dict[str, Callable] = dict(
     none=none,
     debug=debug,
     print_event=print_event,
-    assert_fact=assert_fact,
+    set_fact=set_fact,
     retract_fact=retract_fact,
     post_event=post_event,
     run_playbook=run_playbook,

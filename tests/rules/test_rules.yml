@@ -9,7 +9,7 @@
     - name: r1
       condition: event.i == 1
       action:
-        assert_fact:
+        set_fact:
           ruleset: Test rules4
           fact:
             j: 1

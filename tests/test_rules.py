@@ -3,10 +3,18 @@ import os
 from queue import Queue
 
 if os.environ.get("RULES_ENGINE", "drools") == "drools":
-    from drools.ruleset import assert_fact, post
+    from drools.ruleset import assert_fact as set_fact, post
 else:
     from durable import lang
-    from durable.lang import assert_fact, c, m, post, rule, ruleset, when_all
+    from durable.lang import (
+        assert_fact as set_fact,
+        c,
+        m,
+        post,
+        rule,
+        ruleset,
+        when_all,
+    )
 
 import pytest
 import yaml
@@ -128,9 +136,9 @@ def test_rules():
     os.environ.get("RULES_ENGINE", "drools") == "drools",
     reason="durable rules only test",
 )
-def test_assert_facts():
+def test_set_facts():
 
-    some_rules = ruleset("test_assert_facts")
+    some_rules = ruleset("test_set_facts")
 
     with some_rules:
 
@@ -142,8 +150,8 @@ def test_assert_facts():
                 )
             )
 
-    assert_fact(
-        "test_assert_facts",
+    set_fact(
+        "test_set_facts",
         {"subject": {"x": "Kermit"}, "predicate": "eats", "object": "flies"},
     )
 
@@ -178,10 +186,10 @@ async def test_generate_rules():
     )
 
     print(durable_rulesets[0][0].define())
-    assert_fact("Demo rules", {"payload": {"text": "hello"}})
+    set_fact("Demo rules", {"payload": {"text": "hello"}})
 
     assert ruleset_queue_plans[0][2].get_nowait()[1] == "slack"
-    assert ruleset_queue_plans[0][2].get_nowait()[1] == "assert_fact"
+    assert ruleset_queue_plans[0][2].get_nowait()[1] == "set_fact"
     assert ruleset_queue_plans[0][2].get_nowait()[1] == "log"
 
 

@@ -72,7 +72,7 @@
     - Rule:
         action:
           Action:
-            action: assert_fact
+            action: set_fact
             action_args:
               fact:
                 received_greeting: true

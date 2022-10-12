@@ -6,30 +6,30 @@
       range:
         limit: 5
   rules:
-    - name:
+    - name: r1
       condition: event.i == 1
       action:
-        assert_fact:
+        set_fact:
           fact:
             j: 1
-    - name:
+    - name: r2
       condition: event.i == 2
       action:
         run_playbook:
           name: playbooks/hello_events.yml
-    - name:
+    - name: r3
       condition: event.i == 3
       action:
         retract_fact:
           fact:
             j: 3
-    - name:
+    - name: r4
       condition: event.i == 4
       action:
         post_event:
           event:
             j: 4
-    - name:
+    - name: r5
       condition: +event.j
       action:
         none:
