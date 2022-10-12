@@ -108,22 +108,26 @@ def load_vars(parsed_args) -> Dict[str, str]:
 
 # TODO(cutwater): Maybe move to util.py
 def load_rulebook(parsed_args) -> List[RuleSet]:
-    if not parsed_args.rules:
+    if not parsed_args.rulebook:
         logger.debug("Loading no rules")
         return []
-    elif os.path.exists(parsed_args.rules):
+    elif os.path.exists(parsed_args.rulebook):
         logger.debug(
-            "Loading rules from the file system %s", parsed_args.rules
+            "Loading rules from the file system %s", parsed_args.rulebook
         )
-        with open(parsed_args.rules) as f:
+        with open(parsed_args.rulebook) as f:
             return rules_parser.parse_rule_sets(yaml.safe_load(f.read()))
-    elif has_rulebook(*split_collection_name(parsed_args.rules)):
-        logger.debug("Loading rules from a collection %s", parsed_args.rules)
+    elif has_rulebook(*split_collection_name(parsed_args.rulebook)):
+        logger.debug(
+            "Loading rules from a collection %s", parsed_args.rulebook
+        )
         return rules_parser.parse_rule_sets(
-            collection_load_rulebook(*split_collection_name(parsed_args.rules))
+            collection_load_rulebook(
+                *split_collection_name(parsed_args.rulebook)
+            )
         )
     else:
-        raise Exception(f"Could not find ruleset {parsed_args.rules}")
+        raise Exception(f"Could not find ruleset {parsed_args.rulebook}")
 
 
 def spawn_sources(

@@ -86,7 +86,7 @@ services:
     image: ae-sensu-demo-ansible-rulebook
     build:
       context: ./ansible-rulebook
-    command: bash -c "cd /data && ansible-rulebook --rules rules.yml -i inventory.yml"
+    command: bash -c "cd /data && ansible-rulebook --rulebook rules.yml -i inventory.yml"
     depends_on:
       sensu-backend:
         condition: service_healthy
