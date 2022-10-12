@@ -1,0 +1,22 @@
+---
+- name: Host facts
+  hosts: all
+  gather_facts: true
+  sources:
+    - range:
+        limit: 5
+  rules:
+    - name: "Host 1 rule"
+      condition:
+        all:
+          - fact.meta.hosts == "localhost"
+          - event.i == 1
+      action:
+        debug:
+    - name: "Host 2 rule"
+      condition:
+        all:
+          - fact.os == "linux"
+          - event.i == 4 
+      action:
+        debug:

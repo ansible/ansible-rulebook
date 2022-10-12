@@ -40,7 +40,11 @@ from ansible_rulebook.rule_types import (
     RuleSetQueuePlan,
 )
 from ansible_rulebook.rules_parser import parse_hosts
-from ansible_rulebook.util import json_count, substitute_variables
+from ansible_rulebook.util import (
+    collect_ansible_facts,
+    json_count,
+    substitute_variables,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -190,10 +194,10 @@ async def call_action(
                 variables_copy["events"] = multi_match
                 variables_copy["facts"] = multi_match
                 new_hosts = []
-                for event in variables_copy["events"]:
+                for event in variables_copy["events"].values():
                     if "meta" in event:
                         if "hosts" in event["meta"]:
-                            new_hosts.append(
+                            new_hosts.extend(
                                 parse_hosts(event["meta"]["hosts"])
                             )
                 if new_hosts:
@@ -287,10 +291,17 @@ async def run_rulesets(
     for ruleset_queue_plan in rulesets_queue_plans:
         logger.info("ruleset define: %s", ruleset_queue_plan.ruleset.define())
 
+    hosts_facts = []
+    for ruleset, _ in ruleset_queues:
+        if ruleset.gather_facts and not hosts_facts:
+            hosts_facts = collect_ansible_facts(inventory)
+
     ruleset_tasks = []
     for ruleset_queue_plan in rulesets_queue_plans:
         ruleset_task = asyncio.create_task(
-            run_ruleset(event_log, ruleset_queue_plan, project_data_file)
+            run_ruleset(
+                event_log, ruleset_queue_plan, hosts_facts, project_data_file
+            )
         )
         ruleset_tasks.append(ruleset_task)
 
@@ -303,10 +314,15 @@ async def run_rulesets(
 async def run_ruleset(
     event_log: asyncio.Queue,
     ruleset_queue_plan: EngineRuleSetQueuePlan,
+    hosts_facts: List[Dict],
     project_data_file: Optional[str] = None,
 ):
 
     name = ruleset_queue_plan.ruleset.name
+
+    for data in hosts_facts:
+        lang.assert_fact(name, data)
+
     logger.info("Waiting for event from %s", name)
     while True:
         data = await ruleset_queue_plan.queue.get()
