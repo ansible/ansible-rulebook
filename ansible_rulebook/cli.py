@@ -24,6 +24,7 @@ Options:
 import argparse
 import asyncio
 import logging
+import os
 import sys
 from typing import List, NoReturn
 
@@ -119,6 +120,14 @@ def setup_logging(args: argparse.Namespace) -> None:
 def main(args: List[str] = None) -> int:
     parser = get_parser()
     args = parser.parse_args(args)
+
+    if os.environ.get("RULES_ENGINE", "drools") == "drools":
+        if os.environ.get("JAVA_HOME") is None:
+            print(
+                "JAVA_HOME is not set. "
+                "Please install Java 11+ and set JAVA_HOME"
+            )
+            sys.exit(1)
 
     if args.version:
         show_version()
