@@ -5,19 +5,19 @@
     - range:
         limit: 5
   rules:
-    - name:
+    - name: r1
       condition: event.i == 1
       action:
         assert_fact:
           fact:
             msg: hello
-    - name:
+    - name: r2
       condition: event.msg is defined
       action:
         retract_fact:
           fact:
             msg: hello
-    - name:
+    - name: r3
       condition: event.msg is not defined
       action:
         debug:

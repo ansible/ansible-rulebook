@@ -6,7 +6,7 @@
         i_limit: 5
         j_limit: 5
   rules:
-    - name:
+    - name: r1
       condition:
         all:
           - event.nested.i == 1

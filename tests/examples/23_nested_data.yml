@@ -5,7 +5,7 @@
     - replay:
         directory: examples/replays/23_nested_data
   rules:
-    - name:
+    - name: r1
       condition: event.root.nested.i == 1
       action:
         debug:

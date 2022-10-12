@@ -6,6 +6,7 @@ import pytest
 import yaml
 
 from ansible_rulebook.engine import run_rulesets, start_source
+from ansible_rulebook.exception import RulenameDuplicateException
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.rule_types import EventSource, EventSourceFilter
 from ansible_rulebook.rules_parser import parse_rule_sets
@@ -401,3 +402,9 @@ async def test_run_assert_facts():
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
     assert event_log.get_nowait()["type"] == "Shutdown", "4"
     assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_duplicate_rule_names():
+    with pytest.raises(RulenameDuplicateException):
+        load_rules("rules/test_duplicate_rule_names.yml")

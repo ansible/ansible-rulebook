@@ -4,9 +4,9 @@
   sources:
     - non_existent:
   rules:
-    - name:
+    - name: r1
       condition:
-        all:
+        all: 
           - events.webhook << event.webhook.payload.url == "http://www.example.com"
           - events.kafka << event.kafka.message.channel == "red"
       action:

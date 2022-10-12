@@ -6,7 +6,7 @@
       range:
         limit: 5
   rules:
-    - name:
+    - name: r1
       condition: event.i == 1
       action:
         print_event:
