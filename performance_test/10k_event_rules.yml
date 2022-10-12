@@ -6,7 +6,7 @@
       range:
         limit: 10000
   rules:
-    - name:
+    - name: r1
       condition: event.i is defined
       action:
         none:
