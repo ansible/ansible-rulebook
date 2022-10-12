@@ -19,7 +19,7 @@
               rhs:
                 Integer: 1
         enabled: true
-        name: null
+        name: r1
     - Rule:
         action:
           Action:
@@ -34,7 +34,7 @@
               rhs:
                 Integer: 2
         enabled: true
-        name: null
+        name: r2
     - Rule:
         action:
           Action:
@@ -51,7 +51,7 @@
               rhs:
                 Integer: 3
         enabled: true
-        name: null
+        name: r3
     - Rule:
         action:
           Action:
@@ -68,7 +68,7 @@
               rhs:
                 Integer: 4
         enabled: true
-        name: null
+        name: r4
     - Rule:
         action:
           Action:
@@ -79,7 +79,7 @@
           - IsDefinedExpression:
               Event: j
         enabled: true
-        name: null
+        name: r5
     sources:
     - EventSource:
         name: hosts

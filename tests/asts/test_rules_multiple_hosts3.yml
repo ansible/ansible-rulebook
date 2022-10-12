@@ -16,7 +16,7 @@
               rhs:
                 Integer: 1
         enabled: true
-        name: null
+        name: r1
     sources:
     - EventSource:
         name: range

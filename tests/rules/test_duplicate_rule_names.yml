@@ -1,12 +1,16 @@
 ---
-- name: Test rules multiple hosts 3
+- name: Test ruleset with duplicate rule names
   hosts: all
   sources:
     - name: range
       range:
         limit: 5
   rules:
-    - name: r1
+    - name: rule1
       condition: event.i == 1
+      action:
+        debug:
+    - name: rule1
+      condition: event.i == 2
       action:
         debug:

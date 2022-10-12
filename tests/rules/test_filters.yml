@@ -8,24 +8,24 @@
       filters:
         - noop:
   rules:
-    - name:
+    - name: r1
       condition: event.i == 0
       action:
         print_event:
           pretty: true
           var_root: i
-    - name:
+    - name: r2
       condition: event.i == 1
       action:
         print_event:
-    - name:
+    - name: r3
       condition: event.i == 2
       action:
         run_playbook:
           name: playbooks/hello_world_set_fact.yml
           var_root: i
           post_events: true
-    - name:
+    - name: r4
       condition: event.msg is defined
       action:
         print_event:
