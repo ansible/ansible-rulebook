@@ -87,10 +87,7 @@ async def test_03_print_event():
 
 @pytest.mark.asyncio
 async def test_04_set_fact():
-    ruleset_queues, event_log = load_rules("examples/04_set_fact.yml")
-
-    ruleset_queues, event_log = load_rulebook("examples/04_assert_fact.yml")
-
+    ruleset_queues, event_log = l("examples/04_set_fact.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=1))
