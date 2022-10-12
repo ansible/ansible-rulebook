@@ -1,7 +1,7 @@
 from ansible_rulebook.collection import (
     find_collection,
     find_source,
-    load_rules,
+    load_rulebook,
     split_collection_name,
 )
 
@@ -21,6 +21,6 @@ def test_find_source():
     assert location is not None
 
 
-def test_load_rules():
-    rules = load_rules(*split_collection_name("ansible.eda.hello_events"))
+def test_load_rulebook():
+    rules = load_rulebook(*split_collection_name("ansible.eda.hello_events"))
     assert rules is not None
