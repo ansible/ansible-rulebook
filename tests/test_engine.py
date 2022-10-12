@@ -15,7 +15,7 @@ from ansible_rulebook.util import load_inventory
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
-def load_rules(rules_file):
+def load_rulebook(rules_file):
     os.chdir(HERE)
     with open(rules_file) as f:
         data = yaml.safe_load(f.read())
@@ -49,7 +49,7 @@ async def test_start_source():
 @pytest.mark.asyncio
 async def test_run_rulesets():
 
-    ruleset_queues, event_log = load_rules("rules/test_rules.yml")
+    ruleset_queues, event_log = load_rulebook("rules/test_rules.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict())
@@ -89,7 +89,9 @@ async def test_run_rulesets():
 
 @pytest.mark.asyncio
 async def test_run_rules_with_assignment():
-    ruleset_queues, event_log = load_rules("rules/rules_with_assignment.yml")
+    ruleset_queues, event_log = load_rulebook(
+        "rules/rules_with_assignment.yml"
+    )
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=0))
@@ -113,7 +115,9 @@ async def test_run_rules_with_assignment():
 
 @pytest.mark.asyncio
 async def test_run_rules_with_assignment2():
-    ruleset_queues, event_log = load_rules("rules/rules_with_assignment2.yml")
+    ruleset_queues, event_log = load_rulebook(
+        "rules/rules_with_assignment2.yml"
+    )
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=0))
@@ -137,7 +141,7 @@ async def test_run_rules_with_assignment2():
 
 @pytest.mark.asyncio
 async def test_run_rules_simple():
-    ruleset_queues, event_log = load_rules("rules/test_simple.yml")
+    ruleset_queues, event_log = load_rulebook("rules/test_simple.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=0))
@@ -169,7 +173,7 @@ async def test_run_rules_simple():
 
 @pytest.mark.asyncio
 async def test_run_multiple_hosts():
-    ruleset_queues, event_log = load_rules(
+    ruleset_queues, event_log = load_rulebook(
         "rules/test_rules_multiple_hosts.yml"
     )
 
@@ -223,7 +227,7 @@ async def test_run_multiple_hosts():
 
 @pytest.mark.asyncio
 async def test_run_multiple_hosts2():
-    ruleset_queues, event_log = load_rules(
+    ruleset_queues, event_log = load_rulebook(
         "rules/test_rules_multiple_hosts2.yml"
     )
 
@@ -261,7 +265,7 @@ async def test_run_multiple_hosts2():
 
 @pytest.mark.asyncio
 async def test_run_multiple_hosts3():
-    ruleset_queues, event_log = load_rules(
+    ruleset_queues, event_log = load_rulebook(
         "rules/test_rules_multiple_hosts3.yml"
     )
 
@@ -300,7 +304,7 @@ async def test_run_multiple_hosts3():
 
 @pytest.mark.asyncio
 async def test_filters():
-    ruleset_queues, event_log = load_rules("rules/test_filters.yml")
+    ruleset_queues, event_log = load_rulebook("rules/test_filters.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=0))
@@ -332,7 +336,7 @@ async def test_filters():
 
 @pytest.mark.asyncio
 async def test_run_rulesets_on_hosts():
-    ruleset_queues, event_log = load_rules("rules/test_host_rules.yml")
+    ruleset_queues, event_log = load_rulebook("rules/test_host_rules.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict())
@@ -371,8 +375,9 @@ async def test_run_rulesets_on_hosts():
 
 
 @pytest.mark.asyncio
-async def test_run_set_facts():
-    ruleset_queues, event_log = load_rules("rules/test_set_facts.yml")
+
+async def test_run_assert_facts():
+    ruleset_queues, event_log = load_rulebook("rules/test_assert_facts.yml")
     inventory = dict(
         all=dict(hosts=dict(localhost=dict(ansible_connection="local")))
     )
@@ -407,4 +412,4 @@ async def test_run_set_facts():
 @pytest.mark.asyncio
 async def test_duplicate_rule_names():
     with pytest.raises(RulenameDuplicateException):
-        load_rules("rules/test_duplicate_rule_names.yml")
+        load_rulebook("rules/test_duplicate_rule_names.yml")
