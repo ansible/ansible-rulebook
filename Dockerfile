@@ -1,6 +1,7 @@
 FROM registry.access.redhat.com/ubi8/python-39
 
 ARG USER_ID=${USER_ID:-1001}
+ARG DEVEL_COLLECTION_LIBRARY=0
 WORKDIR $HOME
 
 USER 0
@@ -16,7 +17,10 @@ RUN pip install -U pip \
     aiokafka \
     watchdog \
     azure-servicebus \
-    && ansible-galaxy collection install git+https://github.com/ansible/event-driven-ansible.git
+    && ansible-galaxy collection install ansible.eda
+
+RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
+    ansible-galaxy collection install git+https://github.com/ansible/event-driven-ansible.git --force; fi"
 
 COPY . $WORKDIR
 RUN chown -R $USER_ID ./
