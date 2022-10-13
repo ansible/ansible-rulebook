@@ -6,7 +6,10 @@ import pytest
 import yaml
 
 from ansible_rulebook.engine import run_rulesets, start_source
-from ansible_rulebook.exception import RulenameDuplicateException
+from ansible_rulebook.exception import (
+    RulenameDuplicateException,
+    RulenameEmptyException,
+)
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.rule_types import EventSource, EventSourceFilter
 from ansible_rulebook.rules_parser import parse_rule_sets
@@ -412,3 +415,15 @@ async def test_run_assert_facts():
 async def test_duplicate_rule_names():
     with pytest.raises(RulenameDuplicateException):
         load_rulebook("rules/test_duplicate_rule_names.yml")
+
+
+@pytest.mark.asyncio
+async def test_empty_rule_names():
+    with pytest.raises(RulenameEmptyException):
+        load_rulebook("rules/test_empty_rule_names.yml")
+
+
+@pytest.mark.asyncio
+async def test_missing_rule_names():
+    with pytest.raises(RulenameEmptyException):
+        load_rulebook("rules/test_missing_rule_names.yml")
