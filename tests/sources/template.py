@@ -7,7 +7,9 @@ Arguments:
     - delay: seconds to wait between events
 
 Examples:
-    - template:
+    sources:
+      - template:
+          delay: 1
 
 """
 import asyncio
