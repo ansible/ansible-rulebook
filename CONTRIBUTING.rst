@@ -115,15 +115,12 @@ Building the container image
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The dockerfile points to the required collection_ of ansible which provides source plugins.
-Currently this repository is private, you must `generate a personal token`_ and export it:
 
 .. _collection: https://github.com/ansible/event-driven-ansible
-.. _`generate a personal token`: https://docs.github.com/en/enterprise-server@3.4/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
 
     .. code-block:: console
 
-        export GITHUB_TOKEN=your token
-        docker build -t localhost/ansible-rulebook:dev  --build-arg GITHUB_TOKEN=$GITHUB_TOKEN .
+        docker build -t localhost/ansible-rulebook:dev .
 
 
 
