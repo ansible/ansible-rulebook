@@ -49,6 +49,8 @@ async def none(
         dict(
             type="Action",
             action="noop",
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
             activation_id=settings.identifier,
             run_at=str(datetime.utcnow()),
         )
@@ -70,6 +72,8 @@ async def debug(event_log, **kwargs):
             type="Action",
             action="debug",
             playbook_name=kwargs.get("name"),
+            ruleset=kwargs.get("source_ruleset_name"),
+            rule=kwargs.get("source_rule_name"),
             activation_id=settings.identifier,
             run_at=str(datetime.utcnow()),
         )
@@ -108,6 +112,8 @@ async def print_event(
             type="Action",
             action="print_event",
             activation_id=settings.identifier,
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
             playbook_name=name,
             run_at=str(datetime.utcnow()),
         )
@@ -121,9 +127,9 @@ async def set_fact(
     variables: Dict,
     facts: Dict,
     project_data_file: str,
-    ruleset: str,
     source_ruleset_name: str,
     source_rule_name: str,
+    ruleset: str,
     fact: Dict,
     name: Optional[str] = None,
 ):
@@ -134,6 +140,8 @@ async def set_fact(
             type="Action",
             action="set_fact",
             activation_id=settings.identifier,
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
             playbook_name=name,
             run_at=str(datetime.utcnow()),
         )
@@ -147,9 +155,9 @@ async def retract_fact(
     variables: Dict,
     facts: Dict,
     project_data_file: str,
-    ruleset: str,
     source_ruleset_name: str,
     source_rule_name: str,
+    ruleset: str,
     fact: Dict,
     name: Optional[str] = None,
 ):
@@ -158,6 +166,8 @@ async def retract_fact(
         dict(
             type="Action",
             action="retract_fact",
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
             activation_id=settings.identifier,
             playbook_name=name,
             run_at=str(datetime.utcnow()),
@@ -170,8 +180,8 @@ async def post_event(
     inventory: Dict,
     hosts: List,
     variables: Dict,
-    project_data_file: str,
     facts: Dict,
+    project_data_file: str,
     source_ruleset_name: str,
     source_rule_name: str,
     ruleset: str,
@@ -183,6 +193,8 @@ async def post_event(
         dict(
             type="Action",
             action="post_event",
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
             activation_id=settings.identifier,
             run_at=str(datetime.utcnow()),
         )
@@ -196,9 +208,9 @@ async def run_playbook(
     variables: Dict,
     facts: Dict,
     project_data_file: str,
-    ruleset: str,
     source_ruleset_name: str,
     source_rule_name: str,
+    ruleset: str,
     name: str,
     set_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
@@ -229,6 +241,7 @@ async def run_playbook(
 
     job_id = str(uuid.uuid4())
 
+    logger.info(f"ruleset: {source_ruleset_name}, rule: {source_rule_name}")
     await event_log.put(
         dict(
             type="Job",
@@ -286,9 +299,9 @@ async def run_module(
     hosts: List,
     variables: Dict,
     facts: Dict,
-    ruleset: str,
     source_ruleset_name: str,
     source_rule_name: str,
+    ruleset: str,
     name: str,
     set_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
@@ -583,16 +596,18 @@ async def shutdown(
     hosts: List,
     variables: Dict,
     facts: Dict,
-    ruleset: str,
+    project_data_file: str,
     source_ruleset_name: str,
     source_rule_name: str,
-    project_data_file: str,
+    ruleset: str,
 ):
     await event_log.put(
         dict(
             type="Action",
             action="shutdown",
             activation_id=settings.identifier,
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
             run_at=str(datetime.utcnow()),
         )
     )
