@@ -736,8 +736,8 @@ async def test_27_var_root():
 
 
 @pytest.mark.skipif(
-    os.environ.get("RULES_ENGINE", "drools") == "drools",
-    reason="durable rules only test, issues with jinja substitution",
+    os.environ.get("RULES_ENGINE", "durable_rules") == "durable_rules",
+    reason="durable rules does not support using prior saved facts",
 )
 @pytest.mark.asyncio
 async def test_28_right_side_condition_template():

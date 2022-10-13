@@ -25,10 +25,15 @@ Conditions
 
 When writing conditions 
   * use the **event** prefix when accessing data from the current event
-  * use the **fact** prefix when accessing data from the saved facts
+  * use the **fact** prefix when accessing data from the saved facts or passed in variables
   * use the **events** prefix when assigning variables and accessing data within the rule
   * use the **facts** prefix when assigning variables and accessing data within the rule
 
+
+| A condition **cannot** contain Jinja style substitution when accessing variables passed in
+| from the command line, we loose the data type information and the rule engine will not
+| process the condition. Instead use the fact prefix to access the data passed in from the
+| command line
 
 The following is an example rule::
 
@@ -104,6 +109,18 @@ Multiple conditions with facts and events and **all** of one of them have to mat
           - event.target_os == "windows"
       action:
         debug:
+
+Condition with fact and event, fact being passed in via --variables on command line
+-----------------------------------------------------------------------------------
+::
+
+      name: Condition using a passed in variable and an event
+      condition: event.i == fact.custom.expected_index
+      action:
+        debug:
+
+In the above example the custom.expected_index was passed in via --variables from the
+command line to ansible-rulebook.
 
 | When evaluating a single event you can compare multiple 
 | properties/attributes from the event using **and** or **or**

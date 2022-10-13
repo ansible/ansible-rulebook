@@ -306,7 +306,11 @@ async def run_rulesets(
     for ruleset_queue_plan in rulesets_queue_plans:
         ruleset_task = asyncio.create_task(
             run_ruleset(
-                event_log, ruleset_queue_plan, hosts_facts, project_data_file
+                event_log,
+                ruleset_queue_plan,
+                hosts_facts,
+                variables,
+                project_data_file,
             )
         )
         ruleset_tasks.append(ruleset_task)
@@ -321,13 +325,13 @@ async def run_ruleset(
     event_log: asyncio.Queue,
     ruleset_queue_plan: EngineRuleSetQueuePlan,
     hosts_facts: List[Dict],
+    variables: Dict,
     project_data_file: Optional[str] = None,
 ):
 
     name = ruleset_queue_plan.ruleset.name
 
-    for data in hosts_facts:
-        lang.assert_fact(name, data)
+    prime_facts(name, hosts_facts, variables)
 
     logger.info("Waiting for event from %s", name)
     while True:
@@ -372,3 +376,17 @@ async def run_ruleset(
             return
         except Exception:
             logger.exception("Error calling %s", data)
+
+
+def prime_facts(name: str, hosts_facts: List[Dict], variables: Dict):
+    for data in hosts_facts:
+        try:
+            lang.assert_fact(name, data)
+        except MessageNotHandledException:
+            pass
+
+    if variables:
+        try:
+            lang.assert_fact(name, variables)
+        except MessageNotHandledException:
+            pass
