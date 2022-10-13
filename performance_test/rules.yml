@@ -16,7 +16,7 @@
       condition: event.i == 2
       action:
         run_playbook:
-          name: playbooks/hello_events.yml
+          name: ./hello_playbook1.yml
     - name: r3
       condition: event.i == 3
       action:
@@ -30,6 +30,6 @@
           event:
             j: 4
     - name: r5
-      condition: +event.j
+      condition: event.j is defined
       action:
         none:
