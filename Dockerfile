@@ -1,7 +1,6 @@
 FROM registry.access.redhat.com/ubi8/python-39
 
 ARG USER_ID=${USER_ID:-1001}
-ARG GITHUB_TOKEN
 WORKDIR $HOME
 
 USER 0
@@ -17,7 +16,7 @@ RUN pip install -U pip \
     aiokafka \
     watchdog \
     azure-servicebus \
-    && ansible-galaxy collection install git+https://$GITHUB_TOKEN@github.com/ansible/event-driven-ansible.git
+    && ansible-galaxy collection install git+https://github.com/ansible/event-driven-ansible.git
 
 COPY . $WORKDIR
 RUN chown -R $USER_ID ./
