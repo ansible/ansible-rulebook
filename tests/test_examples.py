@@ -931,7 +931,10 @@ async def test_35_multiple_rulesets_1_fired():
         "max_events": 5,
         "processed_events": 2,
         "shutdown_events": 1,
-        "actions": ["set_fact", "noop"],
+        "actions": [
+            "35 multiple rulesets 1::r1::set_fact",
+            "35 multiple rulesets 1::r2::noop",
+        ],
     }
     validate_events(event_log, **checks)
 
@@ -961,7 +964,10 @@ async def test_36_multiple_rulesets_both_fired():
         "max_events": 6,
         "processed_events": 3,
         "shutdown_events": 1,
-        "actions": ["set_fact", "debug"],
+        "actions": [
+            "36 multiple rulesets 1::r1::set_fact",
+            "36 multiple rulesets 2::r1::debug",
+        ],
     }
     validate_events(event_log, **checks)
 
@@ -977,7 +983,9 @@ def validate_events(event_log, **kwargs):
         if event["type"] == "ProcessedEvent":
             processed_events += 1
         elif event["type"] == "Action":
-            actions.append(event["action"])
+            actions.append(
+                f"{event['ruleset']}::{event['rule']}::{event['action']}"
+            )
         elif event["type"] == "Shutdown":
             shutdown_events += 1
 
@@ -1018,3 +1026,23 @@ async def test_37_hosts_facts():
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "8"
     assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_38_shutdown_action():
+    ruleset_queues, event_log = load_rulebook("examples/38_shutdown.yml")
+
+    queue = ruleset_queues[0][1]
+    queue.put_nowait(dict(i=1))
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "shutdown", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "2"

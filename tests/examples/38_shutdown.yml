@@ -1,0 +1,12 @@
+---
+- name: Test shutdown action
+  hosts: all
+  gather_facts: false
+  sources:
+    - range:
+        limit: 5
+  rules:
+    - name: "Host 1 rule"
+      condition: event.i == 1
+      action:
+        shutdown:

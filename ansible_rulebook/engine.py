@@ -161,6 +161,7 @@ async def start_source(
 
 async def call_action(
     ruleset: str,
+    rule: str,
     action: str,
     action_args: Dict,
     variables: Dict,
@@ -232,6 +233,8 @@ async def call_action(
                 variables=variables_copy,
                 facts=facts,
                 project_data_file=project_data_file,
+                source_ruleset_name=ruleset,
+                source_rule_name=rule,
                 **action_args,
             )
         except KeyError as e:
