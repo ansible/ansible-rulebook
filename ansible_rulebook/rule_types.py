@@ -52,6 +52,7 @@ class RuleSet(NamedTuple):
 
 class ActionContext(NamedTuple):
     ruleset: str
+    rule: str
     action: str
     actions_args: Dict
     variables: Dict

@@ -41,12 +41,16 @@ async def none(
     variables: Dict,
     facts: Dict,
     project_data_file: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
     ruleset: str,
 ):
     await event_log.put(
         dict(
             type="Action",
             action="noop",
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
             activation_id=settings.identifier,
             run_at=str(datetime.utcnow()),
         )
@@ -68,6 +72,8 @@ async def debug(event_log, **kwargs):
             type="Action",
             action="debug",
             playbook_name=kwargs.get("name"),
+            ruleset=kwargs.get("source_ruleset_name"),
+            rule=kwargs.get("source_rule_name"),
             activation_id=settings.identifier,
             run_at=str(datetime.utcnow()),
         )
@@ -81,6 +87,8 @@ async def print_event(
     variables: Dict,
     facts: Dict,
     project_data_file: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
     ruleset: str,
     name: Optional[str] = None,
     var_root: Union[str, Dict, None] = None,
@@ -104,6 +112,8 @@ async def print_event(
             type="Action",
             action="print_event",
             activation_id=settings.identifier,
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
             playbook_name=name,
             run_at=str(datetime.utcnow()),
         )
@@ -117,6 +127,8 @@ async def set_fact(
     variables: Dict,
     facts: Dict,
     project_data_file: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
     ruleset: str,
     fact: Dict,
     name: Optional[str] = None,
@@ -128,6 +140,8 @@ async def set_fact(
             type="Action",
             action="set_fact",
             activation_id=settings.identifier,
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
             playbook_name=name,
             run_at=str(datetime.utcnow()),
         )
@@ -141,6 +155,8 @@ async def retract_fact(
     variables: Dict,
     facts: Dict,
     project_data_file: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
     ruleset: str,
     fact: Dict,
     name: Optional[str] = None,
@@ -150,6 +166,8 @@ async def retract_fact(
         dict(
             type="Action",
             action="retract_fact",
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
             activation_id=settings.identifier,
             playbook_name=name,
             run_at=str(datetime.utcnow()),
@@ -162,8 +180,10 @@ async def post_event(
     inventory: Dict,
     hosts: List,
     variables: Dict,
-    project_data_file: str,
     facts: Dict,
+    project_data_file: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
     ruleset: str,
     event: Dict,
 ):
@@ -173,6 +193,8 @@ async def post_event(
         dict(
             type="Action",
             action="post_event",
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
             activation_id=settings.identifier,
             run_at=str(datetime.utcnow()),
         )
@@ -186,6 +208,8 @@ async def run_playbook(
     variables: Dict,
     facts: Dict,
     project_data_file: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
     ruleset: str,
     name: str,
     set_facts: Optional[bool] = None,
@@ -201,12 +225,11 @@ async def run_playbook(
 ):
 
     logger.info("running Ansible playbook: %s", name)
-    temp, playbook_name, job_id = await pre_process_runner(
+    temp, playbook_name = await pre_process_runner(
         event_log,
         inventory,
         variables,
         facts,
-        ruleset,
         name,
         "run_playbook",
         var_root,
@@ -215,6 +238,23 @@ async def run_playbook(
         project_data_file,
         **kwargs,
     )
+
+    job_id = str(uuid.uuid4())
+
+    logger.info(f"ruleset: {source_ruleset_name}, rule: {source_rule_name}")
+    await event_log.put(
+        dict(
+            type="Job",
+            job_id=job_id,
+            ansible_events_id=settings.identifier,
+            name=playbook_name,
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
+            hosts=",".join(hosts),
+            action="run_playbook",
+        )
+    )
+
     logger.info("Calling Ansible runner")
 
     if retry:
@@ -259,6 +299,8 @@ async def run_module(
     hosts: List,
     variables: Dict,
     facts: Dict,
+    source_ruleset_name: str,
+    source_rule_name: str,
     ruleset: str,
     name: str,
     set_facts: Optional[bool] = None,
@@ -274,12 +316,11 @@ async def run_module(
     **kwargs,
 ):
 
-    temp, module_name, job_id = await pre_process_runner(
+    temp, module_name = await pre_process_runner(
         event_log,
         inventory,
         variables,
         facts,
-        ruleset,
         name,
         "run_module",
         var_root,
@@ -287,6 +328,21 @@ async def run_module(
         False,
         **kwargs,
     )
+    job_id = str(uuid.uuid4())
+
+    await event_log.put(
+        dict(
+            type="Job",
+            job_id=job_id,
+            ansible_events_id=settings.identifier,
+            name=module_name,
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
+            hosts=",".join(hosts),
+            action="run_module",
+        )
+    )
+
     logger.info("Calling Ansible runner")
     module_args_str = ""
     if module_args:
@@ -357,7 +413,6 @@ async def call_runner(
     def event_callback(event, *args, **kwargs):
         event["job_id"] = job_id
         event["ansible_rulebook_id"] = settings.identifier
-        logger.debug("event_callback")
         queue.sync_q.put(dict(type="AnsibleEvent", event=event))
 
     # Here we read the async side and push it into the event queue
@@ -421,7 +476,6 @@ async def pre_process_runner(
     inventory: Dict,
     variables: Dict,
     facts: Dict,
-    ruleset: str,
     name: str,
     action: str,
     var_root: Union[str, Dict, None] = None,
@@ -448,14 +502,14 @@ async def pre_process_runner(
     project_dir = os.path.join(private_data_dir, "project")
 
     playbook_name = name
-    if True:
-        os.mkdir(env_dir)
-        with open(os.path.join(env_dir, "extravars"), "w") as f:
-            f.write(yaml.dump(variables))
-        os.mkdir(inventory_dir)
-        with open(os.path.join(inventory_dir, "hosts"), "w") as f:
-            f.write(yaml.dump(inventory))
-        os.mkdir(project_dir)
+
+    os.mkdir(env_dir)
+    with open(os.path.join(env_dir, "extravars"), "w") as f:
+        f.write(yaml.dump(variables))
+    os.mkdir(inventory_dir)
+    with open(os.path.join(inventory_dir, "hosts"), "w") as f:
+        f.write(yaml.dump(inventory))
+    os.mkdir(project_dir)
 
     logger.debug("project_data_file: %s", project_data_file)
     if project_data_file:
@@ -483,14 +537,7 @@ async def pre_process_runner(
                 "Could not find a playbook for %s from %s", name, os.getcwd()
             )
 
-    job_id = str(uuid.uuid4())
-
-    await event_log.put(
-        dict(
-            type="Job", job_id=job_id, ansible_rulebook_id=settings.identifier
-        )
-    )
-    return (private_data_dir, playbook_name, job_id)
+    return (private_data_dir, playbook_name)
 
 
 async def post_process_runner(
@@ -550,6 +597,9 @@ async def shutdown(
     hosts: List,
     variables: Dict,
     facts: Dict,
+    project_data_file: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
     ruleset: str,
 ):
     await event_log.put(
@@ -557,6 +607,8 @@ async def shutdown(
             type="Action",
             action="shutdown",
             activation_id=settings.identifier,
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
             run_at=str(datetime.utcnow()),
         )
     )
