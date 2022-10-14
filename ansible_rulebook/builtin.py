@@ -592,7 +592,6 @@ async def post_process_runner(
 
 async def shutdown(
     event_log,
-    project_data_file: str,
     inventory: Dict,
     hosts: List,
     variables: Dict,
