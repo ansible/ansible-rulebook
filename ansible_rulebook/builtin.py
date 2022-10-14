@@ -246,7 +246,7 @@ async def run_playbook(
         dict(
             type="Job",
             job_id=job_id,
-            ansible_events_id=settings.identifier,
+            ansible_rulebook_id=settings.identifier,
             name=playbook_name,
             ruleset=source_ruleset_name,
             rule=source_rule_name,
@@ -335,7 +335,7 @@ async def run_module(
         dict(
             type="Job",
             job_id=job_id,
-            ansible_events_id=settings.identifier,
+            ansible_rulebook_id=settings.identifier,
             name=module_name,
             ruleset=source_ruleset_name,
             rule=source_rule_name,
