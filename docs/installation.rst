@@ -1,52 +1,44 @@
-.. highlight:: shell
-
 ============
 Installation
 ============
 
+These instructions will guide you though installing the ansible-rulebook CLI on your local system.
+Please ensure you have installed all components listed in the **Requirements** section before starting the installation process.
 
-Stable release
---------------
-
-To install ansible-rulebook, run this command in your terminal:
-
-.. code-block:: console
-
-    $ pip install ansible_rulebook
-    $ ansible-galaxy collection install ansible.eda
-
-This is the preferred method to install ansible-rulebook, as it will always install the most recent stable release.
-
-If you don't have `pip`_ installed, this `Python installation guide`_ can guide
-you through the process.
-
-.. _pip: https://pip.pypa.io
-.. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
-
-
-From sources
+Requirements
 ------------
 
-The sources for ansible-rulebook can be downloaded from the `Github repo`_.
+* Python >=3.9
+* Python 3 pip
+* Python 3 development libraries
 
-You can either clone the public repository:
+  * Fedora: python3-devel
+  * Ubuntu: python3-dev
 
-.. code-block:: console
+* Java development kit 17
 
-    $ git clone git://github.com/ansible/ansible_rulebook
+  * Fedora: java-17-openjdk
+  * Ubuntu: openjdk-17-jdk
 
-Or download the `tarball`_:
+* Maven
+* gcc
 
-.. code-block:: console
+Installation via pip
+--------------------
 
-    $ curl -OJL https://github.com/ansible/ansible_rulebook/tarball/master
+1. Ensure the `JAVA_HOME` environment variable is set. On Fedora-like systems it should be::
 
-Once you have a copy of the source, you can install it with:
+    JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 
-.. code-block:: console
+2. We use a rules engine called Drools which is written in Java and needs to be compiled from source, by 
+   setting the following environment variable::
 
-    $ pip install .
+    export PIP_NO_BINARY=jpy
 
+3. Install `ansible-rulebook` and dependencies via `pip`::
 
-.. _Github repo: https://github.com/ansible/ansible_rulebook
-.. _tarball: https://github.com/ansible/ansible_rulebook/tarball/master
+    pip install wheel ansible-rulebook ansible ansible-runner
+
+4. Install the required Ansible collections::
+
+    ansible-galaxy collection install community.general ansible.eda
