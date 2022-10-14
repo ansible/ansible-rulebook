@@ -7,6 +7,6 @@
         limit: 5
   rules:
     - name: r1
-      condition: event.i == "{{ custom.expected_index }}"
+      condition: event.i == fact.custom.expected_index
       action:
         debug:
