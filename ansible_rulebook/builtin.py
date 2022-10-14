@@ -260,8 +260,9 @@ async def run_playbook(
     if retry:
         retries = max(retries, 1)
     for i in range(retries + 1):
-        if i > 0 and delay > 0:
-            await asyncio.sleep(delay)
+        if i > 0:
+            if delay > 0:
+                await asyncio.sleep(delay)
             logger.info(
                 "Previous run_playbook failed. Retry %d of %d", i, retries
             )
@@ -354,8 +355,9 @@ async def run_module(
     if retry:
         retries = max(retries, 1)
     for i in range(retries + 1):
-        if i > 0 and delay > 0:
-            await asyncio.sleep(delay)
+        if i > 0:
+            if delay > 0:
+                await asyncio.sleep(delay)
             logger.info(
                 "Previous run_module failed. Retry %d of %d", i, retries
             )
