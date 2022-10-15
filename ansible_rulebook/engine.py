@@ -243,16 +243,16 @@ async def call_action(
             )
             result = dict(error=e)
         except MessageNotHandledException as e:
-            logger.exception("Message cannot be handled: %s", action_args)
-            result = dict(error=e)
+            logger.info(e.message)
+            result = dict(error=e.message)
         except MessageObservedException as e:
-            logger.info("MessageObservedException: %s", action_args)
-            result = dict(error=e)
+            logger.info(e.message)
+            result = dict(error=e.message)
         except ShutdownException:
             raise
         except Exception as e:
             logger.exception("Error calling %s", action)
-            result = dict(error=e)
+            result = dict(error=str(e))
     else:
         logger.error("Action %s not supported", action)
         result = dict(error=f"Action {action} not supported")
