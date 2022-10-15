@@ -37,6 +37,7 @@ async def request_workload(activation_id, websocket_address):
                 data = json.loads(msg)
                 if data.get("type") == "ProjectData":
                     if data.get("data") and data.get("more"):
+                        logger.debug("writing %s", project_data_file)
                         os.write(
                             project_data_fh, base64.b64decode(data.get("data"))
                         )

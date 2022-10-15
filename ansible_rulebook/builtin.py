@@ -482,7 +482,6 @@ async def pre_process_runner(
     action: str,
     var_root: Union[str, Dict, None] = None,
     copy_files: Optional[bool] = False,
-    check_files: Optional[bool] = True,
     project_data_file: Optional[str] = None,
     **kwargs,
 ):
@@ -517,27 +516,25 @@ async def pre_process_runner(
     if project_data_file:
         if os.path.exists(project_data_file):
             await untar_project(project_dir, project_data_file)
-
-    if check_files:
-        if os.path.exists(name):
-            playbook_name = os.path.basename(name)
-            shutil.copy(name, os.path.join(project_dir, playbook_name))
-            if copy_files:
-                shutil.copytree(
-                    os.path.dirname(os.path.abspath(name)),
-                    project_dir,
-                    dirs_exist_ok=True,
-                )
-        elif has_playbook(*split_collection_name(name)):
-            playbook_name = name
-            shutil.copy(
-                find_playbook(*split_collection_name(name)),
-                os.path.join(project_dir, name),
+    elif os.path.exists(name):
+        playbook_name = os.path.basename(name)
+        shutil.copy(name, os.path.join(project_dir, playbook_name))
+        if copy_files:
+            shutil.copytree(
+                os.path.dirname(os.path.abspath(name)),
+                project_dir,
+                dirs_exist_ok=True,
             )
-        else:
-            logger.error(
-                "Could not find a playbook for %s from %s", name, os.getcwd()
-            )
+    elif has_playbook(*split_collection_name(name)):
+        playbook_name = name
+        shutil.copy(
+            find_playbook(*split_collection_name(name)),
+            os.path.join(project_dir, name),
+        )
+    else:
+        logger.error(
+            "Could not find a playbook for %s from %s", name, os.getcwd()
+        )
 
     return (private_data_dir, playbook_name)
 
