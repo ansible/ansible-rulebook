@@ -735,10 +735,6 @@ async def test_27_var_root():
     assert event_log.empty()
 
 
-@pytest.mark.skipif(
-    os.environ.get("RULES_ENGINE", "durable_rules") == "durable_rules",
-    reason="durable rules does not support using prior saved facts",
-)
 @pytest.mark.asyncio
 async def test_28_right_side_condition_template():
     ruleset_queues, event_log = load_rulebook(

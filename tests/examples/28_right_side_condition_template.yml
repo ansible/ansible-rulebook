@@ -7,6 +7,9 @@
         limit: 5
   rules:
     - name: r1
-      condition: event.i == fact.custom.expected_index
+      condition:
+        all:
+          - facts.first << fact.custom.expected_index is defined
+          - event.i == facts.first.custom.expected_index
       action:
         debug:
