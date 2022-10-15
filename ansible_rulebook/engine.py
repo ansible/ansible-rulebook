@@ -159,6 +159,118 @@ async def start_source(
         await queue.put(Shutdown())
 
 
+async def call_action(
+    ruleset: str,
+    rule: str,
+    action: str,
+    action_args: Dict,
+    variables: Dict,
+    inventory: Dict,
+    hosts: List,
+    facts: Dict,
+    rules_engine_result,
+    event_log,
+    project_data_file: Optional[str] = None,
+) -> Dict:
+
+    logger.info("call_action %s", action)
+
+    if action in builtin_actions:
+        try:
+            single_match = None
+            if os.environ.get("RULES_ENGINE", "drools") == "drools":
+                keys = list(rules_engine_result.data.keys())
+                if len(keys) == 1:
+                    single_match = rules_engine_result.data[keys[0]]
+                else:
+                    multi_match = rules_engine_result.data
+            else:
+                if rules_engine_result.m is not None:
+                    single_match = rules_engine_result.m._d
+                else:
+                    multi_match = rules_engine_result._m
+            variables_copy = variables.copy()
+            if single_match:
+                variables_copy["event"] = single_match
+                variables_copy["fact"] = single_match
+                event = single_match
+                if "meta" in event:
+                    if "hosts" in event["meta"]:
+                        hosts = parse_hosts(event["meta"]["hosts"])
+            else:
+                variables_copy["events"] = multi_match
+                variables_copy["facts"] = multi_match
+                new_hosts = []
+                for event in variables_copy["events"].values():
+                    if "meta" in event:
+                        if "hosts" in event["meta"]:
+                            new_hosts.extend(
+                                parse_hosts(event["meta"]["hosts"])
+                            )
+                if new_hosts:
+                    hosts = new_hosts
+
+            logger.info(
+                "substitute_variables [%s] [%s]", action_args, variables_copy
+            )
+            action_args = {
+                k: substitute_variables(v, variables_copy)
+                for k, v in action_args.items()
+            }
+            logger.info("action args: %s", action_args)
+
+            if facts is None:
+                facts = lang.get_facts(ruleset)
+                logger.info("facts: %s", facts)
+
+            if "ruleset" not in action_args:
+                action_args["ruleset"] = ruleset
+
+            return await builtin_actions[action](
+                event_log=event_log,
+                inventory=inventory,
+                hosts=hosts,
+                variables=variables_copy,
+                facts=facts,
+                project_data_file=project_data_file,
+                source_ruleset_name=ruleset,
+                source_rule_name=rule,
+                **action_args,
+            )
+        except KeyError as e:
+            logger.exception(
+                "KeyError with variables %s", pformat(variables_copy)
+            )
+            result = dict(error=e)
+        except MessageNotHandledException as e:
+            logger.info(e.message)
+            result = dict(error=e.message)
+        except MessageObservedException as e:
+            logger.info(e.message)
+            result = dict(error=e.message)
+        except ShutdownException:
+            raise
+        except Exception as e:
+            logger.exception("Error calling %s", action)
+            result = dict(error=str(e))
+    else:
+        logger.error("Action %s not supported", action)
+        result = dict(error=f"Action {action} not supported")
+
+    await event_log.put(
+        dict(
+            type="Action",
+            action=action,
+            activation_id=settings.identifier,
+            playbook_name=action_args.get("name"),
+            status="failed",
+            run_at=str(datetime.utcnow()),
+        )
+    )
+
+    return result
+
+
 async def run_rulesets(
     event_log: asyncio.Queue,
     ruleset_queues: List[RuleSetQueue],
