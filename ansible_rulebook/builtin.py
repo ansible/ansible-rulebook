@@ -300,6 +300,7 @@ async def run_module(
     hosts: List,
     variables: Dict,
     facts: Dict,
+    project_data_file: str,
     source_ruleset_name: str,
     source_rule_name: str,
     ruleset: str,
@@ -327,6 +328,7 @@ async def run_module(
         var_root,
         copy_files,
         False,
+        project_data_file,
         **kwargs,
     )
     job_id = str(uuid.uuid4())
@@ -517,6 +519,7 @@ async def pre_process_runner(
     if project_data_file:
         if os.path.exists(project_data_file):
             await untar_project(project_dir, project_data_file)
+            return (private_data_dir, playbook_name)
 
     if check_files:
         if os.path.exists(name):
