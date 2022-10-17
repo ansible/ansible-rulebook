@@ -1,0 +1,37 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 17 multiple sources
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args: {}
+        condition:
+          AnyCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
+          - EqualsExpression:
+              lhs:
+                Event: range2.i
+              rhs:
+                Integer: 1
+        enabled: true
+        name: r1
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range
+    - EventSource:
+        name: range2
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range2

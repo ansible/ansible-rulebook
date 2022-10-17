@@ -1,0 +1,35 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 07 And
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args: {}
+        condition:
+          AllCondition:
+          - AndExpression:
+              lhs:
+                EqualsExpression:
+                  lhs:
+                    Event: nested.i
+                  rhs:
+                    Integer: 1
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Event: nested.j
+                  rhs:
+                    Integer: 1
+        enabled: true
+        name: r1
+    sources:
+    - EventSource:
+        name: nested
+        source_args:
+          i_limit: 5
+          j_limit: 5
+        source_filters: []
+        source_name: nested

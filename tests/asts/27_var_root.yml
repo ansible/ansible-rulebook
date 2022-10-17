@@ -1,0 +1,41 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 27 multiple events all with var_root
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: print_event
+            action_args:
+              var_root:
+                kafka.message: kafka
+                webhook.payload: webhook
+        condition:
+          AllCondition:
+          - AssignmentExpression:
+              lhs:
+                Events: webhook
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Event: webhook.payload.url
+                  rhs:
+                    String: http://www.example.com
+          - AssignmentExpression:
+              lhs:
+                Events: kafka
+              rhs:
+                EqualsExpression:
+                  lhs:
+                    Event: kafka.message.channel
+                  rhs:
+                    String: red
+        enabled: true
+        name: r1
+    sources:
+    - EventSource:
+        name: non_existent
+        source_args: {}
+        source_filters: []
+        source_name: non_existent

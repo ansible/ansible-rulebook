@@ -1,0 +1,26 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 24 max attributes
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args: {}
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: attr_1
+              rhs:
+                Integer: 1
+        enabled: true
+        name: r1
+    sources:
+    - EventSource:
+        name: replay
+        source_args:
+          directory: examples/replays/24_max_attributes
+        source_filters: []
+        source_name: replay
