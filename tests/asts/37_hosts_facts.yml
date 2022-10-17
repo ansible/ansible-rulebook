@@ -1,0 +1,50 @@
+- RuleSet:
+    hosts:
+    - all
+    name: Host facts
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args: {}
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Fact: meta.hosts
+              rhs:
+                String: localhost
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
+        enabled: true
+        name: Host 1 rule
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args: {}
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Fact: os
+              rhs:
+                String: linux
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 4
+        enabled: true
+        name: Host 2 rule
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range

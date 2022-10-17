@@ -1,0 +1,32 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 28 test jinja templating on the right side of the condition
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args: {}
+        condition:
+          AllCondition:
+          - AssignmentExpression:
+              lhs:
+                Facts: first
+              rhs:
+                IsDefinedExpression:
+                  Fact: custom.expected_index
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Facts: first.custom.expected_index
+        enabled: true
+        name: r1
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range

@@ -1,0 +1,29 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 31 run module missing args
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: run_module
+            action_args:
+              module_args:
+                un_name: fred
+              name: ansible.eda.upcase
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
+        enabled: true
+        name: r1
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range

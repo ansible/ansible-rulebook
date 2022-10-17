@@ -1,0 +1,29 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 33 run playbook and retry after an interval
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: run_playbook
+            action_args:
+              delay: 1
+              name: playbooks/fail_and_succeed.yml
+              retry: true
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
+        enabled: true
+        name: r1
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range
