@@ -1,0 +1,28 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 34 run playbook and retry a number of times
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: run_playbook
+            action_args:
+              name: playbooks/fail_and_succeed.yml
+              retries: 1
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
+        enabled: true
+        name: r1
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range

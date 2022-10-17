@@ -1,0 +1,70 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 35 multiple rulesets 1
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: set_fact
+            action_args:
+              fact:
+                do_not_fire_rule: true
+              ruleset: 35 multiple rulesets 1
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
+        enabled: true
+        name: r1
+    - Rule:
+        action:
+          Action:
+            action: none
+            action_args: {}
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: do_not_fire_rule
+              rhs:
+                Boolean: true
+        enabled: true
+        name: r2
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range
+- RuleSet:
+    hosts:
+    - all
+    name: 35 multiple rulesets 2
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args:
+              msg: Should not run
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: do_not_fire_rule
+              rhs:
+                Boolean: true
+        enabled: true
+        name: r1
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range

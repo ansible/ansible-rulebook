@@ -1,0 +1,26 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 25 max attributes nested
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args: {}
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: branch_0.branch_0.branch_0.leaf_1
+              rhs:
+                Integer: 1
+        enabled: true
+        name: r1
+    sources:
+    - EventSource:
+        name: replay
+        source_args:
+          directory: examples/replays/25_max_attributes_nested
+        source_filters: []
+        source_name: replay

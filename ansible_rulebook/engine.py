@@ -6,7 +6,7 @@ from datetime import datetime
 from pprint import pformat
 from typing import Any, Dict, List, Optional, cast
 
-if os.environ.get("RULES_ENGINE", "drools") == "drools":
+if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
     from drools import ruleset as lang
     from drools.exceptions import (
         MessageNotHandledException,
@@ -177,7 +177,7 @@ async def call_action(
     if action in builtin_actions:
         try:
             single_match = None
-            if os.environ.get("RULES_ENGINE", "drools") == "drools":
+            if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
                 keys = list(rules_engine_result.data.keys())
                 if len(keys) == 1:
                     single_match = rules_engine_result.data[keys[0]]
@@ -242,16 +242,16 @@ async def call_action(
             )
             result = dict(error=e)
         except MessageNotHandledException as e:
-            logger.exception("Message cannot be handled: %s", action_args)
-            result = dict(error=e)
+            logger.info(e.message)
+            result = dict(error=e.message)
         except MessageObservedException as e:
-            logger.info("MessageObservedException: %s", action_args)
-            result = dict(error=e)
+            logger.info(e.message)
+            result = dict(error=e.message)
         except ShutdownException:
             raise
         except Exception as e:
             logger.exception("Error calling %s", action)
-            result = dict(error=e)
+            result = dict(error=str(e))
     else:
         logger.error("Action %s not supported", action)
         result = dict(error=f"Action {action} not supported")
@@ -336,7 +336,7 @@ async def run_ruleset(
         json_count(data)
         if isinstance(data, Shutdown):
             await event_log.put(dict(type="Shutdown"))
-            if os.environ.get("RULES_ENGINE", "drools") == "drools":
+            if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
                 lang.end_session(name)
             return
         if not data:
@@ -381,7 +381,7 @@ async def run_ruleset(
             await event_log.put(dict(type="MessageNotHandled"))
         except ShutdownException:
             await event_log.put(dict(type="Shutdown"))
-            if os.environ.get("RULES_ENGINE", "drools") == "drools":
+            if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
                 lang.end_session(name)
             return
         except Exception:

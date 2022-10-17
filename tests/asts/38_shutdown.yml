@@ -1,0 +1,26 @@
+- RuleSet:
+    hosts:
+    - all
+    name: Test shutdown action
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: shutdown
+            action_args: {}
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
+        enabled: true
+        name: Host 1 rule
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range

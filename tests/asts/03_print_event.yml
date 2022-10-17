@@ -1,0 +1,26 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 03 Print event
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: print_event
+            action_args: {}
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
+        enabled: true
+        name: r1
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range
