@@ -5,6 +5,7 @@ args:
   delay: Optional, interval of seconds between events. Default: 0
   data_size: Optional, size in bytes of randomized data. Default: 0
   limit: Optional, number of events per loop iteration: Default: 5
+>>>>>>> ee62f86 (add an endless range source plugin)
 """
 
 
