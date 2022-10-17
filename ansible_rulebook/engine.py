@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import runpy
+from collections import OrderedDict
 from datetime import datetime
 from pprint import pformat
 from typing import Any, Dict, List, Optional, cast
@@ -20,7 +21,7 @@ else:
     )
 
 import ansible_rulebook.rule_generator as rule_generator
-from ansible_rulebook.builtin import actions as builtin_actions
+from ansible_rulebook.builtin import actions as builtin_actions, run_playbook
 from ansible_rulebook.collection import (
     find_source,
     find_source_filter,
@@ -158,118 +159,6 @@ async def start_source(
         await queue.put(Shutdown())
 
 
-async def call_action(
-    ruleset: str,
-    rule: str,
-    action: str,
-    action_args: Dict,
-    variables: Dict,
-    inventory: Dict,
-    hosts: List,
-    facts: Dict,
-    rules_engine_result,
-    event_log,
-    project_data_file: Optional[str] = None,
-) -> Dict:
-
-    logger.info("call_action %s", action)
-
-    if action in builtin_actions:
-        try:
-            single_match = None
-            if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
-                keys = list(rules_engine_result.data.keys())
-                if len(keys) == 1:
-                    single_match = rules_engine_result.data[keys[0]]
-                else:
-                    multi_match = rules_engine_result.data
-            else:
-                if rules_engine_result.m is not None:
-                    single_match = rules_engine_result.m._d
-                else:
-                    multi_match = rules_engine_result._m
-            variables_copy = variables.copy()
-            if single_match:
-                variables_copy["event"] = single_match
-                variables_copy["fact"] = single_match
-                event = single_match
-                if "meta" in event:
-                    if "hosts" in event["meta"]:
-                        hosts = parse_hosts(event["meta"]["hosts"])
-            else:
-                variables_copy["events"] = multi_match
-                variables_copy["facts"] = multi_match
-                new_hosts = []
-                for event in variables_copy["events"].values():
-                    if "meta" in event:
-                        if "hosts" in event["meta"]:
-                            new_hosts.extend(
-                                parse_hosts(event["meta"]["hosts"])
-                            )
-                if new_hosts:
-                    hosts = new_hosts
-
-            logger.info(
-                "substitute_variables [%s] [%s]", action_args, variables_copy
-            )
-            action_args = {
-                k: substitute_variables(v, variables_copy)
-                for k, v in action_args.items()
-            }
-            logger.info("action args: %s", action_args)
-
-            if facts is None:
-                facts = lang.get_facts(ruleset)
-                logger.info("facts: %s", facts)
-
-            if "ruleset" not in action_args:
-                action_args["ruleset"] = ruleset
-
-            return await builtin_actions[action](
-                event_log=event_log,
-                inventory=inventory,
-                hosts=hosts,
-                variables=variables_copy,
-                facts=facts,
-                project_data_file=project_data_file,
-                source_ruleset_name=ruleset,
-                source_rule_name=rule,
-                **action_args,
-            )
-        except KeyError as e:
-            logger.exception(
-                "KeyError with variables %s", pformat(variables_copy)
-            )
-            result = dict(error=e)
-        except MessageNotHandledException as e:
-            logger.info(e.message)
-            result = dict(error=e.message)
-        except MessageObservedException as e:
-            logger.info(e.message)
-            result = dict(error=e.message)
-        except ShutdownException:
-            raise
-        except Exception as e:
-            logger.exception("Error calling %s", action)
-            result = dict(error=str(e))
-    else:
-        logger.error("Action %s not supported", action)
-        result = dict(error=f"Action {action} not supported")
-
-    await event_log.put(
-        dict(
-            type="Action",
-            action=action,
-            activation_id=settings.identifier,
-            playbook_name=action_args.get("name"),
-            status="failed",
-            run_at=str(datetime.utcnow()),
-        )
-    )
-
-    return result
-
-
 async def run_rulesets(
     event_log: asyncio.Queue,
     ruleset_queues: List[RuleSetQueue],
@@ -301,15 +190,14 @@ async def run_rulesets(
 
     ruleset_tasks = []
     for ruleset_queue_plan in rulesets_queue_plans:
-        ruleset_task = asyncio.create_task(
-            run_ruleset(
-                event_log,
-                ruleset_queue_plan,
-                hosts_facts,
-                variables,
-                project_data_file,
-            )
+        ruleset_runner = RuleSetRunner(
+            event_log=event_log,
+            ruleset_queue_plan=ruleset_queue_plan,
+            hosts_facts=hosts_facts,
+            variables=variables,
+            project_data_file=project_data_file,
         )
+        ruleset_task = asyncio.create_task(ruleset_runner.run_ruleset())
         ruleset_tasks.append(ruleset_task)
 
     await asyncio.wait(ruleset_tasks, return_when=asyncio.FIRST_COMPLETED)
@@ -318,74 +206,278 @@ async def run_rulesets(
         task.cancel()
 
 
-async def run_ruleset(
-    event_log: asyncio.Queue,
-    ruleset_queue_plan: EngineRuleSetQueuePlan,
-    hosts_facts: List[Dict],
-    variables: Dict,
-    project_data_file: Optional[str] = None,
-):
+class RuleSetRunner:
+    def __init__(
+        self,
+        event_log: asyncio.Queue,
+        ruleset_queue_plan: EngineRuleSetQueuePlan,
+        hosts_facts,
+        variables,
+        project_data_file: Optional[str] = None,
+    ):
+        self.pa_runner = PlaybookActionRunner()
+        self.pa_runner_task = None
+        self.action_tasks = []
+        self.event_log = event_log
+        self.ruleset_queue_plan = ruleset_queue_plan
+        self.name = ruleset_queue_plan.ruleset.name
+        self.hosts_facts = hosts_facts
+        self.variables = variables
+        self.project_data_file = project_data_file
 
-    name = ruleset_queue_plan.ruleset.name
+    async def run_ruleset(self):
+        prime_facts(self.name, self.hosts_facts, self.variables)
+        self.pa_runner_task = asyncio.create_task(
+            self.pa_runner.start(self.name), name=self.name
+        )
 
-    prime_facts(name, hosts_facts, variables)
+        logger.info("Waiting for event from %s", self.name)
+        while True:
+            data = await self.ruleset_queue_plan.queue.get()
+            json_count(data)
+            if isinstance(data, Shutdown):
+                await asyncio.wait(self.action_tasks)
+                self.pa_runner.stop()
+                await self.pa_runner_task
+                await self.event_log.put(dict(type="Shutdown"))
+                if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+                    lang.end_session(self.name)
+                return
+            if not data:
+                await self.event_log.put(dict(type="EmptyEvent"))
+                continue
 
-    logger.info("Waiting for event from %s", name)
-    while True:
-        data = await ruleset_queue_plan.queue.get()
-        json_count(data)
-        if isinstance(data, Shutdown):
-            await event_log.put(dict(type="Shutdown"))
-            if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
-                lang.end_session(name)
-            return
-        if not data:
-            await event_log.put(dict(type="EmptyEvent"))
-            continue
+            # create a task to run all actions resulted from each event
+            # so that events can be processed in parallel
+            self.action_tasks.append(
+                asyncio.create_task(self.run_actions(data))
+            )
+
+    async def run_actions(self, data: Dict):
         results = []
         try:
             # Asset added by other ruleset, not related to current event
-            while not ruleset_queue_plan.plan.queue.empty():
+            while not self.ruleset_queue_plan.plan.queue.empty():
                 item = cast(
-                    ActionContext, await ruleset_queue_plan.plan.queue.get()
+                    ActionContext,
+                    await self.ruleset_queue_plan.plan.queue.get(),
                 )
-                result = await call_action(*item, event_log=event_log)
+                result = await self.call_action(*item)
 
             # create a new plan queue for current event so that results
-            # can be concanated
-            ruleset_queue_plan.plan.queue = asyncio.Queue()
+            # can be concatenated
+            self.ruleset_queue_plan.plan.queue = asyncio.Queue()
 
             try:
-                lang.post(name, data)
+                lang.post(self.name, data)
             except MessageObservedException:
                 logger.debug("MessageObservedException: %s", data)
             except MessageNotHandledException:
                 logger.debug("MessageNotHandledException: %s", data)
             finally:
-                logger.debug(lang.get_pending_events(name))
+                logger.debug(lang.get_pending_events(self.name))
 
-            while not ruleset_queue_plan.plan.queue.empty():
+            while not self.ruleset_queue_plan.plan.queue.empty():
                 item = cast(
-                    ActionContext, await ruleset_queue_plan.plan.queue.get()
+                    ActionContext,
+                    await self.ruleset_queue_plan.plan.queue.get(),
                 )
-                result = await call_action(
-                    *item,
-                    event_log=event_log,
-                    project_data_file=project_data_file,
-                )
+                result = await self.call_action(*item)
                 results.append(result)
 
-            await event_log.put(dict(type="ProcessedEvent", results=results))
+            await self.event_log.put(
+                dict(type="ProcessedEvent", results=results)
+            )
         except MessageNotHandledException:
             logger.info("MessageNotHandledException: %s", data)
-            await event_log.put(dict(type="MessageNotHandled"))
+            await self.event_log.put(dict(type="MessageNotHandled"))
         except ShutdownException:
-            await event_log.put(dict(type="Shutdown"))
-            if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
-                lang.end_session(name)
-            return
+            await self.ruleset_queue_plan.queue.put(Shutdown())
         except Exception:
-            logger.exception("Error calling %s", data)
+            logger.exception("Error processing %s", data)
+
+    async def call_action(
+        self,
+        ruleset: str,
+        rule: str,
+        action: str,
+        action_args: Dict,
+        variables: Dict,
+        inventory: Dict,
+        hosts: List,
+        facts: Dict,
+        rules_engine_result,
+    ) -> Dict:
+
+        logger.info("call_action %s", action)
+
+        if action in builtin_actions:
+            try:
+                single_match = None
+                if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+                    keys = list(rules_engine_result.data.keys())
+                    if len(keys) == 1:
+                        single_match = rules_engine_result.data[keys[0]]
+                    else:
+                        multi_match = rules_engine_result.data
+                else:
+                    if rules_engine_result.m is not None:
+                        single_match = rules_engine_result.m._d
+                    else:
+                        multi_match = rules_engine_result._m
+                variables_copy = variables.copy()
+                if single_match:
+                    variables_copy["event"] = single_match
+                    variables_copy["fact"] = single_match
+                    event = single_match
+                    if "meta" in event:
+                        if "hosts" in event["meta"]:
+                            hosts = parse_hosts(event["meta"]["hosts"])
+                else:
+                    variables_copy["events"] = multi_match
+                    variables_copy["facts"] = multi_match
+                    new_hosts = []
+                    for event in variables_copy["events"].values():
+                        if "meta" in event:
+                            if "hosts" in event["meta"]:
+                                new_hosts.extend(
+                                    parse_hosts(event["meta"]["hosts"])
+                                )
+                    if new_hosts:
+                        hosts = new_hosts
+
+                logger.info(
+                    "substitute_variables [%s] [%s]",
+                    action_args,
+                    variables_copy,
+                )
+                action_args = {
+                    k: substitute_variables(v, variables_copy)
+                    for k, v in action_args.items()
+                }
+                logger.info("action args: %s", action_args)
+
+                if facts is None:
+                    facts = lang.get_facts(ruleset)
+                    logger.info("facts: %s", facts)
+
+                if "ruleset" not in action_args:
+                    action_args["ruleset"] = ruleset
+
+                if action == "run_playbook":
+                    action_args["event_log"] = self.event_log
+                    action_args["inventory"] = inventory
+                    action_args["hosts"] = hosts
+                    action_args["variables"] = variables_copy
+                    action_args["facts"] = facts
+                    action_args["project_data_file"] = self.project_data_file
+                    action_args["source_ruleset_name"] = ruleset
+                    action_args["source_rule_name"] = rule
+                    return await self.pa_runner.wait_for_playbook(action_args)
+                else:
+                    return await builtin_actions[action](
+                        event_log=self.event_log,
+                        inventory=inventory,
+                        hosts=hosts,
+                        variables=variables_copy,
+                        facts=facts,
+                        project_data_file=self.project_data_file,
+                        source_ruleset_name=ruleset,
+                        source_rule_name=rule,
+                        **action_args,
+                    )
+            except KeyError as e:
+                logger.exception(
+                    "KeyError with variables %s", pformat(variables_copy)
+                )
+                result = dict(error=e)
+            except MessageNotHandledException as e:
+                logger.exception("Message cannot be handled: %s", action_args)
+                result = dict(error=e)
+            except MessageObservedException as e:
+                logger.info("MessageObservedException: %s", action_args)
+                result = dict(error=e)
+            except ShutdownException:
+                raise
+            except Exception as e:
+                logger.exception("Error calling %s", action)
+                result = dict(error=e)
+        else:
+            logger.error("Action %s not supported", action)
+            result = dict(error=f"Action {action} not supported")
+
+        await self.event_log.put(
+            dict(
+                type="Action",
+                action=action,
+                activation_id=settings.identifier,
+                playbook_name=action_args.get("name"),
+                status="failed",
+                run_at=str(datetime.utcnow()),
+            )
+        )
+
+        return result
+
+
+class PlaybookActionRunner:
+    def __init__(self):
+        self.actions = OrderedDict()
+        self.result = None
+        self.stopped = True
+        self.delay = int(os.environ.get("RUN_PLAYBOOK_DELAY", 0))
+
+    async def start(self, name: str):
+        if not self.stopped:
+            return
+
+        logger.info("Start a playbook action runner for %s", name)
+        self.stopped = False
+        while not self.stopped:
+            await asyncio.sleep(self.delay)
+            await self.execute()
+        logger.info("Playbook action runner %s exits", name)
+
+    def stop(self):
+        self.stopped = True
+
+    async def execute(self):
+        for key in list(self.actions.keys()):
+            action_args = self.actions[key]
+            del self.actions[key]
+            async_condition = action_args.pop("async_condition")
+
+            try:
+                result = await run_playbook(**action_args)
+            except Exception as e:
+                action = "run_playbook"
+                logger.exception("Error calling %s", action)
+                result = dict(error=e)
+
+            async with async_condition:
+                self.result = result
+                async_condition.notify_all()
+
+    async def wait_for_playbook(self, action_args: Dict):
+        name = action_args["name"]
+        logger.info("Queue playbook %s for running later", name)
+
+        if name in self.actions:
+            for host in action_args["hosts"]:
+                logger.info("Combine host %s to playbook %s", host, name)
+                self.actions[name]["hosts"].add(host)
+            async_condition = self.actions[name]["async_condition"]
+        else:
+            async_condition = asyncio.Condition()
+            action_args["async_condition"] = async_condition
+            action_args["hosts"] = set(action_args["hosts"])
+            self.actions[name] = action_args
+
+        result = None
+        async with async_condition:
+            await async_condition.wait()
+            result = self.result
+        return result
 
 
 def prime_facts(name: str, hosts_facts: List[Dict], variables: Dict):

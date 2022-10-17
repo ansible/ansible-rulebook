@@ -7,7 +7,7 @@ from ansible_rulebook.engine import run_rulesets
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.util import load_inventory
 
-from .test_engine import load_rulebook
+from .test_engine import load_rulebook, validate_events
 
 
 @pytest.mark.asyncio
@@ -972,32 +972,6 @@ async def test_36_multiple_rulesets_both_fired():
         ],
     }
     validate_events(event_log, **checks)
-
-
-def validate_events(event_log, **kwargs):
-    processed_events = 0
-    shutdown_events = 0
-    actions = []
-
-    for _ in range(kwargs["max_events"]):
-        event = event_log.get_nowait()
-        print(event)
-        if event["type"] == "ProcessedEvent":
-            processed_events += 1
-        elif event["type"] == "Action":
-            actions.append(
-                f"{event['ruleset']}::{event['rule']}::{event['action']}"
-            )
-        elif event["type"] == "Shutdown":
-            shutdown_events += 1
-
-    assert event_log.empty()
-    if "actions" in kwargs:
-        assert kwargs["actions"] == actions
-    if "processed_events" in kwargs:
-        assert kwargs["processed_events"] == processed_events
-    if "shutdown_events" in kwargs:
-        assert kwargs["shutdown_events"] == shutdown_events
 
 
 @pytest.mark.skipif(
