@@ -1,0 +1,55 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 06 Retract Fact
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: set_fact
+            action_args:
+              fact:
+                msg: hello world
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
+        enabled: true
+        name: r1
+    - Rule:
+        action:
+          Action:
+            action: retract_fact
+            action_args:
+              fact:
+                msg: hello world
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: msg
+              rhs:
+                String: hello world
+        enabled: true
+        name: r2
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args: {}
+        condition:
+          AllCondition:
+          - IsNotDefinedExpression:
+              Event: msg
+        enabled: true
+        name: r3
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range

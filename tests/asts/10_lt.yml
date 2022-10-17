@@ -1,0 +1,26 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 10 Less Than
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args: {}
+        condition:
+          AllCondition:
+          - LessThanExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 2
+        enabled: true
+        name: r1
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range

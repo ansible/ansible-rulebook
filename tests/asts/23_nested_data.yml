@@ -1,0 +1,26 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 23 run playbook
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: debug
+            action_args: {}
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: root.nested.i
+              rhs:
+                Integer: 1
+        enabled: true
+        name: r1
+    sources:
+    - EventSource:
+        name: replay
+        source_args:
+          directory: examples/replays/23_nested_data
+        source_filters: []
+        source_name: replay

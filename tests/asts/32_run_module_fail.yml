@@ -1,0 +1,30 @@
+- RuleSet:
+    hosts:
+    - all
+    name: 32 run module fail
+    rules:
+    - Rule:
+        action:
+          Action:
+            action: run_module
+            action_args:
+              module_args:
+                name: fail
+              name: ansible.eda.upcase
+              retry: true
+        condition:
+          AllCondition:
+          - EqualsExpression:
+              lhs:
+                Event: i
+              rhs:
+                Integer: 1
+        enabled: true
+        name: r1
+    sources:
+    - EventSource:
+        name: range
+        source_args:
+          limit: 5
+        source_filters: []
+        source_name: range
