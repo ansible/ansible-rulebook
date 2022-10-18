@@ -8,7 +8,7 @@ Please ensure you have installed all components listed in the **Requirements** s
 Requirements
 ------------
 
-* Python >=3.9
+* Python >=3.8
 * Python 3 pip
 * Python 3 development libraries
 
@@ -30,7 +30,7 @@ Installation via pip
 
     JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 
-2. We use a rules engine called Drools which is written in Java and needs to be compiled from source, by 
+2. We use a rules engine called Drools which is written in Java and needs to be compiled from source, by
    setting the following environment variable::
 
     export PIP_NO_BINARY=jpy
