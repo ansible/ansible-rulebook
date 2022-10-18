@@ -48,6 +48,8 @@ Installation examples
 
 On Fedora-like systems:
 
+.. code-block:: shell
+
     dnf --assumeyes install gcc java-17-openjdk maven python3-devel python3-pip
     export JDK_HOME=/usr/lib/jvm/java-17-openjdk
     export JAVA_HOME=$JDK_HOME
@@ -56,6 +58,8 @@ On Fedora-like systems:
     pip3 install ansible ansible-rulebook ansible-runner wheel
 
 On Ubuntu systems:
+
+.. code-block:: shell
 
     apt-get --assume-yes install build-essential maven openjdk-17-jdk python3-dev python3-pip
     export JDK_HOME=/usr/lib/jvm/java-17-openjdk-amd64
