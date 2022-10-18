@@ -59,10 +59,6 @@ async def none(
 
 async def debug(event_log, **kwargs):
     print(get_horizontal_rule("="))
-    print(get_horizontal_rule("="))
-    print("facts:")
-    pprint(lang.get_facts(kwargs["ruleset"]))
-    print(get_horizontal_rule("="))
     print("kwargs:")
     pprint(kwargs)
     print(get_horizontal_rule("="))
