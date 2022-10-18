@@ -1,0 +1,21 @@
+---
+- name: 21 run playbook
+  hosts: all
+  sources:
+    - infrange:
+        limit: 2
+        delay: 1
+  rules:
+    - name: r1
+      condition: event.i == 1
+      action:
+        run_playbook:
+          name: playbooks/hello.yml
+
+
+
+
+
+
+
+
