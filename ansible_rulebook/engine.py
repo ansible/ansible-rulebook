@@ -219,10 +219,6 @@ async def call_action(
             }
             logger.info("action args: %s", action_args)
 
-            if facts is None:
-                facts = lang.get_facts(ruleset)
-                logger.info("facts: %s", facts)
-
             if "ruleset" not in action_args:
                 action_args["ruleset"] = ruleset
 
