@@ -30,6 +30,18 @@
               Event: msg
         enabled: true
         name: r2
+    - Rule:
+        action:
+          Action:
+            action: print_event
+            action_args:
+              pretty: true
+        condition:
+          AllCondition:
+          - IsDefinedExpression:
+              Event: payload
+        enabled: true
+        name: r3
     sources:
     - EventSource:
         name: range
