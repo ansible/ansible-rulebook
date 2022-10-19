@@ -498,6 +498,7 @@ async def test_19_is_defined():
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=1))
+    queue.put_nowait(dict(payload=dict(key1="value1", key2=dict(name="fred"))))
     queue.put_nowait(Shutdown())
 
     await run_rulesets(
@@ -515,6 +516,11 @@ async def test_19_is_defined():
     assert event["action"] == "debug", "4"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "5"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "6"
+    assert event["action"] == "print_event", "7"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "8"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "6"
     assert event_log.empty()
