@@ -1,11 +1,14 @@
 #!/bin/bash
 
+# clean
+podman rm -f $(podman ps -qa)
 
 # prometheus
 podman run --rm --name prometheus -d \
 -p 9080:9090 \
 --network memory \
 -v ./prometheus.yml:/etc/prometheus/prometheus.yml:z \
+-v prometheus-data:/prometheus \
 docker.io/prom/prometheus
 
 # exporter
@@ -20,7 +23,10 @@ quay.io/navidys/prometheus-podman-exporter -a
 
 
 # rulebook
-podman run --rm \
--v ../:/workdir:z -w /workdir -m 200m \
+podman run --rm -d \
+--name rulebook \
+-e RULES_ENGINE=drools \
+--network memory \
+-v ../:/workdir:z -w /workdir -m 1000m \
 quay.io/aizquier/ansible-rulebook:main ansible-rulebook \
 --rulebook /workdir/memory_consumption/run_playbook.yml -S /workdir/sources -i /workdir/playbooks/inventory.yml
