@@ -1,10 +1,5 @@
 name: Tests
 
-# The wheel package of jpy is not reliable and causes
-# run time errors, Forcing to build from source
-env:
-  PIP_NO_BINARY: jpy
-
 on:
   push:
     branches: ["main"]
