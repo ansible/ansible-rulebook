@@ -5,17 +5,18 @@ import time
 
 import psutil
 
-name = "ansible-rulebook"
+# psutil truncates the name
+name = "ansible-ruleboo"
 interval = 30  # seconds
 
 # get process
-process = next(p for p in psutil.process_iter() if name in p.cmdline()[1])
+process = next(p for p in psutil.process_iter() if name in p.name())
 
 now = datetime.datetime.now()
 with open(f"{now.isoformat()}_results.csv", "w", newline="") as f:
     writer = csv.writer(f)
     # headers
-    writer.writerow(["datetime", "kilobytes"])
+    writer.writerow(["datetime", "bytes"])
 
     while True:
         now = datetime.datetime.now()
