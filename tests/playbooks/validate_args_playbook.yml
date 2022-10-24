@@ -4,8 +4,9 @@
   gather_facts: false
   tasks:
     - name: Convert vars to json so we can use nested keys
-      set_fact:
+      ansible.builtin.set_fact:
         vars_json: "{{ vars | to_json }}"
-    - name: compare value
-      include_tasks: compare_value.yml
+
+    - name: Compare value
+      ansible.builtin.include_tasks: compare_value.yml
       loop: "{{ validate_args | dict2items }}"

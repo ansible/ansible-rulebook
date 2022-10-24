@@ -1,13 +1,18 @@
 ---
-- name: A playbook
+- name: Print Hello World and set as fact
   hosts: localhost
   gather_facts: false
   tasks:
-    - debug:
+    - name: Print Hello World
+      ansible.builtin.debug:
         msg: 'Hello world'
-    - debug:
-        msg: '{{event}}'
-    - set_fact:
+
+    - name: Print event information
+      ansible.builtin.debug:
+        msg: '{{ event }}'
+
+    - name: Set msg fact
+      ansible.builtin.set_fact:
         msg: 'hello world'
-        cacheable: yes
+        cacheable: true
 ...

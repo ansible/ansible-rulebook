@@ -1,12 +1,13 @@
 ---
-- name: A playbook
+- name: Debug Hello event and facts
   hosts: all
   gather_facts: false
   tasks:
-    - name:
-      debug:
-        msg: 'Hello event {{event}}'
-    - name:
-      debug:
-        msg: 'Hello facts {{facts}}'
+    - name: Debug Hello event
+      ansible.builtin.debug:
+        msg: 'Hello event {{ event }}'
+
+    - name: Debug Hello facts
+      ansible.builtin.debug:
+        msg: 'Hello facts {{ facts }}'
 ...
