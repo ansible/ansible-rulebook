@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Union
 
 import ansible_rulebook.condition_types as ct
@@ -67,13 +68,12 @@ class RuleSetQueue(NamedTuple):
     queue: asyncio.Queue
 
 
-class RuleSetQueuePlan(NamedTuple):
-    ruleset: RuleSet
+@dataclass
+class Plan:
     queue: asyncio.Queue
-    plan: asyncio.Queue
 
 
 class EngineRuleSetQueuePlan(NamedTuple):
     ruleset: EngineRuleSet
     queue: asyncio.Queue
-    plan: asyncio.Queue
+    plan: Plan
