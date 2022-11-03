@@ -28,6 +28,20 @@ import os
 import sys
 from typing import List, NoReturn
 
+if os.environ.get("RULES_ENGINE", "drools") == "drools":
+    if sys.version_info >= (3, 11):
+        print(
+            "Drools engine is not available for python 3.11 "
+            "or higher versions."
+        )
+        sys.exit(1)
+    if os.environ.get("JAVA_HOME") is None:
+        print(
+            "JAVA_HOME is not set. "
+            "Please install Java 11+ and set JAVA_HOME"
+        )
+        sys.exit(1)
+
 import ansible_rulebook
 from ansible_rulebook import app
 from ansible_rulebook.conf import settings
@@ -120,14 +134,6 @@ def setup_logging(args: argparse.Namespace) -> None:
 def main(args: List[str] = None) -> int:
     parser = get_parser()
     args = parser.parse_args(args)
-
-    if os.environ.get("RULES_ENGINE", "drools") == "drools":
-        if os.environ.get("JAVA_HOME") is None:
-            print(
-                "JAVA_HOME is not set. "
-                "Please install Java 11+ and set JAVA_HOME"
-            )
-            sys.exit(1)
 
     if args.version:
         show_version()
