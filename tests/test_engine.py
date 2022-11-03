@@ -428,3 +428,43 @@ async def test_empty_rule_names():
 async def test_missing_rule_names():
     with pytest.raises(RulenameEmptyException):
         load_rulebook("rules/test_missing_rule_names.yml")
+
+
+@pytest.mark.asyncio
+async def test_run_playbook_combine():
+    ruleset_queues, event_log = load_rulebook("rules/test_combine_hosts.yml")
+    inventory = dict(
+        all=dict(
+            hosts=dict(
+                localhost0=dict(ansible_connection="local"),
+                localhost1=dict(ansible_connection="local"),
+            )
+        )
+    )
+    queue = ruleset_queues[0][1]
+    queue.put_nowait(dict())
+    # create two events, each limits to a separate host
+    queue.put_nowait(dict(i=0, meta=dict(hosts="localhost0")))
+    queue.put_nowait(dict(i=1, meta=dict(hosts="localhost1")))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        inventory,
+    )
+
+    job_count = 0
+    while not event_log.empty():
+        log = event_log.get_nowait()
+        if log["type"] == "Job":
+            # assert hosts are combined, order not important
+            assert log["hosts"] in [
+                "localhost0,localhost1",
+                "localhost1,localhost0",
+            ]
+            job_count += 1
+
+    # assert only one playbook job has run
+    assert job_count == 1
