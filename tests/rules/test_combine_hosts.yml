@@ -1,0 +1,13 @@
+---
+- name: Combine hosts when run the same playbook
+  hosts: localhost0, localhost1
+  sources:
+    - name: range
+      range:
+        limit: 2
+  rules:
+    - name: r1
+      condition: event.i is defined
+      action:
+        run_playbook:
+          name: playbooks/hello_events.yml
