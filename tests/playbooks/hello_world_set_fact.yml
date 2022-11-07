@@ -1,12 +1,14 @@
 ---
-- name: A playbook
+- name: Set Hello World fact
   hosts: localhost
   gather_facts: false
   tasks:
-    - name:
-      debug:
+    - name: Debug Hello World
+      ansible.builtin.debug:
         msg: 'Hello world'
-    - set_fact:
+
+    - name: Set Hello World fact
+      ansible.builtin.set_fact:
         msg: 'hello world'
-        cacheable: yes
+        cacheable: true
 ...

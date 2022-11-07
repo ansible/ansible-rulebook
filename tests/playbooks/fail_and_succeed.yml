@@ -11,12 +11,12 @@
       ansible.builtin.stat:
         path: "{{ my_path }}"
       register: my_file
-      
 
     - name: Create the file
       ansible.builtin.file:
         path: "{{ my_path }}"
         state: touch
+        mode: "0644"
       when: not my_file.stat.exists
 
     - name: Fail if the file does not exist
