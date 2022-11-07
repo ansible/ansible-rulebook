@@ -21,6 +21,7 @@ jobs:
           - "3.8"
           - "3.9"
           - "3.10"
+          - "3.11"
 
     steps:
       - name: Checkout
@@ -50,6 +51,11 @@ jobs:
         run: pytest
 
       - name: Run tests via Drools
-        run: pytest
+        run: |
+          if [[ "${{ matrix.python-version }}" == "3.11" ]]; then
+            echo "Skipping tests via drools for python 3.11"
+          else
+            pytest
+          fi
         env:
           RULES_ENGINE: drools
