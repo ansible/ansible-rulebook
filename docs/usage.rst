@@ -6,11 +6,6 @@ Usage
 `ansible-rulebook` is either used as a command line tool or used as a web service with `ansible-rulebook-ui`.
 
 
-======================
-CLI Usage and Examples
-======================
-
-
 The `ansible-rulebook` CLI supports the following options::
 
     Options:
@@ -28,23 +23,33 @@ The `ansible-rulebook` CLI supports the following options::
     --id=<i>                    Identifier
     --worker                    Enable worker mode
     --project-tarball=<p>       Project tarball
+    --controller_url=<u>        Controller API base url, e.g. http://host1:8080
+    --controller_token=<t>      Controller API authentication token
 
-To get help from `ansible-rulebook` run the following::
+To get help from `ansible-rulebook` run the following
+
+.. code-block:: console
 
     ansible-rulebook --help
 
-To check the version of `ansible-rulebook` run the following::
+To check the version of `ansible-rulebook` run the following
+
+.. code-block:: console
 
     ansible-rulebook --version
 
-The normal method for running `ansible-rulebook` is the following::
+The normal method for running `ansible-rulebook` is the following
+
+.. code-block:: console
 
     ansible-rulebook --inventory inventory.yml --rulebook rules.yml --vars vars.yml
 
 .. note::
     The `--rulebook` option requires the `--inventory` option. The `--vars` option is not required.
 
-If you are using custom event source plugins use the following::
+If you are using custom event source plugins use the following
+
+.. code-block:: console
 
     ansible-rulebook --inventory inventory.yml --rulebook rules.yml -S sources/
 
