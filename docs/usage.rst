@@ -6,11 +6,6 @@ Usage
 `ansible-rulebook` is either used as a command line tool or used as a web service with `ansible-rulebook-ui`.
 
 
-======================
-CLI Usage and Examples
-======================
-
-
 The `ansible-rulebook` CLI supports the following options::
 
     Options:

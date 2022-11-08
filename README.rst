@@ -29,10 +29,8 @@ by running a playbook or other actions.
 Installation
 ============
 
-Head over to the `Installation`_ page for details on how to install *ansible-rulebook*. Once installed,
+Head over to the :doc:`installation` page for details on how to install *ansible-rulebook*. Once installed,
 continue with the **Getting started** section below to begin writing your first rulesets.
-
-.. _Installation: docs/installation.rst
 
 ===============
 Getting started
@@ -153,9 +151,7 @@ This block of YAML defines a rule with name "Say Hello", a condition that matche
 when an event has an value "i" that is equal to 1, and an action that runs a playbook
 inside the collection ansible.eda.
 
-For more information on usage and examples, please refer to the `Usage`_ guide.
-
-.. _Usage: docs/usage.rst
+For more information on usage and examples, please refer to the :doc:`usage` guide.
 
 
 Credits

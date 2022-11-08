@@ -180,3 +180,9 @@ texinfo_documents = [
         "Miscellaneous",
     ),
 ]
+
+
+# Extra options
+
+# Text by default
+highlight_language = "text"
