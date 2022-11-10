@@ -430,9 +430,16 @@ async def test_missing_rule_names():
         load_rulebook("rules/test_missing_rule_names.yml")
 
 
+PLAYBOOK_MODULE_RULES = [
+    "rules/test_combine_hosts.yml",
+    "rules/test_combine_hosts_module.yml",
+]
+
+
 @pytest.mark.asyncio
-async def test_run_playbook_combine():
-    ruleset_queues, event_log = load_rulebook("rules/test_combine_hosts.yml")
+@pytest.mark.parametrize("rulebook", PLAYBOOK_MODULE_RULES)
+async def test_run_hosts_combine(rulebook):
+    ruleset_queues, event_log = load_rulebook(rulebook)
     inventory = dict(
         all=dict(
             hosts=dict(
