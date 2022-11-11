@@ -1,0 +1,11 @@
+---
+- name: 39 is defined
+  hosts: all
+  sources:
+    - replay:
+        directory: examples/replays/39_is_defined
+  rules:
+    - name: r1
+      condition: event.root is defined
+      action:
+        debug:
