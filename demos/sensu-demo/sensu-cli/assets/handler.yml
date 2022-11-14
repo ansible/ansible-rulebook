@@ -1,0 +1,11 @@
+---
+type: Handler
+api_version: core/v2
+metadata:
+  name: sensu-kafka-handler
+  namespace: default
+spec:
+  command: sensu-kafka-handler --host broker:9092 --topic sensu-events
+  type: pipe
+  runtime_assets:
+    - sensu/sensu-kafka-handler

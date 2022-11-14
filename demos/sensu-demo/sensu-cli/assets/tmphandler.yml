@@ -1,0 +1,13 @@
+---
+type: Handler
+api_version: core/v2
+metadata:
+  name: sensu-tcp-handler
+spec:
+  socket:
+    host: ansible-rulebook
+    port: 5001
+  type: tcp
+  timeout: 30
+  runtime_assets:
+    - sensu/sensu-tcp-handler

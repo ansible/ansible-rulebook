@@ -1,0 +1,18 @@
+---
+- name: sensu-demo rules
+  hosts: localhost
+  sources:
+    # - name: kafka
+    #   ansible.eda.kafka:
+    #     topic: sensu-events
+    #     host: broker
+    #     port: 9092
+    - sensu:
+        host: 0.0.0.0
+        port: 5001
+  rules:
+    - name: recover fake-app outage
+      condition: event.check.metadata.name == "check-fake-app" and event.check.status == 2
+      action:
+        run_playbook:
+          name: recover-fake-app.yml

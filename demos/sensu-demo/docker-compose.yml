@@ -1,0 +1,67 @@
+---
+version: "3"
+
+services:
+  fake-app:
+    image: quay.io/aizquier/fake-app:latest
+    ports:
+      - "5080:5080"
+
+  sensu-backend:
+    image: docker.io/sensu/sensu:latest
+    command: sensu-backend start
+    ports:
+      - "3000:3000"
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      SENSU_BACKEND_CLUSTER_ADMIN_USERNAME: admin
+      SENSU_BACKEND_CLUSTER_ADMIN_PASSWORD: admin
+    healthcheck:
+      test: wget -q -O- http://127.0.0.1:8080/health
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  sensu-agent:
+    image: docker.io/sensu/sensu:latest
+    command: >-
+      sensu-agent start
+    environment:
+      SENSU_PASSWORD: admin
+      SENSU_USER: admin
+      SENSU_SUBSCRIPTIONS: webserver
+      SENSU_API_HOST: localhost
+      SENSU_BACKEND_URL: ws://sensu-backend:8081
+    depends_on:
+      sensu-backend:
+        condition: service_healthy
+
+  sensu-cli:
+    image: ae-sensu-demo-cli
+    build:
+      context: ./sensu-cli
+    environment:
+      SENSU_API_URL: http://sensu-backend:8080
+    command: >-
+      sh -c  "sensuctl configure --username admin --password admin -n &&
+      sensuctl asset add sensu/http-checks &&
+      sensuctl asset add jspaleta/sensu-http-handler &&
+      sensuctl create -f /sensu-assets/check.yml &&
+      sensuctl create -f /sensu-assets/httphandler.yml"
+    depends_on:
+      sensu-backend:
+        condition: service_healthy
+
+  ansible-rulebook:
+    image: quay.io/aizquier/ansible-rulebook:latest
+    build:
+      context: ./ansible-rulebook
+    command: bash -c "cd /data && ansible-rulebook --rulebook rules.yml -i inventory.yml -S sensu --verbose"
+    volumes:
+      - ./ansible-rulebook/data:/data
+    expose:
+      - "5001"
+    depends_on:
+      sensu-backend:
+        condition: service_healthy

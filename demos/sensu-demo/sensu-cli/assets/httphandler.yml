@@ -1,0 +1,13 @@
+---
+api_version: core/v2
+type: Handler
+metadata:
+  namespace: default
+  name: sensu-http-handler
+spec:
+  type: pipe
+  command: sensu-http-handler --url 'http://192.168.144.5:5001/test' --verbose
+  runtime_assets:
+  - jspaleta/sensu-http-handler
+  mutator: "only_check_output"
+  timeout: 10
