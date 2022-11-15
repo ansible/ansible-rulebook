@@ -42,7 +42,7 @@ import os
 import sys
 from typing import List, NoReturn
 
-if os.environ.get("RULES_ENGINE", "drools") == "drools":
+if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
     if os.environ.get("JAVA_HOME") is None:
         print(
             "JAVA_HOME is not set. "
