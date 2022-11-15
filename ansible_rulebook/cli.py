@@ -29,12 +29,6 @@ import sys
 from typing import List, NoReturn
 
 if os.environ.get("RULES_ENGINE", "drools") == "drools":
-    if sys.version_info >= (3, 11):
-        print(
-            "Drools engine is not available for python 3.11 "
-            "or higher versions."
-        )
-        sys.exit(1)
     if os.environ.get("JAVA_HOME") is None:
         print(
             "JAVA_HOME is not set. "
