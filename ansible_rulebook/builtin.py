@@ -287,7 +287,7 @@ async def run_playbook(
             verbosity,
             json_mode,
         )
-        if get_status(temp) != "failed":
+        if _get_latest_artifact(temp, "status") != "failed":
             break
 
     return await post_process_runner(
@@ -388,7 +388,7 @@ async def run_module(
             verbosity,
             json_mode,
         )
-        if get_status(temp) != "failed":
+        if _get_latest_artifact(temp, "status") != "failed":
             break
 
     return await post_process_runner(
@@ -571,13 +571,8 @@ async def post_process_runner(
     post_events: Optional[bool] = None,
 ):
 
-    for rc_file in glob.glob(
-        os.path.join(private_data_dir, "artifacts", "*", "rc")
-    ):
-        with open(rc_file, "r") as f:
-            rc = int(f.read())
-
-    status = get_status(private_data_dir)
+    rc = int(_get_latest_artifact(private_data_dir, "rc"))
+    status = _get_latest_artifact(private_data_dir, "status")
 
     result = dict(
         type="Action",
@@ -595,9 +590,10 @@ async def post_process_runner(
 
     if set_facts or post_events:
         logger.debug("set_facts")
-        for host_facts in glob.glob(
-            os.path.join(private_data_dir, "artifacts", "*", "fact_cache", "*")
-        ):
+        fact_folder = _get_latest_artifact(
+            private_data_dir, "fact_cache", False
+        )
+        for host_facts in glob.glob(os.path.join(fact_folder, "*")):
             with open(host_facts) as f:
                 fact = json.loads(f.read())
             logger.debug("fact %s", fact)
@@ -667,11 +663,11 @@ def update_variables(variables: Dict, var_root: Union[str, Dict]):
                     break
 
 
-def get_status(private_data_dir: str):
-    status_files = glob.glob(
-        os.path.join(private_data_dir, "artifacts", "*", "status")
-    )
-    status_files.sort(key=os.path.getmtime, reverse=True)
-    with open(status_files[0], "r") as f:
-        status = f.read()
-    return status
+def _get_latest_artifact(data_dir: str, artifact: str, content: bool = True):
+    files = glob.glob(os.path.join(data_dir, "artifacts", "*", artifact))
+    files.sort(key=os.path.getmtime, reverse=True)
+    if content:
+        with open(files[0], "r") as f:
+            content = f.read()
+        return content
+    return files[0]
