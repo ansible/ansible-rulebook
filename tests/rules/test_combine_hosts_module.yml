@@ -1,0 +1,15 @@
+---
+- name: Combine hosts when run the same module
+  hosts: localhost0, localhost1
+  sources:
+    - name: range
+      range:
+        limit: 2
+  rules:
+    - name: r1
+      condition: event.i is defined
+      action:
+        run_module:
+          name: ansible.eda.upcase
+          module_args:
+              name: Fred Flintstone
