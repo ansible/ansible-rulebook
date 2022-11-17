@@ -90,15 +90,20 @@ async def run(parsed_args) -> None:
     logger.info("Cancelling event source tasks")
     for task in tasks:
         task.cancel()
+
+    error_found = False
     results = await asyncio.gather(*tasks, return_exceptions=True)
     for result in results:
         if isinstance(result, Exception) and not isinstance(
             result, CancelledError
         ):
             logger.error(result)
+            error_found = True
 
     logger.info("Main complete")
     await event_log.put(dict(type="Exit"))
+    if error_found:
+        raise Exception("One of the source plugins failed")
 
 
 # TODO(cutwater): Maybe move to util.py

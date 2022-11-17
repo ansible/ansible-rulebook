@@ -169,6 +169,7 @@ async def start_source(
         logger.info("Task cancelled")
     except BaseException:
         logger.exception("Source error")
+        raise
     finally:
         await queue.put(Shutdown())
 
