@@ -35,7 +35,7 @@ else:
     )
 
 import ansible_rulebook.rule_generator as rule_generator
-from ansible_rulebook.builtin import actions as builtin_actions, run_playbook
+from ansible_rulebook.builtin import actions as builtin_actions
 from ansible_rulebook.collection import (
     find_source,
     find_source_filter,
@@ -169,6 +169,7 @@ async def start_source(
         logger.info("Task cancelled")
     except BaseException:
         logger.exception("Source error")
+        raise
     finally:
         await queue.put(Shutdown())
 
@@ -378,7 +379,7 @@ class RuleSetRunner:
                 if "ruleset" not in action_args:
                     action_args["ruleset"] = ruleset
 
-                if action == "run_playbook":
+                if action == "run_playbook" or action == "run_module":
                     action_args["event_log"] = self.event_log
                     action_args["inventory"] = inventory
                     action_args["hosts"] = hosts
@@ -387,7 +388,9 @@ class RuleSetRunner:
                     action_args["project_data_file"] = self.project_data_file
                     action_args["source_ruleset_name"] = ruleset
                     action_args["source_rule_name"] = rule
-                    return await self.pa_runner.wait_for_playbook(action_args)
+                    return await self.pa_runner.wait_for_playbook(
+                        action, action_args
+                    )
                 else:
                     return await builtin_actions[action](
                         event_log=self.event_log,
@@ -435,6 +438,12 @@ class RuleSetRunner:
 
 
 class PlaybookActionRunner:
+    """Run playbooks and modules in background
+    Queue all run_playbook and run_module actions.
+    Run them in an interval and combine hosts if possible.
+    Treat run_module as a special type of run_playbook.
+    """
+
     def __init__(self):
         self.actions = OrderedDict()
         self.result = None
@@ -459,33 +468,37 @@ class PlaybookActionRunner:
         for key in list(self.actions.keys()):
             action_args = self.actions[key]
             del self.actions[key]
-            async_condition = action_args.pop("async_condition")
+            async_condition = action_args.pop("_async_condition")
+            action_method = action_args.pop("_action_method")
 
             try:
-                result = await run_playbook(**action_args)
+                result = await action_method(**action_args)
             except Exception as e:
-                action = "run_playbook"
-                logger.exception("Error calling %s", action)
+                logger.exception("Error calling %s", action_method.__name__)
                 result = dict(error=e)
 
             async with async_condition:
                 self.result = result
                 async_condition.notify_all()
 
-    async def wait_for_playbook(self, action_args: Dict):
-        name = action_args["name"]
-        logger.info("Queue playbook %s for running later", name)
+    async def wait_for_playbook(self, action: str, action_args: Dict):
+        name = {action_args["name"]}
+        key = f"{action}_{name}"
+        logger.info("Queue playbook/module %s for running later", name)
 
-        if name in self.actions:
+        if key in self.actions:
             for host in action_args["hosts"]:
-                logger.info("Combine host %s to playbook %s", host, name)
-                self.actions[name]["hosts"].add(host)
-            async_condition = self.actions[name]["async_condition"]
+                logger.info(
+                    "Combine host %s for playbook/module %s", host, name
+                )
+                self.actions[key]["hosts"].add(host)
+            async_condition = self.actions[key]["_async_condition"]
         else:
             async_condition = asyncio.Condition()
-            action_args["async_condition"] = async_condition
+            action_args["_async_condition"] = async_condition
+            action_args["_action_method"] = builtin_actions[action]
             action_args["hosts"] = set(action_args["hosts"])
-            self.actions[name] = action_args
+            self.actions[key] = action_args
 
         result = None
         async with async_condition:
