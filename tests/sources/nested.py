@@ -18,10 +18,14 @@ from typing import Any, Dict
 
 async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     delay = args.get("delay", 0)
+    str_enable = args.get("str_enable", False)
 
-    for j in range(int(args["i_limit"])):
-        for i in range(int(args["j_limit"])):
-            await queue.put(dict(nested=dict(i=i, j=j)))
+    for i in range(int(args["i_limit"])):
+        for j in range(int(args["j_limit"])):
+            payload = {"nested": {"i": i, "j": j}}
+            if str_enable:
+                payload = {"nested": {"i": f"{i}", "j": f"{j}"}}
+            await queue.put(payload)
             await asyncio.sleep(delay)
 
 

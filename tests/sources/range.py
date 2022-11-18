@@ -18,9 +18,11 @@ from typing import Any, Dict
 
 async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     delay = args.get("delay", 0)
+    str_enable = args.get("str_enable", False)
 
     for i in range(int(args["limit"])):
-        await queue.put(dict(i=i))
+        payload = {"i": f"{i}"} if str_enable else {"i": i}
+        await queue.put(payload)
         await asyncio.sleep(delay)
 
 

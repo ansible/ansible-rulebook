@@ -43,9 +43,12 @@ jobs:
         run: ansible-galaxy collection install git+https://github.com/ansible/event-driven-ansible
 
       - name: Run tests via Durable rules
-        run: pytest -vvv
+        run: pytest -m "not e2e" -vv
 
       - name: Run tests via Drools
-        run: pytest -vvv
+        run: pytest -m "not e2e" -vv
         env:
           EDA_RULES_ENGINE: drools
+
+      - name: Run e2e tests
+        run: pytest -m "e2e"
