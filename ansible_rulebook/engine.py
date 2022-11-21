@@ -259,6 +259,7 @@ class RuleSetRunner:
                     lang.end_session(self.name)
                 return
             if not data:
+                # TODO: is it really necessary to add such event to event_log?
                 await self.event_log.put(dict(type="EmptyEvent"))
                 continue
 
@@ -271,8 +272,10 @@ class RuleSetRunner:
     async def run_actions(self, data: Dict):
         results = []
         try:
+            matched = False
             # Asset added by other ruleset, not related to current event
             while not self.ruleset_queue_plan.plan.queue.empty():
+                matched = True
                 item = cast(
                     ActionContext,
                     await self.ruleset_queue_plan.plan.queue.get(),
@@ -293,6 +296,7 @@ class RuleSetRunner:
                 logger.debug(lang.get_pending_events(self.name))
 
             while not self.ruleset_queue_plan.plan.queue.empty():
+                matched = True
                 item = cast(
                     ActionContext,
                     await self.ruleset_queue_plan.plan.queue.get(),
@@ -300,11 +304,15 @@ class RuleSetRunner:
                 result = await self.call_action(*item)
                 results.append(result)
 
-            await self.event_log.put(
-                dict(type="ProcessedEvent", results=results)
-            )
+            if matched:
+                # TODO: how useful to log the results without logging the
+                # original event data?
+                await self.event_log.put(
+                    dict(type="ProcessedEvent", results=results)
+                )
         except MessageNotHandledException:
             logger.info("MessageNotHandledException: %s", data)
+            # TODO: is it really necessary to add such event to event_log?
             await self.event_log.put(dict(type="MessageNotHandled"))
         except ShutdownException:
             await self.ruleset_queue_plan.queue.put(Shutdown())

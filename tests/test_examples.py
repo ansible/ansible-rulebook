@@ -405,8 +405,6 @@ async def test_15_multiple_events_all():
     )
 
     event = event_log.get_nowait()
-    assert event["type"] == "ProcessedEvent", "0"
-    event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
     event = event_log.get_nowait()
@@ -494,8 +492,6 @@ async def test_18_multiple_sources_all():
         dict(),
     )
 
-    event = event_log.get_nowait()
-    assert event["type"] == "ProcessedEvent", "0"
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
@@ -625,8 +621,6 @@ async def test_23_nested_data():
     )
 
     event = event_log.get_nowait()
-    assert event["type"] == "ProcessedEvent", "0"
-    event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "2"
@@ -707,7 +701,6 @@ async def test_26_print_events():
         dict(),
     )
 
-    event_log.get_nowait()
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "print_event", "2"
@@ -743,8 +736,6 @@ async def test_27_var_root():
     )
 
     event = event_log.get_nowait()
-    assert event["type"] == "ProcessedEvent", "0"
-    event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "print_event", "2"
 
@@ -773,7 +764,6 @@ async def test_28_right_side_condition_template():
         dict(),
     )
 
-    event_log.get_nowait()
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
@@ -944,8 +934,8 @@ async def test_35_multiple_rulesets_1_fired():
     )
 
     checks = {
-        "max_events": 5,
-        "processed_events": 2,
+        "max_events": 4,
+        "processed_events": 1,
         "shutdown_events": 1,
         "actions": [
             "35 multiple rulesets 1::r1::set_fact",
@@ -977,8 +967,8 @@ async def test_36_multiple_rulesets_both_fired():
         dict(),
     )
     checks = {
-        "max_events": 6,
-        "processed_events": 3,
+        "max_events": 5,
+        "processed_events": 2,
         "shutdown_events": 1,
         "actions": [
             "36 multiple rulesets 1::r1::set_fact",
