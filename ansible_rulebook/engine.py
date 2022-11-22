@@ -21,7 +21,7 @@ from datetime import datetime
 from pprint import pformat
 from typing import Any, Dict, List, Optional, cast
 
-if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+if os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "drools":
     from drools import ruleset as lang
     from drools.exceptions import (
         MessageNotHandledException,
@@ -255,7 +255,10 @@ class RuleSetRunner:
                 self.pa_runner.stop()
                 await self.pa_runner_task
                 await self.event_log.put(dict(type="Shutdown"))
-                if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+                if (
+                    os.environ.get("EDA_RULES_ENGINE", "durable_rules")
+                    == "drools"
+                ):
                     lang.end_session(self.name)
                 return
             if not data:
@@ -337,7 +340,10 @@ class RuleSetRunner:
         if action in builtin_actions:
             try:
                 single_match = None
-                if os.environ.get("RULES_ENGINE", "durable_rules") == "drools":
+                if (
+                    os.environ.get("EDA_RULES_ENGINE", "durable_rules")
+                    == "drools"
+                ):
                     keys = list(rules_engine_result.data.keys())
                     if len(keys) == 1:
                         single_match = rules_engine_result.data[keys[0]]
@@ -456,7 +462,7 @@ class PlaybookActionRunner:
         self.actions = OrderedDict()
         self.result = None
         self.stopped = True
-        self.delay = int(os.environ.get("RUN_PLAYBOOK_DELAY", 0))
+        self.delay = int(os.environ.get("EDA_RUN_PLAYBOOK_MAX_DELAY", 0))
 
     async def start(self, name: str):
         if not self.stopped:
