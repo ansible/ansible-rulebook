@@ -16,7 +16,7 @@ import os
 
 import pytest
 
-if os.environ.get("RULES_ENGINE", "durable_rules") == "durable_rules":
+if os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "durable_rules":
     from durable.lang import c, m, none
 
     from ansible_rulebook.condition_parser import condition, parse_condition
@@ -24,7 +24,7 @@ if os.environ.get("RULES_ENGINE", "durable_rules") == "durable_rules":
 
 
 @pytest.mark.skipif(
-    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
+    os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "drools",
     reason="durable rules only test",
 )
 def test_infix():
@@ -50,7 +50,7 @@ def test_infix():
 
 
 @pytest.mark.skipif(
-    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
+    os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "drools",
     reason="durable rules only test",
 )
 def test_m():
@@ -94,7 +94,7 @@ def test_m():
 
 
 @pytest.mark.skipif(
-    os.environ.get("RULES_ENGINE", "durable_rules") == "drools",
+    os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "drools",
     reason="durable rules only test",
 )
 def test_parse_condition():
