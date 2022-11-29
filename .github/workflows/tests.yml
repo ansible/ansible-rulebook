@@ -45,7 +45,7 @@ jobs:
         run: python -m pip install -r requirements_test.txt
 
       - name: Install `ansible.eda` collection
-        run: ansible-galaxy collection install ansible.eda
+        run: ansible-galaxy collection install git+https://github.com/ansible/event-driven-ansible
 
       - name: Run tests via Durable rules
         run: pytest
