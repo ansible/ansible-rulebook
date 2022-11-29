@@ -235,7 +235,7 @@ async def run_playbook(
 ):
 
     logger.info("running Ansible playbook: %s", name)
-    temp, playbook_name = await pre_process_runner(
+    temp_dir, playbook_name = await pre_process_runner(
         event_log,
         inventory,
         variables,
@@ -281,18 +281,18 @@ async def run_playbook(
         await call_runner(
             event_log,
             job_id,
-            temp,
+            temp_dir,
             dict(playbook=playbook_name),
             hosts,
             verbosity,
             json_mode,
         )
-        if _get_latest_artifact(temp, "status") != "failed":
+        if _get_latest_artifact(temp_dir, "status") != "failed":
             break
 
-    return await post_process_runner(
+    result = await post_process_runner(
         event_log,
-        temp,
+        temp_dir,
         ruleset,
         source_rule_name,
         settings.identifier,
@@ -303,6 +303,9 @@ async def run_playbook(
         set_facts,
         post_events,
     )
+
+    shutil.rmtree(temp_dir)
+    return result
 
 
 async def run_module(
@@ -329,7 +332,7 @@ async def run_module(
     **kwargs,
 ):
 
-    temp, module_name = await pre_process_runner(
+    temp_dir, module_name = await pre_process_runner(
         event_log,
         inventory,
         variables,
@@ -378,7 +381,7 @@ async def run_module(
         await call_runner(
             event_log,
             job_id,
-            temp,
+            temp_dir,
             dict(
                 module=module_name,
                 host_pattern=",".join(hosts),
@@ -388,12 +391,12 @@ async def run_module(
             verbosity,
             json_mode,
         )
-        if _get_latest_artifact(temp, "status") != "failed":
+        if _get_latest_artifact(temp_dir, "status") != "failed":
             break
 
-    return await post_process_runner(
+    result = await post_process_runner(
         event_log,
-        temp,
+        temp_dir,
         ruleset,
         source_rule_name,
         settings.identifier,
@@ -404,6 +407,8 @@ async def run_module(
         set_facts,
         post_events,
     )
+    shutil.rmtree(temp_dir)
+    return result
 
 
 async def call_runner(
