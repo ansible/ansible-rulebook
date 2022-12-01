@@ -85,7 +85,9 @@ async def request_workload(activation_id, websocket_address):
 
 async def send_event_log_to_websocket(event_log, websocket_address):
     logger.info("websocket %s connecting", websocket_address)
-    async for websocket in websockets.connect(websocket_address):
+    async for websocket in websockets.connect(
+        websocket_address, logger=logger
+    ):
         logger.info("websocket %s connected", websocket_address)
         event = None
         try:
