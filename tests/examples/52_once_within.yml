@@ -1,0 +1,27 @@
+---
+- name: 52 once within
+  hosts: all
+  sources:
+    - generic:
+        loop_count: 20
+        payload:
+          - alert:
+               level: warning
+               message: Low disk space
+            meta:
+               hosts: HostA
+          - alert:
+               level: error
+               message: Disk failure
+            meta:
+               hosts: HostA
+  rules:
+    - name: r1
+      condition: event.alert.level == "warning" or event.alert.level == "error"
+      action:
+        debug:
+      throttle:
+          once_within: 2 seconds
+          group_by_attributes:
+             - event.meta.hosts
+             - event.alert.level
