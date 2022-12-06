@@ -6,7 +6,12 @@ from typing import Any, Callable
 from urllib.parse import parse_qsl, urljoin, urlparse
 
 import aiohttp
-import dpath.util
+import dpath
+
+from ansible_rulebook.exception import (
+    ControllerApiException,
+    JobTemplateNotExistException,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +34,7 @@ class JobTemplateRunner:
             {"name": name, "summary_fields.organization.name": organization},
         )
         if not job_template:
-            raise Exception(
+            raise JobTemplateNotExistException(
                 "Job template %s in organization %s does not exist"
                 % (name, organization)
             )
@@ -44,21 +49,11 @@ class JobTemplateRunner:
             params = dict(parse_qsl(url_info.query))
             while True:
                 response = await self._get_page(session, url_info.path, params)
-                if response["status"] != 200:
-                    raise Exception(
-                        "Failed to get from %s. Status: %s, Body: %s"
-                        % (
-                            href_slug,
-                            response["status"],
-                            response.get("body", "empty"),
-                        )
-                    )
-
                 json_body = json.loads(response["body"])
                 for obj in json_body["results"]:
                     match = True
                     for key, value in query.items():
-                        if dpath.util.get(obj, key, ".") != value:
+                        if dpath.get(obj, key, ".") != value:
                             match = False
                             break
                     if match:
@@ -74,6 +69,15 @@ class JobTemplateRunner:
         async with session.get(url, params=params) as response:
             response_text = dict(
                 status=response.status, body=await response.text()
+            )
+        if response_text["status"] != 200:
+            raise ControllerApiException(
+                "Failed to get from %s. Status: %s, Body: %s"
+                % (
+                    url,
+                    response_text["status"],
+                    response_text.get("body", "empty"),
+                )
             )
         return response_text
 
@@ -101,20 +105,10 @@ class JobTemplateRunner:
         ) as session:
             while True:
                 response = await self._get_page(session, url, params)
-                if response["status"] != 200:
-                    raise Exception(
-                        "Failed to get from %s. Status: %s, Body: %s"
-                        % (
-                            url,
-                            response["status"],
-                            response.get("body", "empty"),
-                        )
-                    )
-
                 json_body = json.loads(response["body"])
                 job_status = None
                 for event in json_body["results"]:
-                    job_status = dpath.util.get(
+                    job_status = dpath.get(
                         event, "summary_fields.job.status", "."
                     )
                     counter = event["counter"]
@@ -148,8 +142,8 @@ class JobTemplateRunner:
                 )
 
                 if response["status"] not in self.VALID_POST_CODES:
-                    raise Exception(
-                        "Post failed %s status %s body %s"
+                    raise ControllerApiException(
+                        "Failed to post to %s. Status: %s, Body: %s"
                         % (
                             url,
                             response["status"],
@@ -199,6 +193,6 @@ if __name__ == "__main__":
         )
     )
     print("Job template running finished with status", ret)
-    while event_log.empty():
+    while not event_log.empty():
         log = event_log.get_nowait()
         pprint.pprint(log)
