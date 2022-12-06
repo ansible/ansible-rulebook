@@ -27,8 +27,37 @@ class JobTemplateRunner:
         self.refresh_delay = int(
             os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10)
         )
+        self.template_id_cache = {}
 
     async def get_job_template(self, name: str, organization: str) -> dict:
+        key = f"{name}/{organization}"
+        search = True
+        if key in self.template_id_cache:
+            id = self.template_id_cache[key]
+            # load job template to verify the id is valid and names matched
+            job_template = await self.get_job_template_by_id(id)
+            new_organization = dpath.get(
+                job_template, "summary_fields.organization.name", separator="."
+            )
+            if (
+                job_template["name"] == name
+                and new_organization == organization
+            ):
+                search = False
+        if search:
+            job_template = await self._search_job_template(name, organization)
+            self.template_id_cache[key] = job_template["id"]
+        return job_template
+
+    async def get_job_template_by_id(self, id: int) -> dict:
+        async with aiohttp.ClientSession(
+            headers=self._auth_headers()
+        ) as session:
+            slug = f"{self.JOB_TEMPLATE_SLUG}/{id}/"
+            response = await self._get_page(session, slug, {})
+            return json.loads(response["body"])
+
+    async def _search_job_template(self, name: str, organization: str) -> dict:
         job_template = await self._search_list(
             self.JOB_TEMPLATE_SLUG,
             {"name": name, "summary_fields.organization.name": organization},
