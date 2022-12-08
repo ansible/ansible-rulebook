@@ -89,7 +89,7 @@ is a more complete example that accepts alerts from Alertmanager::
 
 
 This example sets up a webhook to receive events from alertmanager and then matches events
-where the `fastapi` job alert has a staus of `firing`.  This runs a playbook that will
+where the `fastapi` job alert has a status of `firing`.  This runs a playbook that will
 remediate the issue.
 
 
