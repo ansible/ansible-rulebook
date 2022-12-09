@@ -12,13 +12,20 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import logging
+import sys
+
 from pyparsing import (
     Combine,
+    Group,
     Literal,
     OpAssoc,
+    ParseException,
     ParserElement,
     QuotedString,
+    Suppress,
     ZeroOrMore,
+    delimitedList,
     infix_notation,
     one_of,
     pyparsing_common,
@@ -35,6 +42,8 @@ from ansible_rulebook.condition_types import (  # noqa: E402
     OperatorExpression,
     String,
 )
+
+logger = logging.getLogger(__name__)
 
 integer = pyparsing_common.signed_integer.copy().add_parse_action(
     lambda toks: Integer(toks[0])
@@ -61,12 +70,23 @@ string2 = (
     QuotedString('"').copy().add_parse_action(lambda toks: String(toks[0]))
 )
 
+delim_value = Group(delimitedList(integer | ident | string1 | string2))
+list_values = Suppress("[") + delim_value + Suppress("]")
+
+
+def as_list(var):
+    if hasattr(var.__class__, "as_list"):
+        return var.as_list()
+    return var
+
 
 def OperatorExpressionFactory(tokens):
     return_value = None
     while tokens:
         if return_value is None:
-            return_value = OperatorExpression(tokens[0], tokens[1], tokens[2])
+            return_value = OperatorExpression(
+                as_list(tokens[0]), tokens[1], as_list(tokens[2])
+            )
             tokens = tokens[3:]
         else:
             return_value = OperatorExpression(
@@ -76,8 +96,9 @@ def OperatorExpressionFactory(tokens):
     return return_value
 
 
+all_terms = list_values | integer | boolean | varname | string1 | string2
 condition = infix_notation(
-    integer | boolean | varname | string1 | string2,
+    all_terms,
     [
         ("+", 1, OpAssoc.RIGHT, lambda toks: ExistsExpression(*toks[0])),
         ("!", 1, OpAssoc.RIGHT),
@@ -136,13 +157,17 @@ condition = infix_notation(
             lambda toks: OperatorExpressionFactory(toks[0]),
         ),
         (
-            "and",
+            one_of(
+                strs=["not in", "in", "not contains", "contains"],
+                caseless=True,
+                as_keyword=True,
+            ),
             2,
             OpAssoc.LEFT,
             lambda toks: OperatorExpressionFactory(toks[0]),
         ),
         (
-            "or",
+            one_of(["and", "or"]),
             2,
             OpAssoc.LEFT,
             lambda toks: OperatorExpressionFactory(toks[0]),
@@ -158,4 +183,9 @@ condition = infix_notation(
 
 
 def parse_condition(condition_string: str) -> Condition:
-    return condition.parseString(condition_string)[0]
+    try:
+        return condition.parseString(condition_string, parse_all=True)[0]
+    except ParseException as pe:
+        print(pe.explain(depth=0), file=sys.stderr)
+        logger.error(pe.explain(depth=0))
+        raise

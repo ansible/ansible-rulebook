@@ -187,6 +187,75 @@ def test_parse_condition():
         {},
     )
 
+    assert {
+        "ItemInListExpression": {
+            "lhs": {"Fact": "i"},
+            "rhs": [{"Integer": 1}, {"Integer": 2}, {"Integer": 3}],
+        }
+    } == visit_condition(parse_condition("fact.i in [1,2,3]"), {})
+
+    assert {
+        "ItemInListExpression": {
+            "lhs": {"Fact": "name"},
+            "rhs": [
+                {"String": "fred"},
+                {"String": "barney"},
+                {"String": "wilma"},
+            ],
+        }
+    } == visit_condition(
+        parse_condition("fact.name in ['fred','barney','wilma']"), {}
+    )
+
+    assert {
+        "ItemNotInListExpression": {
+            "lhs": {"Fact": "i"},
+            "rhs": [{"Integer": 1}, {"Integer": 2}, {"Integer": 3}],
+        }
+    } == visit_condition(parse_condition("fact.i not in [1,2,3]"), {})
+
+    assert {
+        "ItemNotInListExpression": {
+            "lhs": {"Fact": "name"},
+            "rhs": [
+                {"String": "fred"},
+                {"String": "barney"},
+                {"String": "wilma"},
+            ],
+        }
+    } == visit_condition(
+        parse_condition("fact.name not in ['fred','barney','wilma']"), {}
+    )
+    assert {
+        "ListContainsItemExpression": {
+            "lhs": {"Fact": "mylist"},
+            "rhs": {"Integer": 1},
+        }
+    } == visit_condition(parse_condition("fact.mylist contains 1"), {})
+
+    assert {
+        "ListContainsItemExpression": {
+            "lhs": {"Fact": "friends"},
+            "rhs": {"String": "fred"},
+        }
+    } == visit_condition(parse_condition("fact.friends contains 'fred'"), {})
+
+    assert {
+        "ListNotContainsItemExpression": {
+            "lhs": {"Fact": "mylist"},
+            "rhs": {"Integer": 1},
+        }
+    } == visit_condition(parse_condition("fact.mylist not contains 1"), {})
+
+    assert {
+        "ListNotContainsItemExpression": {
+            "lhs": {"Fact": "friends"},
+            "rhs": {"String": "fred"},
+        }
+    } == visit_condition(
+        parse_condition("fact.friends not contains 'fred'"), {}
+    )
+
 
 @pytest.mark.parametrize(
     "rulebook",

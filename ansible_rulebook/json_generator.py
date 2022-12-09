@@ -161,6 +161,22 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
                     ),
                 }
             }
+        elif parsed_condition.operator == "in":
+            return create_binary_node(
+                "ItemInListExpression", parsed_condition, variables
+            )
+        elif parsed_condition.operator == "not in":
+            return create_binary_node(
+                "ItemNotInListExpression", parsed_condition, variables
+            )
+        elif parsed_condition.operator == "contains":
+            return create_binary_node(
+                "ListContainsItemExpression", parsed_condition, variables
+            )
+        elif parsed_condition.operator == "not contains":
+            return create_binary_node(
+                "ListNotContainsItemExpression", parsed_condition, variables
+            )
         else:
             raise Exception(f"Unhandled token {parsed_condition}")
     elif isinstance(parsed_condition, ExistsExpression):
@@ -170,6 +186,15 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
         return visit_condition(parsed_condition.value, variables).__pos__()
     else:
         raise Exception(f"Unhandled token {parsed_condition}")
+
+
+def create_binary_node(name, parsed_condition, variables):
+    return {
+        name: {
+            "lhs": visit_condition(parsed_condition.left, variables),
+            "rhs": visit_condition(parsed_condition.right, variables),
+        }
+    }
 
 
 def visit_rule(parsed_rule: Rule, variables: Dict):

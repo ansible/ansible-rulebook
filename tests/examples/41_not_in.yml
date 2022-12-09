@@ -1,0 +1,12 @@
+---
+- name: 41 not in
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name: r1
+      condition: event.i not in [11,21,31,41]
+      action:
+        debug:

@@ -631,6 +631,14 @@ currently supported
      - To check if a variable is defined
    * - is not defined
      - To check if a variable is not defined
+   * - in
+     - Check if an item on the left hand side exists in a list defined on the right hand side
+   * - not in
+     - Check if an item on the left hand side does not exist in a list defined on the right hand side.
+   * - contains
+     - Check if a list on the left hand side contains the item defined on the right hand side
+   * - not contains
+     - Check if a list on the left hand side does not contain the item defined on the right hand side
    * - `<<`
      - Assignment operator, to save the matching events or facts with events or facts prefix
 
