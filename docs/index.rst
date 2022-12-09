@@ -17,7 +17,6 @@ Welcome to Ansible Rulebook documentation
    collections
    environments
    contributing
-   authors
    history
 
 Indices and tables
