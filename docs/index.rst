@@ -1,5 +1,5 @@
-Welcome to ansible-rulebook's documentation!
-==========================================
+Welcome to Ansible Rulebook documentation
+=========================================
 
 .. toctree::
    :maxdepth: 2
@@ -17,7 +17,6 @@ Welcome to ansible-rulebook's documentation!
    collections
    environments
    contributing
-   authors
    history
 
 Indices and tables

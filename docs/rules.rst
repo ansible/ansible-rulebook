@@ -278,8 +278,8 @@ run_playbook
    * - var_root
      - If the event is a deeply nested dictionary, the var_root can specify the key name whose value should replace the matching event value. The var_root can take a dictionary to account for data when we have multiple matching events.
      - No
-   * - `*` (any other args)
-     - These will be passed to the playbook
+   * - rulebook_extra_vars
+     - In addition to the passed in vars and matching events the rulebook_extra_vars would be passed into the playbook as extra vars.
      - No
 
 run_module

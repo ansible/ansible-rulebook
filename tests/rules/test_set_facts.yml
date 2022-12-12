@@ -21,7 +21,7 @@
       action:
         run_playbook:
           name: playbooks/validate_args_playbook.yml
-          validate_args:
+          rulebook_extra_vars:
              fact.msg: hello world
              fact.alpha: 1
              fact.beta.name: R2D2

@@ -29,7 +29,7 @@ from pprint import pprint
 from typing import Callable, Dict, List, Optional, Union
 
 import ansible_runner
-import dpath.util
+import dpath
 import janus
 import yaml
 
@@ -651,7 +651,7 @@ def update_variables(variables: Dict, var_root: Union[str, Dict]):
     var_roots = {var_root: var_root} if isinstance(var_root, str) else var_root
     if "event" in variables:
         for key, _new_key in var_roots.items():
-            new_value = dpath.util.get(
+            new_value = dpath.get(
                 variables["event"], key, separator=".", default=None
             )
             if new_value:
@@ -660,9 +660,7 @@ def update_variables(variables: Dict, var_root: Union[str, Dict]):
     elif "events" in variables:
         for _k, v in variables["events"].items():
             for old_key, new_key in var_roots.items():
-                new_value = dpath.util.get(
-                    v, old_key, separator=".", default=None
-                )
+                new_value = dpath.get(v, old_key, separator=".", default=None)
                 if new_value:
                     variables["events"][new_key] = new_value
                     break

@@ -10,4 +10,4 @@ recursive-exclude * *.py[co]
 
 recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif
 
-recursive-include schema *.json
+recursive-include ansible_rulebook/schema *.json

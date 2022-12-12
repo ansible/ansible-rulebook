@@ -1,6 +1,6 @@
-========================
+==============
 Limiting hosts
-========================
+==============
 
 You can limit hosts to run a playbook through configuring the meta data in an event's data.
 The limiting hosts must be a subset of the hosts (inventory) selected in the rules file.

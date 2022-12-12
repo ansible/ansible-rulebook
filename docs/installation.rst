@@ -44,7 +44,7 @@ Installation via pip
     ansible-galaxy collection install community.general ansible.eda
 
 Installation examples
---------------------
+---------------------
 
 On Fedora-like systems:
 
