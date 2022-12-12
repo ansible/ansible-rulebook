@@ -1,8 +1,8 @@
-========================
-Including multiple Sources
-========================
+==========================
+Including multiple sources
+==========================
 
-In a rule you can configure match one or more source, each emitting events in different format. 
+In a rule you can configure match one or more source, each emitting events in different format.
 
 Example::
 
@@ -24,7 +24,7 @@ The condition can match events from either source::
         action:
           debug:
 
-To avoid name conflicts the source data structure can use nested keys. The above examples assumes ``range`` 
+To avoid name conflicts the source data structure can use nested keys. The above examples assumes ``range``
 has data like ``{"i": 1}`` and ``range2`` has data like ``{"range2": {"i": 1}}``.
 
 Notes:

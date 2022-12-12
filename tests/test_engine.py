@@ -18,16 +18,15 @@ from pprint import pprint
 
 import pytest
 import yaml
+from jsonschema.exceptions import ValidationError
 
 from ansible_rulebook.engine import run_rulesets, start_source
-from ansible_rulebook.exception import (
-    RulenameDuplicateException,
-    RulenameEmptyException,
-)
+from ansible_rulebook.exception import RulenameDuplicateException
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.rule_types import EventSource, EventSourceFilter
 from ansible_rulebook.rules_parser import parse_rule_sets
 from ansible_rulebook.util import load_inventory
+from ansible_rulebook.validators import Validate
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -37,6 +36,7 @@ def load_rulebook(rules_file):
     with open(rules_file) as f:
         data = yaml.safe_load(f.read())
 
+    Validate.rulebook(data)
     rulesets = parse_rule_sets(data)
     pprint(rulesets)
 
@@ -434,13 +434,13 @@ async def test_duplicate_rule_names():
 
 @pytest.mark.asyncio
 async def test_empty_rule_names():
-    with pytest.raises(RulenameEmptyException):
+    with pytest.raises(ValidationError):
         load_rulebook("rules/test_empty_rule_names.yml")
 
 
 @pytest.mark.asyncio
 async def test_missing_rule_names():
-    with pytest.raises(RulenameEmptyException):
+    with pytest.raises(ValidationError):
         load_rulebook("rules/test_missing_rule_names.yml")
 
 
@@ -489,3 +489,9 @@ async def test_run_hosts_combine(rulebook):
 
     # assert only one playbook job has run
     assert job_count == 1
+
+
+@pytest.mark.asyncio
+async def test_blank_rule_names():
+    with pytest.raises(ValidationError):
+        load_rulebook("rules/test_blank_rule_name.yml")

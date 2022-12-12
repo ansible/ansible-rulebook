@@ -29,6 +29,7 @@ from ansible_rulebook.collection import (
 from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.rule_types import RuleSet, RuleSetQueue
 from ansible_rulebook.util import load_inventory
+from ansible_rulebook.validators import Validate
 from ansible_rulebook.websocket import (
     request_workload,
     send_event_log_to_websocket,
@@ -135,7 +136,9 @@ def load_rulebook(parsed_args) -> List[RuleSet]:
             "Loading rules from the file system %s", parsed_args.rulebook
         )
         with open(parsed_args.rulebook) as f:
-            return rules_parser.parse_rule_sets(yaml.safe_load(f.read()))
+            data = yaml.safe_load(f.read())
+            Validate.rulebook(data)
+            return rules_parser.parse_rule_sets(data)
     elif has_rulebook(*split_collection_name(parsed_args.rulebook)):
         logger.debug(
             "Loading rules from a collection %s", parsed_args.rulebook

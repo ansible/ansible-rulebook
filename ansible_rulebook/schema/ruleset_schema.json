@@ -52,7 +52,9 @@
             "type": "object",
             "properties": {
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "\\S"
                 },
                 "condition": {
                     "anyOf": [
@@ -62,17 +64,24 @@
                     ]
                 },
                 "action": {
-                    "anyOf": [
+                    "oneOf": [
                         {"$ref": "#/$defs/run-playbook-action"},
+                        {"$ref": "#/$defs/run-module-action"},
                         {"$ref": "#/$defs/post-event-action"},
                         {"$ref": "#/$defs/set-fact-action"},
                         {"$ref": "#/$defs/retract-fact-action"},
                         {"$ref": "#/$defs/print-event-action"},
                         {"$ref": "#/$defs/debug-action"},
-                        {"$ref": "#/$defs/none-action"}
+                        {"$ref": "#/$defs/none-action"},
+                        {"$ref": "#/$defs/shutdown-action"}
                     ]
                 }
             },
+            "required": [
+                "name",
+                "condition",
+                "action"
+            ],
             "additionalProperties": false
         },
         "all-condition": {
@@ -106,18 +115,50 @@
                         "post_events": { "type": "boolean" },
                         "set_facts": { "type": "boolean" },
                         "verbosity": {"type": "integer" },
-                        "var_root": {"type": "string" },
+                        "var_root": {"type": ["string","object"] },
                         "json_mode": { "type": "boolean" },
                         "retry": { "type": "boolean" },
                         "retries": { "type": "integer" },
-                        "delay": { "type": "integer" }
+                        "delay": { "type": "number" },
+                        "rulebook_extra_vars": {"type": "object"}
                     },
                     "required": [
                         "name"
                     ],
                     "additionalProperties": false
                 }
-            }
+            },
+            "required": [
+                  "run_playbook"
+            ]
+        },
+        "run-module-action": {
+            "type": "object",
+            "properties": {
+                "run_module": {
+                    "type": "object",
+                    "properties": {
+                        "copy_files": { "type": "boolean" },
+                        "name": {"type": "string" },
+                        "post_events": { "type": "boolean" },
+                        "set_facts": { "type": "boolean" },
+                        "verbosity": {"type": "integer" },
+                        "var_root": {"type": ["string","object"] },
+                        "json_mode": { "type": "boolean" },
+                        "retry": { "type": "boolean" },
+                        "retries": { "type": "integer" },
+                        "delay": { "type": "number" },
+                        "module_args": {"type": "object"}
+                    },
+                    "required": [
+                        "name"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                  "run_module"
+            ]
         },
         "post-event-action": {
             "type": "object",
@@ -127,9 +168,15 @@
                     "properties": {
                         "ruleset": {"type": "string" },
                         "event": {"type": "object" }
-                    }
+                    },
+                    "required": [
+                       "event"
+                    ]
                 }
-            }
+            },
+            "required": [
+                "post_event"
+            ]
         },
         "set-fact-action": {
             "type": "object",
@@ -139,9 +186,15 @@
                     "properties": {
                         "ruleset": {"type": "string" },
                         "fact": {"type": "object" }
-                    }
+                    },
+                    "required": [
+                       "fact"
+                    ]
                 }
-            }
+            },
+            "required": [
+                "set_fact"
+            ]
         },
         "retract-fact-action": {
             "type": "object",
@@ -151,37 +204,63 @@
                     "properties": {
                         "ruleset": {"type": "string" },
                         "fact": {"type": "object" }
-                    }
+                    },
+                    "required": [
+                       "fact"
+                    ]
                 }
-            }
+            },
+            "required": [
+                "retract_fact"
+            ]
         },
         "print-event-action": {
             "type": "object",
             "properties": {
                 "print_event": {
-                    "type": "object",
+                    "type": ["object","null"],
                     "properties": {
-                        "var_root": {"type": "string" },
+                        "var_root": {"type": ["string","object"] },
                         "pretty": {"type": "boolean" }
                     }
                 }
-            }
+            },
+            "required": [
+                "print_event"
+            ]
         },
         "debug-action": {
             "type": "object",
             "properties": {
                 "debug": {
-                    "type": "object"
+                    "type": ["object","null"]
                 }
-            }
+            },
+            "required": [
+                "debug"
+            ]
         },
         "none-action": {
             "type": "object",
             "properties": {
                 "none": {
-                    "type": "object"
+                    "type": ["object","null"]
                 }
-            }
+            },
+            "required": [
+                "none"
+            ]
+        },
+        "shutdown-action": {
+            "type": "object",
+            "properties": {
+                "shutdown": {
+                    "type": ["object","null"]
+                }
+            },
+            "required": [
+                "shutdown"
+            ]
         }
     }
 }

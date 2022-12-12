@@ -1,5 +1,5 @@
 ========================
-Matching Multiple events
+Matching multiple events
 ========================
 
 In a rule you can match one or more events from the same source. Once all the events match it executes the action. Two extra variables are passed into the playbook
