@@ -1,5 +1,5 @@
 ---
-- name: Playbook to check if the passed in values in validate_args are correct
+- name: Playbook to check if the passed in values in rulebook_extra_vars are correct
   hosts: localhost
   gather_facts: false
   tasks:
@@ -9,4 +9,4 @@
 
     - name: Compare value
       ansible.builtin.include_tasks: compare_value.yml
-      loop: "{{ validate_args | dict2items }}"
+      loop: "{{ rulebook_extra_vars | dict2items }}"

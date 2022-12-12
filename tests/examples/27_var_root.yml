@@ -2,7 +2,9 @@
 - name: 27 multiple events all with var_root
   hosts: all
   sources:
-    - non_existent:
+    - name: range
+      range:
+        limit: 5
   rules:
     - name: r1
       condition:
