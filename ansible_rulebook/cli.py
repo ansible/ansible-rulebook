@@ -125,7 +125,6 @@ def get_parser() -> argparse.ArgumentParser:
 
 def show_version() -> NoReturn:
     print(ansible_rulebook.__version__)
-    print(settings.identifier)
     sys.exit(0)
 
 
