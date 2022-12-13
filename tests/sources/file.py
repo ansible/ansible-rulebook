@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import asyncio
 import os
 
 import yaml
@@ -19,13 +20,13 @@ from watchdog.events import RegexMatchingEventHandler
 from watchdog.observers import Observer
 
 
-def send_facts(queue, filename):
+def send_facts(loop, queue, filename):
     with open(filename) as f:
         data = yaml.safe_load(f.read())
         if data is None:
             return
         if isinstance(data, dict):
-            queue.put(data)
+            loop.call_soon_threadsafe(queue.put_nowait, data)
         else:
             if not isinstance(data, list):
                 raise Exception(
@@ -40,10 +41,10 @@ def send_facts(queue, filename):
                     f" found {data}"
                 )
             for item in data:
-                queue.put(item)
+                loop.call_soon_threadsafe(queue.put_nowait, item)
 
 
-def main(queue, args):
+def sync_main(loop, queue, args):
 
     files = [os.path.abspath(f) for f in args.get("files", [])]
 
@@ -51,7 +52,7 @@ def main(queue, args):
         return
 
     for filename in files:
-        send_facts(queue, filename)
+        send_facts(loop, queue, filename)
 
     class Handler(RegexMatchingEventHandler):
         def __init__(self, **kwargs):
@@ -59,14 +60,14 @@ def main(queue, args):
 
         def on_created(self, event):
             if event.src_path in files:
-                send_facts(queue, event.src_path)
+                send_facts(loop, queue, event.src_path)
 
         def on_deleted(self, event):
             pass
 
         def on_modified(self, event):
             if event.src_path in files:
-                send_facts(queue, event.src_path)
+                send_facts(loop, queue, event.src_path)
 
         def on_moved(self, event):
             pass
@@ -86,10 +87,15 @@ def main(queue, args):
         observer.stop()
 
 
+async def main(queue, args):
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, sync_main, loop, queue, args)
+
+
 if __name__ == "__main__":
 
     class MockQueue:
-        def put(self, event):
+        def put_nowait(self, event):
             print(event)
 
-    main(MockQueue(), {"files": ["facts.yml"]})
+    asyncio.run(main(MockQueue(), {"files": ["facts.yml"]}))
