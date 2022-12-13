@@ -37,6 +37,7 @@ Options:
 """
 import argparse
 import asyncio
+import importlib.metadata
 import logging
 import os
 import sys
@@ -53,6 +54,7 @@ if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
 import ansible_rulebook
 from ansible_rulebook import app
 from ansible_rulebook.conf import settings
+from ansible_rulebook.util import get_java_version
 
 logger = logging.getLogger(__name__)
 
@@ -124,8 +126,19 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def show_version() -> NoReturn:
-    print(ansible_rulebook.__version__)
-    print(settings.identifier)
+    rules_engine = f"{os.environ.get('EDA_RULES_ENGINE', 'durable-rules')}"
+    java_home = f"{os.environ.get('JAVA_HOME', 'JAVA_HOME not present')}"
+
+    result = [
+        f"{ansible_rulebook.__version__}",
+        f"  Executable location = {sys.argv[0]}",
+        f"  Rules engine = {rules_engine}",
+        f"  Drools_jpy version = {importlib.metadata.version('drools_jpy')}",
+        f"  Java home = {java_home}",
+        f"  Java version = {get_java_version()}",
+        f"  Python version = {''.join(sys.version.splitlines())}",
+    ]
+    print("\n".join(result))
     sys.exit(0)
 
 

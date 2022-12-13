@@ -15,6 +15,8 @@
 import glob
 import json
 import os
+import shutil
+import subprocess
 import tempfile
 from pprint import pprint
 from typing import Any, Dict, List, Union
@@ -124,3 +126,18 @@ def collect_ansible_facts(inventory: Dict) -> List[Dict]:
             hosts_facts.append(data)
 
     return hosts_facts
+
+
+def get_java_version() -> str:
+    exec_path = shutil.which("java")
+    if not exec_path:
+        return "Java executable not found."
+    try:
+        result = subprocess.run(
+            [exec_path, "--version"], capture_output=True, check=True
+        )
+    except subprocess.CalledProcessError as exc:
+        print(exc)
+        return "Java error"
+
+    return result.stdout.splitlines()[0].decode()
