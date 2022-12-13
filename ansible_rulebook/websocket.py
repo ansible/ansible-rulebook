@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 async def request_workload(activation_id, websocket_address):
     logger.info("websocket %s connecting", websocket_address)
-    async with websockets.connect(websocket_address) as websocket:
+    async with websockets.connect(websocket_address, compression=None, origin="http://localhost", user_agent_header=None) as websocket:
         try:
             logger.info("websocket %s connected", websocket_address)
             await websocket.send(
