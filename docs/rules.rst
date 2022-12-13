@@ -227,6 +227,8 @@ The following actions are supported
      - Run an Ansible playbook from a collection
    * - run_module
      - Run an Ansible module from a collection or from the Ansible built in modules
+   * - run_job_template
+     - Run a job template in the registered controller
    * - set_fact
      - Set a fact for the rule set, will fire all matching rules different from post_event 
    * - post_event
@@ -308,6 +310,46 @@ run_module
      - No
    * - verbosity
      - Verbosity level when running the module, a value between 1-4
+     - No
+
+run_job_template
+************
+.. list-table:: Run a job template
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - name
+     - The name of the job template
+     - Yes
+   * - organization
+     - The name of the organization
+     - Yes
+   * - set_facts
+     - The artifacts from the playbook execution are inserted back into the rule set as facts
+     - No
+   * - post_events
+     - The artifacts from the playbook execution are inserted back into the rule set as events
+     - No
+   * - ruleset
+     - The name of the ruleset to post the event or assert the fact to, default is current rule set.
+     - No
+   * - retry
+     - If the playbook fails execution, retry it once, boolean value true|false
+     - No
+   * - retries
+     - If the playbook fails execution, the number of times to retry it. An integer value
+     - No
+   * - delay
+     - The retry interval, an integer value specified in seconds
+     - No
+   * - var_root
+     - If the event is a deeply nested dictionary, the var_root can specify the key name whose value should replace the matching event value. The var_root can take a dictionary to account for data when we have multiple matching events.
+     - No
+   * - job_args
+     - Additional arguments sent to the job template launch API. Any answers to the survey and other extra vars should be set in nested key extra_vars. Event(s) and fact(s) will be automatically included in extra_vars too.
      - No
 
 post_event

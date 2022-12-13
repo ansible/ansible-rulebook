@@ -5,6 +5,8 @@ Actions
 Event driven automation supports several built-in actions that can be run from rules.  These are:
 
     * run_playbook - run a playbook using ansible-runner
+    * run_module - run a module using ansible-runner
+    * run_job_template - run a job template through tower api
     * set_fact - set a long term fact
     * retract_fact - remove a long term fact
     * post_event - send a new short term event to the rule engine
