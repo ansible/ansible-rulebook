@@ -1,0 +1,13 @@
+---
+- name: Test equal operator (int)
+  hosts: all
+  sources:
+    - range:
+        limit: 8
+  rules:
+    - name: r1
+      condition: event.i == 4
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
+          json_mode: true

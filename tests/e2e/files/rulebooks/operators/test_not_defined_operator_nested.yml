@@ -1,0 +1,15 @@
+---
+- name: Test is not defined operator nested
+  hosts: all
+  sources:
+    - nested:
+        j_limit: 5
+        i_limit: 1
+        # delay: 1
+  rules:
+    - name: r1
+      condition: event.nested.idonotexist is not defined
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
+          json_mode: true
