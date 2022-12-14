@@ -1,0 +1,14 @@
+---
+- name: Test is not defined operator
+  hosts: all
+  sources:
+    - range:
+        limit: 5
+        # delay: 1
+  rules:
+    - name: r1
+      condition: event.idonotexist is not defined
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
+          json_mode: true

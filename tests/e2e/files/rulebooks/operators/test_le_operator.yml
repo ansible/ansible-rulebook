@@ -1,0 +1,14 @@
+---
+- name: Test less or equal operator
+  hosts: all
+  sources:
+    - range:
+        limit: 8
+        # delay: 1
+  rules:
+    - name: r1
+      condition: event.i <= 3
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
+          json_mode: true
