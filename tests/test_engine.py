@@ -125,8 +125,8 @@ async def test_run_rulesets():
     )
 
     checks = {
-        "max_events": 23,
-        "processed_events": 5,
+        "max_events": 22,
+        "processed_events": 4,
         "shutdown_events": 1,
         "job_events": 1,
         "ansible_events": 9,
@@ -155,8 +155,6 @@ async def test_run_rules_with_assignment():
 
     assert event_log.get_nowait()["type"] == "Action", "0"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
-    # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '1'
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
     assert event_log.get_nowait()["type"] == "Shutdown", "3"
     assert event_log.empty()
 
@@ -181,8 +179,6 @@ async def test_run_rules_with_assignment2():
 
     assert event_log.get_nowait()["type"] == "Action", "0"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
-    # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '1'
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
     assert event_log.get_nowait()["type"] == "Shutdown", "3"
     assert event_log.empty()
 
@@ -242,8 +238,8 @@ async def test_run_multiple_hosts():
     )
 
     checks = {
-        "max_events": 27,
-        "processed_events": 6,
+        "max_events": 25,
+        "processed_events": 4,
         "shutdown_events": 1,
         "job_events": 1,
         "ansible_events": 13,
@@ -274,19 +270,9 @@ async def test_run_multiple_hosts2():
         load_inventory("playbooks/inventory1.yml"),
     )
 
-    # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '0'
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
-    assert event_log.get_nowait()["type"] == "Action", "1.1"
+    assert event_log.get_nowait()["type"] == "Action", "1"
     assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
-    # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '2.5'
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
-    # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '4'
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "5"
-    # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '6'
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "7"
-    # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '8'
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "9"
-    assert event_log.get_nowait()["type"] == "Shutdown", "10"
+    assert event_log.get_nowait()["type"] == "Shutdown", "3"
     assert event_log.empty()
 
 
@@ -312,20 +298,9 @@ async def test_run_multiple_hosts3():
         load_inventory("playbooks/inventory.yml"),
     )
 
-    # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '0'
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
-    # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '2'
-    assert event_log.get_nowait()["type"] == "Action", "2"
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
-    # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '4'
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "5"
-    # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '6'
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "7"
-    # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '8'
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "9"
-    # assert event_log.get_nowait()['type'] == 'MessageNotHandled', '10'
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "11"
-    assert event_log.get_nowait()["type"] == "Shutdown", "12"
+    assert event_log.get_nowait()["type"] == "Action", "1"
+    assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
+    assert event_log.get_nowait()["type"] == "Shutdown", "3"
     assert event_log.empty()
 
 
@@ -382,8 +357,8 @@ async def test_run_rulesets_on_hosts():
     )
 
     checks = {
-        "max_events": 23,
-        "processed_events": 5,
+        "max_events": 22,
+        "processed_events": 4,
         "shutdown_events": 1,
         "job_events": 1,
         "ansible_events": 9,
