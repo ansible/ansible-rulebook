@@ -35,6 +35,12 @@ from ansible_rulebook.websocket import (
     send_event_log_to_websocket,
 )
 
+
+class NullQueue:
+    async def put(self, _data):
+        pass
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -52,6 +58,7 @@ async def run(parsed_args) -> None:
         ) = await request_workload(
             int(parsed_args.id), parsed_args.websocket_address
         )
+        event_log = asyncio.Queue()
     else:
         inventory = {}
         variables = load_vars(parsed_args)
@@ -59,8 +66,7 @@ async def run(parsed_args) -> None:
         if parsed_args.inventory:
             inventory = load_inventory(parsed_args.inventory)
         project_data_file = parsed_args.project_tarball
-
-    event_log = asyncio.Queue()
+        event_log = NullQueue()
 
     logger.info("Starting sources")
     tasks, ruleset_queues = spawn_sources(
