@@ -34,6 +34,8 @@ Options:
     --id=<i>                    Identifier
     --worker                    Enable worker mode
     --project-tarball=<p>       Project tarball
+    --controller_url=<u>        Controller API base url, e.g. http://host1:8080
+    --controller_token=<t>      Controller API authentication token
 """
 import argparse
 import asyncio
@@ -42,6 +44,8 @@ import logging
 import os
 import sys
 from typing import List, NoReturn
+
+from ansible_rulebook.job_template_runner import job_template_runner
 
 if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
     if os.environ.get("JAVA_HOME") is None:
@@ -122,6 +126,14 @@ def get_parser() -> argparse.ArgumentParser:
         "--project-tarball",
         help="A tarball of the project",
     )
+    parser.add_argument(
+        "--controller-url",
+        help="Controller API base url, e.g. http://host1:8080",
+    )
+    parser.add_argument(
+        "--controller-token",
+        help="Controller API authentication token",
+    )
     return parser
 
 
@@ -166,6 +178,14 @@ def main(args: List[str] = None) -> int:
     if args.rulebook and not args.inventory:
         print("Error: inventory is required")
         return 1
+
+    if args.controller_url:
+        if args.controller_token:
+            job_template_runner.host = args.controller_url
+            job_template_runner.token = args.controller_token
+        else:
+            print("Error: controller_token is required")
+            return 1
 
     if args.id:
         settings.identifier = args.id
