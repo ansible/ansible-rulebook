@@ -58,7 +58,6 @@ async def run(parsed_args) -> None:
         ) = await request_workload(
             int(parsed_args.id), parsed_args.websocket_address
         )
-        event_log = asyncio.Queue()
     else:
         inventory = {}
         variables = load_vars(parsed_args)
@@ -66,6 +65,10 @@ async def run(parsed_args) -> None:
         if parsed_args.inventory:
             inventory = load_inventory(parsed_args.inventory)
         project_data_file = parsed_args.project_tarball
+
+    if parsed_args.websocket_address:
+        event_log = asyncio.Queue()
+    else:
         event_log = NullQueue()
 
     logger.info("Starting sources")
