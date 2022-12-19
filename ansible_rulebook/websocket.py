@@ -79,6 +79,8 @@ async def request_workload(activation_id, websocket_address):
                     job_template_runner.host = data.get("data")
                 if data.get("type") == "ControllerToken":
                     job_template_runner.token = data.get("data")
+                if data.get("type") == "ControllerSslVerify":
+                    job_template_runner.verify_ssl = data.get("data")
             return inventory, extra_vars, rulebook, project_data_file
         except CancelledError:
             logger.info("closing websocket due to task cancelled")
