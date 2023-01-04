@@ -94,8 +94,9 @@ def assert_playbook_output(result: CompletedProcess) -> List[dict]:
 
     output = jsonify_output(result.stdout.decode())
 
-    assert output[-1]["event_data"]["ok"]
-    assert not output[-1]["event_data"]["failures"]
+    if output:
+        assert output[-1]["event_data"]["ok"]
+        assert not output[-1]["event_data"]["failures"]
 
     return output
 

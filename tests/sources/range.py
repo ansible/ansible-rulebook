@@ -19,9 +19,12 @@ from typing import Any, Dict
 async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     delay = args.get("delay", 0)
     str_enable = args.get("str_enable", False)
+    extra_payload = args.get("extra_payload", None)
 
     for i in range(int(args["limit"])):
         payload = {"i": f"{i}"} if str_enable else {"i": i}
+        if extra_payload:
+            payload.update({"extra_payload": extra_payload})
         await queue.put(payload)
         await asyncio.sleep(delay)
 

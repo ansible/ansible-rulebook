@@ -231,3 +231,150 @@ def test_defined_operator(rules_engine, rulebook):
     ]
 
     assert len(printed_events) == 5
+
+
+@pytest.mark.e2e
+@pytest.mark.parametrize(
+    "rulebook,expected_count",
+    [
+        pytest.param(
+            "test_contains_str_single_operator.yml",
+            3,
+            id="contains_str_single",
+        ),
+        pytest.param(
+            "test_contains_str_single_neg_operator.yml",
+            0,
+            id="contains_str_single_neg",
+        ),
+        pytest.param(
+            "test_contains_str_combined_operator.yml",
+            1,
+            id="contains_str_combined",
+        ),
+        pytest.param(
+            "test_contains_int_single_operator.yml",
+            3,
+            id="contains_int_single",
+        ),
+        pytest.param(
+            "test_contains_int_combined_operator.yml",
+            1,
+            id="contains_int_combined",
+        ),
+        pytest.param(
+            "test_not_contains_str_single_operator.yml",
+            0,
+            id="not_contains_str_single",
+        ),
+        pytest.param(
+            "test_not_contains_str_combined_neg_operator.yml",
+            2,
+            id="not_contains_str_combined",
+        ),
+        pytest.param(
+            "test_not_contains_int_combined_operator.yml",
+            1,
+            id="not_contains_int_combined",
+        ),
+    ],
+)
+def test_contains_operator(default_rules_engine, rulebook, expected_count):
+    """
+    GIVEN a rulebook with range source plugin that produces events
+        and the event contains an array
+        and a condition like "{array} [not] contains {str|int}"
+        and an action to run a playbook that prints the event
+    WHEN the program is executed
+    THEN the playbook must be executed the expected times printing the event
+        and the program must finish without errors
+    """
+
+    rulebook = utils.BASE_DATA_PATH / f"rulebooks/operators/{rulebook}"
+    cmd = utils.Command(rulebook=rulebook)
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        env=utils.get_environ(default_rules_engine),
+        timeout=DEFAULT_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+    )
+
+    output = utils.assert_playbook_output(result)
+
+    printed_events = [
+        line for line in output if "Event matched" in line["stdout"]
+    ]
+
+    assert len(printed_events) == expected_count
+
+
+@pytest.mark.e2e
+@pytest.mark.parametrize(
+    "rulebook,expected_count",
+    [
+        pytest.param(
+            "test_in_str_multiple_extra_vars_operator.yml",
+            2,
+            id="int_combined_multiple_extravars",
+        ),
+        pytest.param(
+            "test_in_int_single_operator.yml",
+            1,
+            id="int_single",
+        ),
+        pytest.param(
+            "test_not_in_int_extra_vars_operator.yml",
+            2,
+            id="not_in_int_extravars",
+        ),
+        pytest.param(
+            "test_not_in_str_extra_vars_operator.yml",
+            3,
+            id="not_in_str_extravars",
+        ),
+        pytest.param(
+            "test_in_str_single_operator.yml",
+            2,
+            id="str_single",
+        ),
+        pytest.param(
+            "test_not_in_str_single_operator.yml",
+            3,
+            id="not_in_str_single",
+        ),
+    ],
+)
+def test_in_operator(default_rules_engine, rulebook, expected_count):
+    """
+    GIVEN a rulebook with range source plugin that produces events
+        and the event contains an array
+        and a condition like "{array} [not] contains {str|int}"
+        and an action to run a playbook that prints the event
+    WHEN the program is executed
+    THEN the playbook must be executed the expected times printing the event
+        and the program must finish without errors
+    """
+
+    rulebook = utils.BASE_DATA_PATH / f"rulebooks/operators/{rulebook}"
+    vars_file = utils.BASE_DATA_PATH / "extra_vars/operator_variables.yml"
+    cmd = utils.Command(rulebook=rulebook, vars_file=vars_file)
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        env=utils.get_environ(default_rules_engine),
+        timeout=DEFAULT_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+    )
+
+    output = utils.assert_playbook_output(result)
+
+    printed_events = [
+        line for line in output if "Event matched" in line["stdout"]
+    ]
+
+    assert len(printed_events) == expected_count

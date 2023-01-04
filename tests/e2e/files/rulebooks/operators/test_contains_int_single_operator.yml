@@ -1,0 +1,22 @@
+---
+- name: Test CONTAINS operator, one condition, int
+  hosts: all
+  sources:
+    - range:
+        limit: 3
+        delay: 1
+        extra_payload:
+          numbers:
+            - 42
+            - 2.7182
+            - 3.1415
+            - 173.035
+            - 20000000000000000426408380189087937446025157425359298935486676996 # > uint64
+
+  rules:
+    - name: r1
+      condition: event.extra_payload.numbers contains 20000000000000000426408380189087937446025157425359298935486676996
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
+          json_mode: true

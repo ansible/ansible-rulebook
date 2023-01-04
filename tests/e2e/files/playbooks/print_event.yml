@@ -2,5 +2,11 @@
   gather_facts: false
   tasks:
     - name: Print event
+      when: event is defined
       ansible.builtin.debug:
         msg: "Event matched: {{ event }}"
+
+    - name: Print events
+      when: events is defined
+      ansible.builtin.debug:
+        msg: "Event matched: {{ events }}"
