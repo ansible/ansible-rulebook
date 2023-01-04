@@ -8,6 +8,7 @@ Welcome to Ansible Rulebook documentation
    readme
    installation
    usage
+   rulebooks
    rules
    conditions
    actions
