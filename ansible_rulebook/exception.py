@@ -31,8 +31,3 @@ class RulenameDuplicateException(Exception):
 class ControllerApiException(Exception):
 
     pass
-
-
-class JobTemplateNotExistException(Exception):
-
-    pass
