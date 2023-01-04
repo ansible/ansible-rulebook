@@ -463,6 +463,9 @@ class PlaybookActionRunner:
         self.result = None
         self.stopped = True
         self.delay = float(os.environ.get("EDA_RUN_PLAYBOOK_MAX_DELAY", 0.01))
+        # Protect against explicit user configuration
+        if self.delay == 0:
+            self.delay = 0.01
 
     async def start(self, name: str):
         if not self.stopped:
