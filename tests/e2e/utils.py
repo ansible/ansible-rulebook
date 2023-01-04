@@ -1,11 +1,14 @@
 """module with utils for e2e tests"""
 
+import asyncio
 import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
 from subprocess import CompletedProcess
 from typing import Iterable, List, Optional, Union
+
+import websockets.server as ws_server
 
 BASE_DATA_PATH = Path(f"{__file__}").parent / Path("files")
 DEFAULT_SOURCES = Path(f"{__file__}").parent / Path("../sources")
@@ -106,3 +109,16 @@ def get_environ(envvars: dict) -> dict:
     environ = os.environ.copy()
     environ.update(envvars)
     return environ
+
+
+async def msg_handler(
+    websocket: ws_server.WebSocketServerProtocol, queue: asyncio.Queue
+):
+    """
+    Handler for a websocket server that passes json messages
+    from ansible-rulebook in the given queue
+    """
+    async for message in websocket:
+        payload = json.loads(message)
+        data = {"path": websocket.path, "payload": payload}
+        await queue.put(data)
