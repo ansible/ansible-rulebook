@@ -1,0 +1,12 @@
+- name: Test websocket range events
+  hosts: all
+  sources:
+    - name: Generate a range
+      ansible.eda.range:
+        limit: 2000
+  rules:
+    - name: match the event
+      condition: event.i == 700
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
