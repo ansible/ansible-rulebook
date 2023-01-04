@@ -30,16 +30,11 @@ Installation via pip
 
     JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 
-2. We use a rules engine called Drools which is written in Java and needs to be compiled from source, by
-   setting the following environment variable::
-
-    export PIP_NO_BINARY=jpy
-
-3. Install `ansible-rulebook` and dependencies via `pip`::
+2. Install `ansible-rulebook` and dependencies via `pip`::
 
     pip install wheel ansible-rulebook ansible ansible-runner
 
-4. Install the required Ansible collections::
+3. Install the required Ansible collections::
 
     ansible-galaxy collection install community.general ansible.eda
 
@@ -53,7 +48,6 @@ On Fedora-like systems:
     dnf --assumeyes install gcc java-17-openjdk maven python3-devel python3-pip
     export JDK_HOME=/usr/lib/jvm/java-17-openjdk
     export JAVA_HOME=$JDK_HOME
-    export PIP_NO_BINARY=jpy
     pip3 install -U Jinja2
     pip3 install ansible ansible-rulebook ansible-runner wheel
 
@@ -64,7 +58,6 @@ On Ubuntu systems:
     apt-get --assume-yes install build-essential maven openjdk-17-jdk python3-dev python3-pip
     export JDK_HOME=/usr/lib/jvm/java-17-openjdk-amd64
     export JAVA_HOME=$JDK_HOME
-    export PIP_NO_BINARY=jpy
     export PATH=$PATH:~/.local/bin
     pip3 install -U Jinja2
     pip3 install ansible ansible-rulebook ansible-runner wheel
