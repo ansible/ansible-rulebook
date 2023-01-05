@@ -18,7 +18,7 @@ import logging
 import os
 from typing import Callable, Dict, List
 
-if os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "drools":
+if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
     from drools.rule import Rule as DroolsRule
     from drools.ruleset import Ruleset as DroolsRuleset
 
@@ -212,7 +212,7 @@ def make_fn(
     return fn
 
 
-if os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "durable_rules":
+if os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules":
 
     def generate_rulesets(
         ruleset_queues: List[RuleSetQueue],
