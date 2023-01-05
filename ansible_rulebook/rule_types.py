@@ -79,7 +79,7 @@ class ActionContext(NamedTuple):
 
 class RuleSetQueue(NamedTuple):
     ruleset: RuleSet
-    queue: asyncio.Queue
+    source_queue: asyncio.Queue
 
 
 @dataclass
@@ -89,5 +89,5 @@ class Plan:
 
 class EngineRuleSetQueuePlan(NamedTuple):
     ruleset: EngineRuleSet
-    queue: asyncio.Queue
+    source_queue: asyncio.Queue
     plan: Plan
