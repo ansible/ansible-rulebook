@@ -979,7 +979,7 @@ async def test_36_multiple_rulesets_both_fired():
 
 
 @pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "durable_rules",
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
     reason="durable rules does not support more than 255 keys in facts",
 )
 @pytest.mark.asyncio
