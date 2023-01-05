@@ -33,7 +33,7 @@ import dpath
 import janus
 import yaml
 
-if os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "drools":
+if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
     from drools import ruleset as lang
 else:
     from durable import lang

@@ -21,7 +21,7 @@ from datetime import datetime
 from pprint import pformat
 from typing import Any, Dict, List, Optional, cast
 
-if os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "drools":
+if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
     from drools import ruleset as lang
     from drools.exceptions import (
         MessageNotHandledException,
@@ -248,17 +248,14 @@ class RuleSetRunner:
 
         logger.info("Waiting for event from %s", self.name)
         while True:
-            data = await self.ruleset_queue_plan.queue.get()
+            data = await self.ruleset_queue_plan.source_queue.get()
             json_count(data)
             if isinstance(data, Shutdown):
                 await asyncio.wait(self.action_tasks)
                 self.pa_runner.stop()
                 await self.pa_runner_task
                 await self.event_log.put(dict(type="Shutdown"))
-                if (
-                    os.environ.get("EDA_RULES_ENGINE", "durable_rules")
-                    == "drools"
-                ):
+                if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
                     lang.end_session(self.name)
                 return
             if not data:
@@ -284,10 +281,6 @@ class RuleSetRunner:
                     await self.ruleset_queue_plan.plan.queue.get(),
                 )
                 result = await self.call_action(*item)
-
-            # create a new plan queue for current event so that results
-            # can be concatenated
-            self.ruleset_queue_plan.plan.queue = asyncio.Queue()
 
             try:
                 lang.post(self.name, data)
@@ -318,7 +311,7 @@ class RuleSetRunner:
             # TODO: is it really necessary to add such event to event_log?
             await self.event_log.put(dict(type="MessageNotHandled"))
         except ShutdownException:
-            await self.ruleset_queue_plan.queue.put(Shutdown())
+            await self.ruleset_queue_plan.source_queue.put(Shutdown())
         except Exception:
             logger.exception("Error processing %s", data)
 
@@ -340,10 +333,7 @@ class RuleSetRunner:
         if action in builtin_actions:
             try:
                 single_match = None
-                if (
-                    os.environ.get("EDA_RULES_ENGINE", "durable_rules")
-                    == "drools"
-                ):
+                if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
                     keys = list(rules_engine_result.data.keys())
                     if len(keys) == 1:
                         single_match = rules_engine_result.data[keys[0]]

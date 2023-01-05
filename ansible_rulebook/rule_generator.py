@@ -18,7 +18,7 @@ import logging
 import os
 from typing import Callable, Dict, List
 
-if os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "drools":
+if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
     from drools.rule import Rule as DroolsRule
     from drools.ruleset import Ruleset as DroolsRuleset
 
@@ -212,7 +212,7 @@ def make_fn(
     return fn
 
 
-if os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "durable_rules":
+if os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules":
 
     def generate_rulesets(
         ruleset_queues: List[RuleSetQueue],
@@ -221,7 +221,7 @@ if os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "durable_rules":
     ) -> List[EngineRuleSetQueuePlan]:
         rulesets = []
 
-        for ansible_ruleset, queue in ruleset_queues:
+        for ansible_ruleset, source_queue in ruleset_queues:
             a_ruleset = ruleset(ansible_ruleset.name)
             plan = Plan(queue=asyncio.Queue())
             with a_ruleset:
@@ -244,7 +244,9 @@ if os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "durable_rules":
                             ),
                         )(fn)
                         logger.info(r.define())
-            rulesets.append(EngineRuleSetQueuePlan(a_ruleset, queue, plan))
+            rulesets.append(
+                EngineRuleSetQueuePlan(a_ruleset, source_queue, plan)
+            )
 
         return rulesets
 
@@ -258,7 +260,7 @@ else:
 
         rulesets = []
 
-        for ansible_ruleset, queue in ruleset_queues:
+        for ansible_ruleset, source_queue in ruleset_queues:
             ruleset_ast = visit_ruleset(ansible_ruleset, variables)
             drools_ruleset = DroolsRuleset(
                 name=ansible_ruleset.name,
@@ -281,6 +283,6 @@ else:
                     )
 
             rulesets.append(
-                EngineRuleSetQueuePlan(drools_ruleset, queue, plan)
+                EngineRuleSetQueuePlan(drools_ruleset, source_queue, plan)
             )
         return rulesets
