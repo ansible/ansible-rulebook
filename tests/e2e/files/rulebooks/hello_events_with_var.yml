@@ -1,0 +1,14 @@
+---
+- name: Hello Events with variable
+  hosts: all
+  sources:
+    - range:
+        limit: "{{ RANGE_LIMIT }}"
+  rules:
+    - name: Say Hello
+      condition: event.i == 1
+      action:
+        run_module:
+          name: ansible.builtin.debug
+          module_args:
+            msg: Hello there!
