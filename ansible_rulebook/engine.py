@@ -285,10 +285,6 @@ class RuleSetRunner:
                 )
                 result = await self.call_action(*item)
 
-            # create a new plan queue for current event so that results
-            # can be concatenated
-            self.ruleset_queue_plan.plan.queue = asyncio.Queue()
-
             try:
                 lang.post(self.name, data)
             except MessageObservedException:
