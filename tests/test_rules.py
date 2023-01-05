@@ -16,7 +16,7 @@ import asyncio
 import os
 from queue import Queue
 
-if os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "drools":
+if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
     from drools.ruleset import assert_fact as set_fact, post
 else:
     from durable import lang
@@ -40,7 +40,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 @pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "drools",
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "drools",
     reason="durable rules only test",
 )
 def test_m():
@@ -93,7 +93,7 @@ def test_m():
 
 
 @pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "drools",
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "drools",
     reason="durable rules only test",
 )
 def test_ruleset():
@@ -115,7 +115,7 @@ def test_ruleset():
 
 
 @pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "drools",
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "drools",
     reason="durable rules only test",
 )
 def test_rules():
@@ -147,7 +147,7 @@ def test_rules():
 
 
 @pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "drools",
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "drools",
     reason="durable rules only test",
 )
 def test_set_facts():
@@ -171,7 +171,7 @@ def test_set_facts():
 
 
 @pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "durable_rules") == "drools",
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "drools",
     reason="durable rules only test",
 )
 def test_parse_rules():

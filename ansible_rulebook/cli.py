@@ -126,7 +126,7 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def show_version() -> NoReturn:
-    rules_engine = f"{os.environ.get('EDA_RULES_ENGINE', 'durable-rules')}"
+    rules_engine = f"{os.environ.get('EDA_RULES_ENGINE', 'drools')}"
     java_home = f"{os.environ.get('JAVA_HOME', 'JAVA_HOME not present')}"
 
     result = [
@@ -155,6 +155,10 @@ def setup_logging(args: argparse.Namespace) -> None:
 def main(args: List[str] = None) -> int:
     parser = get_parser()
     args = parser.parse_args(args)
+
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(0)
 
     if args.version:
         show_version()
