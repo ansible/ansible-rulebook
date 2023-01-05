@@ -156,6 +156,10 @@ def main(args: List[str] = None) -> int:
     parser = get_parser()
     args = parser.parse_args(args)
 
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(0)
+
     if args.version:
         show_version()
 
