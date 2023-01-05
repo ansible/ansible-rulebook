@@ -26,3 +26,8 @@ class RulenameEmptyException(Exception):
 class RulenameDuplicateException(Exception):
 
     pass
+
+
+class ControllerApiException(Exception):
+
+    pass
