@@ -126,7 +126,7 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def show_version() -> NoReturn:
-    rules_engine = f"{os.environ.get('EDA_RULES_ENGINE', 'durable-rules')}"
+    rules_engine = f"{os.environ.get('EDA_RULES_ENGINE', 'drools')}"
     java_home = f"{os.environ.get('JAVA_HOME', 'JAVA_HOME not present')}"
 
     result = [

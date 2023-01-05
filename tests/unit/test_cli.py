@@ -13,7 +13,7 @@ def test_show_version(capsys):
     pattern = re.compile(
         r"""(.+)\d+\.\d+\.\d+'
   Executable location = (.+)
-  Rules engine = (drools|durable-rules)
+  Rules engine = (drools|durable_rules)
   Drools_jpy version = \d+\.\d+\.\d+
   Java home = (.+)
   Java version = (.+)\d+\.\d+\.\d+(.+)
