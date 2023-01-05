@@ -1,0 +1,12 @@
+---
+- name: 44 in and
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name: r1
+      condition: event.i > 3 and event.i in [1,2,3,4]
+      action:
+        debug:
