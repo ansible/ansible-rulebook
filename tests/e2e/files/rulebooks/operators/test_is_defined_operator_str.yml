@@ -5,7 +5,7 @@
     - range:
         limit: 5
         str_enable: true
-        # delay: 1
+        delay: 1
   rules:
     - name: r1
       condition: event.i is defined
