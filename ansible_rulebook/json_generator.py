@@ -35,6 +35,24 @@ from ansible_rulebook.rule_types import (
 )
 from ansible_rulebook.util import substitute_variables
 
+OPERATOR_MNEMONIC = {
+    "!=": "NotEqualsExpression",
+    "==": "EqualsExpression",
+    "and": "AndExpression",
+    "or": "OrExpression",
+    ">": "GreaterThanExpression",
+    "<": "LessThanExpression",
+    ">=": "GreaterThanOrEqualToExpression",
+    "<=": "LessThanOrEqualToExpression",
+    "+": "AdditionExpression",
+    "-": "SubtractionExpression",
+    "<<": "AssignmentExpression",
+    "in": "ItemInListExpression",
+    "not in": "ItemNotInListExpression",
+    "contains": "ListContainsItemExpression",
+    "not contains": "ListNotContainsItemExpression",
+}
+
 
 def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
     """Visit the condition and generate the AST."""
@@ -66,76 +84,12 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
     elif isinstance(parsed_condition, Integer):
         return {"Integer": parsed_condition.value}
     elif isinstance(parsed_condition, OperatorExpression):
-        if parsed_condition.operator == "!=":
-            return {
-                "NotEqualsExpression": {
-                    "lhs": visit_condition(parsed_condition.left, variables),
-                    "rhs": visit_condition(parsed_condition.right, variables),
-                }
-            }
-        elif parsed_condition.operator == "==":
-            return {
-                "EqualsExpression": {
-                    "lhs": visit_condition(parsed_condition.left, variables),
-                    "rhs": visit_condition(parsed_condition.right, variables),
-                }
-            }
-        elif parsed_condition.operator == "and":
-            return {
-                "AndExpression": {
-                    "lhs": visit_condition(parsed_condition.left, variables),
-                    "rhs": visit_condition(parsed_condition.right, variables),
-                }
-            }
-        elif parsed_condition.operator == "or":
-            return {
-                "OrExpression": {
-                    "lhs": visit_condition(parsed_condition.left, variables),
-                    "rhs": visit_condition(parsed_condition.right, variables),
-                }
-            }
-        elif parsed_condition.operator == ">":
-            return {
-                "GreaterThanExpression": {
-                    "lhs": visit_condition(parsed_condition.left, variables),
-                    "rhs": visit_condition(parsed_condition.right, variables),
-                }
-            }
-        elif parsed_condition.operator == "<":
-            return {
-                "LessThanExpression": {
-                    "lhs": visit_condition(parsed_condition.left, variables),
-                    "rhs": visit_condition(parsed_condition.right, variables),
-                }
-            }
-        elif parsed_condition.operator == ">=":
-            return {
-                "GreaterThanOrEqualToExpression": {
-                    "lhs": visit_condition(parsed_condition.left, variables),
-                    "rhs": visit_condition(parsed_condition.right, variables),
-                }
-            }
-        elif parsed_condition.operator == "<=":
-            return {
-                "LessThanOrEqualToExpression": {
-                    "lhs": visit_condition(parsed_condition.left, variables),
-                    "rhs": visit_condition(parsed_condition.right, variables),
-                }
-            }
-        elif parsed_condition.operator == "+":
-            return {
-                "AdditionExpression": {
-                    "lhs": visit_condition(parsed_condition.left, variables),
-                    "rhs": visit_condition(parsed_condition.right, variables),
-                }
-            }
-        elif parsed_condition.operator == "-":
-            return {
-                "SubtractionExpression": {
-                    "lhs": visit_condition(parsed_condition.left, variables),
-                    "rhs": visit_condition(parsed_condition.right, variables),
-                }
-            }
+        if parsed_condition.operator in OPERATOR_MNEMONIC:
+            return create_binary_node(
+                OPERATOR_MNEMONIC[parsed_condition.operator],
+                parsed_condition,
+                variables,
+            )
         elif parsed_condition.operator == "is":
             if isinstance(parsed_condition.right, Identifier):
                 if parsed_condition.right.value == "defined":
@@ -152,31 +106,6 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
                             parsed_condition.left, variables
                         )
                     }
-        elif parsed_condition.operator == "<<":
-            return {
-                "AssignmentExpression": {
-                    "lhs": visit_condition(parsed_condition.left, variables),
-                    "rhs": (
-                        visit_condition(parsed_condition.right, variables)
-                    ),
-                }
-            }
-        elif parsed_condition.operator == "in":
-            return create_binary_node(
-                "ItemInListExpression", parsed_condition, variables
-            )
-        elif parsed_condition.operator == "not in":
-            return create_binary_node(
-                "ItemNotInListExpression", parsed_condition, variables
-            )
-        elif parsed_condition.operator == "contains":
-            return create_binary_node(
-                "ListContainsItemExpression", parsed_condition, variables
-            )
-        elif parsed_condition.operator == "not contains":
-            return create_binary_node(
-                "ListNotContainsItemExpression", parsed_condition, variables
-            )
         else:
             raise Exception(f"Unhandled token {parsed_condition}")
     elif isinstance(parsed_condition, ExistsExpression):
