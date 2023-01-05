@@ -19,6 +19,10 @@ class Integer(NamedTuple):
     value: int
 
 
+class Float(NamedTuple):
+    value: float
+
+
 class String(NamedTuple):
     value: str
 
@@ -32,9 +36,9 @@ class Identifier(NamedTuple):
 
 
 class OperatorExpression(NamedTuple):
-    left: Union[Integer, String, List]
+    left: Union[Float, Integer, String, List]
     operator: str
-    right: Union[Integer, String, List]
+    right: Union[Float, Integer, String, List]
 
 
 class ExistsExpression(NamedTuple):
@@ -44,7 +48,12 @@ class ExistsExpression(NamedTuple):
 
 class Condition(NamedTuple):
     value: Union[
-        Integer, String, Identifier, OperatorExpression, ExistsExpression
+        Float,
+        Integer,
+        String,
+        Identifier,
+        OperatorExpression,
+        ExistsExpression,
     ]
 
 
@@ -55,5 +64,6 @@ ConditionTypes = Union[
     Identifier,
     String,
     Integer,
+    Float,
     ExistsExpression,
 ]

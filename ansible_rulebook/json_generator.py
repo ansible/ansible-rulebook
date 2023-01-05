@@ -20,6 +20,7 @@ from ansible_rulebook.condition_types import (
     Condition,
     ConditionTypes,
     ExistsExpression,
+    Float,
     Identifier,
     Integer,
     OperatorExpression,
@@ -83,6 +84,8 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
         }
     elif isinstance(parsed_condition, Integer):
         return {"Integer": parsed_condition.value}
+    elif isinstance(parsed_condition, Float):
+        return {"Float": parsed_condition.value}
     elif isinstance(parsed_condition, OperatorExpression):
         if parsed_condition.operator in OPERATOR_MNEMONIC:
             return create_binary_node(
