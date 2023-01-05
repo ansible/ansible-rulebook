@@ -4,7 +4,7 @@
   sources:
     - range:
         limit: 8
-        # delay: 1
+        delay: 1
   rules:
     - name: r1
       condition: event.i != 5
