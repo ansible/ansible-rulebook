@@ -248,7 +248,7 @@ class RuleSetRunner:
 
         logger.info("Waiting for event from %s", self.name)
         while True:
-            data = await self.ruleset_queue_plan.queue.get()
+            data = await self.ruleset_queue_plan.source_queue.get()
             json_count(data)
             if isinstance(data, Shutdown):
                 await asyncio.wait(self.action_tasks)
@@ -285,10 +285,6 @@ class RuleSetRunner:
                 )
                 result = await self.call_action(*item)
 
-            # create a new plan queue for current event so that results
-            # can be concatenated
-            self.ruleset_queue_plan.plan.queue = asyncio.Queue()
-
             try:
                 lang.post(self.name, data)
             except MessageObservedException:
@@ -318,7 +314,7 @@ class RuleSetRunner:
             # TODO: is it really necessary to add such event to event_log?
             await self.event_log.put(dict(type="MessageNotHandled"))
         except ShutdownException:
-            await self.ruleset_queue_plan.queue.put(Shutdown())
+            await self.ruleset_queue_plan.source_queue.put(Shutdown())
         except Exception:
             logger.exception("Error processing %s", data)
 
