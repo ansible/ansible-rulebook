@@ -335,7 +335,9 @@ class RuleSetRunner:
                 single_match = None
                 if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
                     keys = list(rules_engine_result.data.keys())
-                    if len(keys) == 1:
+                    if len(keys) == 0:
+                        single_match = {}
+                    elif len(keys) == 1:
                         single_match = rules_engine_result.data[keys[0]]
                     else:
                         multi_match = rules_engine_result.data
@@ -345,7 +347,7 @@ class RuleSetRunner:
                     else:
                         multi_match = rules_engine_result._m
                 variables_copy = variables.copy()
-                if single_match:
+                if single_match is not None:
                     variables_copy["event"] = single_match
                     variables_copy["fact"] = single_match
                     event = single_match
@@ -452,7 +454,10 @@ class PlaybookActionRunner:
         self.actions = OrderedDict()
         self.result = None
         self.stopped = True
-        self.delay = int(os.environ.get("EDA_RUN_PLAYBOOK_MAX_DELAY", 0))
+        self.delay = float(os.environ.get("EDA_RUN_PLAYBOOK_MAX_DELAY", 0.01))
+        # Protect against explicit user configuration
+        if self.delay == 0:
+            self.delay = 0.01
 
     async def start(self, name: str):
         if not self.stopped:

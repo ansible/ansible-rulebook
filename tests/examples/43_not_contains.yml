@@ -1,0 +1,12 @@
+---
+- name: 43 not contains
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name: r1
+      condition: event.id_list not contains 10
+      action:
+        debug:

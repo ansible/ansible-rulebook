@@ -12,7 +12,6 @@ LOGGER = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 10
 
 
-@pytest.mark.xfail(reason="BUG: https://issues.redhat.com/browse/AAP-7206")
 @pytest.mark.e2e
 @pytest.mark.parametrize(
     "rulebook",
@@ -94,7 +93,6 @@ def test_eq_operator(rules_engine, rulebook, expected):
     assert expected in printed_event["stdout"]
 
 
-@pytest.mark.xfail(reason="BUG: https://issues.redhat.com/browse/AAP-7206")
 @pytest.mark.e2e
 @pytest.mark.parametrize(
     "rulebook",
@@ -137,7 +135,6 @@ def test_greater_operators(rules_engine, rulebook):
         assert f"{{'i': {expected}}}" in event["stdout"]
 
 
-@pytest.mark.xfail(reason="BUG: https://issues.redhat.com/browse/AAP-7206")
 @pytest.mark.e2e
 @pytest.mark.parametrize(
     "rulebook",
@@ -182,7 +179,6 @@ def test_ne_operator(rules_engine, rulebook, request):
         assert expected in event["stdout"]
 
 
-@pytest.mark.xfail(reason="BUG: https://issues.redhat.com/browse/AAP-7206")
 @pytest.mark.e2e
 @pytest.mark.parametrize(
     "rulebook",

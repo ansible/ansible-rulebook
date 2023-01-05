@@ -32,9 +32,9 @@ class Identifier(NamedTuple):
 
 
 class OperatorExpression(NamedTuple):
-    left: Union[Integer, String]
+    left: Union[Integer, String, List]
     operator: str
-    right: Union[Integer, String]
+    right: Union[Integer, String, List]
 
 
 class ExistsExpression(NamedTuple):

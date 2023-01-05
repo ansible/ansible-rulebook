@@ -1026,3 +1026,175 @@ async def test_38_shutdown_action():
     assert event["action"] == "shutdown", "1"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "2"
+
+
+@pytest.mark.skipif(
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
+    reason="durable rules does not support in",
+)
+@pytest.mark.asyncio
+async def test_40_in():
+    ruleset_queues, event_log = load_rulebook("examples/40_in.yml")
+
+    queue = ruleset_queues[0][1]
+    queue.put_nowait(dict(i=1))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "debug", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "3"
+
+
+@pytest.mark.skipif(
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
+    reason="durable rules does not support not in",
+)
+@pytest.mark.asyncio
+async def test_41_not_in():
+    ruleset_queues, event_log = load_rulebook("examples/41_not_in.yml")
+
+    queue = ruleset_queues[0][1]
+    queue.put_nowait(dict(i=1))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "debug", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "3"
+
+
+@pytest.mark.skipif(
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
+    reason="durable rules does not support contains",
+)
+@pytest.mark.asyncio
+async def test_42_contains():
+    ruleset_queues, event_log = load_rulebook("examples/42_contains.yml")
+
+    queue = ruleset_queues[0][1]
+    queue.put_nowait(dict(id_list=[1, 2, 3]))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "debug", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "3"
+
+
+@pytest.mark.skipif(
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
+    reason="durable rules does not support not contains",
+)
+@pytest.mark.asyncio
+async def test_43_not_contains():
+    ruleset_queues, event_log = load_rulebook("examples/43_not_contains.yml")
+
+    queue = ruleset_queues[0][1]
+    queue.put_nowait(dict(id_list=[1, 2, 3]))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "debug", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "3"
+
+
+@pytest.mark.skipif(
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
+    reason="durable rules does not support in",
+)
+@pytest.mark.asyncio
+async def test_44_in_and():
+    ruleset_queues, event_log = load_rulebook("examples/44_in_and.yml")
+
+    queue = ruleset_queues[0][1]
+    queue.put_nowait(dict(i=0))
+    queue.put_nowait(dict(i=1))
+    queue.put_nowait(dict(i=2))
+    queue.put_nowait(dict(i=3))
+    queue.put_nowait(dict(i=4))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "debug", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "3"
+
+
+@pytest.mark.skipif(
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
+    reason="durable rules does not support in",
+)
+@pytest.mark.asyncio
+async def test_45_in_or():
+    ruleset_queues, event_log = load_rulebook("examples/45_in_or.yml")
+
+    queue = ruleset_queues[0][1]
+    queue.put_nowait(dict(i=4))
+    queue.put_nowait(dict(i=8))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "debug", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "3"
+    assert event["action"] == "debug", "3"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "4"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "5"
