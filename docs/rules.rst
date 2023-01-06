@@ -115,7 +115,10 @@ Condition with fact and event, fact being passed in via --variables on command l
 ::
 
       name: Condition using a passed in variable and an event
-      condition: event.i == fact.custom.expected_index
+      condition:
+        all:
+           - facts.first << fact.custom.expected_index is defined
+           - event.i == facts.first.custom.expected_index
       action:
         debug:
 
