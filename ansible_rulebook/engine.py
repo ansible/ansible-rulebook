@@ -222,6 +222,8 @@ async def run_rulesets(
 
 
 class RuleSetRunner:
+    COMBINEABLE_ACTIONS = ("run_playbook", "run_module", "run_job_template")
+
     def __init__(
         self,
         event_log: asyncio.Queue,
@@ -385,7 +387,7 @@ class RuleSetRunner:
                 if "ruleset" not in action_args:
                     action_args["ruleset"] = ruleset
 
-                if action == "run_playbook" or action == "run_module":
+                if action in self.COMBINEABLE_ACTIONS:
                     action_args["event_log"] = self.event_log
                     action_args["inventory"] = inventory
                     action_args["hosts"] = hosts
@@ -444,10 +446,10 @@ class RuleSetRunner:
 
 
 class PlaybookActionRunner:
-    """Run playbooks and modules in background
-    Queue all run_playbook and run_module actions.
-    Run them in an interval and combine hosts if possible.
-    Treat run_module as a special type of run_playbook.
+    """Run playbook like actions in background. Queue such actions
+    and run them in an interval and combine hosts if possible.
+    These actions are defined in COMBINEABLE_ACTIONS including
+    run_playbook, run_module, and run_job_template.
     """
 
     def __init__(self):
@@ -493,12 +495,16 @@ class PlaybookActionRunner:
     async def wait_for_playbook(self, action: str, action_args: Dict):
         name = {action_args["name"]}
         key = f"{action}_{name}"
-        logger.info("Queue playbook/module %s for running later", name)
+        logger.info(
+            "Queue playbook/module/job template %s for running later", name
+        )
 
         if key in self.actions:
             for host in action_args["hosts"]:
                 logger.info(
-                    "Combine host %s for playbook/module %s", host, name
+                    "Combine host %s for playbook/module/job template %s",
+                    host,
+                    name,
                 )
                 self.actions[key]["hosts"].add(host)
             async_condition = self.actions[key]["_async_condition"]
