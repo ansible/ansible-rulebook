@@ -62,6 +62,7 @@
                 "condition": {
                     "anyOf": [
                         { "type": "string" },
+                        { "type": "boolean" },
                         {"$ref": "#/$defs/all-condition"},
                         {"$ref": "#/$defs/any-condition"}
                     ]

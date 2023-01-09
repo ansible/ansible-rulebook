@@ -12,12 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import asyncio
 import json
 import os
 
 import pytest
 
-from ansible_rulebook.engine import run_rulesets
+from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.util import load_inventory
 
@@ -1294,3 +1295,40 @@ async def test_48_echo():
     assert event["type"] == "ProcessedEvent", "2"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "5"
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
+    reason="durable rules does not support single booleans",
+)
+async def test_51_literal_boolean():
+    ruleset_queues, event_log = load_rulebook(
+        "examples/51_literal_boolean.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "print_event", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "3"
+    assert event["action"] == "print_event", "3"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "4"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "5"
+    source_task.cancel()

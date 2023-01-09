@@ -1,0 +1,21 @@
+---
+- name: 51 literal boolean
+  hosts: all
+  sources:
+    - name: generic
+      generic:
+        payload:
+          - e1:
+              data:
+                port: 5000
+                enabled: true
+          - e2:
+              extra:
+                msg: Hello World
+
+  rules:
+    - name: print event always
+      condition: true
+      action:
+        print_event:
+          pretty: true

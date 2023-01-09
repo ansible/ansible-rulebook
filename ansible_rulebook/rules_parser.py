@@ -124,12 +124,14 @@ def parse_action(action: Dict) -> rt.Action:
 def parse_condition(condition: Any) -> rt.Condition:
     if isinstance(condition, str):
         return rt.Condition("all", [parse_condition_value(condition)])
+    elif isinstance(condition, bool):
+        return rt.Condition("all", [parse_condition_value(str(condition))])
     elif isinstance(condition, dict):
         keys = list(condition.keys())
         if len(condition) == 1 and keys[0] in ["any", "all"]:
             when = keys[0]
             return rt.Condition(
-                when, [parse_condition_value(c) for c in condition[when]]
+                when, [parse_condition_value(str(c)) for c in condition[when]]
             )
         else:
             raise Exception(
