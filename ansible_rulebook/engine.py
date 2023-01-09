@@ -339,7 +339,7 @@ class RuleSetRunner:
                     keys = list(rules_engine_result.data.keys())
                     if len(keys) == 0:
                         single_match = {}
-                    elif len(keys) == 1:
+                    elif len(keys) == 1 and keys[0] == "m":
                         single_match = rules_engine_result.data[keys[0]]
                     else:
                         multi_match = rules_engine_result.data

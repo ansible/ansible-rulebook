@@ -68,6 +68,7 @@ async def none(
             rule=source_rule_name,
             activation_id=settings.identifier,
             run_at=str(datetime.utcnow()),
+            matching_events=_get_events(variables),
         )
     )
 
@@ -87,6 +88,7 @@ async def debug(event_log, **kwargs):
             rule=kwargs.get("source_rule_name"),
             activation_id=settings.identifier,
             run_at=str(datetime.utcnow()),
+            matching_events=_get_events(kwargs.get("variables")),
         )
     )
 
@@ -127,6 +129,7 @@ async def print_event(
             rule=source_rule_name,
             playbook_name=name,
             run_at=str(datetime.utcnow()),
+            matching_events=_get_events(variables),
         )
     )
 
@@ -155,6 +158,7 @@ async def set_fact(
             rule=source_rule_name,
             playbook_name=name,
             run_at=str(datetime.utcnow()),
+            matching_events=_get_events(variables),
         )
     )
 
@@ -182,6 +186,7 @@ async def retract_fact(
             activation_id=settings.identifier,
             playbook_name=name,
             run_at=str(datetime.utcnow()),
+            matching_events=_get_events(variables),
         )
     )
 
@@ -208,6 +213,7 @@ async def post_event(
             rule=source_rule_name,
             activation_id=settings.identifier,
             run_at=str(datetime.utcnow()),
+            matching_events=_get_events(variables),
         )
     )
 
@@ -293,6 +299,7 @@ async def run_playbook(
 
     result = await post_process_runner(
         event_log,
+        variables,
         temp_dir,
         ruleset,
         source_rule_name,
@@ -397,6 +404,7 @@ async def run_module(
 
     result = await post_process_runner(
         event_log,
+        variables,
         temp_dir,
         ruleset,
         source_rule_name,
@@ -565,6 +573,7 @@ async def pre_process_runner(
 
 async def post_process_runner(
     event_log,
+    variables: Dict,
     private_data_dir: str,
     ruleset: str,
     rule: str,
@@ -591,6 +600,7 @@ async def post_process_runner(
         rc=rc,
         status=status,
         run_at=run_at,
+        matching_events=_get_events(variables),
     )
     await event_log.put(result)
 
@@ -750,6 +760,7 @@ async def shutdown(
             ruleset=source_ruleset_name,
             rule=source_rule_name,
             run_at=str(datetime.utcnow()),
+            matching_events=_get_events(variables),
         )
     )
     raise ShutdownException()
@@ -796,3 +807,11 @@ def _get_latest_artifact(data_dir: str, artifact: str, content: bool = True):
             content = f.read()
         return content
     return files[0]
+
+
+def _get_events(variables: Dict):
+    if "event" in variables:
+        return {"m": variables["event"]}
+    elif "events" in variables:
+        return variables["events"]
+    return {}
