@@ -10,3 +10,4 @@ jmespath
 pytest
 pytest-asyncio
 pytest-timeout
+pytest-xdist
