@@ -42,6 +42,7 @@ async def test_01_noop():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "noop", "2"
+    assert event["matching_events"] == {"m": {"i": 1}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "1"
     event = event_log.get_nowait()
@@ -67,6 +68,7 @@ async def test_02_debug():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["matching_events"] == {"m": {"i": 1}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "1"
     event = event_log.get_nowait()
@@ -92,6 +94,7 @@ async def test_03_print_event():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "print_event", "2"
+    assert event["matching_events"] == {"m": {"i": 1}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "1"
     event = event_log.get_nowait()
@@ -117,6 +120,7 @@ async def test_04_set_fact():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "set_fact", "2"
+    assert event["matching_events"] == {"m": {"i": 1}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "Action", "3"
     assert event["action"] == "print_event", "4"
@@ -145,6 +149,7 @@ async def test_05_post_event():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "post_event", "2"
+    assert event["matching_events"] == {"m": {"i": 1}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "Action", "3"
     assert event["action"] == "print_event", "4"
@@ -173,6 +178,7 @@ async def test_06_retract_fact():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "set_fact", "2"
+    assert event["matching_events"] == {"m": {"i": 1}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "Action", "3"
     assert event["action"] == "retract_fact", "4"
@@ -204,6 +210,7 @@ async def test_07_and():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["matching_events"] == {"m": {"nested": {"i": 1, "j": 1}}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "6"
     event = event_log.get_nowait()
@@ -229,6 +236,7 @@ async def test_08_or():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["matching_events"] == {"m": {"nested": {"i": 1, "j": 1}}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "6"
     event = event_log.get_nowait()
@@ -254,6 +262,7 @@ async def test_09_gt():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["matching_events"] == {"m": {"i": 3}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "6"
     event = event_log.get_nowait()
@@ -279,6 +288,7 @@ async def test_10_lt():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["matching_events"] == {"m": {"i": 1}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "6"
     event = event_log.get_nowait()
@@ -304,6 +314,7 @@ async def test_11_le():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["matching_events"] == {"m": {"i": 2}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "6"
     event = event_log.get_nowait()
@@ -329,6 +340,7 @@ async def test_12_ge():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["matching_events"] == {"m": {"i": 2}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "6"
     event = event_log.get_nowait()
@@ -354,6 +366,7 @@ async def test_13_add():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["matching_events"] == {"m": {"nested": {"i": 2, "j": 1}}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "6"
     event = event_log.get_nowait()
@@ -379,6 +392,7 @@ async def test_14_sub():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["matching_events"] == {"m": {"nested": {"i": 1, "j": 2}}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "6"
     event = event_log.get_nowait()
@@ -407,6 +421,10 @@ async def test_15_multiple_events_all():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["matching_events"] == {
+        "m_0": {"nested": {"i": 1, "j": 0}},
+        "m_1": {"nested": {"i": 0, "j": 1}},
+    }, "3"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "6"
     event = event_log.get_nowait()
@@ -434,6 +452,7 @@ async def test_16_multiple_events_any():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["matching_events"] == {"m_0": {"nested": {"i": 1, "j": 0}}}
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "6"
     event = event_log.get_nowait()
@@ -462,11 +481,13 @@ async def test_17_multiple_sources_any():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["matching_events"] == {"m_0": {"i": 1}}
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "3"
     event = event_log.get_nowait()
     assert event["type"] == "Action", "4"
     assert event["action"] == "debug", "5"
+    assert event["matching_events"] == {"m_1": {"range2": {"i": 1}}}, "6"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "7"
     event = event_log.get_nowait()
@@ -495,10 +516,14 @@ async def test_18_multiple_sources_all():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["matching_events"] == {
+        "m_0": {"i": 1},
+        "m_1": {"range2": {"i": 1}},
+    }, "3"
     event = event_log.get_nowait()
-    assert event["type"] == "ProcessedEvent", "3"
+    assert event["type"] == "ProcessedEvent", "4"
     event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "8"
+    assert event["type"] == "Shutdown", "5"
     assert event_log.empty()
 
 
@@ -521,6 +546,7 @@ async def test_19_is_defined():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "set_fact", "2"
+    assert event["matching_events"] == {"m": {"i": 1}}
     event = event_log.get_nowait()
     assert event["type"] == "Action", "3"
     assert event["action"] == "debug", "4"
@@ -554,12 +580,18 @@ async def test_20_is_not_defined():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "set_fact", "2"
+    assert event["matching_events"] == {"m": {"i": 1}}
     event = event_log.get_nowait()
     assert event["type"] == "Action", "3"
     assert event["action"] == "retract_fact", "4"
+    assert event["matching_events"] == {"m": {"msg": "hello"}}
     event = event_log.get_nowait()
     assert event["type"] == "Action", "5"
     assert event["action"] == "debug", "6"
+    if os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules":
+        assert event["matching_events"] == {}
+    else:
+        assert event["matching_events"] == {"m": {"msg": "hello"}}
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "7"
     event = event_log.get_nowait()
@@ -597,6 +629,7 @@ async def test_21_run_playbook(rule):
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "run_playbook", "2"
+    assert event["matching_events"] == {"m": {"i": 1}}
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "7"
     event = event_log.get_nowait()
@@ -622,6 +655,7 @@ async def test_23_nested_data():
 
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
+    assert event["matching_events"] == {"m": {"root": {"nested": {"i": 1}}}}
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "2"
     event = event_log.get_nowait()
@@ -704,6 +738,7 @@ async def test_26_print_events():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "print_event", "2"
+    assert event["matching_events"] == {"m_0": {"i": 1}, "m_1": {"i": 2}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "1"
     event = event_log.get_nowait()
@@ -738,7 +773,10 @@ async def test_27_var_root():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "print_event", "2"
-
+    assert event["matching_events"] == {
+        "webhook": {"url": "http://www.example.com", "action": "merge"},
+        "kafka": {"topic": "testing", "channel": "red"},
+    }
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "6"
     event = event_log.get_nowait()
@@ -767,6 +805,10 @@ async def test_28_right_side_condition_template():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["matching_events"] == {
+        "first": {"custom": {"expected_index": 2}},
+        "m_1": {"i": 2},
+    }, "3"
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "1"
     event = event_log.get_nowait()
@@ -797,7 +839,9 @@ async def test_29_run_module():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "run_module", "2"
-
+    assert event["matching_events"] == {
+        "m": {"i": 1, "meta": {"hosts": "localhost"}}
+    }
     assert event["rc"] == 0, "2.1"
     assert event["status"] == "successful", "2.2"
     event = event_log.get_nowait()
