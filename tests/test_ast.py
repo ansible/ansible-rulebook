@@ -53,12 +53,43 @@ def test_parse_condition():
             "rhs": {"Integer": 1},
         }
     } == visit_condition(parse_condition("fact.range.i > 1"), {})
+
+    assert {
+        "NegateExpression": {
+            "Event": "enabled",
+        }
+    } == visit_condition(parse_condition("not event.enabled"), {})
+
+    assert {
+        "NegateExpression": {
+            "LessThanExpression": {
+                "lhs": {"Fact": "range.i"},
+                "rhs": {"Integer": 1},
+            }
+        }
+    } == visit_condition(parse_condition("not (fact.range.i < 1)"), {})
+
     assert {
         "LessThanExpression": {
             "lhs": {"Fact": "range.i"},
             "rhs": {"Integer": 1},
         }
     } == visit_condition(parse_condition("fact.range.i < 1"), {})
+
+    assert {
+        "NegateExpression": {
+            "Event": "enabled",
+        }
+    } == visit_condition(parse_condition("not event.enabled"), {})
+
+    assert {
+        "NegateExpression": {
+            "LessThanExpression": {
+                "lhs": {"Fact": "range.i"},
+                "rhs": {"Integer": 1},
+            }
+        }
+    } == visit_condition(parse_condition("not (fact.range.i < 1)"), {})
     assert {
         "LessThanOrEqualToExpression": {
             "lhs": {"Fact": "range.i"},
