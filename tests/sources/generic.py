@@ -14,6 +14,7 @@
 
 import asyncio
 import random
+from itertools import cycle
 from typing import Any, Dict
 
 
@@ -21,11 +22,16 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     payload = args.get("payload")
     randomize = args.get("randomize", False)
     delay = int(args.get("delay", 0))
+    loop_mode = args.get("loop_mode", False)
+
     if not isinstance(payload, list):
         payload = [payload]
 
     if randomize:
         random.shuffle(payload)
+
+    if loop_mode:
+        payload = cycle(payload)
 
     for event in payload:
         await queue.put(event)
