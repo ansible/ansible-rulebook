@@ -41,6 +41,7 @@ else:
 from .collection import find_playbook, has_playbook, split_collection_name
 from .conf import settings
 from .exception import ShutdownException
+from .job_template_runner import job_template_runner
 from .util import get_horizontal_rule
 
 logger = logging.getLogger(__name__)
@@ -67,6 +68,7 @@ async def none(
             rule=source_rule_name,
             activation_id=settings.identifier,
             run_at=str(datetime.utcnow()),
+            matching_events=_get_events(variables),
         )
     )
 
@@ -86,6 +88,7 @@ async def debug(event_log, **kwargs):
             rule=kwargs.get("source_rule_name"),
             activation_id=settings.identifier,
             run_at=str(datetime.utcnow()),
+            matching_events=_get_events(kwargs.get("variables")),
         )
     )
 
@@ -126,6 +129,7 @@ async def print_event(
             rule=source_rule_name,
             playbook_name=name,
             run_at=str(datetime.utcnow()),
+            matching_events=_get_events(variables),
         )
     )
 
@@ -154,6 +158,7 @@ async def set_fact(
             rule=source_rule_name,
             playbook_name=name,
             run_at=str(datetime.utcnow()),
+            matching_events=_get_events(variables),
         )
     )
 
@@ -181,6 +186,7 @@ async def retract_fact(
             activation_id=settings.identifier,
             playbook_name=name,
             run_at=str(datetime.utcnow()),
+            matching_events=_get_events(variables),
         )
     )
 
@@ -207,6 +213,7 @@ async def post_event(
             rule=source_rule_name,
             activation_id=settings.identifier,
             run_at=str(datetime.utcnow()),
+            matching_events=_get_events(variables),
         )
     )
 
@@ -292,6 +299,7 @@ async def run_playbook(
 
     result = await post_process_runner(
         event_log,
+        variables,
         temp_dir,
         ruleset,
         source_rule_name,
@@ -396,6 +404,7 @@ async def run_module(
 
     result = await post_process_runner(
         event_log,
+        variables,
         temp_dir,
         ruleset,
         source_rule_name,
@@ -564,6 +573,7 @@ async def pre_process_runner(
 
 async def post_process_runner(
     event_log,
+    variables: Dict,
     private_data_dir: str,
     ruleset: str,
     rule: str,
@@ -590,6 +600,7 @@ async def post_process_runner(
         rc=rc,
         status=status,
         run_at=run_at,
+        matching_events=_get_events(variables),
     )
     await event_log.put(result)
 
@@ -608,6 +619,126 @@ async def post_process_runner(
                 lang.post(ruleset, fact)
 
     return result
+
+
+async def run_job_template(
+    event_log,
+    inventory: Dict,
+    hosts: List,
+    variables: Dict,
+    facts: Dict,
+    project_data_file: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
+    ruleset: str,
+    name: str,
+    organization: str,
+    job_args: Optional[dict] = None,
+    set_facts: Optional[bool] = None,
+    post_events: Optional[bool] = None,
+    verbosity: int = 0,
+    var_root: Union[str, Dict, None] = None,
+    copy_files: Optional[bool] = False,
+    json_mode: Optional[bool] = False,
+    retries: Optional[int] = 0,
+    retry: Optional[bool] = False,
+    delay: Optional[int] = 0,
+    **kwargs,
+):
+
+    logger.info(
+        "running job template: %s, organization: %s", name, organization
+    )
+    logger.info("ruleset: %s, rule %s", source_ruleset_name, source_rule_name)
+
+    hosts_limit = ",".join(hosts)
+    if not job_args:
+        job_args = {}
+    job_args["limit"] = hosts_limit
+
+    job_args["extra_vars"] = job_args.get("extra_vars", {})
+    for key in ["fact", "facts", "event", "events"]:
+        if key in variables:
+            job_args["extra_vars"][key] = variables[key]
+
+    job_id = str(uuid.uuid4())
+
+    await event_log.put(
+        dict(
+            type="Job",
+            job_id=job_id,
+            ansible_rulebook_id=settings.identifier,
+            name=name,
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
+            hosts=hosts_limit,
+            action="run_job_template",
+        )
+    )
+
+    async def event_callback(event: dict) -> None:
+        await event_log.put(
+            {
+                "type": "AnsibleEvent",
+                "event": {
+                    "uuid": event["uuid"],
+                    "counter": event["counter"],
+                    "stdout": event["stdout"],
+                    "start_line": event["start_line"],
+                    "end_line": event["end_line"],
+                    "event": event["event"],
+                    "created": event["created"],
+                    "parent_uuid": event["parent_uuid"],
+                    "event_data": event["event_data"],
+                    "job_id": job_id,
+                    "controller_job_id": event["job"],
+                    "ansible_rulebook_id": settings.identifier,
+                },
+                "run_at": event["created"],
+            }
+        )
+
+    if retry:
+        retries = max(retries, 1)
+    for i in range(retries + 1):
+        if i > 0:
+            if delay > 0:
+                await asyncio.sleep(delay)
+            logger.info(
+                "Previous run_job_template failed. Retry %d of %d", i, retries
+            )
+        controller_job = await job_template_runner.run_job_template(
+            name, organization, job_args, event_callback
+        )
+        if controller_job["status"] != "failed":
+            break
+
+    await event_log.put(
+        dict(
+            type="Action",
+            action="run_job_template",
+            activation_id=settings.identifier,
+            job_template_name=name,
+            organization=organization,
+            job_id=job_id,
+            ruleset=ruleset,
+            rule=source_rule_name,
+            status=controller_job["status"],
+            run_at=controller_job["created"],
+        )
+    )
+
+    if set_facts or post_events:
+        logger.debug("set_facts")
+        facts = controller_job["artifacts"]
+        if facts:
+            logger.debug("facts %s", facts)
+            if set_facts:
+                lang.assert_fact(ruleset, facts)
+            if post_events:
+                lang.post(ruleset, facts)
+        else:
+            logger.debug("Empty facts are not set")
 
 
 async def shutdown(
@@ -629,6 +760,7 @@ async def shutdown(
             ruleset=source_ruleset_name,
             rule=source_rule_name,
             run_at=str(datetime.utcnow()),
+            matching_events=_get_events(variables),
         )
     )
     raise ShutdownException()
@@ -643,6 +775,7 @@ actions: Dict[str, Callable] = dict(
     post_event=post_event,
     run_playbook=run_playbook,
     run_module=run_module,
+    run_job_template=run_job_template,
     shutdown=shutdown,
 )
 
@@ -674,3 +807,11 @@ def _get_latest_artifact(data_dir: str, artifact: str, content: bool = True):
             content = f.read()
         return content
     return files[0]
+
+
+def _get_events(variables: Dict):
+    if "event" in variables:
+        return {"m": variables["event"]}
+    elif "events" in variables:
+        return variables["events"]
+    return {}

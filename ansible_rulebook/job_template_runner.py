@@ -67,7 +67,7 @@ class JobTemplateRunner:
         organization: str,
         job_params: dict,
         event_handler: Callable[[dict], Any],
-    ) -> str:
+    ) -> dict:
         job = await self.launch(name, organization, job_params)
 
         url_info = urlparse(job["url"])
@@ -79,6 +79,7 @@ class JobTemplateRunner:
             headers=self._auth_headers()
         ) as session:
             while True:
+                # fetch and process job events
                 response = await self._get_page(session, url, params)
                 json_body = json.loads(response["body"])
                 job_status = None
@@ -98,7 +99,10 @@ class JobTemplateRunner:
                     continue
 
                 if job_status in self.JOB_COMPLETION_STATUSES:
-                    return job_status
+                    # fetch and return job object containing artifacts
+                    response = await self._get_page(session, url_info.path, {})
+                    return json.loads(response["body"])
+
                 await asyncio.sleep(self.refresh_delay)
 
     async def launch(
@@ -133,45 +137,5 @@ class JobTemplateRunner:
         return json_body
 
 
-# For testing only. To be removed after intergration with rulebook action
-if __name__ == "__main__":
-    import pprint
-    from datetime import datetime
-
-    runner = JobTemplateRunner("<controller host>", "<api token>")
-
-    event_log = asyncio.Queue()
-    time_now = str(datetime.utcnow())
-
-    async def event_callback(event: dict) -> None:
-        await event_log.put(
-            {
-                "type": "AnsibleEvent",
-                "event": {
-                    "uuid": event["uuid"],
-                    "counter": event["counter"],
-                    "stdout": event["stdout"],
-                    "start_line": event["start_line"],
-                    "end_line": event["end_line"],
-                    "runner_ident": "<UUID N/A>",
-                    "event": event["event"],
-                    "pid": "<N/A>",
-                    "created": event["created"],
-                    "parent_uuid": event["parent_uuid"],
-                    "event_data": event["event_data"],
-                    "job_id": "uuid",
-                    "ansible_rulebook_id": "id",
-                },
-                "run_at": time_now,
-            }
-        )
-
-    ret = asyncio.run(
-        runner.run_job_template(
-            "Demo Job Template", "Default", {}, event_handler=event_callback
-        )
-    )
-    print("Job template running finished with status", ret)
-    while not event_log.empty():
-        log = event_log.get_nowait()
-        pprint.pprint(log)
+# Will be set through CLI in another PR
+job_template_runner = JobTemplateRunner("<controller host>", "<api token>")

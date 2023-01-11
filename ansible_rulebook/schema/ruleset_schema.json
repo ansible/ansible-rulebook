@@ -67,6 +67,7 @@
                     "oneOf": [
                         {"$ref": "#/$defs/run-playbook-action"},
                         {"$ref": "#/$defs/run-module-action"},
+                        {"$ref": "#/$defs/run-job-template-action"},
                         {"$ref": "#/$defs/post-event-action"},
                         {"$ref": "#/$defs/set-fact-action"},
                         {"$ref": "#/$defs/retract-fact-action"},
@@ -158,6 +159,33 @@
             },
             "required": [
                   "run_module"
+            ]
+        },
+        "run-job-template-action": {
+            "type": "object",
+            "properties": {
+                "run_job_template": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "type": "string" },
+                        "organization": { "type": "string" },
+                        "job_args": { "type": "object" },
+                        "post_events": { "type": "boolean" },
+                        "set_facts": { "type": "boolean" },
+                        "var_root": { "type": "string" },
+                        "retry": { "type": "boolean" },
+                        "retries": { "type": "integer" },
+                        "delay": { "type": "integer" }
+                    },
+                    "required": [
+                        "name",
+                        "organization"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "run_job_template"
             ]
         },
         "post-event-action": {
