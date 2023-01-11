@@ -1,0 +1,20 @@
+---
+- name: Test NOT CONTAINS operator, str, negative, combined
+  hosts: all
+  sources:
+    - range:
+        limit: 6
+        delay: 1
+        extra_payload:
+          houses:
+            - Lannister
+            - Stark
+            - Targaryen
+            - Baratheon
+  rules:
+    - name: r1
+      condition: event.extra_payload.houses not contains "Martell" and event.i > 3
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
+          json_mode: true

@@ -1,0 +1,14 @@
+---
+- name: Test in operator int single condition
+  hosts: localhost
+  sources:
+    - range:
+        limit: 5
+        delay: 1
+  rules:
+    - name: r1
+      condition: event.i in [20,-2,4,5,6]
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
+          json_mode: true

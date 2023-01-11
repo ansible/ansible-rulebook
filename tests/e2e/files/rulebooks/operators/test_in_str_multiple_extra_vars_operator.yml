@@ -1,0 +1,23 @@
+---
+- name: Test in operator, str, multiple conditions, using variables
+  hosts: all
+  sources:
+    - range:
+        limit: 4
+        delay: 1
+        extra_payload:
+          houses:
+            - Lannister
+            - Stark
+            - Targaryen
+            - Baratheon
+  rules:
+    - name: r1
+      condition:
+        all:
+          - facts.custom << fact.houses is defined
+          - event.extra_payload.houses contains "Stark" and event.i in facts.custom.in_operator_int_array
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
+          json_mode: true
