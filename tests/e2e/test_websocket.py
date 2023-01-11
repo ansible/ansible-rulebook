@@ -91,6 +91,6 @@ async def test_websocket_messages():
             assert event["ansible_rulebook_id"] == proc_id
             assert data["run_at"]
 
-    assert ansible_event_counter == 6
+    assert ansible_event_counter == 9
     assert job_counter == 1
     assert action_counter == 1

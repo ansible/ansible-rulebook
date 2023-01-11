@@ -1,0 +1,23 @@
+---
+- name: Test not in operator, multiple conditions, using variables
+  hosts: all
+  sources:
+    - range:
+        limit: 4
+        delay: 1
+        extra_payload:
+          houses:
+            - Lannister
+            - Stark
+            - Targaryen
+            - Baratheon
+  rules:
+    - name: r1
+      condition:
+        all:
+          - facts.custom << fact.in_operator_int_array is defined
+          - event.i not in facts.custom.in_operator_int_array
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
+          json_mode: true

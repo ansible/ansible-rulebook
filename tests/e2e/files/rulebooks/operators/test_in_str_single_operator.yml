@@ -1,0 +1,15 @@
+---
+- name: Test in operator str single condition
+  hosts: all
+  sources:
+    - range:
+        limit: 5
+        delay: 1
+        str_enable: true
+  rules:
+    - name: r1
+      condition: event.i in ["2", "3"]
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
+          json_mode: true
