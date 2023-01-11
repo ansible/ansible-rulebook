@@ -21,16 +21,15 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     payload = args.get("payload")
     randomize = args.get("randomize", False)
     delay = int(args.get("delay", 0))
-    loop_count = int(args.get("loop_count", 1))
+    loop_count = int(args.get("loop_count", 1))  # -1 infinite
 
     if not isinstance(payload, list):
         payload = [payload]
 
-    if randomize:
-        random.shuffle(payload)
-
     iteration = 0
     while iteration != loop_count:
+        if randomize:
+            random.shuffle(payload)
         for event in payload:
             await queue.put(event)
             await asyncio.sleep(delay)
