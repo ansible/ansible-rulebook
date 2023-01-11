@@ -20,19 +20,27 @@ from typing import Any, Dict
 async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     payload = args.get("payload")
     randomize = args.get("randomize", False)
+    create_index = args.get("create_index", None)
     delay = int(args.get("delay", 0))
     loop_count = int(args.get("loop_count", 1))  # -1 infinite
+    loop_delay = int(args.get("loop_delay", 0))
 
     if not isinstance(payload, list):
         payload = [payload]
 
     iteration = 0
+    index = 0
     while iteration != loop_count:
+        if loop_delay > 0 and iteration > 0:
+            await asyncio.sleep(loop_delay)
         if randomize:
             random.shuffle(payload)
         for event in payload:
+            if create_index:
+                event.update({f"{create_index}": index})
             await queue.put(event)
             await asyncio.sleep(delay)
+            index += 1
         iteration += 1
 
 
@@ -47,6 +55,8 @@ if __name__ == "__main__":
             MockQueue(),
             dict(
                 randomize=True,
+                create_index="my_index",
+                loop_count=2,
                 payload=[dict(i=1), dict(f=3.14159), dict(b=False)],
             ),
         )
