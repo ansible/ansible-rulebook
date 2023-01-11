@@ -64,11 +64,6 @@ async def test_websocket_messages():
         assert data["path"] == endpoint
         data = data["payload"]
 
-        # ignore empty events
-        # TODO: remove after fix https://issues.redhat.com/browse/AAP-6141
-        if data["type"] == "ProcessedEvent" and not data["results"]:
-            continue
-
         if data["type"] == "Action":
             action_counter += 1
             assert data["action"] == "run_playbook"
