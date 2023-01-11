@@ -1,0 +1,13 @@
+---
+- name: Malformed rulebook
+  hosts: all
+  sources:
+    - range:
+  rules:
+    - name: This is poorly formatted
+      condition: event.i == 1
+      action:
+      run_module:
+      name: ansible.builtin.debug
+      module_args:
+      msg: I am invalid
