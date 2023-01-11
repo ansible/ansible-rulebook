@@ -72,6 +72,7 @@ async def test_websocket_messages():
         if data["type"] == "Action":
             action_counter += 1
             assert data["action"] == "run_playbook"
+            assert data["matching_events"] == {"m": {"i": 700}}
             assert data["status"] == "successful"
 
         if data["type"] == "Job":
