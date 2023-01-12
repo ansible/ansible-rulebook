@@ -2,7 +2,7 @@
 Getting started
 ===============
 
-Let's get started with a simple hello world example to familiarize ourselves with the concepts
+Let's get started with a simple hello world example to familiarize ourselves with the concepts:
 
 .. code-block:: yaml
 
@@ -31,7 +31,7 @@ When :code:`i` is equal to 1 the condition for the the :code:`Say Hello` rule ma
 
 
 Normally events would come from monitoring and alerting systems or other software. The following
-is a more complete example that accepts alerts from Alertmanager
+is a more complete example that accepts alerts from Alertmanager:
 
 .. code-block:: yaml
 

@@ -66,7 +66,7 @@ Plugin template
 Plugin entrypoint
 ^^^^^^^^^^^^^^^^^
 The plugin python file must contain an entrypoint function exactly like the
-following
+following:
 
 .. code-block:: python
 
@@ -76,7 +76,7 @@ It is an async function. The first argument is an asyncio queue that will be
 consumed by ansible-rulebook CLI. The rest arguments are custom defined. They
 must match the arguments in the source section of the rulebook. For example
 the template plugin expects a single argument ``delay``. In the rulebook the
-source section looks like
+source section looks like:
 
 .. code-block:: yaml
 
@@ -108,7 +108,7 @@ the ``-S`` argument in the ansible-rulebook CLI. The recommended method for
 distributing and installing the plugin is through a collection. In this case
 the plugin source file should be placed under ``plugins/event_source`` folder
 and referred to by FQCN. The following rulebook example illustrates how to
-refer to the range plugin provided by ``ansible.eda`` collection
+refer to the range plugin provided by ``ansible.eda`` collection:
 
 .. code-block:: yaml
 

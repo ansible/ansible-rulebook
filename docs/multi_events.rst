@@ -8,7 +8,7 @@ In a rule you can match one or more events from the same source. Once all the ev
 - events
 - facts
 
-Example
+Example:
 
 .. code-block:: yaml
 
@@ -17,14 +17,14 @@ Example
       - event.i == 1
       - event.i == 2
 
-The variables passed into the playbook would have the following values
+The variables passed into the playbook would have the following values:
 
 .. code-block:: json
 
      'variables': {'events': {'m_0': {'i': 1}, 'm_1': {'i': 2}},
                    'facts':  {'m_0': {'i': 1}, 'm_1': {'i': 2}}}}
 
-Example with assignments
+Example with assignments:
 
 .. code-block:: yaml
 
@@ -33,7 +33,7 @@ Example with assignments
       - events.first << event.i == 1
       - events.second << event.i == 2
 
-The variables passed into the playbook would have the following values
+The variables passed into the playbook would have the following values:
 
 .. code-block:: json
 
@@ -43,7 +43,7 @@ The variables passed into the playbook would have the following values
 
 **Notes:**
 
-The same event expression cannot be used more than once In the case below ``event.i == 1`` has been used twice so it wont match anything
+The same event expression cannot be used more than once. In the case below ``event.i == 1`` has been used twice so it wont match anything:
 
 .. code-block:: yaml
 
@@ -53,7 +53,7 @@ The same event expression cannot be used more than once In the case below ``even
           - event.i == 1
 
 
-In the below case event.i == 2 has been used twice so it wont match anything
+In the below case event.i == 2 has been used twice so it wont match anything:
 
 .. code-block:: yaml
 
@@ -63,7 +63,7 @@ In the below case event.i == 2 has been used twice so it wont match anything
           - event.i == 2
 
 
-Once an event matches it is removed and wont match any subsequent conditions. This case would work since the event expression is different
+Once an event matches it is removed and wont match any subsequent conditions. This case would work since the event expression is different:
 
 .. code-block:: yaml
 

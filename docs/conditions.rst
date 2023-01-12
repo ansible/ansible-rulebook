@@ -351,7 +351,6 @@ ignored and doesn't match anything.
 | **Ans:** Use the is defined
 
 Example:
-
     .. code-block:: yaml
 
         name: rule1
@@ -366,7 +365,6 @@ Example:
 | **Ans:** Use the is not defined
 
 Example:
-
     .. code-block:: yaml
 
       name: rule2

@@ -14,7 +14,7 @@ Rulebooks
 
 Rulesets
 --------
-A ruleset has the following properties
+A ruleset has the following properties:
 
 * name
 * hosts similar to Ansible playbook

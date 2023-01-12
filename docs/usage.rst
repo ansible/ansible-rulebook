@@ -26,19 +26,19 @@ The `ansible-rulebook` CLI supports the following options::
     --controller_url=<u>        Controller API base url, e.g. http://host1:8080
     --controller_token=<t>      Controller API authentication token
 
-To get help from `ansible-rulebook` run the following
+To get help from `ansible-rulebook` run the following:
 
 .. code-block:: console
 
     ansible-rulebook --help
 
-To check the version of `ansible-rulebook` run the following
+To check the version of `ansible-rulebook` run the following:
 
 .. code-block:: console
 
     ansible-rulebook --version
 
-The normal method for running `ansible-rulebook` is the following
+The normal method for running `ansible-rulebook` is the following:
 
 .. code-block:: console
 
@@ -47,7 +47,7 @@ The normal method for running `ansible-rulebook` is the following
 .. note::
     The `--rulebook` option requires the `--inventory` option. The `--vars` option is not required.
 
-If you are using custom event source plugins use the following
+If you are using custom event source plugins use the following:
 
 .. code-block:: console
 
