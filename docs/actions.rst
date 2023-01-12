@@ -155,7 +155,7 @@ post_event
      - The name of the rule set to post the event, default is the current rule set name
      - No
 
-Example
+Example:
 
 .. code-block:: yaml
 
@@ -165,7 +165,7 @@ Example
           event:
             j: 4
 
-Example, using data saved with assignment
+Example, using data saved with assignment:
 
 .. code-block:: yaml
 
@@ -201,7 +201,7 @@ set_fact
      - The name of the rule set to post the fact, default is the current rule set name
      - No
 
-Example
+Example:
 
 .. code-block:: yaml
 
@@ -211,7 +211,7 @@ Example
           fact:
             j: 1
 
-Example, using data saved with assignment in multiple condition
+Example, using data saved with assignment in multiple condition:
 
 .. code-block:: yaml
 
@@ -227,7 +227,7 @@ Example, using data saved with assignment in multiple condition
           fact:
             data: "{{events.first}}"
 
-Example, using data saved with single condition
+Example, using data saved with single condition:
 
 .. code-block:: yaml
 
@@ -260,7 +260,7 @@ retract_fact
      - The name of the rule set to retract the fact, default is the current rule set name
      - No
 
-Example
+Example:
 
 .. code-block:: yaml
 
@@ -286,7 +286,7 @@ print_event
      - If the event is a deeply nested dictionary, the var_root can specify the key name whose value should replace the matching event value. The var_root can take a dictionary to account for data when we have multiple matching events.
      - No
 
-Example
+Example:
 
 .. code-block:: yaml
 
@@ -295,7 +295,7 @@ Example
         pretty: true
         var_root: i
 
-Example with multiple event match
+Example with multiple event match:
 
 .. code-block:: yaml
 
@@ -319,7 +319,7 @@ shutdown
 | all other rule-sets to end, care needs to be taken to account for running playbooks which
 | can be impacted when one of the rule set decides to shutdown.
 
-Example
+Example:
 
     .. code-block:: yml
 
@@ -331,7 +331,7 @@ Example
 Results
 *******
 
-When a rule's condition are satisfied we get the results back as
+When a rule's condition(s) are satisfied we get the results back as:
   * events/facts for multiple conditions
   * event/fact if a single condition
 

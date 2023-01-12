@@ -12,7 +12,6 @@ Example:
 
 
 Each of the condition(s) can use information from
-
  * Event received
  * Previously saved events within the rule
  * Longer term facts about the system
@@ -218,7 +217,7 @@ Logical or
 Combining logical operators
 ----------
 
-You can combine multiple ``and`` operators
+You can combine multiple ``and`` operators:
 
     .. code-block:: yaml
 
@@ -228,7 +227,7 @@ You can combine multiple ``and`` operators
           debug:
 
 
-If you combine ``and`` and ``or`` operators they must be enclosed in parenthesis
+If you combine ``and`` and ``or`` operators they must be enclosed in parenthesis:
 
 
     .. code-block:: yaml
@@ -252,7 +251,7 @@ Multiple conditions with assignment
 
 When a condition is evaluated if the condition passes the matching event
 it is stored in well known attribute(s) called **m**, **m_1**, **m_2**.....
-You can optionally alias these attribute(s) using the **<<** operator e.g
+You can optionally alias these attribute(s) using the **<<** operator. For example:
 
     .. code-block:: yaml
 
@@ -309,7 +308,7 @@ Single condition assignment (Not supported)
 | Assignment **cannot** be used for rules that have a single condition, the
 | matching event will always be called **event**. In the above example **event.first**
 | is ignored and the matching event is stored as **event**. Compare this to multiple
-| condition rules where the matching events are stored as **events**
+| condition rules where the matching events are stored as **events**.
 
 
 FAQ
