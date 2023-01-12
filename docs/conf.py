@@ -49,7 +49,6 @@ import ansible_rulebook
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    'sphinx_ansible_theme',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -102,14 +101,14 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_ansible_theme'
-html_title = "Ansible Rulebook Documentation"
-
-html_theme_options = {
-    'display_version': False,
-    'titles_only': False,
-    'documentation_home_url': 'https://ansible-rulebook.readthedocs.io/en/latest/',
-}
+# html_theme = 'sphinx_ansible_theme'
+# html_title = "Ansible Rulebook Documentation"
+#
+# html_theme_options = {
+#     'display_version': False,
+#     'titles_only': False,
+#     'documentation_home_url': 'https://ansible-rulebook.readthedocs.io/en/latest/',
+# }
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the

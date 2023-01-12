@@ -13,4 +13,4 @@ coverage
 
 # Docs
 sphinx
-sphinx-ansible-theme == 0.10.1
+# sphinx-ansible-theme == 0.10.1
