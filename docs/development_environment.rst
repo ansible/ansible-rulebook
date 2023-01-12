@@ -1,7 +1,7 @@
 Development environment
 =======================
 
-Ready to contribute? Here's how to set up `ansible_rulebook` for local development.
+Ready to contribute? Here's how to set up `ansible_rulebook` for local development:
 
 1. Fork the `ansible_rulebook` repo on GitHub.
 2. Clone your fork locally
@@ -19,43 +19,43 @@ Ready to contribute? Here's how to set up `ansible_rulebook` for local developme
    * Maven 3.8.1+ installed, might come bundled in some Java installs
 
 
-4. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development
+4. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development:
 
-    .. code-block:: console
+.. code-block:: console
 
-        cd ansible_rulebook/
-        python3.9 -m venv venv
-        source venv/bin/activate
-        pip install -e .
-        pip install -r requirements_dev.txt
-        ansible-galaxy collection install ansible.eda
+    cd ansible_rulebook/
+    python3.9 -m venv venv
+    source venv/bin/activate
+    pip install -e .
+    pip install -r requirements_dev.txt
+    ansible-galaxy collection install ansible.eda
 
-5. Create a branch for local development
+5. Create a branch for local development:
 
-    .. code-block:: console
+.. code-block:: console
 
-        git checkout -b name-of-your-bugfix-or-feature
+    git checkout -b name-of-your-bugfix-or-feature
 
-   Now you can make your changes locally.
+Now you can make your changes locally.
 
 6. When you're done making changes, check that your changes pass flake8 and the
-   tests, including testing other Python versions with tox
+   tests, including testing other Python versions with tox:
 
-   .. code-block:: console
+.. code-block:: console
 
-        flake8 ansible_rulebook tests
-        pytest
-        tox
+    flake8 ansible_rulebook tests
+    pytest
+    tox
 
-   To get flake8 and tox, just pip install them into your virtualenv.
+To get flake8 and tox, just pip install them into your virtualenv.
 
-7. Commit your changes and push your branch to GitHub
+7. Commit your changes and push your branch to GitHub:
 
-   .. code-block:: console
+.. code-block:: console
 
-        git add .
-        git commit -m "Your detailed description of your changes."
-        git push origin name-of-your-bugfix-or-feature
+    git add .
+    git commit -m "Your detailed description of your changes."
+    git push origin name-of-your-bugfix-or-feature
 
 8. Submit a pull request through the GitHub website.
 
@@ -68,9 +68,9 @@ The dockerfile points to the required collection_ of ansible which provides sour
 
 .. _collection: https://github.com/ansible/event-driven-ansible
 
-    .. code-block:: console
+.. code-block:: console
 
-        docker build -t localhost/ansible-rulebook:dev .
+    docker build -t localhost/ansible-rulebook:dev .
 
 
 
@@ -118,35 +118,39 @@ You may run pre-commit manually on all tracked files by calling:
 Tips
 ----
 
-To run a subset of tests
+To run a subset of tests:
 
-    .. code-block:: console
+.. code-block:: console
 
-        pytest tests.test_ansible_rulebook
+    pytest tests.test_ansible_rulebook
 
 
-Deploying
+
+To run E2E tests
+
+.. code-block:: console
+
+    pytest -m e2e
+
+
+Building
 ---------
 
-A reminder for the maintainers on how to deploy.
-Make sure all your changes are committed (including an entry in HISTORY.rst).
-Then run
+.. code-block:: console
 
-    .. code-block:: console
-
-        bump2version patch # possible: major / minor / patch
-        git push
-        git push --tags
-
+    python -m build
+    twine upload dist/*
 
 Releasing
 ---------
 
-A reminder for the maintainers on how to deploy.
-Make sure all your changes are committed (including an entry in HISTORY.rst).
-Then run
 
-    .. code-block:: console
-        python -m build
-        twine upload dist/*
+.. code-block:: console
+
+    bump2version patch # possible: major / minor / patch
+    git push
+    git push --tags
+
+
+
 
