@@ -14,12 +14,14 @@
 
 import asyncio
 import random
+from datetime import datetime
 from typing import Any, Dict
 
 
 async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     payload = args.get("payload")
     randomize = args.get("randomize", False)
+    add_timestamp = args.get("timestamp", False)
     create_index = args.get("create_index", None)
     delay = int(args.get("delay", 0))
     loop_count = int(args.get("loop_count", 1))  # -1 infinite
@@ -36,8 +38,12 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
         if randomize:
             random.shuffle(payload)
         for event in payload:
+            extras = {}
             if create_index:
-                event.update({f"{create_index}": index})
+                extras[f"{create_index}"] = index
+            if add_timestamp:
+                extras["timestamp"] = str(datetime.now())
+            event.update(extras)
             await queue.put(event)
             await asyncio.sleep(delay)
             index += 1
@@ -57,6 +63,7 @@ if __name__ == "__main__":
                 randomize=True,
                 create_index="my_index",
                 loop_count=2,
+                timestamp=True,
                 payload=[dict(i=1), dict(f=3.14159), dict(b=False)],
             ),
         )
