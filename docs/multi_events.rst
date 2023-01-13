@@ -21,8 +21,26 @@ The variables passed into the playbook would have the following values:
 
 .. code-block:: json
 
-     'variables': {'events': {'m_0': {'i': 1}, 'm_1': {'i': 2}},
-                   'facts':  {'m_0': {'i': 1}, 'm_1': {'i': 2}}}}
+    {
+        "variables": {
+            "events": {
+                "m_0": {
+                    "i": 1
+                },
+                "m_1": {
+                    "i": 2
+                }
+            },
+            "facts": {
+                "m_0": {
+                    "i": 1
+                },
+                "m_1": {
+                    "i": 2
+                }
+            }
+        }
+    }
 
 Example with assignments:
 
@@ -37,8 +55,26 @@ The variables passed into the playbook would have the following values:
 
 .. code-block:: json
 
-     'variables': {'events': {'first': {'i': 1}, 'second': {'i': 2}},
-                   'facts':  {'first': {'i': 1}, 'second': {'i': 2}}}}
+    {
+        "variables": {
+            "events": {
+                "first": {
+                    "i": 1
+                },
+                "second": {
+                    "i": 2
+                }
+            },
+            "facts": {
+                "first": {
+                    "i": 1
+                },
+                "second": {
+                    "i": 2
+                }
+            }
+        }
+    }
 
 
 **Notes:**

@@ -1,5 +1,6 @@
 -r requirements_test.txt
 -r requirements_lint.txt
+-r docs/requirements.txt
 
 bump2version
 
@@ -11,6 +12,3 @@ build
 tox
 coverage
 
-# Docs
-sphinx
-sphinx-ansible-theme == 0.10.1
