@@ -44,7 +44,7 @@ To learn more about using ``ansible-rulebook`` view the `Docs site <https://ansi
 Installation
 ============
 
-Head over to the `Installation_` page for details on how to install *ansible-rulebook*.
+Head over to the Installation_ page for details on how to install *ansible-rulebook*.
 
 .. _Installation: docs/installation.rst
 
