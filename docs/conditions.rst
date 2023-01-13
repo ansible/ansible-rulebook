@@ -215,7 +215,7 @@ Logical or
 
 
 Combining logical operators
-----------
+---------------------------
 
 You can combine multiple ``and`` operators:
 

@@ -94,7 +94,7 @@ Run an Ansible module
      - No
 
 run_job_template
-************
+****************
 
 Run a job template.
 
@@ -321,7 +321,7 @@ shutdown
 
 Example:
 
-    .. code-block:: yml
+    .. code-block:: yaml
 
        name: shutdown after 5 events
        condition: event.i >= 5

@@ -34,6 +34,7 @@ A ruleset has the following properties:
 | host name use the **fact.meta.hosts** attribute. e.g.
 
 .. code-block:: yaml
+
     - name: Example
       hosts: all
       sources:
