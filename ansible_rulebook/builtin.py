@@ -267,6 +267,7 @@ async def run_playbook(
     retries: Optional[int] = 0,
     retry: Optional[bool] = False,
     delay: Optional[int] = 0,
+    extra_vars: Optional[Dict] = None,
     **kwargs,
 ):
 
@@ -282,6 +283,7 @@ async def run_playbook(
         copy_files,
         True,
         project_data_file,
+        extra_vars,
         **kwargs,
     )
 
@@ -365,6 +367,7 @@ async def run_module(
     retries: Optional[int] = 0,
     retry: Optional[bool] = False,
     delay: Optional[int] = 0,
+    extra_vars: Optional[Dict] = None,
     **kwargs,
 ):
 
@@ -379,6 +382,7 @@ async def run_module(
         copy_files,
         False,
         project_data_file,
+        extra_vars,
         **kwargs,
     )
     job_id = str(uuid.uuid4())
@@ -539,6 +543,7 @@ async def pre_process_runner(
     copy_files: Optional[bool] = False,
     check_files: Optional[bool] = True,
     project_data_file: Optional[str] = None,
+    extra_vars: Optional[Dict] = None,
     **kwargs,
 ):
 
@@ -554,6 +559,8 @@ async def pre_process_runner(
     if var_root:
         update_variables(variables, var_root)
 
+    playbook_extra_vars = _collect_extra_vars(variables, extra_vars, facts)
+
     env_dir = os.path.join(private_data_dir, "env")
     inventory_dir = os.path.join(private_data_dir, "inventory")
     project_dir = os.path.join(private_data_dir, "project")
@@ -562,7 +569,7 @@ async def pre_process_runner(
 
     os.mkdir(env_dir)
     with open(os.path.join(env_dir, "extravars"), "w") as f:
-        f.write(yaml.dump(variables))
+        f.write(yaml.dump(playbook_extra_vars))
     os.mkdir(inventory_dir)
     with open(os.path.join(inventory_dir, "hosts"), "w") as f:
         f.write(yaml.dump(inventory))
@@ -681,10 +688,11 @@ async def run_job_template(
         job_args = {}
     job_args["limit"] = hosts_limit
 
-    job_args["extra_vars"] = job_args.get("extra_vars", {})
-    for key in ["fact", "facts", "event", "events"]:
-        if key in variables:
-            job_args["extra_vars"][key] = variables[key]
+    if var_root:
+        update_variables(variables, var_root)
+    job_args["extra_vars"] = _collect_extra_vars(
+        variables, job_args.get("extra_vars", {}), facts
+    )
 
     job_id = str(uuid.uuid4())
 
@@ -841,3 +849,15 @@ def _get_events(variables: Dict):
     elif "events" in variables:
         return variables["events"]
     return {}
+
+
+def _collect_extra_vars(variables: Dict, user_extra_vars: Dict, facts: Dict):
+    extra_vars = user_extra_vars.copy() if user_extra_vars else {}
+    eda_vars = {}
+    for key in ["fact", "facts", "event", "events"]:
+        if key in variables:
+            eda_vars[key] = variables[key]
+    if facts:
+        eda_vars["facts"] = facts
+    extra_vars["ansible_eda"] = eda_vars
+    return extra_vars

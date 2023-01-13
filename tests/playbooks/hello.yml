@@ -9,7 +9,7 @@
 
     - name: Print event information
       ansible.builtin.debug:
-        msg: '{{ event }}'
+        msg: '{{ ansible_eda.event }}'
 
     - name: Set msg fact
       ansible.builtin.set_fact:
