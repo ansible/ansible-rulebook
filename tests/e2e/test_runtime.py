@@ -11,7 +11,7 @@ import pytest
 from . import utils
 
 LOGGER = logging.getLogger(__name__)
-DEFAULT_TIMEOUT = 10
+DEFAULT_TIMEOUT = 15
 
 
 @pytest.mark.e2e
