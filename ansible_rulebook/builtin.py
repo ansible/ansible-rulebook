@@ -134,6 +134,39 @@ async def print_event(
     )
 
 
+async def echo(
+    event_log,
+    inventory: Dict,
+    hosts: List,
+    variables: Dict,
+    facts: Dict,
+    project_data_file: str,
+    source_ruleset_name: str,
+    source_rule_name: str,
+    ruleset: str,
+    name: Optional[str] = None,
+    var_root: Union[str, Dict, None] = None,
+    message: Optional[str] = None,
+):
+    if var_root:
+        update_variables(variables, var_root)
+
+    print(str(datetime.now()) + " : " + message)
+    sys.stdout.flush()
+    await event_log.put(
+        dict(
+            type="Action",
+            action="echo",
+            activation_id=settings.identifier,
+            ruleset=source_ruleset_name,
+            rule=source_rule_name,
+            playbook_name=name,
+            run_at=str(datetime.utcnow()),
+            matching_events=_get_events(variables),
+        )
+    )
+
+
 async def set_fact(
     event_log,
     inventory: Dict,
@@ -777,6 +810,7 @@ actions: Dict[str, Callable] = dict(
     run_module=run_module,
     run_job_template=run_job_template,
     shutdown=shutdown,
+    echo=echo,
 )
 
 

@@ -1271,3 +1271,26 @@ async def test_47_generic_plugin():
     assert event["type"] == "ProcessedEvent", "4"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "5"
+
+
+@pytest.mark.asyncio
+async def test_48_echo():
+    ruleset_queues, event_log = load_rulebook("examples/48_echo.yml")
+
+    queue = ruleset_queues[0][1]
+    queue.put_nowait(dict(i=1))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "echo", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "5"

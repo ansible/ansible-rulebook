@@ -74,7 +74,8 @@
                         {"$ref": "#/$defs/print-event-action"},
                         {"$ref": "#/$defs/debug-action"},
                         {"$ref": "#/$defs/none-action"},
-                        {"$ref": "#/$defs/shutdown-action"}
+                        {"$ref": "#/$defs/shutdown-action"},
+                        {"$ref": "#/$defs/echo-action"}
                     ]
                 }
             },
@@ -266,6 +267,23 @@
             },
             "required": [
                 "debug"
+            ]
+        },
+        "echo-action": {
+            "type": "object",
+            "properties": {
+                "echo": {
+                    "type": ["object"],
+                    "properties": {
+                        "message": {"type": "string" }
+                    }
+                },
+		"required": [
+			"message"
+		]
+            },
+            "required": [
+                "echo"
             ]
         },
         "none-action": {
