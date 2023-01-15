@@ -128,7 +128,7 @@ def load_vars(parsed_args) -> Dict[str, str]:
             env_var = env_var.strip()
             if env_var not in os.environ:
                 raise KeyError(
-                    f'Could not find environment variable "{env_var}"'
+                    f"Could not find environment variable {env_var!r}"
                 )
             variables[env_var] = os.environ[env_var]
 
