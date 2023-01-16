@@ -173,7 +173,7 @@ def test_ne_operator(rules_engine, rulebook, request):
     assert len(printed_events) == 7
     for event, expected in zip(printed_events, [0, 1, 2, 3, 4, 6, 7]):
         if "str" in request.node.callspec.id:
-            expected = f"{{'i': '{expected}'}}"
+            expected = f"{{'i': {str(expected)!r}}}"
         else:
             expected = f"{{'i': {expected}}}"
         assert expected in event["stdout"]

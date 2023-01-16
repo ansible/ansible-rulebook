@@ -374,7 +374,7 @@ async def run_module(
         for k, v in module_args.items():
             if len(module_args_str) > 0:
                 module_args_str += " "
-            module_args_str += f'{k}="{v}"'
+            module_args_str += f"{k}={v!r}"
 
     if retry:
         retries = max(retries, 1)
