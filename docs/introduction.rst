@@ -2,7 +2,7 @@ Introduction
 ====================
 
 What is Event-Driven Ansible?
------------
+-----------------------------
 
 Event-Driven Ansible is a new way to enhance and expand automation. It
 improves IT speed and agility, while enabling consistency and
