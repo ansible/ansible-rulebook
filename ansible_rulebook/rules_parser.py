@@ -18,6 +18,7 @@ import ansible_rulebook.rule_types as rt
 from ansible_rulebook.condition_parser import (
     parse_condition as parse_condition_value,
 )
+from ansible_rulebook.job_template_runner import job_template_runner
 
 from .exception import RulenameDuplicateException, RulenameEmptyException
 
@@ -109,6 +110,10 @@ def parse_rules(rules: Dict) -> List[rt.Rule]:
 
 def parse_action(action: Dict) -> rt.Action:
     action_name = list(action.keys())[0]
+    if action_name == "run_job_template":
+        if not job_template_runner.host or not job_template_runner.token:
+            raise Exception("No controller is configured to run job templates")
+
     if action[action_name]:
         action_args = {k: v for k, v in action[action_name].items()}
     else:

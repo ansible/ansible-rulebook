@@ -23,6 +23,7 @@ import websockets
 import yaml
 
 from ansible_rulebook import rules_parser as rules_parser
+from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.key import install_private_key
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,10 @@ async def request_workload(activation_id, websocket_address):
                     await install_private_key(
                         base64.b64decode(data.get("data")).decode()
                     )
+                if data.get("type") == "ControllerUrl":
+                    job_template_runner.host = data.get("data")
+                if data.get("type") == "ControllerToken":
+                    job_template_runner.token = data.get("data")
             return inventory, extra_vars, rulebook, project_data_file
         except CancelledError:
             logger.info("closing websocket due to task cancelled")
