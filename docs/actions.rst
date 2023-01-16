@@ -15,6 +15,7 @@ The following actions are supported:
 - `shutdown`_
 - `debug`_
 - `none`_
+- `echo`_
 
 run_playbook
 ************
@@ -348,3 +349,24 @@ none
 ****
   No action, useful when writing tests
   No arguments needed
+
+echo
+****
+.. list-table:: Write a user specified message to stdout
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - message
+     - A terse message to display to stdout
+     - Yes
+
+Example:
+
+.. code-block:: yaml
+
+    action:
+      echo:
+        message: Hello World
