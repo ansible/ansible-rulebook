@@ -32,7 +32,7 @@ class JobTemplateRunner:
     VALID_POST_CODES = [200, 201, 202]
     JOB_COMPLETION_STATUSES = ["successful", "failed", "error", "canceled"]
 
-    def __init__(self, host: str, token: str):
+    def __init__(self, host: str = "", token: str = ""):
         self.token = token
         self.host = host
         self.refresh_delay = int(
@@ -137,5 +137,4 @@ class JobTemplateRunner:
         return json_body
 
 
-# Will be set through CLI in another PR
-job_template_runner = JobTemplateRunner("<controller host>", "<api token>")
+job_template_runner = JobTemplateRunner()
