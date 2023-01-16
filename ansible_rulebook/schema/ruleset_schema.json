@@ -45,7 +45,10 @@
                 }
             },
             "additionalProperties": {
-                "type": "object"
+                "oneOf":[
+                    {"type": "object"},
+                    {"type": "null"}
+                ]
             }
         },
         "rule": {
