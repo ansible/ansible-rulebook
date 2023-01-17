@@ -16,8 +16,8 @@ The `ansible-rulebook` CLI supports the following options::
     --vars=<v>                  Variables file
     --env-vars=<e>              Comma separated list of variables to import
                                 from the environment
-    --debug                     Show debug logging
-    --verbose                   Show verbose logging
+    --debug                     Show debug logging, writes to stdout
+    --verbose                   Show verbose logging, overwrites debug writes to stdout
     --version                   Show the version and exit
     --websocket-address=<w>     Connect the event log to a websocket
     --id=<i>                    Identifier
