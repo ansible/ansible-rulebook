@@ -559,7 +559,7 @@ async def pre_process_runner(
     if var_root:
         update_variables(variables, var_root)
 
-    playbook_extra_vars = _collect_extra_vars(variables, extra_vars, facts)
+    playbook_extra_vars = _collect_extra_vars(variables, extra_vars)
 
     env_dir = os.path.join(private_data_dir, "env")
     inventory_dir = os.path.join(private_data_dir, "inventory")
@@ -691,7 +691,7 @@ async def run_job_template(
     if var_root:
         update_variables(variables, var_root)
     job_args["extra_vars"] = _collect_extra_vars(
-        variables, job_args.get("extra_vars", {}), facts
+        variables, job_args.get("extra_vars", {})
     )
 
     job_id = str(uuid.uuid4())
@@ -851,13 +851,11 @@ def _get_events(variables: Dict):
     return {}
 
 
-def _collect_extra_vars(variables: Dict, user_extra_vars: Dict, facts: Dict):
+def _collect_extra_vars(variables: Dict, user_extra_vars: Dict):
     extra_vars = user_extra_vars.copy() if user_extra_vars else {}
     eda_vars = {}
     for key in ["fact", "facts", "event", "events"]:
         if key in variables:
             eda_vars[key] = variables[key]
-    if facts:
-        eda_vars["facts"] = facts
     extra_vars["ansible_eda"] = eda_vars
     return extra_vars
