@@ -1,0 +1,141 @@
+---
+- name: Test actions sanity
+  hosts: all
+  sources:
+    - generic:
+        event_delay: 1
+        payload:
+          - action: "run_playbook"
+          - action: "run_module"
+          - action: "print_event"
+          - action: "debug"
+          - action: "post_event"
+            rulebook_scope: same_ruleset
+          - action: "post_event"
+            rulebook_scope: different_ruleset
+          - action: "set_fact"
+            rulebook_scope: same_ruleset
+          - action: "set_fact"
+            rulebook_scope: different_ruleset
+          - action: "retract_fact"
+            rulebook_scope: same_ruleset
+          - action: "check_retract_fact"
+            rulebook_scope: same_ruleset
+          - action: "echo"
+  rules:
+    - name: run_playbook
+      condition: event.action == "run_playbook"
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
+
+    - name: run_module
+      condition: event.action == "run_module"
+      action:
+        run_module:
+          name: ansible.builtin.debug
+          module_args:
+            msg: "Event matched: {{ event }}"
+
+    - name: print_event
+      condition: event.action == "print_event"
+      action:
+        print_event:
+
+    - name: debug
+      condition: event.action == "debug"
+      action:
+        debug:
+
+    - name: post_event same ruleset
+      condition: event.action == "post_event" and event.rulebook_scope == "same_ruleset"
+      action:
+        post_event:
+          event:
+            post_event_state: sent
+
+    - name: print post_event same ruleset
+      condition: event.post_event_state == "sent"
+      action:
+        run_module:
+          name: ansible.builtin.debug
+          module_args:
+            msg: "Event matched in same ruleset: {{ event.post_event_state }}"
+
+    - name: post_event different ruleset
+      condition: event.action == "post_event" and event.rulebook_scope == "different_ruleset"
+      action:
+        post_event:
+          ruleset: Second ruleset
+          event:
+            post_event_state: sent
+
+    - name: set_fact same ruleset
+      condition: event.action == "set_fact" and event.rulebook_scope == "same_ruleset"
+      action:
+        set_fact:
+          fact:
+            my_fact: sent
+
+    - name: print set_fact same ruleset
+      condition: event.my_fact == "sent"
+      action:
+        run_module:
+          name: ansible.builtin.debug
+          module_args:
+            msg: "Fact matched in same ruleset: {{ event.my_fact }}"
+
+    - name: set_fact different ruleset
+      condition: event.action == "set_fact" and event.rulebook_scope == "different_ruleset"
+      action:
+        set_fact:
+          ruleset: Second ruleset
+          fact:
+            my_fact: sent
+
+    - name: retract_fact same ruleset
+      condition: event.action == "retract_fact" and event.rulebook_scope == "same_ruleset"
+      action:
+        retract_fact:
+          fact:
+            my_fact: sent
+
+    - name: print retract_fact same ruleset
+      condition:
+        all:
+          - event.my_fact is defined
+          - event.action == "check_retract_fact"
+      action:
+        run_module:
+          name: ansible.builtin.debug
+          module_args:
+            msg: "Retracted fact in same ruleset, this should not be printed"
+
+    - name: echo
+      condition: event.action == "echo"
+      action:
+        echo:
+          message: "Echo action executed"
+
+- name: Second ruleset
+  hosts: all
+  sources:
+    - ansible.eda.range:
+        limit: 60
+        delay: 1
+  rules:
+    - name: print post_event different ruleset
+      condition: event.post_event_state == "sent"
+      action:
+        run_module:
+          name: ansible.builtin.debug
+          module_args:
+            msg: "Event matched in different ruleset: {{ event.post_event_state }}"
+
+    - name: print set_fact different ruleset
+      condition: event.my_fact == "sent"
+      action:
+        run_module:
+          name: ansible.builtin.debug
+          module_args:
+            msg: "Fact matched in different ruleset: {{ event.my_fact }}"
