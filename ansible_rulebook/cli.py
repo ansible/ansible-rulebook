@@ -82,12 +82,12 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--debug",
         action="store_true",
-        help="Show debug logging",
+        help="Show debug logging, written to stdout",
     )
     parser.add_argument(
         "--verbose",
         action="store_true",
-        help="Show verbose logging",
+        help="Show verbose logging, written to stdout",
     )
     parser.add_argument(
         "--version",
@@ -155,13 +155,18 @@ def show_version() -> NoReturn:
 
 
 def setup_logging(args: argparse.Namespace) -> None:
+    LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    stream = sys.stderr
+    level = logging.WARNING
+
     if args.debug:
         level = logging.DEBUG
+        stream = sys.stdout
     elif args.verbose:
         level = logging.INFO
-    else:
-        level = logging.WARNING
-    logging.basicConfig(level=level)
+        stream = sys.stdout
+
+    logging.basicConfig(stream=stream, level=level, format=LOG_FORMAT)
 
 
 def main(args: List[str] = None) -> int:
