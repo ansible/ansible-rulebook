@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import argparse
 import asyncio
 import logging
 import os
@@ -45,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 
 # FIXME(cutwater): Replace parsed_args with clear interface
-async def run(parsed_args) -> None:
+async def run(parsed_args: argparse.ArgumentParser) -> None:
 
     if parsed_args.worker and parsed_args.websocket_address and parsed_args.id:
         logger.info("Starting worker mode")
@@ -92,8 +93,7 @@ async def run(parsed_args) -> None:
         ruleset_queues,
         variables,
         inventory,
-        parsed_args.redis_host_name,
-        parsed_args.redis_port,
+        parsed_args,
         project_data_file,
     )
 

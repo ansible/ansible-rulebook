@@ -12,13 +12,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import argparse
 import asyncio
 import logging
 import os
 import runpy
 from collections import OrderedDict
 from datetime import datetime
-from pprint import pformat
+from pprint import PrettyPrinter, pformat
 from typing import Any, Dict, List, Optional, cast
 
 if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
@@ -179,14 +180,17 @@ async def run_rulesets(
     ruleset_queues: List[RuleSetQueue],
     variables: Dict,
     inventory: Dict,
-    redis_host_name: Optional[str] = None,
-    redis_port: Optional[int] = None,
+    parsed_args: argparse.ArgumentParser = None,
     project_data_file: Optional[str] = None,
 ):
 
     logger.info("run_ruleset")
-    if redis_host_name and redis_port:
-        provide_durability(lang.get_host(), redis_host_name, redis_port)
+    if parsed_args and parsed_args.redis_host_name and parsed_args.redis_port:
+        provide_durability(
+            lang.get_host(),
+            parsed_args.redis_host_name,
+            parsed_args.redis_port,
+        )
 
     rulesets_queue_plans = rule_generator.generate_rulesets(
         ruleset_queues, variables, inventory
@@ -211,6 +215,7 @@ async def run_rulesets(
             hosts_facts=hosts_facts,
             variables=variables,
             project_data_file=project_data_file,
+            parsed_args=parsed_args,
         )
         ruleset_task = asyncio.create_task(ruleset_runner.run_ruleset())
         ruleset_tasks.append(ruleset_task)
@@ -231,6 +236,7 @@ class RuleSetRunner:
         hosts_facts,
         variables,
         project_data_file: Optional[str] = None,
+        parsed_args=None,
     ):
         self.pa_runner = PlaybookActionRunner()
         self.pa_runner_task = None
@@ -241,6 +247,7 @@ class RuleSetRunner:
         self.hosts_facts = hosts_facts
         self.variables = variables
         self.project_data_file = project_data_file
+        self.parsed_args = parsed_args
 
     async def run_ruleset(self):
         prime_facts(self.name, self.hosts_facts, self.variables)
@@ -251,6 +258,10 @@ class RuleSetRunner:
         logger.info("Waiting for event from %s", self.name)
         while True:
             data = await self.ruleset_queue_plan.source_queue.get()
+            if self.parsed_args and self.parsed_args.print_events:
+                PrettyPrinter(indent=4).pprint(data)
+
+            logger.debug("Received event : " + str(data))
             json_count(data)
             if isinstance(data, Shutdown):
                 await asyncio.wait(self.action_tasks)

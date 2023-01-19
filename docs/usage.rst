@@ -18,6 +18,7 @@ The `ansible-rulebook` CLI supports the following options::
                                 from the environment
     --debug                     Show debug logging, writes to stdout
     --verbose                   Show verbose logging, overwrites debug writes to stdout
+    --print_events              Print events after reading from source queue
     --version                   Show the version and exit
     --websocket-address=<w>     Connect the event log to a websocket
     --id=<i>                    Identifier
