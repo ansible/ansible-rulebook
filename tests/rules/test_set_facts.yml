@@ -15,7 +15,7 @@
             alpha: 1
             beta: 
               name: R2D2
-              location: Naboo
+              location: "{{ Naboo }}"
     - name: r2
       condition: event.msg == "hello world"
       action:
@@ -26,5 +26,5 @@
               fact.msg: hello world
               fact.alpha: 1
               fact.beta.name: R2D2
-              fact.beta.location: Naboo
+              fact.beta.location: "{{ Naboo }}"
           copy_files: True

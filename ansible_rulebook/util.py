@@ -59,12 +59,12 @@ def substitute_variables(
     elif isinstance(value, list):
         new_value = []
         for item in value:
-            new_value.append(render_string_or_return_value(item, context))
+            new_value.append(substitute_variables(item, context))
         return new_value
     elif isinstance(value, dict):
         new_value = value.copy()
         for key, subvalue in new_value.items():
-            new_value[key] = render_string_or_return_value(subvalue, context)
+            new_value[key] = substitute_variables(subvalue, context)
         return new_value
     else:
         return value

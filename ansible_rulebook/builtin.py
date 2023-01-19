@@ -44,6 +44,8 @@ logger = logging.getLogger(__name__)
 
 tar = shutil.which("tar")
 
+KEY_EDA_VARS = "ansible_eda"
+
 
 async def none(
     event_log,
@@ -111,10 +113,10 @@ async def print_event(
         update_variables(variables, var_root)
 
     var_name = "event"
-    if "events" in variables:
+    if "events" in variables[KEY_EDA_VARS]:
         var_name = "events"
 
-    print_fn(variables[var_name])
+    print_fn(variables[KEY_EDA_VARS][var_name])
     sys.stdout.flush()
     await event_log.put(
         dict(
@@ -816,20 +818,21 @@ actions: Dict[str, Callable] = dict(
 
 def update_variables(variables: Dict, var_root: Union[str, Dict]):
     var_roots = {var_root: var_root} if isinstance(var_root, str) else var_root
-    if "event" in variables:
+    variables_eda = variables[KEY_EDA_VARS]
+    if "event" in variables_eda:
         for key, _new_key in var_roots.items():
             new_value = dpath.get(
-                variables["event"], key, separator=".", default=None
+                variables_eda["event"], key, separator=".", default=None
             )
             if new_value:
-                variables["event"] = new_value
+                variables_eda["event"] = new_value
                 break
-    elif "events" in variables:
-        for _k, v in variables["events"].items():
+    elif "events" in variables_eda:
+        for _k, v in variables_eda["events"].items():
             for old_key, new_key in var_roots.items():
                 new_value = dpath.get(v, old_key, separator=".", default=None)
                 if new_value:
-                    variables["events"][new_key] = new_value
+                    variables_eda["events"][new_key] = new_value
                     break
 
 
@@ -844,18 +847,15 @@ def _get_latest_artifact(data_dir: str, artifact: str, content: bool = True):
 
 
 def _get_events(variables: Dict):
-    if "event" in variables:
-        return {"m": variables["event"]}
-    elif "events" in variables:
-        return variables["events"]
+    variables_eda = variables[KEY_EDA_VARS]
+    if "event" in variables_eda:
+        return {"m": variables_eda["event"]}
+    elif "events" in variables_eda:
+        return variables_eda["events"]
     return {}
 
 
 def _collect_extra_vars(variables: Dict, user_extra_vars: Dict):
     extra_vars = user_extra_vars.copy() if user_extra_vars else {}
-    eda_vars = {}
-    for key in ["fact", "facts", "event", "events"]:
-        if key in variables:
-            eda_vars[key] = variables[key]
-    extra_vars["ansible_eda"] = eda_vars
+    extra_vars[KEY_EDA_VARS] = variables[KEY_EDA_VARS]
     return extra_vars
