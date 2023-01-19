@@ -15,6 +15,8 @@
 """Generate condition AST from Ansible condition."""
 from typing import Dict, List
 
+import dpath
+
 from ansible_rulebook.condition_types import (
     Boolean,
     Condition,
@@ -27,6 +29,7 @@ from ansible_rulebook.condition_types import (
     OperatorExpression,
     String,
 )
+from ansible_rulebook.exception import VarsKeyMissingException
 from ansible_rulebook.rule_types import (
     Action,
     Condition as RuleCondition,
@@ -77,6 +80,17 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
             return {"Events": parsed_condition.value[7:]}
         elif parsed_condition.value.startswith("facts."):
             return {"Facts": parsed_condition.value[6:]}
+        elif parsed_condition.value.startswith("vars."):
+            key = parsed_condition.value[5:]
+            try:
+                return visit_condition(
+                    convert_to_type(dpath.get(variables, key, separator=".")),
+                    variables,
+                )
+            except KeyError:
+                raise VarsKeyMissingException(
+                    f"vars does not contain key: {key}"
+                )
         else:
             raise Exception(f"Unhandled identifier {parsed_condition.value}")
     elif isinstance(parsed_condition, String):
@@ -125,6 +139,21 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
         }
     else:
         raise Exception(f"Unhandled token {parsed_condition}")
+
+
+def convert_to_type(value):
+    if isinstance(value, int):
+        return Integer(value)
+    elif isinstance(value, bool):
+        return Boolean(value)
+    elif isinstance(value, str):
+        return String(value)
+    elif isinstance(value, float):
+        return Float(value)
+    elif isinstance(value, list):
+        return [convert_to_type(v) for v in value]
+    else:
+        raise Exception(f"Invalid type for {value}")
 
 
 def create_binary_node(name, parsed_condition, variables):
