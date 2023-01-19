@@ -250,7 +250,7 @@ Multiple conditions with assignment
 -----------------------------------
 
 When a condition is evaluated if the condition passes the matching event
-it is stored in well known attribute(s) called **m**, **m_1**, **m_2**.....
+it is stored in well known attribute(s) called **m_0**, **m_1**, **m_2**.....
 You can optionally alias these attribute(s) using the **<<** operator. For example:
 
     .. code-block:: yaml
@@ -263,9 +263,9 @@ You can optionally alias these attribute(s) using the **<<** operator. For examp
             - events.third << event.i == events.first.i + 2
         action:
           debug:
-            first: "{{events.first}}"
-            second: "{{events.second}}"
-            third: "{{events.third}}"
+            first: "{{ events.first }}"
+            second: "{{ events.second }}"
+            third: "{{ events.third }}"
 
 | When using the assignment operator the attribute names should have the
 | **events.** or **facts.** prefix. In the above example we are saving the
@@ -274,6 +274,21 @@ You can optionally alias these attribute(s) using the **<<** operator. For examp
 | a comparison. **events** and **facts** have rule scope and are not available
 | outside of the rule. They can be used in assignments and accessing the saved
 | values in a condition or in action.
+| The above example using default assignments
+
+    .. code-block:: yaml
+
+        name: multiple conditions using default assignments
+        condition:
+          all:
+            - event.i == 0
+            - event.i == 1
+            - event.i == events.m_0.i + 2
+        action:
+          debug:
+            first: "{{ events.m_0 }}"
+            second: "{{ events.m_1 }}"
+            third: "{{ events.m_2 }}"
 
 Multiple condition with default assignments
 -------------------------------------------
