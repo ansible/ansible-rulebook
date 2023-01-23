@@ -35,10 +35,21 @@ class Identifier(NamedTuple):
     value: str
 
 
+class KeywordValue(NamedTuple):
+    name: String
+    value: Union[Integer, String, Boolean]
+
+
+class SearchType(NamedTuple):
+    kind: String
+    pattern: String
+    options: List[KeywordValue] = None
+
+
 class OperatorExpression(NamedTuple):
     left: Union[Float, Integer, String, List]
     operator: str
-    right: Union[Float, Integer, String, List]
+    right: Union[Float, Integer, String, List, SearchType]
 
 
 class NegateExpression(NamedTuple):
@@ -60,6 +71,8 @@ class Condition(NamedTuple):
         OperatorExpression,
         ExistsExpression,
         NegateExpression,
+        KeywordValue,
+        SearchType,
     ]
 
 
@@ -73,4 +86,6 @@ ConditionTypes = Union[
     Float,
     ExistsExpression,
     NegateExpression,
+    KeywordValue,
+    SearchType,
 ]
