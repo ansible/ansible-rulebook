@@ -11,13 +11,13 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import asyncio
 import json
 import os
 
 import pytest
 
-from ansible_rulebook.engine import run_rulesets
+from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.util import load_inventory
 
@@ -1294,3 +1294,40 @@ async def test_48_echo():
     assert event["type"] == "ProcessedEvent", "2"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "5"
+
+
+@pytest.mark.skipif(
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
+    reason="durable rules does not support in list used in the example",
+)
+@pytest.mark.asyncio
+async def test_49_float():
+    ruleset_queues, event_log = load_rulebook("examples/49_float.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "debug", "1"
+    assert event["matching_events"] == {"m": {"pi": 3.14159}}, "3"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "3"
+    assert event["action"] == "debug", "4"
+    assert event["matching_events"] == {"m": {"mass": 5.97219}}, "5"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "6"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "7"
+    source_task.cancel()

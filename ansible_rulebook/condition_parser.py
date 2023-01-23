@@ -37,6 +37,7 @@ from ansible_rulebook.condition_types import (  # noqa: E402
     Boolean,
     Condition,
     ExistsExpression,
+    Float,
     Identifier,
     Integer,
     OperatorExpression,
@@ -48,6 +49,11 @@ logger = logging.getLogger(__name__)
 integer = pyparsing_common.signed_integer.copy().add_parse_action(
     lambda toks: Integer(toks[0])
 )
+
+float_t = pyparsing_common.real.copy().add_parse_action(
+    lambda toks: Float(toks[0])
+)
+
 ident = pyparsing_common.identifier
 varname = (
     Combine(ident + ZeroOrMore("." + ident))
@@ -70,7 +76,9 @@ string2 = (
     QuotedString('"').copy().add_parse_action(lambda toks: String(toks[0]))
 )
 
-delim_value = Group(delimitedList(integer | ident | string1 | string2))
+delim_value = Group(
+    delimitedList(float_t | integer | ident | string1 | string2)
+)
 list_values = Suppress("[") + delim_value + Suppress("]")
 
 
@@ -96,7 +104,9 @@ def OperatorExpressionFactory(tokens):
     return return_value
 
 
-all_terms = list_values | integer | boolean | varname | string1 | string2
+all_terms = (
+    list_values | float_t | integer | boolean | varname | string1 | string2
+)
 condition = infix_notation(
     all_terms,
     [
