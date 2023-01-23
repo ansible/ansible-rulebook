@@ -48,9 +48,7 @@ DEFAULT_TIMEOUT = 15
         ),
     ],
 )
-def test_program_return_code(
-    rules_engine, rulebook, inventory, range_limit, expected_rc
-):
+def test_program_return_code(rulebook, inventory, range_limit, expected_rc):
     """
     GIVEN a valid or invalid rulebook
         and a valid or invalid environment variable
@@ -68,7 +66,6 @@ def test_program_return_code(
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
-        env=utils.get_environ(rules_engine),
         timeout=DEFAULT_TIMEOUT,
         cwd=utils.BASE_DATA_PATH,
     )
