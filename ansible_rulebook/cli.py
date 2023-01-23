@@ -48,13 +48,9 @@ from typing import List, NoReturn
 
 from ansible_rulebook.job_template_runner import job_template_runner
 
-if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
-    if os.environ.get("JAVA_HOME") is None:
-        print(
-            "JAVA_HOME is not set. "
-            "Please install Java 11+ and set JAVA_HOME"
-        )
-        sys.exit(1)
+if os.environ.get("JAVA_HOME") is None:
+    print("JAVA_HOME is not set. " "Please install Java 11+ and set JAVA_HOME")
+    sys.exit(1)
 
 import ansible_rulebook
 from ansible_rulebook import app
@@ -144,13 +140,11 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def show_version() -> NoReturn:
-    rules_engine = f"{os.environ.get('EDA_RULES_ENGINE', 'drools')}"
     java_home = f"{os.environ.get('JAVA_HOME', 'JAVA_HOME not present')}"
 
     result = [
         f"{ansible_rulebook.__version__}",
         f"  Executable location = {sys.argv[0]}",
-        f"  Rules engine = {rules_engine}",
         f"  Drools_jpy version = {importlib.metadata.version('drools_jpy')}",
         f"  Java home = {java_home}",
         f"  Java version = {get_java_version()}",

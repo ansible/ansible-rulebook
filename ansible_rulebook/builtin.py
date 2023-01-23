@@ -32,11 +32,7 @@ import ansible_runner
 import dpath
 import janus
 import yaml
-
-if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
-    from drools import ruleset as lang
-else:
-    from durable import lang
+from drools import ruleset as lang
 
 from .collection import find_playbook, has_playbook, split_collection_name
 from .conf import settings

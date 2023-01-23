@@ -20,6 +20,7 @@ from pyparsing import (
     Group,
     Literal,
     OpAssoc,
+    Optional,
     ParseException,
     ParserElement,
     QuotedString,
@@ -40,10 +41,14 @@ from ansible_rulebook.condition_types import (  # noqa: E402
     Float,
     Identifier,
     Integer,
+    KeywordValue,
     NegateExpression,
     OperatorExpression,
+    SearchType,
     String,
 )
+
+SUPPORTED_SEARCH_KINDS = ("match", "regex", "search")
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +82,15 @@ string2 = (
     QuotedString('"').copy().add_parse_action(lambda toks: String(toks[0]))
 )
 
+allowed_values = float_t | integer | boolean | string1 | string2
+key_value = ident + Suppress("=") + allowed_values
+string_search_t = (
+    one_of("regex match search")
+    + Suppress("(")
+    + Group(Optional(delimitedList(string1 | string2 | key_value)))
+    + Suppress(")")
+)
+
 delim_value = Group(
     delimitedList(float_t | integer | ident | string1 | string2)
 )
@@ -89,14 +103,32 @@ def as_list(var):
     return var
 
 
+def SearchTypeFactory(kind, tokens):
+    options = []
+    if len(tokens) > 1:
+        for i in range(1, len(tokens), 2):
+            options.append(KeywordValue(String(tokens[i]), tokens[i + 1]))
+
+    return SearchType(String(kind), tokens[0], options)
+
+
 def OperatorExpressionFactory(tokens):
     return_value = None
     while tokens:
         if return_value is None:
-            return_value = OperatorExpression(
-                as_list(tokens[0]), tokens[1], as_list(tokens[2])
-            )
-            tokens = tokens[3:]
+            if (tokens[1] == "is" or tokens[1] == "is not") and (
+                tokens[2] in SUPPORTED_SEARCH_KINDS
+            ):
+                search_type = SearchTypeFactory(tokens[2], tokens[3])
+                return_value = OperatorExpression(
+                    tokens[0], tokens[1], search_type
+                )
+                tokens = tokens[4:]
+            else:
+                return_value = OperatorExpression(
+                    as_list(tokens[0]), tokens[1], as_list(tokens[2])
+                )
+                tokens = tokens[3:]
         else:
             return_value = OperatorExpression(
                 return_value, tokens[0], tokens[1]
@@ -106,7 +138,14 @@ def OperatorExpressionFactory(tokens):
 
 
 all_terms = (
-    list_values | float_t | integer | boolean | varname | string1 | string2
+    string_search_t
+    | list_values
+    | float_t
+    | integer
+    | boolean
+    | varname
+    | string1
+    | string2
 )
 condition = infix_notation(
     all_terms,
@@ -156,13 +195,7 @@ condition = infix_notation(
             lambda toks: OperatorExpressionFactory(toks[0]),
         ),
         (
-            "is not",
-            2,
-            OpAssoc.LEFT,
-            lambda toks: OperatorExpressionFactory(toks[0]),
-        ),
-        (
-            "is",
+            one_of(strs=["is not", "is"]),
             2,
             OpAssoc.LEFT,
             lambda toks: OperatorExpressionFactory(toks[0]),

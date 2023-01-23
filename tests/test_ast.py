@@ -306,6 +306,81 @@ def test_parse_condition():
         parse_condition("fact.friends not contains 'fred'"), {}
     )
 
+    assert {
+        "SearchMatchesExpression": {
+            "lhs": {"Event": "url"},
+            "rhs": {
+                "SearchType": {
+                    "kind": {"String": "match"},
+                    "pattern": {
+                        "String": "https://example.com/users/.*/resources"
+                    },
+                    "options": [
+                        {
+                            "name": {"String": "ignorecase"},
+                            "value": {"Boolean": True},
+                        }
+                    ],
+                }
+            },
+        }
+    } == visit_condition(
+        parse_condition(
+            "event.url is "
+            + 'match("https://example.com/users/.*/resources", '
+            + "ignorecase=true)"
+        ),
+        {},
+    )
+
+    assert {
+        "SearchNotMatchesExpression": {
+            "lhs": {"Event": "url"},
+            "rhs": {
+                "SearchType": {
+                    "kind": {"String": "match"},
+                    "pattern": {
+                        "String": "https://example.com/users/.*/resources"
+                    },
+                    "options": [
+                        {
+                            "name": {"String": "ignorecase"},
+                            "value": {"Boolean": True},
+                        }
+                    ],
+                }
+            },
+        }
+    } == visit_condition(
+        parse_condition(
+            "event.url is not "
+            + 'match("https://example.com/users/.*/resources",ignorecase=true)'
+        ),
+        {},
+    )
+    assert {
+        "SearchMatchesExpression": {
+            "lhs": {"Event": "url"},
+            "rhs": {
+                "SearchType": {
+                    "kind": {"String": "regex"},
+                    "pattern": {"String": "example.com/foo"},
+                    "options": [
+                        {
+                            "name": {"String": "ignorecase"},
+                            "value": {"Boolean": True},
+                        }
+                    ],
+                }
+            },
+        }
+    } == visit_condition(
+        parse_condition(
+            'event.url is regex("example.com/foo",ignorecase=true)'
+        ),
+        {},
+    )
+
 
 @pytest.mark.parametrize(
     "rulebook",

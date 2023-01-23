@@ -23,8 +23,10 @@ from ansible_rulebook.condition_types import (
     Float,
     Identifier,
     Integer,
+    KeywordValue,
     NegateExpression,
     OperatorExpression,
+    SearchType,
     String,
 )
 from ansible_rulebook.rule_types import (
@@ -87,6 +89,21 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
         return {"Integer": parsed_condition.value}
     elif isinstance(parsed_condition, Float):
         return {"Float": parsed_condition.value}
+    elif isinstance(parsed_condition, SearchType):
+        data = dict(
+            kind=visit_condition(parsed_condition.kind, variables),
+            pattern=visit_condition(parsed_condition.pattern, variables),
+        )
+        if parsed_condition.options:
+            data["options"] = [
+                visit_condition(v, variables) for v in parsed_condition.options
+            ]
+        return {"SearchType": data}
+    elif isinstance(parsed_condition, KeywordValue):
+        return dict(
+            name=visit_condition(parsed_condition.name, variables),
+            value=visit_condition(parsed_condition.value, variables),
+        )
     elif isinstance(parsed_condition, OperatorExpression):
         if parsed_condition.operator in OPERATOR_MNEMONIC:
             return create_binary_node(
@@ -102,6 +119,10 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
                             parsed_condition.left, variables
                         )
                     }
+            elif isinstance(parsed_condition.right, SearchType):
+                return create_binary_node(
+                    "SearchMatchesExpression", parsed_condition, variables
+                )
         elif parsed_condition.operator == "is not":
             if isinstance(parsed_condition.right, Identifier):
                 if parsed_condition.right.value == "defined":
@@ -110,6 +131,10 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
                             parsed_condition.left, variables
                         )
                     }
+            elif isinstance(parsed_condition.right, SearchType):
+                return create_binary_node(
+                    "SearchNotMatchesExpression", parsed_condition, variables
+                )
         else:
             raise Exception(f"Unhandled token {parsed_condition}")
     elif isinstance(parsed_condition, ExistsExpression):
