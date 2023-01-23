@@ -29,6 +29,7 @@ Options:
     --redis_port=<p>            Redis port
     --debug                     Show debug logging
     --verbose                   Show verbose logging
+    --print-events              Print events after reading from source queue
     --version                   Show the version and exit
     --websocket-address=<w>     Connect the event log to a websocket
     --id=<i>                    Identifier
@@ -134,6 +135,11 @@ def get_parser() -> argparse.ArgumentParser:
         "--controller-token",
         help="Controller API authentication token",
     )
+    parser.add_argument(
+        "--print-events",
+        action="store_true",
+        help="Print events to stdout, disabled if used with --debug",
+    )
     return parser
 
 
@@ -184,6 +190,8 @@ def main(args: List[str] = None) -> int:
         print("Error: inventory is required")
         return 1
 
+    if args.debug:
+        args.print_events = False
     if args.controller_url:
         if args.controller_token:
             job_template_runner.host = args.controller_url
