@@ -1331,3 +1331,46 @@ async def test_49_float():
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "7"
     source_task.cancel()
+
+
+@pytest.mark.skipif(
+    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
+    reason="durable rules does not support negation using not",
+)
+@pytest.mark.asyncio
+async def test_50_negation():
+    ruleset_queues, event_log = load_rulebook("examples/50_negation.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "print_event", "1"
+    assert event["matching_events"] == {"m": {"b": False}}, "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "3"
+    assert event["action"] == "print_event", "3"
+    assert event["matching_events"] == {"m": {"bt": True}}, "3"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "4"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "5"
+    assert event["action"] == "print_event", "5"
+    assert event["matching_events"] == {"m": {"i": 10}}, "5"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "6"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "7"
+    source_task.cancel()
