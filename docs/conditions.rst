@@ -75,6 +75,8 @@ Conditions support the following operators:
      - To check if a variable is not defined
    * - `<<`
      - Assignment operator, to save the matching events or facts with events or facts prefix
+   * - not
+     - Negation operator, to negate boolean expression
 
 
 Examples
@@ -325,6 +327,18 @@ Single condition assignment (Not supported)
 | is ignored and the matching event is stored as **event**. Compare this to multiple
 | condition rules where the matching events are stored as **events**.
 
+
+Negation Example
+----------------
+
+    .. code-block:: yaml
+
+        name: negation
+        condition: not (event.i > 50 or event.i < 10)
+        action:
+          print_event:
+
+| In this example the boolean expression is evaluated first and then negated.
 
 FAQ
 ***

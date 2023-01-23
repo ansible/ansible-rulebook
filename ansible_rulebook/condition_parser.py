@@ -40,6 +40,7 @@ from ansible_rulebook.condition_types import (  # noqa: E402
     Float,
     Identifier,
     Integer,
+    NegateExpression,
     OperatorExpression,
     String,
 )
@@ -111,7 +112,7 @@ condition = infix_notation(
     all_terms,
     [
         ("+", 1, OpAssoc.RIGHT, lambda toks: ExistsExpression(*toks[0])),
-        ("!", 1, OpAssoc.RIGHT),
+        ("not", 1, OpAssoc.RIGHT, lambda toks: NegateExpression(*toks[0])),
         (
             one_of("* /"),
             2,

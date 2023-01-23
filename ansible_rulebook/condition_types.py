@@ -41,6 +41,11 @@ class OperatorExpression(NamedTuple):
     right: Union[Float, Integer, String, List]
 
 
+class NegateExpression(NamedTuple):
+    operator: str
+    value: Union[Boolean, Identifier, OperatorExpression]
+
+
 class ExistsExpression(NamedTuple):
     operator: str
     value: String
@@ -54,6 +59,7 @@ class Condition(NamedTuple):
         Identifier,
         OperatorExpression,
         ExistsExpression,
+        NegateExpression,
     ]
 
 
@@ -66,4 +72,5 @@ ConditionTypes = Union[
     Integer,
     Float,
     ExistsExpression,
+    NegateExpression,
 ]
