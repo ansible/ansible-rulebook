@@ -42,11 +42,6 @@ jobs:
       - name: Install `ansible.eda` collection
         run: ansible-galaxy collection install git+https://github.com/ansible/event-driven-ansible
 
-      - name: Run tests via Durable rules
-        run: pytest -m "not e2e" -vv -n auto
-        env:
-          EDA_RULES_ENGINE: durable_rules
-
       - name: Run tests via Drools
         run: pytest -m "not e2e" -vv -n auto
 

@@ -13,7 +13,6 @@
 #  limitations under the License.
 import asyncio
 import json
-import os
 
 import pytest
 
@@ -588,10 +587,7 @@ async def test_20_is_not_defined():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "5"
     assert event["action"] == "debug", "6"
-    if os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules":
-        assert event["matching_events"] == {}
-    else:
-        assert event["matching_events"] == {"m": {"msg": "hello"}}
+    assert event["matching_events"] == {"m": {"msg": "hello"}}
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "7"
     event = event_log.get_nowait()
@@ -1022,10 +1018,6 @@ async def test_36_multiple_rulesets_both_fired():
     validate_events(event_log, **checks)
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support more than 255 keys in facts",
-)
 @pytest.mark.asyncio
 async def test_37_hosts_facts():
     ruleset_queues, event_log = load_rulebook("examples/37_hosts_facts.yml")
@@ -1072,10 +1064,6 @@ async def test_38_shutdown_action():
     assert event["type"] == "Shutdown", "2"
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support in",
-)
 @pytest.mark.asyncio
 async def test_40_in():
     ruleset_queues, event_log = load_rulebook("examples/40_in.yml")
@@ -1099,10 +1087,6 @@ async def test_40_in():
     assert event["type"] == "Shutdown", "3"
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support not in",
-)
 @pytest.mark.asyncio
 async def test_41_not_in():
     ruleset_queues, event_log = load_rulebook("examples/41_not_in.yml")
@@ -1126,10 +1110,6 @@ async def test_41_not_in():
     assert event["type"] == "Shutdown", "3"
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support contains",
-)
 @pytest.mark.asyncio
 async def test_42_contains():
     ruleset_queues, event_log = load_rulebook("examples/42_contains.yml")
@@ -1153,10 +1133,6 @@ async def test_42_contains():
     assert event["type"] == "Shutdown", "3"
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support not contains",
-)
 @pytest.mark.asyncio
 async def test_43_not_contains():
     ruleset_queues, event_log = load_rulebook("examples/43_not_contains.yml")
@@ -1180,10 +1156,6 @@ async def test_43_not_contains():
     assert event["type"] == "Shutdown", "3"
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support in",
-)
 @pytest.mark.asyncio
 async def test_44_in_and():
     ruleset_queues, event_log = load_rulebook("examples/44_in_and.yml")
@@ -1211,10 +1183,6 @@ async def test_44_in_and():
     assert event["type"] == "Shutdown", "3"
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support in",
-)
 @pytest.mark.asyncio
 async def test_45_in_or():
     ruleset_queues, event_log = load_rulebook("examples/45_in_or.yml")
@@ -1296,10 +1264,6 @@ async def test_48_echo():
     assert event["type"] == "Shutdown", "5"
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support in list used in the example",
-)
 @pytest.mark.asyncio
 async def test_49_float():
     ruleset_queues, event_log = load_rulebook("examples/49_float.yml")
@@ -1333,10 +1297,6 @@ async def test_49_float():
     source_task.cancel()
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support negation using not",
-)
 @pytest.mark.asyncio
 async def test_50_negation():
     ruleset_queues, event_log = load_rulebook("examples/50_negation.yml")

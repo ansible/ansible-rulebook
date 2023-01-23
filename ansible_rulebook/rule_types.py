@@ -15,16 +15,12 @@
 from __future__ import annotations
 
 import asyncio
-import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Union
 
-import ansible_rulebook.condition_types as ct
+from drools.ruleset import Ruleset as EngineRuleSet
 
-if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
-    from drools.ruleset import Ruleset as EngineRuleSet
-else:
-    from durable.lang import ruleset as EngineRuleSet
+import ansible_rulebook.condition_types as ct
 
 
 class EventSourceFilter(NamedTuple):

@@ -22,18 +22,11 @@ from datetime import datetime
 from pprint import PrettyPrinter, pformat
 from typing import Any, Dict, List, Optional, cast
 
-if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
-    from drools import ruleset as lang
-    from drools.exceptions import (
-        MessageNotHandledException,
-        MessageObservedException,
-    )
-else:
-    from durable import lang
-    from durable.engine import (
-        MessageObservedException,
-        MessageNotHandledException,
-    )
+from drools import ruleset as lang
+from drools.exceptions import (
+    MessageNotHandledException,
+    MessageObservedException,
+)
 
 import ansible_rulebook.rule_generator as rule_generator
 from ansible_rulebook.builtin import actions as builtin_actions
@@ -268,8 +261,7 @@ class RuleSetRunner:
                 self.pa_runner.stop()
                 await self.pa_runner_task
                 await self.event_log.put(dict(type="Shutdown"))
-                if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
-                    lang.end_session(self.name)
+                lang.end_session(self.name)
                 return
             if not data:
                 # TODO: is it really necessary to add such event to event_log?
@@ -346,19 +338,13 @@ class RuleSetRunner:
         if action in builtin_actions:
             try:
                 single_match = None
-                if os.environ.get("EDA_RULES_ENGINE", "drools") == "drools":
-                    keys = list(rules_engine_result.data.keys())
-                    if len(keys) == 0:
-                        single_match = {}
-                    elif len(keys) == 1 and keys[0] == "m":
-                        single_match = rules_engine_result.data[keys[0]]
-                    else:
-                        multi_match = rules_engine_result.data
+                keys = list(rules_engine_result.data.keys())
+                if len(keys) == 0:
+                    single_match = {}
+                elif len(keys) == 1 and keys[0] == "m":
+                    single_match = rules_engine_result.data[keys[0]]
                 else:
-                    if rules_engine_result.m is not None:
-                        single_match = rules_engine_result.m._d
-                    else:
-                        multi_match = rules_engine_result._m
+                    multi_match = rules_engine_result.data
                 variables_copy = variables.copy()
                 if single_match is not None:
                     variables_copy["event"] = single_match
