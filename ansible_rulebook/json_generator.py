@@ -20,8 +20,10 @@ from ansible_rulebook.condition_types import (
     Condition,
     ConditionTypes,
     ExistsExpression,
+    Float,
     Identifier,
     Integer,
+    NegateExpression,
     OperatorExpression,
     String,
 )
@@ -83,6 +85,8 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
         }
     elif isinstance(parsed_condition, Integer):
         return {"Integer": parsed_condition.value}
+    elif isinstance(parsed_condition, Float):
+        return {"Float": parsed_condition.value}
     elif isinstance(parsed_condition, OperatorExpression):
         if parsed_condition.operator in OPERATOR_MNEMONIC:
             return create_binary_node(
@@ -113,6 +117,12 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
             raise Exception("Please use 'is defined' instead of +")
 
         return visit_condition(parsed_condition.value, variables).__pos__()
+    elif isinstance(parsed_condition, NegateExpression):
+        return {
+            "NegateExpression": visit_condition(
+                parsed_condition.value, variables
+            )
+        }
     else:
         raise Exception(f"Unhandled token {parsed_condition}")
 

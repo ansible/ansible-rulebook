@@ -66,7 +66,9 @@ Plugin template
 Plugin entrypoint
 ^^^^^^^^^^^^^^^^^
 The plugin python file must contain an entrypoint function exactly like the
-following::
+following:
+
+.. code-block:: python
 
   async def main(queue: asyncio.Queue, args: Dict[str, Any]):
 
@@ -74,7 +76,9 @@ It is an async function. The first argument is an asyncio queue that will be
 consumed by ansible-rulebook CLI. The rest arguments are custom defined. They
 must match the arguments in the source section of the rulebook. For example
 the template plugin expects a single argument ``delay``. In the rulebook the
-source section looks like::
+source section looks like:
+
+.. code-block:: yaml
 
   - name: example
     hosts: all
@@ -94,7 +98,7 @@ event data put on the queue must be a dictionary. You can insert the ``meta``
 key that points to another dictionary that holds a list of hosts. These hosts
 will limit where the ansible playbook can run. A simple example looks like
 ``{"i": 2, "meta": {hosts: "localhost"}}``. ``hosts`` can be a comma delimited
-string or a list of host names. 
+string or a list of host names.
 
 Distributing plugins
 ^^^^^^^^^^^^^^^^^^^^
@@ -104,7 +108,9 @@ the ``-S`` argument in the ansible-rulebook CLI. The recommended method for
 distributing and installing the plugin is through a collection. In this case
 the plugin source file should be placed under ``plugins/event_source`` folder
 and referred to by FQCN. The following rulebook example illustrates how to
-refer to the range plugin provided by ``ansible.eda`` collection::
+refer to the range plugin provided by ``ansible.eda`` collection:
+
+.. code-block:: yaml
 
   - name: example2
     hosts: localhost

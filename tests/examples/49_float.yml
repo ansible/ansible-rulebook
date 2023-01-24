@@ -1,0 +1,18 @@
+---
+- name: 49 float
+  hosts: all
+  sources:
+    - name: generic
+      generic:
+        payload:
+          - pi: 3.14159
+          - mass: 5.97219
+  rules:
+    - name: r1
+      condition: event.pi == 3.14159
+      action:
+        debug:
+    - name: r2
+      condition: event.mass in [3.14159, 5.97219]
+      action:
+        debug:

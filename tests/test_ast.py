@@ -34,6 +34,7 @@ def test_parse_condition():
     assert {"Boolean": True} == visit_condition(parse_condition("True"), {})
     assert {"Boolean": False} == visit_condition(parse_condition("False"), {})
     assert {"Integer": 42} == visit_condition(parse_condition("42"), {})
+    assert {"Float": 3.1415} == visit_condition(parse_condition("3.1415"), {})
     assert {"String": "Hello"} == visit_condition(
         parse_condition("'Hello'"), {}
     )
@@ -41,17 +42,54 @@ def test_parse_condition():
         "EqualsExpression": {"lhs": {"Fact": "range.i"}, "rhs": {"Integer": 1}}
     } == visit_condition(parse_condition("fact.range.i == 1"), {})
     assert {
+        "EqualsExpression": {
+            "lhs": {"Fact": "range.pi"},
+            "rhs": {"Float": 3.1415},
+        }
+    } == visit_condition(parse_condition("fact.range.pi == 3.1415"), {})
+    assert {
         "GreaterThanExpression": {
             "lhs": {"Fact": "range.i"},
             "rhs": {"Integer": 1},
         }
     } == visit_condition(parse_condition("fact.range.i > 1"), {})
+
+    assert {
+        "NegateExpression": {
+            "Event": "enabled",
+        }
+    } == visit_condition(parse_condition("not event.enabled"), {})
+
+    assert {
+        "NegateExpression": {
+            "LessThanExpression": {
+                "lhs": {"Fact": "range.i"},
+                "rhs": {"Integer": 1},
+            }
+        }
+    } == visit_condition(parse_condition("not (fact.range.i < 1)"), {})
+
     assert {
         "LessThanExpression": {
             "lhs": {"Fact": "range.i"},
             "rhs": {"Integer": 1},
         }
     } == visit_condition(parse_condition("fact.range.i < 1"), {})
+
+    assert {
+        "NegateExpression": {
+            "Event": "enabled",
+        }
+    } == visit_condition(parse_condition("not event.enabled"), {})
+
+    assert {
+        "NegateExpression": {
+            "LessThanExpression": {
+                "lhs": {"Fact": "range.i"},
+                "rhs": {"Integer": 1},
+            }
+        }
+    } == visit_condition(parse_condition("not (fact.range.i < 1)"), {})
     assert {
         "LessThanOrEqualToExpression": {
             "lhs": {"Fact": "range.i"},
@@ -225,6 +263,18 @@ def test_parse_condition():
         }
     } == visit_condition(
         parse_condition("fact.name not in ['fred','barney','wilma']"), {}
+    )
+    assert {
+        "ItemNotInListExpression": {
+            "lhs": {"Fact": "radius"},
+            "rhs": [
+                {"Float": 1079.6234},
+                {"Float": 3985.8},
+                {"Float": 2106.1234},
+            ],
+        }
+    } == visit_condition(
+        parse_condition("fact.radius not in [1079.6234,3985.8,2106.1234]"), {}
     )
     assert {
         "ListContainsItemExpression": {

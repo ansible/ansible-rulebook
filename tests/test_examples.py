@@ -11,13 +11,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import asyncio
 import json
-import os
 
 import pytest
 
-from ansible_rulebook.engine import run_rulesets
+from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.util import load_inventory
 
@@ -588,10 +587,7 @@ async def test_20_is_not_defined():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "5"
     assert event["action"] == "debug", "6"
-    if os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules":
-        assert event["matching_events"] == {}
-    else:
-        assert event["matching_events"] == {"m": {"msg": "hello"}}
+    assert event["matching_events"] == {"m": {"msg": "hello"}}
     event = event_log.get_nowait()
     assert event["type"] == "ProcessedEvent", "7"
     event = event_log.get_nowait()
@@ -1022,10 +1018,6 @@ async def test_36_multiple_rulesets_both_fired():
     validate_events(event_log, **checks)
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support more than 255 keys in facts",
-)
 @pytest.mark.asyncio
 async def test_37_hosts_facts():
     ruleset_queues, event_log = load_rulebook("examples/37_hosts_facts.yml")
@@ -1072,10 +1064,6 @@ async def test_38_shutdown_action():
     assert event["type"] == "Shutdown", "2"
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support in",
-)
 @pytest.mark.asyncio
 async def test_40_in():
     ruleset_queues, event_log = load_rulebook("examples/40_in.yml")
@@ -1099,10 +1087,6 @@ async def test_40_in():
     assert event["type"] == "Shutdown", "3"
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support not in",
-)
 @pytest.mark.asyncio
 async def test_41_not_in():
     ruleset_queues, event_log = load_rulebook("examples/41_not_in.yml")
@@ -1126,10 +1110,6 @@ async def test_41_not_in():
     assert event["type"] == "Shutdown", "3"
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support contains",
-)
 @pytest.mark.asyncio
 async def test_42_contains():
     ruleset_queues, event_log = load_rulebook("examples/42_contains.yml")
@@ -1153,10 +1133,6 @@ async def test_42_contains():
     assert event["type"] == "Shutdown", "3"
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support not contains",
-)
 @pytest.mark.asyncio
 async def test_43_not_contains():
     ruleset_queues, event_log = load_rulebook("examples/43_not_contains.yml")
@@ -1180,10 +1156,6 @@ async def test_43_not_contains():
     assert event["type"] == "Shutdown", "3"
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support in",
-)
 @pytest.mark.asyncio
 async def test_44_in_and():
     ruleset_queues, event_log = load_rulebook("examples/44_in_and.yml")
@@ -1211,10 +1183,6 @@ async def test_44_in_and():
     assert event["type"] == "Shutdown", "3"
 
 
-@pytest.mark.skipif(
-    os.environ.get("EDA_RULES_ENGINE", "drools") == "durable_rules",
-    reason="durable rules does not support in",
-)
 @pytest.mark.asyncio
 async def test_45_in_or():
     ruleset_queues, event_log = load_rulebook("examples/45_in_or.yml")
@@ -1271,3 +1239,98 @@ async def test_47_generic_plugin():
     assert event["type"] == "ProcessedEvent", "4"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "5"
+
+
+@pytest.mark.asyncio
+async def test_48_echo():
+    ruleset_queues, event_log = load_rulebook("examples/48_echo.yml")
+
+    queue = ruleset_queues[0][1]
+    queue.put_nowait(dict(i=1))
+    queue.put_nowait(Shutdown())
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "echo", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "5"
+
+
+@pytest.mark.asyncio
+async def test_49_float():
+    ruleset_queues, event_log = load_rulebook("examples/49_float.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "debug", "1"
+    assert event["matching_events"] == {"m": {"pi": 3.14159}}, "3"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "3"
+    assert event["action"] == "debug", "4"
+    assert event["matching_events"] == {"m": {"mass": 5.97219}}, "5"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "6"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "7"
+    source_task.cancel()
+
+
+@pytest.mark.asyncio
+async def test_50_negation():
+    ruleset_queues, event_log = load_rulebook("examples/50_negation.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "print_event", "1"
+    assert event["matching_events"] == {"m": {"b": False}}, "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "3"
+    assert event["action"] == "print_event", "3"
+    assert event["matching_events"] == {"m": {"bt": True}}, "3"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "4"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "5"
+    assert event["action"] == "print_event", "5"
+    assert event["matching_events"] == {"m": {"i": 10}}, "5"
+    event = event_log.get_nowait()
+    assert event["type"] == "ProcessedEvent", "6"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "7"
+    source_task.cancel()

@@ -1,0 +1,23 @@
+---
+- name: 50 Negation on booleans
+  hosts: all
+  sources:
+    - name: generic
+      generic:
+        payload:
+           - b: false
+           - bt: true
+           - i: 10
+  rules:
+    - name: r1
+      condition: not event.b
+      action:
+        print_event:
+    - name: r2
+      condition: event.bt
+      action:
+        print_event:
+    - name: r3
+      condition: not (event.i > 50 or event.i < 10)
+      action:
+        print_event:
