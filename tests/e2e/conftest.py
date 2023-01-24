@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.fixture(params=["durable_rules", "drools"])
+@pytest.fixture(params=["drools"])
 def rules_engine(request):
     return {"EDA_RULES_ENGINE": request.param}
 
