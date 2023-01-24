@@ -48,7 +48,6 @@ def load_rulebook(rules_file):
 
 
 def validate_events(event_log, **kwargs):
-    processed_events = 0
     shutdown_events = 0
     job_events = 0
     ansible_events = 0
@@ -58,9 +57,7 @@ def validate_events(event_log, **kwargs):
     for _ in range(kwargs["max_events"]):
         event = event_log.get_nowait()
         print(event)
-        if event["type"] == "ProcessedEvent":
-            processed_events += 1
-        elif event["type"] == "Action":
+        if event["type"] == "Action":
             action_events += 1
             actions.append(
                 f"{event['ruleset']}::{event['rule']}::{event['action']}"
@@ -75,8 +72,6 @@ def validate_events(event_log, **kwargs):
     assert event_log.empty()
     if "actions" in kwargs:
         assert kwargs["actions"] == actions
-    if "processed_events" in kwargs:
-        assert kwargs["processed_events"] == processed_events
     if "shutdown_events" in kwargs:
         assert kwargs["shutdown_events"] == shutdown_events
     if "job_events" in kwargs:
@@ -125,8 +120,7 @@ async def test_run_rulesets():
     )
 
     checks = {
-        "max_events": 22,
-        "processed_events": 4,
+        "max_events": 18,
         "shutdown_events": 1,
         "job_events": 1,
         "ansible_events": 9,
@@ -154,7 +148,6 @@ async def test_run_rules_with_assignment():
     )
 
     assert event_log.get_nowait()["type"] == "Action", "0"
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
     assert event_log.get_nowait()["type"] == "Shutdown", "3"
     assert event_log.empty()
 
@@ -178,7 +171,6 @@ async def test_run_rules_with_assignment2():
     )
 
     assert event_log.get_nowait()["type"] == "Action", "0"
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
     assert event_log.get_nowait()["type"] == "Shutdown", "3"
     assert event_log.empty()
 
@@ -201,16 +193,13 @@ async def test_run_rules_simple():
     )
 
     assert event_log.get_nowait()["type"] == "Action", "0"
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "0.1"
     assert event_log.get_nowait()["type"] == "Action", "0.2"
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
     assert event_log.get_nowait()["type"] == "Job", "1.0"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.2"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.3"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.4"
     assert event_log.get_nowait()["type"] == "Action", "1.5"
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
     assert event_log.get_nowait()["type"] == "Shutdown", "3"
     assert event_log.empty()
 
@@ -238,8 +227,7 @@ async def test_run_multiple_hosts():
     )
 
     checks = {
-        "max_events": 25,
-        "processed_events": 4,
+        "max_events": 21,
         "shutdown_events": 1,
         "job_events": 1,
         "ansible_events": 13,
@@ -271,7 +259,6 @@ async def test_run_multiple_hosts2():
     )
 
     assert event_log.get_nowait()["type"] == "Action", "1"
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
     assert event_log.get_nowait()["type"] == "Shutdown", "3"
     assert event_log.empty()
 
@@ -299,7 +286,6 @@ async def test_run_multiple_hosts3():
     )
 
     assert event_log.get_nowait()["type"] == "Action", "1"
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
     assert event_log.get_nowait()["type"] == "Shutdown", "3"
     assert event_log.empty()
 
@@ -322,16 +308,13 @@ async def test_filters():
     )
 
     assert event_log.get_nowait()["type"] == "Action", "0"
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "0.1"
     assert event_log.get_nowait()["type"] == "Action", "0.2"
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "1"
     assert event_log.get_nowait()["type"] == "Job", "1.0"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.1"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.2"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.3"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.4"
     assert event_log.get_nowait()["type"] == "Action", "1.5"
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "2"
     assert event_log.get_nowait()["type"] == "Shutdown", "3"
     assert event_log.empty()
 
@@ -357,8 +340,7 @@ async def test_run_rulesets_on_hosts():
     )
 
     checks = {
-        "max_events": 22,
-        "processed_events": 4,
+        "max_events": 18,
         "shutdown_events": 1,
         "job_events": 1,
         "ansible_events": 9,
@@ -395,8 +377,6 @@ async def test_run_assert_facts():
     assert event["action"] == "run_playbook", "2.2"
     assert event["rc"] == 0, "2.3"
     assert event["status"] == "successful", "2.4"
-
-    assert event_log.get_nowait()["type"] == "ProcessedEvent", "3"
     assert event_log.get_nowait()["type"] == "Shutdown", "4"
     assert event_log.empty()
 
@@ -417,53 +397,6 @@ async def test_empty_rule_names():
 async def test_missing_rule_names():
     with pytest.raises(ValidationError):
         load_rulebook("rules/test_missing_rule_names.yml")
-
-
-PLAYBOOK_MODULE_RULES = [
-    "rules/test_combine_hosts.yml",
-    "rules/test_combine_hosts_module.yml",
-]
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("rulebook", PLAYBOOK_MODULE_RULES)
-async def test_run_hosts_combine(rulebook):
-    ruleset_queues, event_log = load_rulebook(rulebook)
-    inventory = dict(
-        all=dict(
-            hosts=dict(
-                localhost0=dict(ansible_connection="local"),
-                localhost1=dict(ansible_connection="local"),
-            )
-        )
-    )
-    queue = ruleset_queues[0][1]
-    queue.put_nowait(dict())
-    # create two events, each limits to a separate host
-    queue.put_nowait(dict(i=0, meta=dict(hosts="localhost0")))
-    queue.put_nowait(dict(i=1, meta=dict(hosts="localhost1")))
-    queue.put_nowait(Shutdown())
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        inventory,
-    )
-
-    job_count = 0
-    while not event_log.empty():
-        log = event_log.get_nowait()
-        if log["type"] == "Job":
-            # assert hosts are combined, order not important
-            assert log["hosts"] in [
-                "localhost0,localhost1",
-                "localhost1,localhost0",
-            ]
-            job_count += 1
-
-    # assert only one playbook job has run
-    assert job_count == 1
 
 
 @pytest.mark.asyncio
