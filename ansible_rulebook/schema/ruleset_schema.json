@@ -135,7 +135,8 @@
             },
             "required": [
                   "run_playbook"
-            ]
+            ],
+            "additionalProperties": false
         },
         "run-module-action": {
             "type": "object",
@@ -163,7 +164,8 @@
             },
             "required": [
                   "run_module"
-            ]
+            ],
+            "additionalProperties": false
         },
         "run-job-template-action": {
             "type": "object",
@@ -190,7 +192,8 @@
             },
             "required": [
                 "run_job_template"
-            ]
+            ],
+            "additionalProperties": false
         },
         "post-event-action": {
             "type": "object",
@@ -203,12 +206,14 @@
                     },
                     "required": [
                        "event"
-                    ]
+                    ],
+                    "additionalProperties": false
                 }
             },
             "required": [
                 "post_event"
-            ]
+            ],
+            "additionalProperties": false
         },
         "set-fact-action": {
             "type": "object",
@@ -221,12 +226,14 @@
                     },
                     "required": [
                        "fact"
-                    ]
+                    ],
+                    "additionalProperties": false
                 }
             },
             "required": [
                 "set_fact"
-            ]
+            ],
+            "additionalProperties": false
         },
         "retract-fact-action": {
             "type": "object",
@@ -239,12 +246,14 @@
                     },
                     "required": [
                        "fact"
-                    ]
+                    ], 
+                    "additionalProperties": false
                 }
             },
             "required": [
                 "retract_fact"
-            ]
+            ],
+            "additionalProperties": false
         },
         "print-event-action": {
             "type": "object",
@@ -254,12 +263,14 @@
                     "properties": {
                         "var_root": {"type": ["string","object"] },
                         "pretty": {"type": "boolean" }
-                    }
+                    }, 
+                    "additionalProperties": false
                 }
             },
             "required": [
                 "print_event"
-            ]
+            ],
+            "additionalProperties": false
         },
         "debug-action": {
             "type": "object",
@@ -279,7 +290,8 @@
                     "type": ["object"],
                     "properties": {
                         "message": {"type": "string" }
-                    }
+                    }, 
+                    "additionalProperties": false
                 },
 		"required": [
 			"message"
@@ -287,7 +299,8 @@
             },
             "required": [
                 "echo"
-            ]
+            ],
+            "additionalProperties": false
         },
         "none-action": {
             "type": "object",
@@ -298,7 +311,8 @@
             },
             "required": [
                 "none"
-            ]
+            ],
+            "additionalProperties": false
         },
         "shutdown-action": {
             "type": "object",
@@ -309,7 +323,8 @@
             },
             "required": [
                 "shutdown"
-            ]
+            ],
+            "additionalProperties": false
         }
     }
 }
