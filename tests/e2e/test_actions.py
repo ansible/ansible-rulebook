@@ -13,7 +13,7 @@ DEFAULT_TIMEOUT = 15
 
 
 @pytest.mark.e2e
-def test_actions_sanity(default_rules_engine):
+def test_actions_sanity():
     """
     A rulebook that contains multiple rules with the following list of actions:
         * run_playbook
@@ -35,7 +35,6 @@ def test_actions_sanity(default_rules_engine):
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
-        env=utils.get_environ(default_rules_engine),
         timeout=DEFAULT_TIMEOUT,
         capture_output=True,
         cwd=utils.BASE_DATA_PATH,
