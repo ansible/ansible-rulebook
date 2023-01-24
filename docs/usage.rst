@@ -2,30 +2,35 @@
 Usage
 =====
 
-
-`ansible-rulebook` is either used as a command line tool or used as a web service with `ansible-rulebook-ui`.
-
-
 The `ansible-rulebook` CLI supports the following options::
 
-    Options:
-    -h, --help                  Show this page
-    -i, --inventory=<i>         Inventory
-    --rulebook=<r>              The rulebook file or rulebook from a collection
-    -S=<S>, --source_dir=<S>    Source dir
-    --vars=<v>                  Variables file
-    --env-vars=<e>              Comma separated list of variables to import
-                                from the environment
-    --debug                     Show debug logging, writes to stdout
-    --verbose                   Show verbose logging, overwrites debug writes to stdout
-    --print_events              Print events after reading from source queue
-    --version                   Show the version and exit
-    --websocket-address=<w>     Connect the event log to a websocket
-    --id=<i>                    Identifier
-    --worker                    Enable worker mode
-    --project-tarball=<p>       Project tarball
-    --controller_url=<u>        Controller API base url, e.g. http://host1:8080
-    --controller_token=<t>      Controller API authentication token
+    optional arguments:
+    -h, --help            show this help message and exit
+    --rulebook RULEBOOK   The rulebook file or rulebook from a collection
+    --vars VARS           Variables file
+    --env-vars ENV_VARS   Comma separated list of variables to import from the environment
+    --debug               Show debug logging, written to stdout
+    --verbose             Show verbose logging, written to stdout
+    --version             Show the version and exit
+    --redis-host-name REDIS_HOST_NAME
+                            Redis host name
+    --redis-port REDIS_PORT
+                            Redis port
+    -S SOURCE_DIR, --source-dir SOURCE_DIR
+                            Source dir
+    -i INVENTORY, --inventory INVENTORY
+                            Inventory
+    --websocket-address WEBSOCKET_ADDRESS
+                            Connect the event log to a websocket
+    --id ID               Identifier
+    --worker              Enable worker mode
+    --project-tarball PROJECT_TARBALL
+                            A tarball of the project
+    --controller-url CONTROLLER_URL
+                            Controller API base url, e.g. http://host1:8080
+    --controller-token CONTROLLER_TOKEN
+                            Controller API authentication token
+    --print-events        Print events to stdout, disabled if used with --debug
 
 To get help from `ansible-rulebook` run the following:
 

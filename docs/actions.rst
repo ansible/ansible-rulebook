@@ -343,7 +343,7 @@ When a rule's condition(s) are satisfied we get the results back as:
 debug
 *****
   Write the event to stdout
-  No arguments needed
+  It accepts an arbitrary dict that it's injected into the event to be printed
 
 none
 ****
