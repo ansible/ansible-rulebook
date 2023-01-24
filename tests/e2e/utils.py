@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from subprocess import CompletedProcess
@@ -99,17 +98,6 @@ def assert_playbook_output(result: CompletedProcess) -> List[dict]:
         assert not output[-1]["event_data"]["failures"]
 
     return output
-
-
-def get_environ(envvars: dict) -> dict:
-    """
-    Returns a copy of the environment and updates it
-    with the received dict.
-    """
-
-    environ = os.environ.copy()
-    environ.update(envvars)
-    return environ
 
 
 async def msg_handler(

@@ -20,7 +20,7 @@ DEFAULT_TIMEOUT = 15
         pytest.param("test_le_operator.yml", id="le"),
     ],
 )
-def test_less_operators(rules_engine, rulebook):
+def test_less_operators(rulebook):
     """
     GIVEN a rulebook with range source plugin that produces 8 events
         and a condition like "i less than 4"
@@ -36,7 +36,6 @@ def test_less_operators(rules_engine, rulebook):
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
-        env=utils.get_environ(rules_engine),
         timeout=DEFAULT_TIMEOUT,
         capture_output=True,
         cwd=utils.BASE_DATA_PATH,
@@ -62,7 +61,7 @@ def test_less_operators(rules_engine, rulebook):
         pytest.param("test_eq_operator_str.yml", "{'i': '4'}", id="str"),
     ],
 )
-def test_eq_operator(rules_engine, rulebook, expected):
+def test_eq_operator(rulebook, expected):
     """
     GIVEN a rulebook with range source plugin that produces 8 events
         and a condition like "i equal 4"
@@ -78,7 +77,6 @@ def test_eq_operator(rules_engine, rulebook, expected):
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
-        env=utils.get_environ(rules_engine),
         timeout=DEFAULT_TIMEOUT,
         capture_output=True,
         cwd=utils.BASE_DATA_PATH,
@@ -101,7 +99,7 @@ def test_eq_operator(rules_engine, rulebook, expected):
         pytest.param("test_gt_operator.yml", id="gt_operator"),
     ],
 )
-def test_greater_operators(rules_engine, rulebook):
+def test_greater_operators(rulebook):
     """
     GIVEN a rulebook with range source plugin that produces 8 events
         and a condition like "i greater or equal than 5"
@@ -117,7 +115,6 @@ def test_greater_operators(rules_engine, rulebook):
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
-        env=utils.get_environ(rules_engine),
         timeout=DEFAULT_TIMEOUT,
         capture_output=True,
         cwd=utils.BASE_DATA_PATH,
@@ -143,7 +140,7 @@ def test_greater_operators(rules_engine, rulebook):
         pytest.param("test_ne_operator_int.yml", id="int"),
     ],
 )
-def test_ne_operator(rules_engine, rulebook, request):
+def test_ne_operator(rulebook, request):
     """
     GIVEN a rulebook with range source plugin that produces 8 events
         and a condition like "i not equal 5"
@@ -158,7 +155,6 @@ def test_ne_operator(rules_engine, rulebook, request):
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
-        env=utils.get_environ(rules_engine),
         timeout=DEFAULT_TIMEOUT,
         capture_output=True,
         cwd=utils.BASE_DATA_PATH,
@@ -202,7 +198,7 @@ def test_ne_operator(rules_engine, rulebook, request):
         ),
     ],
 )
-def test_defined_operator(rules_engine, rulebook):
+def test_defined_operator(rulebook):
     """
     GIVEN a rulebook with range source plugin that produces 5 events
         and a condition like "i is defined"
@@ -218,7 +214,6 @@ def test_defined_operator(rules_engine, rulebook):
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
-        env=utils.get_environ(rules_engine),
         timeout=DEFAULT_TIMEOUT,
         capture_output=True,
         cwd=utils.BASE_DATA_PATH,
@@ -279,7 +274,7 @@ def test_defined_operator(rules_engine, rulebook):
         ),
     ],
 )
-def test_contains_operator(default_rules_engine, rulebook, expected_count):
+def test_contains_operator(rulebook, expected_count):
     """
     GIVEN a rulebook with range source plugin that produces events
         and the event contains an array
@@ -296,7 +291,6 @@ def test_contains_operator(default_rules_engine, rulebook, expected_count):
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
-        env=utils.get_environ(default_rules_engine),
         timeout=DEFAULT_TIMEOUT,
         capture_output=True,
         cwd=utils.BASE_DATA_PATH,
@@ -347,7 +341,7 @@ def test_contains_operator(default_rules_engine, rulebook, expected_count):
         ),
     ],
 )
-def test_in_operator(default_rules_engine, rulebook, expected_count):
+def test_in_operator(rulebook, expected_count):
     """
     GIVEN a rulebook with range source plugin that produces events
         and the event contains an array
@@ -365,7 +359,6 @@ def test_in_operator(default_rules_engine, rulebook, expected_count):
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
-        env=utils.get_environ(default_rules_engine),
         timeout=DEFAULT_TIMEOUT,
         capture_output=True,
         cwd=utils.BASE_DATA_PATH,
