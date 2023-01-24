@@ -17,7 +17,6 @@ import asyncio
 import logging
 import os
 import runpy
-from collections import OrderedDict
 from datetime import datetime
 from pprint import PrettyPrinter, pformat
 from typing import Any, Dict, List, Optional, cast
@@ -220,7 +219,7 @@ async def run_rulesets(
 
 
 class RuleSetRunner:
-    COMBINEABLE_ACTIONS = ("run_playbook", "run_module", "run_job_template")
+    ANSIBLE_ACTIONS = ("run_playbook", "run_module", "run_job_template")
 
     def __init__(
         self,
@@ -233,7 +232,7 @@ class RuleSetRunner:
     ):
         self.pa_runner = PlaybookActionRunner()
         self.pa_runner_task = None
-        self.action_tasks = []
+        self.action_loop_task = None
         self.event_log = event_log
         self.ruleset_queue_plan = ruleset_queue_plan
         self.name = ruleset_queue_plan.ruleset.name
@@ -241,14 +240,39 @@ class RuleSetRunner:
         self.variables = variables
         self.project_data_file = project_data_file
         self.parsed_args = parsed_args
+        self.stopped = True
 
     async def run_ruleset(self):
+        self.stopped = False
         prime_facts(self.name, self.hosts_facts, self.variables)
         self.pa_runner_task = asyncio.create_task(
             self.pa_runner.start(self.name), name=self.name
         )
+        self.action_loop_task = asyncio.create_task(
+            self._drain_actionplan_queue()
+        )
+        source_loop_task = asyncio.create_task(self._drain_source_queue())
+        await asyncio.wait([source_loop_task])
 
-        logger.info("Waiting for event from %s", self.name)
+    async def _stop(self):
+        # Wait for items in queues to be completed. Mainly for spec tests.
+        await asyncio.sleep(0.01)
+
+        logger.info("Attempt to stop ruleset %s", self.name)
+        self.stopped = True
+        self.pa_runner.stop()
+        # helps to break waiting on the plan queue when it is empty
+        try:
+            self.ruleset_queue_plan.plan.queue.put_nowait(Shutdown())
+        except asyncio.QueueFull:
+            pass
+
+        await asyncio.wait([self.pa_runner_task, self.action_loop_task])
+        await self.event_log.put(dict(type="Shutdown"))
+        lang.end_session(self.name)
+
+    async def _drain_source_queue(self):
+        logger.info("Waiting for events from %s", self.name)
         while True:
             data = await self.ruleset_queue_plan.source_queue.get()
             if self.parsed_args and self.parsed_args.print_events:
@@ -257,35 +281,13 @@ class RuleSetRunner:
             logger.debug("Received event : " + str(data))
             json_count(data)
             if isinstance(data, Shutdown):
-                await asyncio.wait(self.action_tasks)
-                self.pa_runner.stop()
-                await self.pa_runner_task
-                await self.event_log.put(dict(type="Shutdown"))
-                lang.end_session(self.name)
+                await self._stop()
+                logger.info("Stopped waiting on events from %s", self.name)
                 return
             if not data:
                 # TODO: is it really necessary to add such event to event_log?
                 await self.event_log.put(dict(type="EmptyEvent"))
                 continue
-
-            # create a task to run all actions resulted from each event
-            # so that events can be processed in parallel
-            self.action_tasks.append(
-                asyncio.create_task(self.run_actions(data))
-            )
-
-    async def run_actions(self, data: Dict):
-        results = []
-        try:
-            matched = False
-            # Asset added by other ruleset, not related to current event
-            while not self.ruleset_queue_plan.plan.queue.empty():
-                matched = True
-                item = cast(
-                    ActionContext,
-                    await self.ruleset_queue_plan.plan.queue.get(),
-                )
-                result = await self.call_action(*item)
 
             try:
                 lang.post(self.name, data)
@@ -296,31 +298,24 @@ class RuleSetRunner:
             finally:
                 logger.debug(lang.get_pending_events(self.name))
 
-            while not self.ruleset_queue_plan.plan.queue.empty():
-                matched = True
-                item = cast(
-                    ActionContext,
-                    await self.ruleset_queue_plan.plan.queue.get(),
-                )
-                result = await self.call_action(*item)
-                results.append(result)
+    async def _drain_actionplan_queue(self):
+        logger.info("Waiting for actions on events from %s", self.name)
+        while not self.stopped:
+            queue_item = await self.ruleset_queue_plan.plan.queue.get()
+            if isinstance(queue_item, Shutdown):
+                break
+            # TODO: consider uncomment the following but it will fail a lot of
+            # spec tests because Shutdown is issued immediately after the last
+            # event. Spec tests assume every thing is processed without lossing
+            # if self.stopped:
+            #    break
 
-            if matched:
-                # TODO: how useful to log the results without logging the
-                # original event data?
-                await self.event_log.put(
-                    dict(type="ProcessedEvent", results=results)
-                )
-        except MessageNotHandledException:
-            logger.info("MessageNotHandledException: %s", data)
-            # TODO: is it really necessary to add such event to event_log?
-            await self.event_log.put(dict(type="MessageNotHandled"))
-        except ShutdownException:
-            await self.ruleset_queue_plan.source_queue.put(Shutdown())
-        except Exception:
-            logger.exception("Error processing %s", data)
+            action_item = cast(ActionContext, queue_item)
+            await self._call_action(*action_item)
 
-    async def call_action(
+        logger.info("Stopped waiting for actions on events from %s", self.name)
+
+    async def _call_action(
         self,
         ruleset: str,
         rule: str,
@@ -331,10 +326,11 @@ class RuleSetRunner:
         hosts: List,
         facts: Dict,
         rules_engine_result,
-    ) -> Dict:
+    ) -> None:
 
         logger.info("call_action %s", action)
 
+        result = None
         if action in builtin_actions:
             try:
                 single_match = None
@@ -384,7 +380,7 @@ class RuleSetRunner:
                 if "ruleset" not in action_args:
                     action_args["ruleset"] = ruleset
 
-                if action in self.COMBINEABLE_ACTIONS:
+                if action in self.ANSIBLE_ACTIONS:
                     action_args["event_log"] = self.event_log
                     action_args["inventory"] = inventory
                     action_args["hosts"] = hosts
@@ -393,11 +389,11 @@ class RuleSetRunner:
                     action_args["project_data_file"] = self.project_data_file
                     action_args["source_ruleset_name"] = ruleset
                     action_args["source_rule_name"] = rule
-                    return await self.pa_runner.wait_for_playbook(
+                    result = await self.pa_runner.add_playbook(
                         action, action_args
                     )
                 else:
-                    return await builtin_actions[action](
+                    await builtin_actions[action](
                         event_log=self.event_log,
                         inventory=inventory,
                         hosts=hosts,
@@ -420,7 +416,7 @@ class RuleSetRunner:
                 logger.info("MessageObservedException: %s", action_args)
                 result = dict(error=e)
             except ShutdownException:
-                raise
+                await self.ruleset_queue_plan.source_queue.put(Shutdown())
             except Exception as e:
                 logger.exception("Error calling %s", action)
                 result = dict(error=e)
@@ -428,35 +424,31 @@ class RuleSetRunner:
             logger.error("Action %s not supported", action)
             result = dict(error=f"Action {action} not supported")
 
-        await self.event_log.put(
-            dict(
-                type="Action",
-                action=action,
-                activation_id=settings.identifier,
-                playbook_name=action_args.get("name"),
-                status="failed",
-                run_at=str(datetime.utcnow()),
+        if result:
+            await self.event_log.put(
+                dict(
+                    type="Action",
+                    action=action,
+                    activation_id=settings.identifier,
+                    playbook_name=action_args.get("name"),
+                    status="failed",
+                    run_at=str(datetime.utcnow()),
+                    reason=result,
+                )
             )
-        )
-
-        return result
 
 
 class PlaybookActionRunner:
     """Run playbook like actions in background. Queue such actions
-    and run them in an interval and combine hosts if possible.
-    These actions are defined in COMBINEABLE_ACTIONS including
+    and run them in sequential order.
+    These actions are defined in ANSIBLE_ACTIONS including
     run_playbook, run_module, and run_job_template.
     """
 
     def __init__(self):
-        self.actions = OrderedDict()
+        self.actions = asyncio.Queue()
         self.result = None
         self.stopped = True
-        self.delay = float(os.environ.get("EDA_RUN_PLAYBOOK_MAX_DELAY", 0.01))
-        # Protect against explicit user configuration
-        if self.delay == 0:
-            self.delay = 0.01
 
     async def start(self, name: str):
         if not self.stopped:
@@ -465,58 +457,54 @@ class PlaybookActionRunner:
         logger.info("Start a playbook action runner for %s", name)
         self.stopped = False
         while not self.stopped:
-            await asyncio.sleep(self.delay)
-            await self.execute()
+            action_args = await self.actions.get()
+            if isinstance(action_args, Shutdown):
+                break
+            # TODO: consider uncomment the following but it will fail some
+            # spec tests because Shutdown is issued immediately after the last
+            # event. Spec tests assume everything is processed with lossing
+            # if self.stopped:
+            #    break
+            await self.execute(action_args)
+
         logger.info("Playbook action runner %s exits", name)
 
     def stop(self):
         self.stopped = True
+        # helps to break waiting on actions.get when the queue is empty
+        try:
+            self.actions.put_nowait(Shutdown())
+        except asyncio.QueueFull:
+            pass
 
-    async def execute(self):
-        for key in list(self.actions.keys()):
-            action_args = self.actions[key]
-            del self.actions[key]
-            async_condition = action_args.pop("_async_condition")
-            action_method = action_args.pop("_action_method")
+    async def execute(self, action_args: Dict):
+        action_method = action_args.pop("_action_method")
 
-            try:
-                result = await action_method(**action_args)
-            except Exception as e:
-                logger.exception("Error calling %s", action_method.__name__)
-                result = dict(error=e)
+        try:
+            await action_method(**action_args)
+        except Exception as e:
+            logger.exception("Error calling %s", action_method.__name__)
+            result = dict(error=e)
+            await self.event_log.put(
+                dict(
+                    type="Action",
+                    action=action_method.__name__,
+                    activation_id=settings.identifier,
+                    playbook_name=action_args.get("name"),
+                    status="failed",
+                    run_at=str(datetime.utcnow()),
+                    reason=result,
+                )
+            )
 
-            async with async_condition:
-                self.result = result
-                async_condition.notify_all()
-
-    async def wait_for_playbook(self, action: str, action_args: Dict):
+    async def add_playbook(self, action: str, action_args: Dict):
         name = {action_args["name"]}
-        key = f"{action}_{name}"
         logger.info(
             "Queue playbook/module/job template %s for running later", name
         )
 
-        if key in self.actions:
-            for host in action_args["hosts"]:
-                logger.info(
-                    "Combine host %s for playbook/module/job template %s",
-                    host,
-                    name,
-                )
-                self.actions[key]["hosts"].add(host)
-            async_condition = self.actions[key]["_async_condition"]
-        else:
-            async_condition = asyncio.Condition()
-            action_args["_async_condition"] = async_condition
-            action_args["_action_method"] = builtin_actions[action]
-            action_args["hosts"] = set(action_args["hosts"])
-            self.actions[key] = action_args
-
-        result = None
-        async with async_condition:
-            await async_condition.wait()
-            result = self.result
-        return result
+        action_args["_action_method"] = builtin_actions[action]
+        await self.actions.put(action_args)
 
 
 def prime_facts(name: str, hosts_facts: List[Dict], variables: Dict):

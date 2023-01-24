@@ -15,19 +15,20 @@ Each of the condition(s) can use information from
  * Event received
  * Previously saved events within the rule
  * Longer term facts about the system
- * Variables provided by the user at startup saved as facts
+ * Variables provided by the user at startup saved as vars
 
 When writing conditions
   * use the **event** prefix when accessing data from the current event
-  * use the **fact** prefix when accessing data from the saved facts or passed in variables
+  * use the **fact** prefix when accessing data from the set_facts actions in the rulebook
   * use the **events** prefix when assigning variables and accessing data within the rule
   * use the **facts** prefix when assigning variables and accessing data within the rule
+  * use the **vars** prefix when accessing variables passed in via --vars and --env-vars
 
 
 .. note::
     A condition **cannot** contain Jinja style substitution when accessing variables passed in
     from the command line, we loose the data type information and the rule engine will not
-    process the condition. Instead use the fact prefix to `access the data passed <#condition-with-fact-and-event-fact-being-passed-in-via-variables-on-command-line>`_ in from the
+    process the condition. Instead use the vars prefix to `access the data passed <#condition-with-vars-and-event>`_ in from the
     command line
 
 
@@ -173,12 +174,12 @@ Multiple conditions with facts and events and **all** of one of them have to mat
         action:
           debug:
 
-Condition with fact and event, fact being passed in via --variables on command line
------------------------------------------------------------------------------------
+Condition with fact and event
+-----------------------------
 
     .. code-block:: yaml
 
-        name: Condition using a passed in variable and an event
+        name: Condition using a set_fact fact and an event
         condition:
           all:
             - facts.first << fact.custom.expected_index is defined
@@ -186,7 +187,23 @@ Condition with fact and event, fact being passed in via --variables on command l
         action:
           debug:
 
-In the above example the custom.expected_index was passed in a variables file via ``--variables`` from the
+In the above example the custom.expected_index was set using the set_fact action in the running of the rulebook
+
+
+Condition with vars and event
+-----------------------------
+
+    .. code-block:: yaml
+
+        name: Condition using a passed in variable and an event
+        condition:
+          all:
+            - event.year == vars.person.year
+            - event.age == vars.person.age
+        action:
+          debug:
+
+In the above example the person.year and person.age was passed in a variables file via ``--vars`` from the
 command line to ansible-rulebook.
 
 | When evaluating a single event you can compare multiple
