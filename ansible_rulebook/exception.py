@@ -31,3 +31,8 @@ class RulenameDuplicateException(Exception):
 class ControllerApiException(Exception):
 
     pass
+
+
+class VarsKeyMissingException(Exception):
+
+    pass

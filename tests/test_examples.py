@@ -17,6 +17,7 @@ import json
 import pytest
 
 from ansible_rulebook.engine import run_rulesets, start_source
+from ansible_rulebook.exception import VarsKeyMissingException
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.util import load_inventory
 
@@ -1232,4 +1233,81 @@ async def test_50_negation():
     assert event["matching_events"] == {"m": {"i": 10}}, "5"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "7"
+    source_task.cancel()
+
+
+@pytest.mark.asyncio
+async def test_51_vars_namespace():
+    ruleset_queues, event_log = load_rulebook("examples/51_vars_namespace.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+    years = [2001, 2002, 2003, 2004]
+    address = dict(
+        street="123 Any Street", city="Bedrock", state="NJ", years_active=years
+    )
+    person = dict(
+        person=dict(
+            age=45,
+            name="Fred Flintstone",
+            active=True,
+            reliability=86.9,
+            address=address,
+        )
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        person,
+        load_inventory("playbooks/inventory.yml"),
+    )
+    checks = {
+        "max_events": 6,
+        "shutdown_events": 1,
+        "actions": [
+            "51 vars namespace::str_test::echo",
+            "51 vars namespace::list_test::echo",
+            "51 vars namespace::bool_test::echo",
+            "51 vars namespace::int_test::echo",
+            "51 vars namespace::float_test::echo",
+        ],
+    }
+    validate_events(event_log, **checks)
+    source_task.cancel()
+
+
+@pytest.mark.asyncio
+async def test_51_vars_namespace_missing_key():
+    ruleset_queues, event_log = load_rulebook("examples/51_vars_namespace.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+    years = [2001, 2002, 2003, 2004]
+    address = dict(
+        street="123 Any Street", city="Bedrock", state="NJ", years_active=years
+    )
+    person = dict(
+        person=dict(
+            name="Fred Flintstone",
+            active=True,
+            reliability=86.9,
+            address=address,
+        )
+    )
+
+    with pytest.raises(VarsKeyMissingException) as exc_info:
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            person,
+            load_inventory("playbooks/inventory.yml"),
+        )
+    assert str(exc_info.value) == "vars does not contain key: person.age"
     source_task.cancel()
