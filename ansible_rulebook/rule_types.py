@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from typing import Any, Dict, List, NamedTuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Union
 
 from drools.ruleset import Ruleset as EngineRuleSet
 
@@ -44,6 +44,13 @@ class Action(NamedTuple):
 class Condition(NamedTuple):
     when: str
     value: List[ct.Condition]
+    timeout: Optional[str] = None
+
+
+class Throttle(NamedTuple):
+    group_by_attributes: List[str]
+    once_within: Optional[str] = None
+    once_after: Optional[str] = None
 
 
 class Rule(NamedTuple):
@@ -51,6 +58,7 @@ class Rule(NamedTuple):
     condition: Condition
     action: Action
     enabled: bool
+    throttle: Optional[Throttle] = None
 
 
 class RuleSet(NamedTuple):

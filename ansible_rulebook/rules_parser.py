@@ -96,12 +96,22 @@ def parse_rules(rules: Dict) -> List[rt.Rule]:
             )
 
         rule_names.append(name)
+        if "throttle" in rule:
+            throttle = rt.Throttle(
+                once_within=rule["throttle"].get("once_within", None),
+                once_after=rule["throttle"].get("once_after", None),
+                group_by_attributes=rule["throttle"]["group_by_attributes"],
+            )
+        else:
+            throttle = None
+
         rule_list.append(
             rt.Rule(
                 name=name,
                 condition=parse_condition(rule["condition"]),
                 action=parse_action(rule["action"]),
                 enabled=rule.get("enabled", True),
+                throttle=throttle,
             )
         )
 
@@ -125,15 +135,18 @@ def parse_condition(condition: Any) -> rt.Condition:
     if isinstance(condition, str):
         return rt.Condition("all", [parse_condition_value(condition)])
     elif isinstance(condition, dict):
+        timeout = condition.pop("timeout", None)
         keys = list(condition.keys())
-        if len(condition) == 1 and keys[0] in ["any", "all"]:
+        if len(condition) == 1 and keys[0] in ["any", "all", "not_all"]:
             when = keys[0]
             return rt.Condition(
-                when, [parse_condition_value(c) for c in condition[when]]
+                when,
+                [parse_condition_value(c) for c in condition[when]],
+                timeout,
             )
         else:
             raise Exception(
-                f"Condition should have one of any or all: {condition}"
+                f"Condition should have one of any, all, not_all: {condition}"
             )
 
     else:

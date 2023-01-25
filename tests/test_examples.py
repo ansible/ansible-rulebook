@@ -1311,3 +1311,176 @@ async def test_51_vars_namespace_missing_key():
         )
     assert str(exc_info.value) == "vars does not contain key: person.age"
     source_task.cancel()
+
+
+@pytest.mark.asyncio
+async def test_52_once_within():
+    ruleset_queues, event_log = load_rulebook("examples/52_once_within.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+
+    for i in range(2):
+        event = event_log.get_nowait()
+        assert event["type"] == "Action", f"{i}"
+        assert event["action"] == "debug", f"{i}"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "3"
+    source_task.cancel()
+
+
+@pytest.mark.asyncio
+async def test_53_once_within_multiple_hosts():
+    ruleset_queues, event_log = load_rulebook(
+        "examples/53_once_within_multiple_hosts.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "debug", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "3"
+    assert event["action"] == "debug", "3"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "6"
+    source_task.cancel()
+
+
+@pytest.mark.asyncio
+@pytest.mark.temporal
+async def test_54_time_window():
+    ruleset_queues, event_log = load_rulebook("examples/54_time_window.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "print_event", "1"
+    assert event["matching_events"] == {
+        "m_1": {
+            "alert": {"code": 1002, "message": "Restarted"},
+            "event_index": 1,
+        },
+        "m_0": {
+            "alert": {"code": 1001, "message": "Applying maintenance"},
+            "event_index": 0,
+        },
+    }
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "6"
+    source_task.cancel()
+
+
+@pytest.mark.asyncio
+@pytest.mark.temporal
+async def test_55_not_all():
+    ruleset_queues, event_log = load_rulebook("examples/55_not_all.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+
+    for i in range(2):
+        event = event_log.get_nowait()
+        assert event["type"] == "Action", f"{i}"
+        assert event["action"] == "echo", f"{i}"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "3"
+    source_task.cancel()
+
+
+@pytest.mark.asyncio
+@pytest.mark.temporal
+async def test_56_once_after():
+    ruleset_queues, event_log = load_rulebook("examples/56_once_after.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "echo", "1"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "2"
+    source_task.cancel()
+
+
+@pytest.mark.asyncio
+@pytest.mark.temporal
+async def test_57_once_after_multi():
+    ruleset_queues, event_log = load_rulebook(
+        "examples/57_once_after_multi.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+
+    for i in range(6):
+        event = event_log.get_nowait()
+        assert event["type"] == "Action", f"{i}"
+        assert event["action"] == "echo", f"{i}"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "6"
+    source_task.cancel()
