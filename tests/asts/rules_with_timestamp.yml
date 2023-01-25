@@ -4,8 +4,8 @@
     name: Demo rules with timestamp
     rules:
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: set_fact
             action_args:
               fact:
@@ -17,8 +17,8 @@
         enabled: true
         name: promote timestamp.unix_timestamp to current_time fact
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: set_fact
             action_args:
               fact:
@@ -36,8 +36,8 @@
         enabled: true
         name: set the initial time
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: retract_fact
             action_args:
               fact:
@@ -49,8 +49,8 @@
         enabled: true
         name: retract current_time fact
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: debug
             action_args: {}
         condition:
@@ -60,8 +60,8 @@
         enabled: true
         name: debug
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: shutdown
             action_args: {}
         condition:

@@ -4,8 +4,8 @@
     name: Demo rules
     rules:
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: slack
             action_args:
               color: good
@@ -21,8 +21,8 @@
         enabled: true
         name: send to slack3
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: slack
             action_args:
               color: warning
@@ -38,8 +38,8 @@
         enabled: true
         name: send to slack4
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: slack
             action_args:
               msg: '{{event}}'
@@ -54,8 +54,8 @@
         enabled: true
         name: send to slack5
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: slack
             action_args:
               msg: '{{event}}'
@@ -70,8 +70,8 @@
         enabled: true
         name: send to slack6
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: set_fact
             action_args:
               fact:
@@ -87,8 +87,8 @@
         enabled: true
         name: assert fact
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: log
             action_args: {}
         condition:

@@ -1510,3 +1510,37 @@ async def test_58_string_search():
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "6"
     source_task.cancel()
+
+
+@pytest.mark.asyncio
+async def test_59_multiple_actions():
+    ruleset_queues, event_log = load_rulebook(
+        "examples/59_multiple_actions.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+
+    checks = {
+        "max_events": 6,
+        "shutdown_events": 1,
+        "actions": [
+            "59 Multiple Actions::r1::debug",
+            "59 Multiple Actions::r1::print_event",
+            "59 Multiple Actions::r1::echo",
+            "59 Multiple Actions::r1::echo",
+            "59 Multiple Actions::r2::echo",
+        ],
+    }
+    validate_events(event_log, **checks)
+    source_task.cancel()

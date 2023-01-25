@@ -4,8 +4,8 @@
     name: Demo rules with assignment2
     rules:
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: debug
             action_args:
               events_event: '{{events.first}}'
