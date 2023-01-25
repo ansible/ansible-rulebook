@@ -1,0 +1,57 @@
+---
+- name: 51 vars namespace
+  hosts: all
+  sources:
+    - generic:
+        payload:
+          - name: Fred Flintstone
+            address:
+               street: 123 Any Street
+               city: Bedrock
+               state: NJ
+          - year: 2003
+          - active: true
+          - age: 45
+          - threshold: 34.56
+  # This test needs a variables yml with the following payload
+  # ---
+  # person:
+  #   age: 45
+  #   name: Fred Flintstone
+  #   active: true
+  #   reliability: 86.9
+  #   address:
+  #     street: 123 Any Street
+  #     city: Bedrock
+  #     state: NJ
+  #     years_active:
+  #       - 2001
+  #       - 2002
+  #       - 2003
+  #       - 2004
+  rules:
+    - name: str_test
+      condition: event.address.street == vars.person.address.street
+      action:
+        echo:
+          message: String comparison works
+    - name: list_test
+      condition: event.year in vars.person.address.years_active
+      action:
+        echo:
+          message: List in works
+    - name: bool_test
+      condition: event.active == vars.person.active
+      action:
+        echo:
+          message: Boolean works
+    - name: int_test
+      condition: event.age == vars.person.age
+      action:
+        echo:
+          message: Int works
+    - name: float_test
+      condition: event.threshold < vars.person.reliability
+      action:
+        echo:
+          message: Float works

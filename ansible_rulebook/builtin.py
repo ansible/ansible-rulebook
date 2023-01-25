@@ -326,7 +326,7 @@ async def run_playbook(
         if _get_latest_artifact(temp_dir, "status") != "failed":
             break
 
-    result = await post_process_runner(
+    await post_process_runner(
         event_log,
         variables,
         temp_dir,
@@ -342,7 +342,6 @@ async def run_playbook(
     )
 
     shutil.rmtree(temp_dir)
-    return result
 
 
 async def run_module(
@@ -431,7 +430,7 @@ async def run_module(
         if _get_latest_artifact(temp_dir, "status") != "failed":
             break
 
-    result = await post_process_runner(
+    await post_process_runner(
         event_log,
         variables,
         temp_dir,
@@ -446,7 +445,6 @@ async def run_module(
         post_events,
     )
     shutil.rmtree(temp_dir)
-    return result
 
 
 async def call_runner(
@@ -646,8 +644,6 @@ async def post_process_runner(
                 lang.assert_fact(ruleset, fact)
             if post_events:
                 lang.post(ruleset, fact)
-
-    return result
 
 
 async def run_job_template(
