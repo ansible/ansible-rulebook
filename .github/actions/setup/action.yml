@@ -1,0 +1,33 @@
+name: setup
+description: Common steps to install ansible-rulebook for CI workflows
+
+inputs:
+  python-version:
+    description: python version to use
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: "zulu"
+        java-version: "17"
+
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install package
+      shell: bash
+      run: python -m pip install -e .
+
+    - name: Install test dependencies
+      shell: bash
+      run: python -m pip install -r requirements_test.txt
+
+    - name: Install `ansible.eda` collection
+      shell: bash
+      run: ansible-galaxy collection install git+https://github.com/ansible/event-driven-ansible
