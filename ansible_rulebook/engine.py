@@ -22,6 +22,7 @@ from pprint import PrettyPrinter, pformat
 from typing import Any, Dict, List, Optional, cast
 
 from drools import ruleset as lang
+from drools.dispatch import establish_async_channel, handle_async_messages
 from drools.exceptions import (
     MessageNotHandledException,
     MessageObservedException,
@@ -200,6 +201,11 @@ async def run_rulesets(
             hosts_facts = collect_ansible_facts(inventory)
 
     ruleset_tasks = []
+    reader, writer = await establish_async_channel()
+    ruleset_tasks.append(
+        asyncio.create_task(handle_async_messages(reader, writer))
+    )
+
     for ruleset_queue_plan in rulesets_queue_plans:
         ruleset_runner = RuleSetRunner(
             event_log=event_log,

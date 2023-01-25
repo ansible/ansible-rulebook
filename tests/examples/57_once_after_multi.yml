@@ -1,0 +1,72 @@
+---
+- name: 57 once after multiple
+  hosts: all
+  sources:
+    - generic:
+        loop_count: 3
+        loop_delay: 15
+        shutdown_after: 60
+        timestamp: true
+        create_index: event_index
+        payload:
+          - r1:
+               level: warning
+               message: Low disk space
+            meta:
+               hosts: localhost.11
+          - r1:
+               level: warning
+               message: Low disk space
+            meta:
+               hosts: localhost.12
+          - r2:
+               level: warning
+               message: Low disk space
+            meta:
+               hosts: localhost.21
+          - r2:
+               level: warning
+               message: Low disk space
+            meta:
+               hosts: localhost.22
+          - r3:
+               level: warning
+               message: Low disk space
+            meta:
+               hosts: localhost31
+          - r3:
+               level: warning
+               message: Low disk space
+            meta:
+               hosts: localhost32
+  rules:
+    - name: r1
+      condition: event.r1.level == "warning" or event.r1.level == "error"
+      action:
+        echo:
+          message: r1 works
+      throttle:
+         once_after: 15 seconds
+         group_by_attributes:
+           - event.meta.hosts
+           - event.r1.level
+    - name: r2
+      condition: event.r2.level == "warning" or event.r2.level == "error"
+      action:
+        echo:
+          message: r2 works
+      throttle:
+         once_after: 30 seconds
+         group_by_attributes:
+           - event.meta.hosts
+           - event.r2.level
+    - name: r3
+      condition: event.r3.level == "warning" or event.r3.level == "error"
+      action:
+        echo:
+          message: r3 works
+      throttle:
+         once_after: 45 seconds
+         group_by_attributes:
+           - event.meta.hosts
+           - event.r3.level

@@ -36,6 +36,7 @@ A condition can contain
  * One condition
  * Multiple conditions where all of them have to match
  * Multiple conditions where any one of them has to match
+ * Multiple conditions where not all one of them have to match
 
 Supported Operators
 *******************
@@ -356,6 +357,132 @@ Negation Example
           print_event:
 
 | In this example the boolean expression is evaluated first and then negated.
+
+Adding time constraints for rules with multiple conditions
+----------------------------------------------------------
+
+    .. code-block:: yaml
+
+        name: Condition with timeout
+        condition:
+          all:
+            - event.x == 5
+            - event.y == 99
+          timeout: 10 seconds
+        action:
+          debug:
+
+| In the above example the event.x and event.y are 2 separate events that would be
+| processed at different times. The order of which event comes first is not guaranteed.
+| When both conditions are met the action in the rule is triggered. The **timeout** attribute
+| in a condition allows you to put time constraints on how long to wait for these multiple
+| conditions to be satisfied.
+| The timeout units are **milliseconds**, **seconds**, **minutes**, **hours**, **days**.
+| If the conditions are not met within 10 seconds in the above example the rule will be skipped.
+| The timer for the rule starts when any one of the conditions match.
+
+
+Adding time constraints for rules when "not all" conditions matched
+-------------------------------------------------------------------
+
+    .. code-block:: yaml
+
+        name: Not all conditions met with timeout
+        condition:
+          not_all:
+            - event.msg == "Applying Maintenance"
+            - event.msg == "Server Rebooted"
+            - event.msg == "Application Restarted"
+          timeout: 5 minutes
+        action:
+          run_playbook:
+            name: notify_delays.yml
+
+| In certain scenarios you might want to trigger an action only if **some** of
+| the conditions (not_all) from a group of conditions are met. In the above example
+| we are tracking 3 separate events, if they are all met everything is
+| normal, but if we only have some of the conditions match within the time window then
+| we have something abnormal in the environment and would like to trigger an action.
+| In the above example it triggers a notify_delays playbook when not all conditions
+| are met within the time window. The timer starts when one of the conditions match.
+| The timeout units are **milliseconds**, **seconds**, **minutes**, **hours**, **days**.
+
+Throttle actions to counter event storms: Reactive
+--------------------------------------------------
+
+    .. code-block:: yaml
+
+        name: Throttle example reactive
+        condition: event.code == "error"
+        throttle:
+           once_within: 5 minutes
+           group_by_attributes:
+              - event.meta.hosts
+              - event.code
+        action:
+          run_playbook:
+            name: notify_outage.yml
+
+| When we have too many events within a short time span (event storm) and the condition
+| matches, we would trigger the action multiple times within that time period.
+| This will lead to the playbook running several times within that short time frame.
+| You can throttle this behavior by specifying a time window using the **once_within**
+| attribute under the **throttle** node for a rule. When the condition matches for the
+| **first time** we trigger the action and then suppress further action till the
+| time window expires.
+| In the above example we would trigger the action as soon (reactive) as we see an
+| event with the code attribute set to error. Then for the next 5 minutes we would
+| suppress further actions. After the 5 minute window has expired we will run the
+| action again if the condition matches.
+| The **group_by_attributes** in the throttle node allows you to specify an array of
+| attributes in the event payload which create unique events. In the above example
+| we are using event.meta.hosts and event.code. If we got 2 separate events one that had
+| event.code=warning and another one with event.code=error they would be treated as distinct
+| events and each one would be handled separately triggering an action. Its mandatory
+| to have **group_by_attributes**  specified when using the once_within option.
+| The timeout units are **milliseconds**, **seconds**, **minutes**, **hours**, **days**.
+| The once_within will only work with a single condition and doesn't support multiple conditions.
+| The timer for the rule starts when any one of unique event matches the condition.
+| The **once_within** provides event level granularity as opposed to **once_after** described below
+| which provides a time window level granularity with multiple matching events.
+
+Throttle actions to counter event storms: Passive
+-------------------------------------------------
+
+    .. code-block:: yaml
+
+        name: Throttle example passive
+        condition: event.code == "warning"
+        throttle:
+           once_after: 5 minutes
+           group_by_attributes:
+              - event.meta.hosts
+              - event.code
+        action:
+          run_playbook:
+            name: notify_outage.yml
+
+| This is similar to the **once_within** described earlier. This is more of a passive
+| approach, for situations where you don't want to react immediately like
+| in the **once_within** case. With **once_after** you would wait,
+| then collect all the unique events until the time window expires.
+| Then at the end of 5 minutes in the above example trigger the action to run the
+| playbook.
+| The **group_by_attributes** in the throttle node allows you to specify an array of
+| attributes in the event payload which create unique event pairs. In the above example
+| we are using event.meta.hosts and event.code. If we get 2 separate events, one that had
+| event.code=warning and another one with event.code=error, they would be treated as distinct
+| events and would result in matching multiple events when the action is triggered.
+| Its mandatory to have group_by_attributes specified when using the once_after option.
+| One of the advantages of the **once_after** is that you can collect all the
+| unique events that match the condition and trigger a single action based on multiple
+| matching events, allowing you to combine host information.
+| The timeout units are **milliseconds**, **seconds**, **minutes**, **hours**, **days**.
+| The once_after will only work with a single condition and doesn't support multiple conditions.
+
+| When evaluating a single event you can compare multiple
+| properties/attributes from the event using **and** or **or**
+
 
 FAQ
 ***

@@ -1,0 +1,24 @@
+---
+- name: 54 time window
+  hosts: all
+  sources:
+    - generic:
+        create_index: event_index
+        shutdown_after: 15
+        event_delay: 5
+        payload:
+          - alert:
+               code: 1001
+               message: Applying maintenance
+          - alert:
+               code: 1002
+               message: Restarted
+  rules:
+    - name: maint cycle
+      condition:
+         all:
+            - event.alert.code == 1001
+            - event.alert.code == 1002
+         timeout: 10 seconds
+      action:
+        print_event:

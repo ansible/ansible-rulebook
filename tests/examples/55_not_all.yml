@@ -1,0 +1,27 @@
+---
+- name: 55 not all
+  hosts: all
+  sources:
+    - generic:
+        create_index: event_index
+        timestamp: true
+        event_delay: 15
+        display: false
+        shutdown_after: 5
+        payload:
+          - alert:
+               code: 1001
+               message: Applying maintenance
+          - alert:
+               code: 1002
+               message: Restarted
+  rules:
+    - name: maint failed
+      condition:
+         not_all:
+           - event.alert.code == 1001
+           - event.alert.code == 1002
+         timeout: 10 seconds
+      action:
+        echo:
+          message: "Not all conditions met"

@@ -132,6 +132,17 @@ To run E2E tests
 
     pytest -m e2e
 
+To run Temporal tests
+
+.. code-block:: console
+
+    pytest -m temporal
+
+To skip running Temporal tests
+
+.. code-block:: console
+
+    pytest -m "not temporal"
 
 Building
 ---------

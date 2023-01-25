@@ -37,6 +37,7 @@ from ansible_rulebook.rule_types import (
     EventSourceFilter,
     Rule,
     RuleSet,
+    Throttle,
 )
 from ansible_rulebook.util import substitute_variables
 
@@ -166,14 +167,17 @@ def create_binary_node(name, parsed_condition, variables):
 
 
 def visit_rule(parsed_rule: Rule, variables: Dict):
-    return {
-        "Rule": {
-            "name": parsed_rule.name,
-            "condition": generate_condition(parsed_rule.condition, variables),
-            "action": visit_action(parsed_rule.action, variables),
-            "enabled": parsed_rule.enabled,
-        }
+    data = {
+        "name": parsed_rule.name,
+        "condition": generate_condition(parsed_rule.condition, variables),
+        "action": visit_action(parsed_rule.action, variables),
+        "enabled": parsed_rule.enabled,
     }
+
+    if parsed_rule.throttle:
+        data.update(visit_throttle(parsed_rule.throttle, variables))
+
+    return {"Rule": data}
 
 
 def visit_action(parsed_action: Action, variables: Dict):
@@ -183,6 +187,16 @@ def visit_action(parsed_action: Action, variables: Dict):
             "action_args": parsed_action.action_args,
         }
     }
+
+
+def visit_throttle(parsed_throttle: Throttle, variables: Dict):
+    throttle = {"group_by_attributes": parsed_throttle.group_by_attributes}
+    if parsed_throttle.once_within:
+        throttle["once_within"] = parsed_throttle.once_within
+    elif parsed_throttle.once_after:
+        throttle["once_after"] = parsed_throttle.once_after
+
+    return {"throttle": throttle}
 
 
 def visit_source(parsed_source: EventSource, variables: Dict):
@@ -213,11 +227,18 @@ def generate_condition(ansible_condition: RuleCondition, variables: Dict):
     """Generate the condition AST."""
     condition = visit_condition(ansible_condition.value, variables)
     if ansible_condition.when == "any":
-        return {"AnyCondition": condition}
+        data = {"AnyCondition": condition}
     elif ansible_condition.when == "all":
-        return {"AllCondition": condition}
+        data = {"AllCondition": condition}
+    elif ansible_condition.when == "not_all":
+        data = {"NotAllCondition": condition}
     else:
-        return {"AllCondition": condition}
+        data = {"AllCondition": condition}
+
+    if ansible_condition.timeout:
+        data["timeout"] = ansible_condition.timeout
+
+    return data
 
 
 def visit_ruleset(ruleset: RuleSet, variables: Dict):

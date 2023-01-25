@@ -1,0 +1,32 @@
+---
+- name: 56 once after
+  hosts: all
+  sources:
+    - generic:
+        loop_count: 2
+        loop_delay: 1
+        timestamp: true
+        shutdown_after: 15
+        create_index: event_index
+        payload:
+          - alert:
+               level: warning
+               message: Low disk space
+            meta:
+               hosts: localhost0
+          - alert:
+               level: warning
+               message: Low disk space
+            meta:
+               hosts: localhost1
+  rules:
+    - name: r1
+      condition: event.alert.level == "warning" or event.alert.level == "error"
+      action:
+        echo:
+          message: Once after 10 seconds
+      throttle:
+         once_after: 10 seconds
+         group_by_attributes:
+           - event.meta.hosts
+           - event.alert.level

@@ -51,6 +51,28 @@
                 ]
             }
         },
+        "throttle": {
+            "type": "object",
+	    "oneOf": [
+		    {"required": ["once_within", "group_by_attributes"]},
+		    {"required": ["once_after", "group_by_attributes"]}
+	    ],
+            "properties": {
+                "once_within" : {
+                    "type": "string",
+                    "pattern": "^\\d+\\s(milliseconds?|seconds?|minutes?|hours?|days?)$"
+                },
+                "once_after" : {
+                    "type": "string",
+                    "pattern": "^\\d+\\s(milliseconds?|seconds?|minutes?|hours?|days?)$"
+                },
+                "group_by_attributes": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                }
+            },
+            "additionalProperties": false
+        },
         "rule": {
             "type": "object",
             "properties": {
@@ -59,11 +81,13 @@
                     "minLength": 1,
                     "pattern": "\\S"
                 },
+                "throttle": {"$ref": "#/$defs/throttle"},
                 "condition": {
                     "anyOf": [
                         { "type": "string" },
                         {"$ref": "#/$defs/all-condition"},
-                        {"$ref": "#/$defs/any-condition"}
+                        {"$ref": "#/$defs/any-condition"},
+                        {"$ref": "#/$defs/not-all-condition"}
                     ]
                 },
                 "action": {
@@ -95,8 +119,30 @@
                 "all": {
                     "type": "array",
                     "items": { "type": "string" }
+                },
+                "timeout" : {
+                    "type": "string",
+                    "pattern": "^\\d+\\s(milliseconds?|seconds?|minutes?|hours?|days?)$"
                 }
             },
+            "additionalProperties": false
+        },
+        "not-all-condition": {
+            "type": "object",
+            "properties": {
+                "not_all": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                },
+                "timeout" : {
+                    "type": "string",
+                    "pattern": "^\\d+\\s(milliseconds?|seconds?|minutes?|hours?|days?)$"
+                }
+            },
+            "required": [
+                "timeout",
+                "not_all"
+            ],
             "additionalProperties": false
         },
         "any-condition": {
