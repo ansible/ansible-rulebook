@@ -1,0 +1,30 @@
+---
+- name: Test not (negation) operator
+  hosts: all
+  sources:
+    - generic:
+        event_delay: 1
+        payload:
+          - test_bool: false
+            test_str: "Hello there"
+          - test_int: 79
+            test_float: 4.212
+  rules:
+    - name: Test negation round 1
+      condition: >
+                not event.test_bool and
+                not (event.test_str == "Goodbye" or event.test_str != "Hello there")
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
+          json_mode: true
+
+    - name: Test negation round 2
+      condition:
+        all:
+          - not (event.test_int > 80 and event.test_int < 79)
+          - not (event.test_float <= 3.14 or event.test_float >= 4.5)
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
+          json_mode: true

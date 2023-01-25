@@ -371,3 +371,30 @@ def test_in_operator(rulebook, expected_count):
     ]
 
     assert len(printed_events) == expected_count
+
+
+def test_not_operator():
+    """
+    Test to validate the functionality of the negation (not) operator
+    """
+
+    rulebook = (
+        utils.BASE_DATA_PATH / "rulebooks/operators/test_not_operator.yml"
+    )
+    cmd = utils.Command(rulebook=rulebook)
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+    )
+
+    output = utils.assert_playbook_output(result)
+
+    printed_events = [
+        line for line in output if "Event matched" in line["stdout"]
+    ]
+
+    assert len(printed_events) == 2
