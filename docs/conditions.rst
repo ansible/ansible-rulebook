@@ -84,6 +84,18 @@ Conditions support the following operators:
      - To check if a variable is defined
    * - is not defined
      - To check if a variable is not defined
+   * - is match(pattern,ignorecase=true)
+     - To check if the pattern exists in the beginning
+   * - is not match(pattern,ignorecase=true)
+     - To check if the pattern does not exist in the beginning of the string
+   * - is search(pattern,ignorecase=true)
+     - To check if the pattern exists anywhere in the string
+   * - is not search(pattern,ignorecase=true)
+     - To check if the pattern does not exist anywhere in the string
+   * - is regex(pattern,ignorecase=true)
+     - To check if the regular expression pattern exists in the string
+   * - is not regex(pattern,ignorecase=true)
+     - To check if the regular expression pattern does not exist in the string
    * - `<<`
      - Assignment operator, to save the matching events or facts with events or facts prefix
    * - not
@@ -498,6 +510,77 @@ Throttle actions to counter event storms: Passive
 | When evaluating a single event you can compare multiple
 | properties/attributes from the event using **and** or **or**
 
+String search
+-------------
+
+    .. code-block:: yaml
+
+        name: string search example
+        condition: event.url is search("example.com", ignorecase=true)
+        action:
+          print_event:
+
+| To search for a pattern anywhere in the string. In the above example we check if
+| the event.url has "example.com" anywhere in its value. The option controls that this
+| is a case insensitive search
+
+    .. code-block:: yaml
+
+        name: string not search example
+        condition: event.url is not search("example.com", ignorecase=true)
+        action:
+          print_event:
+
+| In the above example we check if the event.url does not have "example.com" anywhere in its value
+| And the option controls that this is a case insensitive search.
+
+String match
+------------
+
+    .. code-block:: yaml
+
+        name: string match example
+        condition: event.url is match("http://www.example.com", ignorecase=true)
+        action:
+          print_event:
+
+| To search for a pattern in the beginning of string. In the above example we check if
+| the event.url has "http://www.example.com" in the beginning. The option controls that this
+| is a case insensitive search
+
+    .. code-block:: yaml
+
+        name: string not search example
+        condition: event.url is not match("http://www.example.com", ignorecase=true)
+        action:
+          print_event:
+
+| In the above example we check if the event.url does not have "http://www.example.com" in the beginning 
+| And the option controls that this is a case insensitive search.
+
+String regular expression
+-------------------------
+
+    .. code-block:: yaml
+
+        name: string regex example
+        condition: event.url is regex("example\.com", ignorecase=true)
+        action:
+          print_event:
+
+| To search for a regex pattern in the string. In the above example we check if
+| the event.url has "example.com" in its value. The option controls that this
+| is a case insensitive search
+
+    .. code-block:: yaml
+
+        name: string not regex example
+        condition: event.url is not regex("example\.com", ignorecase=true)
+        action:
+          print_event:
+
+| In the above example we check if the event.url does not have "example.com" in its value
+| And the option controls that this is a case insensitive search.
 
 FAQ
 ***

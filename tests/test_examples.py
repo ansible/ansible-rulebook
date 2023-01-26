@@ -1484,3 +1484,29 @@ async def test_57_once_after_multi():
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "6"
     source_task.cancel()
+
+
+@pytest.mark.asyncio
+async def test_58_string_search():
+    ruleset_queues, event_log = load_rulebook("examples/58_string_search.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+
+    for i in range(6):
+        event = event_log.get_nowait()
+        assert event["type"] == "Action", f"{i}"
+        assert event["action"] == "echo", f"{i}"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "6"
+    source_task.cancel()
