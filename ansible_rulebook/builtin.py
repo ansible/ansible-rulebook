@@ -776,6 +776,8 @@ async def shutdown(
     source_ruleset_name: str,
     source_rule_name: str,
     ruleset: str,
+    delay: float = 0.0,
+    message: str = "Default shutdown message",
 ):
     await event_log.put(
         dict(
@@ -786,8 +788,17 @@ async def shutdown(
             rule=source_rule_name,
             run_at=str(datetime.utcnow()),
             matching_events=_get_events(variables),
+            delay=delay,
+            message=message,
         )
     )
+
+    print(
+        "Ruleset: %s rule: %s has initiated shutdown. "
+        "Delay: %.3f seconds, Message: %s"
+        % (source_ruleset_name, source_rule_name, delay, message)
+    )
+    await asyncio.sleep(delay)
     raise ShutdownException()
 
 
