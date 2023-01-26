@@ -38,6 +38,15 @@ A condition can contain
  * Multiple conditions where any one of them has to match
  * Multiple conditions where not all one of them have to match
 
+Supported datatypes
+*******************
+The data type is of great importance for the rules engine. The following types are supported
+
+* integers
+* strings
+* booleans
+* floats (dot notation and scientific notation)
+
 Supported Operators
 *******************
 
@@ -357,6 +366,12 @@ Negation Example
           print_event:
 
 | In this example the boolean expression is evaluated first and then negated.
+
+.. note::
+    ``not`` operator can work without parenthesis when the value is a boolean, E.g ``condition: not event.disabled``
+
+    In the rest of the cases the expression must be enclosed in parenthesis. E.g ``condition: not (event.i == 4)``
+
 
 Adding time constraints for rules with multiple conditions
 ----------------------------------------------------------

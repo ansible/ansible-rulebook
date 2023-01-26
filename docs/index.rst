@@ -5,6 +5,7 @@ Welcome to Ansible Rulebook documentation
    :maxdepth: 2
    :caption: Contents:
 
+   introduction
    installation
    getting_started
    development_environment
@@ -13,6 +14,7 @@ Welcome to Ansible Rulebook documentation
    rulebooks
    rules
    conditions
+   events_and_facts
    host_limit
    multi_events
    actions

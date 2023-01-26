@@ -2,20 +2,47 @@
 Event Source Plugins
 ====================
 
-Events come from event sources.  Event driven automation supports many event
-sources using a plugin system.  Event source plugins can be stored locally but
-are preferably distributed via collections.  ``ansible.eda`` is a collection
-that includes our initial set of event source plugins.  These include:
+Events come from event sources. Event driven automation supports many event
+sources using a plugin system. Event source plugins can be stored locally but
+are preferably distributed via collections.
 
-* alertmanager - receive events via a webhook from alertmanager
-* azure_service_bus - receive events from an Azure service
-* file - load facts from YAML files initially and reload when any file changes
-* kafka - receive events via a kafka topic
-* range - generate events with an increasing index i within a range
-* tick - generate events with an increasing index i that never ends
-* url_check - poll a set of URLs and send events with their statuses
-* watchdog - watch file system and send events when a file status changes
-* webhook - provide a webhook and receive events from it
+`Ansible.eda <https://github.com/ansible/event-driven-ansible/blob/main/COLLECTION.md>`_
+is the collection that includes our initial set of event source plugins.
+These include:
+
+..
+    TODO: Add extended documentation for plugins in the collection and link to it here.
+
+* alertmanager
+    Receive events via a webhook from alertmanager
+
+* azure_service_bus
+    Receive events from an Azure service
+
+* kafka
+    Receive events via a kafka topic
+
+* url_check
+    Poll a set of URLs and send events with their statuses
+
+* watchdog
+    Watch file system and send events when a file status changes
+
+* webhook
+    Provide a webhook and receive events from it
+
+* tick
+    Generate events with an increasing index i that never ends
+    Mainly used for development and testing
+
+* file
+    Load facts from YAML files initially and reload when any file changes
+    Mainly used for development and testing
+
+* range
+    Generate events with an increasing index i within a range
+    Mainly used for development and testing
+
 
 How to Develop a Custom Plugin
 ------------------------------
@@ -99,6 +126,21 @@ key that points to another dictionary that holds a list of hosts. These hosts
 will limit where the ansible playbook can run. A simple example looks like
 ``{"i": 2, "meta": {hosts: "localhost"}}``. ``hosts`` can be a comma delimited
 string or a list of host names.
+
+As the plugin have full access to an unbounded queue that is consumed by ansible-rulebbok
+we carefully recommend to use always the method ``asyncio.Queue.put`` to put events as it's a non-blocking call.
+To give free cpu cycles to the event loop to process the events, we recommend to use ``asyncio.sleep(0)``
+inmediately after the ``put`` method.
+
+.. note::
+    ansible-rulebook is intended to be a long running process and react to events over the time.
+    If the ``main`` function of **any of the sources** exits then the ansible-rulebook process will be terminated.
+    Usually you may want to implement a loop that keeps running and waits for events endlessly.
+
+.. note::
+    The rulebook can contain it's own logic to finish the process through the ``shutdown`` action.
+    If your plugin needs to perform some cleanup before the process is terminated, you must catch the ``asyncio.CancelledError`` exception.
+
 
 Distributing plugins
 ^^^^^^^^^^^^^^^^^^^^
