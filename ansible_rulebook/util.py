@@ -175,7 +175,8 @@ def get_java_home() -> typing.Optional[str]:
 
 
 def get_java_version() -> str:
-    exec_path = f"{get_java_home()}/bin/java"
+    java_home = get_java_home()
+    exec_path = f"{java_home}/bin/java"
     if not exec_path:
         return "Java executable not found."
 

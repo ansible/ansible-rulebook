@@ -145,12 +145,14 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def show_version() -> NoReturn:
+    java_home = util.get_java_home()
+    java_version = util.get_java_version()
     result = [
         f"{ansible_rulebook.__version__}",
         f"  Executable location = {sys.argv[0]}",
         f"  Drools_jpy version = {importlib.metadata.version('drools_jpy')}",
-        f"  Java home = {util.get_java_home()}",
-        f"  Java version = {util.get_java_version()}",
+        f"  Java home = {java_home}",
+        f"  Java version = {java_version}",
         f"  Python version = {''.join(sys.version.splitlines())}",
     ]
     print("\n".join(result))
