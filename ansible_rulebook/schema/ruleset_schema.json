@@ -3,6 +3,7 @@
     "$id": "http://ansible.com/schema/ruleset.json",
     "type": "array",
     "items": {"$ref": "#/$defs/ruleset"},
+    "minItems": 1,
     "$defs": {
         "ruleset": {
             "type": "object",
