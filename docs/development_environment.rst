@@ -14,9 +14,9 @@ Ready to contribute? Here's how to set up `ansible_rulebook` for local developme
    we directly call the Drools Java classes using JPY. The following criteria must be
    met for JPY to work correctly:
 
-   * Java 11+ installed
-   * Environment variable JAVA_HOME set accordingly
+   * Java 17+ installed
    * Maven 3.8.1+ installed, might come bundled in some Java installs
+   * Environment variable JAVA_HOME set accordingly if you want to use a specific Java version different from the default one
 
 
 4. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development:
