@@ -4,8 +4,8 @@
     name: Demo rules with time
     rules:
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: set_fact
             action_args:
               fact:
@@ -17,8 +17,8 @@
         enabled: true
         name: promote time.tick to current_time fact
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: retract_fact
             action_args:
               fact:
@@ -30,8 +30,8 @@
         enabled: true
         name: retract current_time fact
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: debug
             action_args: {}
         condition:
@@ -42,8 +42,8 @@
         name: matches current_time fact before it is retracted since facts fire all
           matching rules
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: shutdown
             action_args: {}
         condition:

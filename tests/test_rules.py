@@ -43,7 +43,10 @@ async def test_generate_rules():
     print(durable_rulesets[0].ruleset.define())
     set_fact("Demo rules", {"payload": {"text": "hello"}})
 
-    assert durable_rulesets[0].plan.queue.get_nowait().action == "slack"
+    assert (
+        durable_rulesets[0].plan.queue.get_nowait().actions[0].action
+        == "slack"
+    )
     assert durable_rulesets[0].plan.queue.get_nowait().rule == "assert fact"
     assert durable_rulesets[0].plan.queue.get_nowait().ruleset == "Demo rules"
 
@@ -65,9 +68,15 @@ async def test_generate_rules_multiple_conditions_any():
     print(durable_rulesets[0].ruleset.define())
 
     post("Demo rules multiple conditions any", {"i": 0})
-    assert durable_rulesets[0].plan.queue.get_nowait().action == "debug"
+    assert (
+        durable_rulesets[0].plan.queue.get_nowait().actions[0].action
+        == "debug"
+    )
     post("Demo rules multiple conditions any", {"i": 1})
-    assert durable_rulesets[0].plan.queue.get_nowait().action == "debug"
+    assert (
+        durable_rulesets[0].plan.queue.get_nowait().actions[0].action
+        == "debug"
+    )
 
 
 @pytest.mark.asyncio
@@ -90,7 +99,10 @@ async def test_generate_rules_multiple_conditions_all():
     assert durable_rulesets[0].plan.queue.qsize() == 0
     post("Demo rules multiple conditions all", {"i": 1})
     assert durable_rulesets[0].plan.queue.qsize() == 1
-    assert durable_rulesets[0].plan.queue.get_nowait().action == "debug"
+    assert (
+        durable_rulesets[0].plan.queue.get_nowait().actions[0].action
+        == "debug"
+    )
 
 
 @pytest.mark.asyncio
@@ -115,4 +127,7 @@ async def test_generate_rules_multiple_conditions_all_3():
     assert durable_rulesets[0].plan.queue.qsize() == 0
     post("Demo rules multiple conditions reference assignment", {"i": 2})
     assert durable_rulesets[0].plan.queue.qsize() == 1
-    assert durable_rulesets[0].plan.queue.get_nowait().action == "debug"
+    assert (
+        durable_rulesets[0].plan.queue.get_nowait().actions[0].action
+        == "debug"
+    )

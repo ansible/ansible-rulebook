@@ -4,8 +4,8 @@
     name: Demo rules multiple conditions reference assignment
     rules:
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: debug
             action_args:
               first: '{{events.first}}'
