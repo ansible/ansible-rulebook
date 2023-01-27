@@ -22,6 +22,7 @@ from drools.ruleset import Ruleset as DroolsRuleset
 
 from ansible_rulebook.json_generator import visit_ruleset
 from ansible_rulebook.rule_types import (
+    Action,
     ActionContext,
     EngineRuleSetQueuePlan,
     Plan,
@@ -34,8 +35,7 @@ logger = logging.getLogger(__name__)
 def add_to_plan(
     ruleset: str,
     rule: str,
-    action: str,
-    action_args: Dict,
+    actions: List[Action],
     variables: Dict,
     inventory: Dict,
     hosts: List,
@@ -47,8 +47,7 @@ def add_to_plan(
         ActionContext(
             ruleset,
             rule,
-            action,
-            action_args,
+            actions,
             variables,
             inventory,
             hosts,
@@ -72,8 +71,7 @@ def make_fn(
         add_to_plan(
             ruleset,
             ansible_rule.name,
-            ansible_rule.action.action,
-            ansible_rule.action.action_args,
+            ansible_rule.actions,
             variables,
             inventory,
             hosts,

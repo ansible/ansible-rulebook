@@ -4,8 +4,8 @@
     name: Test rules4
     rules:
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: set_fact
             action_args:
               fact:
@@ -21,8 +21,8 @@
         enabled: true
         name: r1
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: run_playbook
             action_args:
               name: playbooks/hello_world_set_fact.yml
@@ -36,8 +36,8 @@
         enabled: true
         name: r2
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: retract_fact
             action_args:
               fact:
@@ -53,8 +53,8 @@
         enabled: true
         name: r3
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: post_event
             action_args:
               event:
@@ -70,8 +70,8 @@
         enabled: true
         name: r4
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: none
             action_args: {}
         condition:

@@ -76,6 +76,10 @@
         },
         "rule": {
             "type": "object",
+            "oneOf": [
+                  {"required": ["name", "condition", "actions"]},
+                  {"required": ["name", "condition", "action"]}
+            ],
             "properties": {
                 "name": {
                     "type": "string",
@@ -90,6 +94,24 @@
                         {"$ref": "#/$defs/any-condition"},
                         {"$ref": "#/$defs/not-all-condition"}
                     ]
+                },
+                "actions": {
+                    "type": "array",
+                    "items": {
+                         "oneOf": [
+                                {"$ref": "#/$defs/run-playbook-action"},
+                                {"$ref": "#/$defs/run-module-action"},
+                                {"$ref": "#/$defs/run-job-template-action"},
+                                {"$ref": "#/$defs/post-event-action"},
+                                {"$ref": "#/$defs/set-fact-action"},
+                                {"$ref": "#/$defs/retract-fact-action"},
+                                {"$ref": "#/$defs/print-event-action"},
+                                {"$ref": "#/$defs/debug-action"},
+                                {"$ref": "#/$defs/none-action"},
+                                {"$ref": "#/$defs/shutdown-action"},
+                                {"$ref": "#/$defs/echo-action"}
+                         ]
+                     }
                 },
                 "action": {
                     "oneOf": [
@@ -107,11 +129,6 @@
                     ]
                 }
             },
-            "required": [
-                "name",
-                "condition",
-                "action"
-            ],
             "additionalProperties": false
         },
         "all-condition": {

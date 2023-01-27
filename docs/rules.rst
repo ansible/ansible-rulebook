@@ -2,8 +2,10 @@
 Rules
 =====
 
-Rules is a list of rules. Event driven automation uses rules to determine if an action should be taken when an event is received.
-The rule decides to run an action by evaluating the condition(s) that is defined by the rulebook author.
+| Rules is a list of rules. Event driven automation uses rules to determine if an action or 
+| actions should be taken when an event is received.
+| The rule decides to run an action or actions by evaluating the condition(s) 
+| that is defined by the rulebook author.
 
 A rule comprises:
 
@@ -21,13 +23,16 @@ A rule comprises:
    * - condition
      - See :doc:`conditions`
      - Yes
+   * - actions
+     - See :doc:`actions`
+     - or action
    * - action
      - See :doc:`actions`
-     - Yes
+     - or actions
 
 
 
-Example:
+Example: A single action
 
     .. code-block:: yaml
 
@@ -42,3 +47,19 @@ Example:
             condition: event.target_os == "linux" or
             action:
               debug:
+
+Example: Multiple actions
+
+    .. code-block:: yaml
+
+        rules:
+          - name: An automatic remediation rule
+            condition: event.outage == true
+            actions:
+              - run_playbook:
+                  name: remediate_outage.yml
+              - print_event:
+                  pretty: true
+
+| In the above example the 2 actions are executed in order. First
+| we call run_playbook and then when it ends we call print_event

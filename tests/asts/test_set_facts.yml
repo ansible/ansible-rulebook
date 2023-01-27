@@ -4,8 +4,8 @@
     name: Test Assert Fact of different data types
     rules:
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: set_fact
             action_args:
               fact:
@@ -24,8 +24,8 @@
         enabled: true
         name: r1
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: run_playbook
             action_args:
               copy_files: true
