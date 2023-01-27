@@ -15,7 +15,7 @@ def test_show_version(capsys):
   Executable location = (.+)
   Drools_jpy version = \d+\.\d+\.\d+
   Java home = (.+)
-  Java version = (.+)\d+\.\d+\.\d+(.+)
+  Java version = \d+\.\d+\.\d+
   Python version = \d+\.\d+\.\d+ (.+)$"""
     )
     assert pattern.match(output.out)

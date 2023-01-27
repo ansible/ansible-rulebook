@@ -46,16 +46,21 @@ import os
 import sys
 from typing import List, NoReturn
 
-from ansible_rulebook.job_template_runner import job_template_runner
+import ansible_rulebook.util as util
 
-if os.environ.get("JAVA_HOME") is None:
-    print("JAVA_HOME is not set. " "Please install Java 11+ and set JAVA_HOME")
-    sys.exit(1)
+# ensure a valid JVM is available and configures JAVA_HOME if necessary
+# must be done before importing any other modules
+util.check_jvm()
+if not os.environ.get("JAVA_HOME"):
+    os.environ["JAVA_HOME"] = util.get_java_home()
 
-import ansible_rulebook
-from ansible_rulebook import app
-from ansible_rulebook.conf import settings
-from ansible_rulebook.util import get_java_version
+
+import ansible_rulebook  # noqa: E402
+from ansible_rulebook import app  # noqa: E402
+from ansible_rulebook.conf import settings  # noqa: E402
+from ansible_rulebook.job_template_runner import (  # noqa: E402
+    job_template_runner,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -140,14 +145,14 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def show_version() -> NoReturn:
-    java_home = f"{os.environ.get('JAVA_HOME', 'JAVA_HOME not present')}"
-
+    java_home = util.get_java_home()
+    java_version = util.get_java_version()
     result = [
         f"{ansible_rulebook.__version__}",
         f"  Executable location = {sys.argv[0]}",
         f"  Drools_jpy version = {importlib.metadata.version('drools_jpy')}",
         f"  Java home = {java_home}",
-        f"  Java version = {get_java_version()}",
+        f"  Java version = {java_version}",
         f"  Python version = {''.join(sys.version.splitlines())}",
     ]
     print("\n".join(result))

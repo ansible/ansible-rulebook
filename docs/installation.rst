@@ -8,13 +8,13 @@ Please ensure you have installed all components listed in the **Requirements** s
 Requirements
 ------------
 
-* Python >=3.8
+* Python >= 3.8
 * Python 3 pip
 
   * Fedora: python3-devel
   * Ubuntu: python3-dev
 
-* Java development kit 17
+* Java development kit >= 17
 
   * Fedora: java-17-openjdk
   * Ubuntu: openjdk-17-jdk
@@ -24,7 +24,8 @@ Requirements
 Installation via pip
 --------------------
 
-1. Ensure the `JAVA_HOME` environment variable is set. On Fedora-like systems it should be::
+1. Ensure the `JAVA_HOME` environment variable is set if you have multiple Java installations.
+On Fedora-like systems it should be::
 
     JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 

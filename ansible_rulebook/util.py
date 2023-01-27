@@ -14,16 +14,22 @@
 
 import glob
 import json
+import logging
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
+import typing
 from pprint import pprint
 from typing import Any, Dict, List, Union
 
 import ansible_runner
 import jinja2
 import yaml
+from packaging import version
+
+logger = logging.getLogger(__name__)
 
 
 def get_horizontal_rule(character):
@@ -128,16 +134,82 @@ def collect_ansible_facts(inventory: Dict) -> List[Dict]:
     return hosts_facts
 
 
-def get_java_version() -> str:
+def run_java_settings(exec_path: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [exec_path, "-XshowSettings:properties", "-version"],
+        check=True,
+        text=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+    )
+
+
+def get_java_home() -> typing.Optional[str]:
+    """
+    Get the java home path. It tries to get the path
+    from the default java installation if JAVA_HOME is not set.
+    If is not possible to find the java home path, it returns None.
+    """
+
+    # if java_home is set, return it
+    java_home = os.environ.get("JAVA_HOME", None)
+    if java_home:
+        return java_home
+
+    # if default java executable is not found, return None
     exec_path = shutil.which("java")
     if not exec_path:
-        return "Java executable not found."
-    try:
-        result = subprocess.run(
-            [exec_path, "--version"], capture_output=True, check=True
-        )
-    except subprocess.CalledProcessError as exc:
-        print(exc)
-        return "Java error"
+        return None
 
-    return result.stdout.splitlines()[0].decode()
+    # try to get the java home path from the default java executable
+    try:
+        result = run_java_settings(exec_path)
+    except subprocess.CalledProcessError:
+        return None
+
+    for line in result.stderr.splitlines():
+        if "java.home" in line:
+            return line.split("=")[-1].strip()
+
+    return None
+
+
+def get_java_version() -> str:
+    java_home = get_java_home()
+    exec_path = f"{java_home}/bin/java"
+    if not exec_path:
+        return "Java executable not found."
+
+    try:
+        result = run_java_settings(exec_path)
+    except subprocess.CalledProcessError as exc:
+        logger.error("java executable failed: %s", exc)
+        return "Java error"
+    for line in result.stderr.splitlines():
+        if "java.version" in line:
+            return line.split("=")[-1].strip()
+
+    return "Java version not found."
+
+
+def check_jvm():
+    """
+    Ensures that a valid JVM is properly installed
+    """
+    java_home = get_java_home()
+    if not java_home:
+        print(
+            "Java executable or JAVA_HOME environment variable not found."
+            "Please install a valid JVM.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    java_version = get_java_version()
+    if version.parse(java_version) < version.parse("17"):
+        print(
+            "The minimum supported Java version is 17. "
+            f"Found version: {java_version}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
