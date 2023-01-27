@@ -4,8 +4,8 @@
     name: Demo rules multiple conditions any
     rules:
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: debug
             action_args: {}
         condition:

@@ -4,8 +4,8 @@
     name: Test rule filters
     rules:
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: print_event
             action_args:
               pretty: true
@@ -20,8 +20,8 @@
         enabled: true
         name: r1
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: print_event
             action_args: {}
         condition:
@@ -34,8 +34,8 @@
         enabled: true
         name: r2
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: run_playbook
             action_args:
               name: playbooks/hello_world_set_fact.yml
@@ -51,8 +51,8 @@
         enabled: true
         name: r3
     - Rule:
-        action:
-          Action:
+        actions:
+        - Action:
             action: print_event
             action_args: {}
         condition:

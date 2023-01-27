@@ -109,13 +109,24 @@ def parse_rules(rules: Dict) -> List[rt.Rule]:
             rt.Rule(
                 name=name,
                 condition=parse_condition(rule["condition"]),
-                action=parse_action(rule["action"]),
+                actions=parse_actions(rule),
                 enabled=rule.get("enabled", True),
                 throttle=throttle,
             )
         )
 
     return rule_list
+
+
+def parse_actions(rule: Dict) -> List[rt.Action]:
+    actions = []
+    if "actions" in rule:
+        for action in rule["actions"]:
+            actions.append(parse_action(action))
+    elif "action" in rule:
+        actions.append(parse_action(rule["action"]))
+
+    return actions
 
 
 def parse_action(action: Dict) -> rt.Action:

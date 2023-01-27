@@ -56,7 +56,7 @@ class Throttle(NamedTuple):
 class Rule(NamedTuple):
     name: str
     condition: Condition
-    action: Action
+    actions: List[Action]
     enabled: bool
     throttle: Optional[Throttle] = None
 
@@ -72,8 +72,7 @@ class RuleSet(NamedTuple):
 class ActionContext(NamedTuple):
     ruleset: str
     rule: str
-    action: str
-    actions_args: Dict
+    actions: List[Action]
     variables: Dict
     inventory: Dict
     hosts: List[str]

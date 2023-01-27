@@ -317,7 +317,18 @@ class RuleSetRunner:
             #    break
 
             action_item = cast(ActionContext, queue_item)
-            await self._call_action(*action_item)
+            for action in action_item.actions:
+                await self._call_action(
+                    action_item.ruleset,
+                    action_item.rule,
+                    action.action,
+                    action.action_args,
+                    action_item.variables,
+                    action_item.inventory,
+                    action_item.hosts,
+                    action_item.facts,
+                    action_item.c,
+                )
 
         logger.info("Stopped waiting for actions on events from %s", self.name)
 

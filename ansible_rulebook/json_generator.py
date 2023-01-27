@@ -195,7 +195,7 @@ def visit_rule(parsed_rule: Rule, variables: Dict):
     data = {
         "name": parsed_rule.name,
         "condition": generate_condition(parsed_rule.condition, variables),
-        "action": visit_action(parsed_rule.action, variables),
+        "actions": visit_actions(parsed_rule.actions, variables),
         "enabled": parsed_rule.enabled,
     }
 
@@ -203,6 +203,10 @@ def visit_rule(parsed_rule: Rule, variables: Dict):
         data.update(visit_throttle(parsed_rule.throttle, variables))
 
     return {"Rule": data}
+
+
+def visit_actions(actions: List[Action], variables: Dict):
+    return [visit_action(a, variables) for a in actions]
 
 
 def visit_action(parsed_action: Action, variables: Dict):
