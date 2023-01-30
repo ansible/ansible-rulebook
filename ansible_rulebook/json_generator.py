@@ -21,7 +21,6 @@ from ansible_rulebook.condition_types import (
     Boolean,
     Condition,
     ConditionTypes,
-    ExistsExpression,
     Float,
     Identifier,
     Integer,
@@ -152,11 +151,6 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
                 )
         else:
             raise Exception(f"Unhandled token {parsed_condition}")
-    elif isinstance(parsed_condition, ExistsExpression):
-        if parsed_condition.operator == "+":
-            raise Exception("Please use 'is defined' instead of +")
-
-        return visit_condition(parsed_condition.value, variables).__pos__()
     elif isinstance(parsed_condition, NegateExpression):
         return {
             "NegateExpression": visit_condition(
