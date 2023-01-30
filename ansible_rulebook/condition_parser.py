@@ -37,7 +37,6 @@ ParserElement.enable_packrat()
 from ansible_rulebook.condition_types import (  # noqa: E402
     Boolean,
     Condition,
-    ExistsExpression,
     Float,
     Identifier,
     Integer,
@@ -150,7 +149,6 @@ all_terms = (
 condition = infix_notation(
     all_terms,
     [
-        ("+", 1, OpAssoc.RIGHT, lambda toks: ExistsExpression(*toks[0])),
         ("not", 1, OpAssoc.RIGHT, lambda toks: NegateExpression(*toks[0])),
         (
             one_of("* /"),
