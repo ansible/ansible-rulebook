@@ -351,7 +351,7 @@ class RuleSetRunner:
                     action_item.inventory,
                     action_item.hosts,
                     action_item.facts,
-                    action_item.c,
+                    action_item.rule_engine_results,
                 )
 
         logger.info("Stopped waiting for actions on events from %s", self.name)
