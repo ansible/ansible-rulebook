@@ -77,7 +77,7 @@ class ActionContext(NamedTuple):
     inventory: Dict
     hosts: List[str]
     facts: Dict
-    c: Any
+    rule_engine_results: Any
 
 
 class RuleSetQueue(NamedTuple):
