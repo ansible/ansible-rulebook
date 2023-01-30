@@ -15,7 +15,7 @@
 import asyncio
 import json
 import logging
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict, List
 
 from drools.rule import Rule as DroolsRule
 from drools.ruleset import Ruleset as DroolsRuleset
@@ -41,7 +41,7 @@ def add_to_plan(
     hosts: List,
     facts: Dict,
     plan: Plan,
-    c,
+    rule_engine_results: Any,
 ) -> None:
     plan.queue.put_nowait(
         ActionContext(
@@ -52,7 +52,7 @@ def add_to_plan(
             inventory,
             hosts,
             facts,
-            c,
+            rule_engine_results,
         )
     )
 
@@ -66,7 +66,7 @@ def make_fn(
     facts: Dict,
     plan: Plan,
 ) -> Callable:
-    def fn(c):
+    def fn(rule_engine_results):
         logger.info("calling %s", ansible_rule.name)
         add_to_plan(
             ruleset,
@@ -77,7 +77,7 @@ def make_fn(
             hosts,
             facts,
             plan,
-            c,
+            rule_engine_results,
         )
 
     return fn
