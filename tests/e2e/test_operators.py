@@ -373,6 +373,7 @@ def test_in_operator(rulebook, expected_count):
     assert len(printed_events) == expected_count
 
 
+@pytest.mark.e2e
 def test_not_operator():
     """
     Test to validate the functionality of the negation (not) operator

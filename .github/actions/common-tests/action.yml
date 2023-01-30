@@ -1,0 +1,9 @@
+name: common-tests
+description: run common tests for ansible-rulebook (unit and integration)
+
+runs:
+  using: composite
+  steps:
+    - name: Run common tests
+      shell: bash
+      run: pytest -m "not e2e and not long_run" -vv -n auto --cov=./ --cov-report=xml

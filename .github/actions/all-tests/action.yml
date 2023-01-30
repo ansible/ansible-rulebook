@@ -1,0 +1,15 @@
+name: all-tests
+description: run all tests for ansible-rulebook (unit, integration, e2e)
+
+runs:
+  using: composite
+  steps:
+    - name: Common tests
+      uses: ./.github/actions/common-tests
+
+    - name: Long-running tests
+      shell: bash
+      run: pytest -m "long_run" -vv -n auto --cov=./ --cov-report=xml
+
+    - name: e2e tests
+      uses: ./.github/actions/e2e-tests
