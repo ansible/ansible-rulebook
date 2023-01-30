@@ -1,0 +1,30 @@
+---
+- name: 61 select 1
+  hosts: all
+  sources:
+    - generic:
+        payload:
+          - name: Fred
+            age: 54
+            levels:
+               - 10
+               - 20
+               - 30
+          - name: Barney
+            age: 53
+            levels:
+               - 11
+               - 15
+               - 16
+          - name: Wilma
+            age: 53
+            levels:
+               - 1
+               - 5
+               - 6
+  rules:
+    - name: r1
+      condition: event.levels is select('>', 25)
+      action:
+        echo:
+          message: Found a player with level greater than 25

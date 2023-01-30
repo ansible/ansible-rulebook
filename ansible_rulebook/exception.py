@@ -41,3 +41,13 @@ class VarsKeyMissingException(Exception):
 class InvalidAssignmentException(Exception):
 
     pass
+
+
+class SelectattrOperatorException(Exception):
+
+    pass
+
+
+class SelectOperatorException(Exception):
+
+    pass

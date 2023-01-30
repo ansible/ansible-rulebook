@@ -1567,3 +1567,126 @@ async def test_60_json_filter():
             ],
         }
         validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_61_select_1():
+    ruleset_queues, event_log = load_rulebook("examples/61_select_1.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "61 select 1::r1::echo",
+            ],
+        }
+        validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_62_select_2():
+    ruleset_queues, event_log = load_rulebook("examples/62_select_2.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 4,
+            "shutdown_events": 1,
+            "actions": [
+                "62 select 2::r1::echo",
+                "62 select 2::r2::echo",
+                "62 select 2::r1::echo",
+            ],
+        }
+        validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_63_selectattr_1():
+    ruleset_queues, event_log = load_rulebook("examples/63_selectattr_1.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 3,
+            "shutdown_events": 1,
+            "actions": [
+                "63 selectattr 1::r1::echo",
+                "63 selectattr 1::r2::echo",
+            ],
+        }
+        validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_64_selectattr_2():
+    ruleset_queues, event_log = load_rulebook("examples/64_selectattr_2.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "64 selectattr 2::r1::echo",
+            ],
+        }
+        validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_65_selectattr_3():
+    ruleset_queues, event_log = load_rulebook("examples/65_selectattr_3.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "65 selectattr 3::r1::echo",
+            ],
+        }
+        validate_events(event_log, **checks)

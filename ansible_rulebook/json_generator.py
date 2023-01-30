@@ -28,6 +28,8 @@ from ansible_rulebook.condition_types import (
     NegateExpression,
     OperatorExpression,
     SearchType,
+    SelectattrType,
+    SelectType,
     String,
 )
 from ansible_rulebook.exception import (
@@ -116,6 +118,17 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
                 visit_condition(v, variables) for v in parsed_condition.options
             ]
         return {"SearchType": data}
+    elif isinstance(parsed_condition, SelectattrType):
+        return dict(
+            key=visit_condition(parsed_condition.key, variables),
+            operator=visit_condition(parsed_condition.operator, variables),
+            value=visit_condition(parsed_condition.value, variables),
+        )
+    elif isinstance(parsed_condition, SelectType):
+        return dict(
+            operator=visit_condition(parsed_condition.operator, variables),
+            value=visit_condition(parsed_condition.value, variables),
+        )
     elif isinstance(parsed_condition, KeywordValue):
         return dict(
             name=visit_condition(parsed_condition.name, variables),
@@ -143,6 +156,14 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
                 return create_binary_node(
                     "SearchMatchesExpression", parsed_condition, variables
                 )
+            elif isinstance(parsed_condition.right, SelectattrType):
+                return create_binary_node(
+                    "SelectAttrExpression", parsed_condition, variables
+                )
+            elif isinstance(parsed_condition.right, SelectType):
+                return create_binary_node(
+                    "SelectExpression", parsed_condition, variables
+                )
         elif parsed_condition.operator == "is not":
             if isinstance(parsed_condition.right, Identifier):
                 if parsed_condition.right.value == "defined":
@@ -154,6 +175,14 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
             elif isinstance(parsed_condition.right, SearchType):
                 return create_binary_node(
                     "SearchNotMatchesExpression", parsed_condition, variables
+                )
+            elif isinstance(parsed_condition.right, SelectattrType):
+                return create_binary_node(
+                    "SelectAttrNotExpression", parsed_condition, variables
+                )
+            elif isinstance(parsed_condition.right, SelectType):
+                return create_binary_node(
+                    "SelectNotExpression", parsed_condition, variables
                 )
         else:
             raise Exception(f"Unhandled token {parsed_condition}")

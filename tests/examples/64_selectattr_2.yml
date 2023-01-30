@@ -1,0 +1,25 @@
+---
+- name: 64 selectattr 2
+  hosts: all
+  sources:
+    - generic:
+        payload:
+          - people:
+             - person:
+                 name: Fred
+                 age: 54
+             - person:
+                 name: Barney
+                 age: 45
+             - person:
+                 name: Wilma
+                 age: 23
+             - person:
+                 name: Betty
+                 age: 25
+  rules:
+    - name: r1
+      condition: event.people is selectattr('person.age', 'in', [55,25])
+      action:
+        echo:
+          message: Found person who is either 55 or 25
