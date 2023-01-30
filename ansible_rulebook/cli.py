@@ -172,6 +172,7 @@ def setup_logging(args: argparse.Namespace) -> None:
         stream = sys.stdout
 
     logging.basicConfig(stream=stream, level=level, format=LOG_FORMAT)
+    logging.getLogger("drools.").setLevel(level)
 
 
 def main(args: List[str] = None) -> int:
