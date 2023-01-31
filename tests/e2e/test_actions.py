@@ -64,7 +64,8 @@ def test_actions_sanity():
  'ruleset': 'Test actions sanity',
  'source_rule_name': 'debug',
  'source_ruleset_name': 'Test actions sanity',
- 'variables': {'event': {'action': 'debug'}, 'fact': {'action': 'debug'}}}"""  # noqa: E501
+ 'variables': {'ansible_eda': {'event': {'action': 'debug'},
+                               'fact': {'action': 'debug'}}}}"""  # noqa: E501
 
     assert event_debug_expected_output in result.stdout, "debug action failed"
 
@@ -92,5 +93,5 @@ def test_actions_sanity():
     assert "Echo action executed" in result.stdout
 
     assert (
-        len(result.stdout.splitlines()) == 41
+        len(result.stdout.splitlines()) == 42
     ), "unexpected output from the rulebook"

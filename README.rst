@@ -2,16 +2,38 @@
 ansible-rulebook
 ================
 
+.. maintainenance status
+.. image:: https://img.shields.io/badge/Maintained%3F-yes-green.svg
 
+.. codecov
+.. image:: https://codecov.io/gh/ansible/ansible-rulebook/branch/main/graph/badge.svg?token=U1mIB6PI9I
+        :target: https://codecov.io/gh/ansible/ansible-rulebook
+
+.. gh workflow
+.. image:: https://github.com/ansible/ansible-rulebook/actions/workflows/ci.yml/badge.svg?branch=main
+        :target: https://github.com/ansible/ansible-rulebook/actions/workflows/ci.yml?query=branch%3Amain
+
+.. python versions
+.. image:: https://img.shields.io/pypi/pyversions/ansible-rulebook.svg
+        :target: https://pypi.org/project/ansible-rulebook/
+
+.. pypi
 .. image:: https://img.shields.io/pypi/v/ansible_rulebook.svg
         :target: https://pypi.python.org/pypi/ansible_rulebook
 
-.. image:: https://img.shields.io/travis/ansible/ansible_rulebook.svg
-        :target: https://travis-ci.com/ansible/ansible_rulebook
-
+.. Docs
 .. image:: https://readthedocs.org/projects/ansible-rulebook/badge/?version=latest
         :target: https://ansible-rulebook.readthedocs.io/en/latest/?version=latest
         :alt: Documentation Status
+
+.. Last release
+.. image:: https://img.shields.io/github/v/release/ansible/ansible-rulebook.svg
+        :target: https://github.com/ansible/ansible-rulebook/releases
+
+.. License
+.. image:: https://img.shields.io/github/license/ansible/ansible-rulebook.svg
+        :target: https://github.com/ansible/ansible-rulebook/blob/main/LICENSE
+
 
 * Free software: Apache Software License 2.0
 

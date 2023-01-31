@@ -5,9 +5,9 @@
   tasks:
     - name: Debug Hello event
       ansible.builtin.debug:
-        msg: 'Hello event {{ event }}'
+        msg: 'Hello event {{ ansible_eda.event }}'
 
     - name: Debug Hello facts
       ansible.builtin.debug:
-        msg: 'Hello facts {{ facts }}'
+        msg: 'Hello facts {{ ansible_eda.facts }}'
 ...
