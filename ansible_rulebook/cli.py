@@ -25,8 +25,6 @@ Options:
     --vars=<v>                  A vars file
     --env-vars=<e>              Comma separated list of variables to import
                                 from the environment
-    --redis_host_name=<h>       Redis host name
-    --redis_port=<p>            Redis port
     --debug                     Show debug logging
     --verbose                   Show verbose logging
     --print-events              Print events after reading from source queue
@@ -95,14 +93,6 @@ def get_parser() -> argparse.ArgumentParser:
         "--version",
         action="store_true",
         help="Show the version and exit",
-    )
-    parser.add_argument(
-        "--redis-host-name",
-        help="Redis host name",
-    )
-    parser.add_argument(
-        "--redis-port",
-        help="Redis port",
     )
     parser.add_argument(
         "-S",

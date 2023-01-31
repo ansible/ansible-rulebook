@@ -38,7 +38,6 @@ from ansible_rulebook.collection import (
     split_collection_name,
 )
 from ansible_rulebook.conf import settings
-from ansible_rulebook.durability import provide_durability
 from ansible_rulebook.exception import ShutdownException
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.rule_types import (
@@ -178,13 +177,6 @@ async def run_rulesets(
 ):
 
     logger.info("run_ruleset")
-    if parsed_args and parsed_args.redis_host_name and parsed_args.redis_port:
-        provide_durability(
-            lang.get_host(),
-            parsed_args.redis_host_name,
-            parsed_args.redis_port,
-        )
-
     rulesets_queue_plans = rule_generator.generate_rulesets(
         ruleset_queues, variables, inventory
     )

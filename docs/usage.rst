@@ -12,10 +12,6 @@ The `ansible-rulebook` CLI supports the following options::
     --debug               Show debug logging, written to stdout
     --verbose             Show verbose logging, written to stdout
     --version             Show the version and exit
-    --redis-host-name REDIS_HOST_NAME
-                            Redis host name
-    --redis-port REDIS_PORT
-                            Redis port
     -S SOURCE_DIR, --source-dir SOURCE_DIR
                             Source dir
     -i INVENTORY, --inventory INVENTORY
