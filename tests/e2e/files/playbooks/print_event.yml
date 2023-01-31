@@ -2,11 +2,11 @@
   gather_facts: false
   tasks:
     - name: Print event
-      when: event is defined
+      when: ansible_eda.event is defined
       ansible.builtin.debug:
-        msg: "Event matched: {{ event }}"
+        msg: "Event matched: {{ ansible_eda.event }}"
 
     - name: Print events
-      when: events is defined
+      when: ansible_eda.events is defined
       ansible.builtin.debug:
-        msg: "Event matched: {{ events }}"
+        msg: "Event matched: {{ ansible_eda.events }}"

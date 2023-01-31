@@ -11,7 +11,7 @@
               fact:
                 alpha: 1
                 beta:
-                  location: Naboo
+                  location: "{{ Naboo }}"
                   name: R2D2
                 msg: hello world
         condition:
@@ -30,11 +30,12 @@
             action_args:
               copy_files: true
               name: playbooks/validate_args_playbook.yml
-              rulebook_extra_vars:
-                fact.alpha: 1
-                fact.beta.location: Naboo
-                fact.beta.name: R2D2
-                fact.msg: hello world
+              extra_vars:
+                my_vars:
+                  fact.alpha: 1
+                  fact.beta.location: "{{ Naboo }}"
+                  fact.beta.name: R2D2
+                  fact.msg: hello world
         condition:
           AllCondition:
           - EqualsExpression:
