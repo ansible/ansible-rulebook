@@ -176,10 +176,11 @@ def get_java_home() -> typing.Optional[str]:
 
 def get_java_version() -> str:
     java_home = get_java_home()
-    exec_path = f"{java_home}/bin/java"
-    if not exec_path:
+
+    if not java_home:
         return "Java executable not found."
 
+    exec_path = f"{java_home}/bin/java"
     try:
         result = run_java_settings(exec_path)
     except subprocess.CalledProcessError as exc:
