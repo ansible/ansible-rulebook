@@ -29,7 +29,7 @@ from drools.exceptions import (
 )
 
 import ansible_rulebook.rule_generator as rule_generator
-from ansible_rulebook.builtin import actions as builtin_actions
+from ansible_rulebook.builtin import KEY_EDA_VARS, actions as builtin_actions
 from ansible_rulebook.collection import (
     find_source,
     find_source_filter,
@@ -375,18 +375,20 @@ class RuleSetRunner:
                 else:
                     multi_match = rules_engine_result.data
                 variables_copy = variables.copy()
+                variables_eda = {}
+                variables_copy[KEY_EDA_VARS] = variables_eda
                 if single_match is not None:
-                    variables_copy["event"] = single_match
-                    variables_copy["fact"] = single_match
+                    variables_eda["event"] = single_match
+                    variables_eda["fact"] = single_match
                     event = single_match
                     if "meta" in event:
                         if "hosts" in event["meta"]:
                             hosts = parse_hosts(event["meta"]["hosts"])
                 else:
-                    variables_copy["events"] = multi_match
-                    variables_copy["facts"] = multi_match
+                    variables_eda["events"] = multi_match
+                    variables_eda["facts"] = multi_match
                     new_hosts = []
-                    for event in variables_copy["events"].values():
+                    for event in variables_eda["events"].values():
                         if "meta" in event:
                             if "hosts" in event["meta"]:
                                 new_hosts.extend(

@@ -189,7 +189,7 @@
                         "retry": { "type": "boolean" },
                         "retries": { "type": "integer" },
                         "delay": { "type": "number" },
-                        "rulebook_extra_vars": {"type": "object"}
+                        "extra_vars": {"type": "object"}
                     },
                     "required": [
                         "name"
@@ -218,7 +218,8 @@
                         "retry": { "type": "boolean" },
                         "retries": { "type": "integer" },
                         "delay": { "type": "number" },
-                        "module_args": {"type": "object"}
+                        "module_args": {"type": "object"},
+                        "extra_vars": {"type": "object"}
                     },
                     "required": [
                         "name"

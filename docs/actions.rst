@@ -56,8 +56,8 @@ Run an Ansible playbook.
    * - var_root
      - If the event is a deeply nested dictionary, the var_root can specify the key name whose value should replace the matching event value. The var_root can take a dictionary to account for data when we have multiple matching events.
      - No
-   * - rulebook_extra_vars
-     - In addition to the passed in vars and matching events the rulebook_extra_vars would be passed into the playbook as extra vars.
+   * - extra_vars
+     - Additional vars to be passed into the playbook as extra vars.
      - No
    * - json_mode
      - Boolean, sends the playbook events data to the stdout as json strings as they are processed by ansible-runner
@@ -92,6 +92,9 @@ Run an Ansible module
      - No
    * - verbosity
      - Verbosity level when running the module, a value between 1-4
+     - No
+   * - extra_vars
+     - Additional vars to be passed into the playbook as extra vars.
      - No
 
 run_job_template

@@ -1375,6 +1375,7 @@ async def test_53_once_within_multiple_hosts():
 
 @pytest.mark.asyncio
 @pytest.mark.temporal
+@pytest.mark.long_run
 async def test_54_time_window():
     ruleset_queues, event_log = load_rulebook("examples/54_time_window.yml")
 
@@ -1411,6 +1412,7 @@ async def test_54_time_window():
 
 @pytest.mark.asyncio
 @pytest.mark.temporal
+@pytest.mark.long_run
 async def test_55_not_all():
     ruleset_queues, event_log = load_rulebook("examples/55_not_all.yml")
 
@@ -1438,6 +1440,7 @@ async def test_55_not_all():
 
 @pytest.mark.asyncio
 @pytest.mark.temporal
+@pytest.mark.long_run
 async def test_56_once_after():
     ruleset_queues, event_log = load_rulebook("examples/56_once_after.yml")
 
@@ -1463,6 +1466,7 @@ async def test_56_once_after():
 
 @pytest.mark.asyncio
 @pytest.mark.temporal
+@pytest.mark.long_run
 async def test_57_once_after_multi():
     ruleset_queues, event_log = load_rulebook(
         "examples/57_once_after_multi.yml"

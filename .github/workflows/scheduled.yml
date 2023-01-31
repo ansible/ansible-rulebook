@@ -1,12 +1,9 @@
-name: ci
+name: scheduled
 
 on:
-  push:
-    branches:
-      - "main"
-  pull_request:
-    branches:
-      - "main"
+  schedule:
+    # Run at 10:00 AM/PM UTC
+    - cron: "0 10,22 * * *"
   workflow_dispatch:
 
 jobs:
@@ -57,8 +54,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Common tests
-        uses: ./.github/actions/common-tests
+      - name: All tests
+        uses: ./.github/actions/all-tests
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -69,3 +66,12 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           verbose: true
+
+      # WAITING FOR APPROVAL
+
+      # - name: Notify to slack if failure
+      #   if: ${{ failure() }}
+      #   uses: rtCamp/action-slack-notify@v2
+      #   env:
+      #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      #     SLACK_MESSAGE: Failure of scheduled executed tests for ansible rulebook
