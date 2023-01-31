@@ -362,7 +362,7 @@ async def test_run_assert_facts():
     await run_rulesets(
         event_log,
         ruleset_queues,
-        dict(),
+        dict(Naboo="naboo"),
         inventory,
     )
 
