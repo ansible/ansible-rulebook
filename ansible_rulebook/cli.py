@@ -25,8 +25,6 @@ Options:
     --vars=<v>                  A vars file
     --env-vars=<e>              Comma separated list of variables to import
                                 from the environment
-    --redis_host_name=<h>       Redis host name
-    --redis_port=<p>            Redis port
     --debug                     Show debug logging
     --verbose                   Show verbose logging
     --print-events              Print events after reading from source queue
@@ -97,14 +95,6 @@ def get_parser() -> argparse.ArgumentParser:
         help="Show the version and exit",
     )
     parser.add_argument(
-        "--redis-host-name",
-        help="Redis host name",
-    )
-    parser.add_argument(
-        "--redis-port",
-        help="Redis port",
-    )
-    parser.add_argument(
         "-S",
         "--source-dir",
         help="Source dir",
@@ -172,6 +162,7 @@ def setup_logging(args: argparse.Namespace) -> None:
         stream = sys.stdout
 
     logging.basicConfig(stream=stream, level=level, format=LOG_FORMAT)
+    logging.getLogger("drools.").setLevel(level)
 
 
 def main(args: List[str] = None) -> int:
