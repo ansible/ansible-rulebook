@@ -8,7 +8,7 @@
           - test_bool: false
             test_str: "Hello there"
           - test_int: 79
-            test_float: 4.212
+          - test_float: 4.212
   rules:
     - name: Test negation round 1
       condition: >
