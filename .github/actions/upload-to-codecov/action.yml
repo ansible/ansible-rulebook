@@ -14,6 +14,9 @@ inputs:
     description: seconds between retries
     required: false
     default: "10"
+  codecov-token:
+    description: codecov token
+    required: true
 
 # There is no easy way to implement retries for actions.
 # There is an action in the community that can do it but
@@ -34,7 +37,7 @@ runs:
         flags: ${{ inputs.flags }}
         name: codecov-umbrella
         verbose: true
-        token: ${{ secrets.CODECOV_TOKEN }}
+        token: ${{ inputs.codecov-token }}
 
     # - name: "Waiting (attempt #2)"
     #   if: steps.codecov-upload-1.outcome == 'failure'

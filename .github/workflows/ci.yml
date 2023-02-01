@@ -64,3 +64,5 @@ jobs:
 
       - name: Upload coverage to Codecov
         uses: ./.github/actions/upload-to-codecov
+        with:
+          codecov-token: "${{ secrets.CODECOV_TOKEN }}"
