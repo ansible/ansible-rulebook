@@ -44,6 +44,57 @@ These include:
     Mainly used for development and testing
 
 
+Caveats
+^^^^^^^
+ansible-rulebook has a limit on the size of the events that it would forward to
+the rule engine. The current limit is 255 keys in a dictionary. Its highly
+recommended that the event only contain the keys that would be used in the rulebook
+and the playbook or job template. All other keys should be discarded if no program
+is going to use it. Its recommended that you use source filters in your rulebook to
+limit the keys. One such filter is **ansible.eda.json_filter** its use in a rulebook
+is shown below
+
+.. code-block:: yaml
+
+   ---
+   - name: filtering event payload
+     hosts: all
+     sources:
+       - generic:
+           payload:
+             key1:
+               key2:
+                 f_ignore_1: 1
+                 f_ignore_2: 2
+             key3:
+               key4:
+                 f_use_1: 42
+                 f_use_2: 45
+         filters:
+           - ansible.eda.json_filter:
+               include_keys:
+                 - key3
+                 - key4
+                 - f_use*
+               exclude_keys:
+                 - "*"
+   
+     rules:
+       - name: r1
+         condition: event.key3.key4.f_use_1 == 42
+         action:
+           echo:
+             message: Hurray filtering works
+       - name: r2
+         condition: event.key1.key2.f_ignore_1 == 1
+         action:
+           echo:
+             message: Should never fire
+  
+| The above example uses the generic source plugin which allows you to define
+| the events in the rulebook itself for ease of understanding and testing.
+
+
 How to Develop a Custom Plugin
 ------------------------------
 You can build your own event source plugin in python. A plugin is a single
@@ -130,7 +181,7 @@ string or a list of host names.
 As the plugin have full access to an unbounded queue that is consumed by ansible-rulebbok
 we carefully recommend to use always the method ``asyncio.Queue.put`` to put events as it's a non-blocking call.
 To give free cpu cycles to the event loop to process the events, we recommend to use ``asyncio.sleep(0)``
-inmediately after the ``put`` method.
+immediately after the ``put`` method.
 
 .. note::
     ansible-rulebook is intended to be a long running process and react to events over the time.
@@ -171,3 +222,4 @@ It is strongly recommended that you add comments at the top of the source file.
 Please describe the purpose of the event source plugin. List all required or
 optional arguments. Also add an example how to configure the plugin in a
 rulebook.
+
