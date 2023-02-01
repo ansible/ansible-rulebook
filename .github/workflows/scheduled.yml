@@ -60,14 +60,7 @@ jobs:
         uses: ./.github/actions/all-tests
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          env_vars: OS,PYTHON
-          fail_ci_if_error: true
-          files: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
-          verbose: true
+        uses: ./.github/actions/upload-to-codecov
 
       # WAITING FOR APPROVAL
 

@@ -1,0 +1,72 @@
+name: Upload to codecov
+description: Action to upload the coverage to codecov.io with retries
+
+inputs:
+  file:
+    description: report file to upload
+    required: false
+    default: "./coverage.xml"
+  flags:
+    description: flags passed to codecov
+    required: false
+    default: "unittests"
+  retry-delay:
+    description: seconds between retries
+    required: false
+    default: "10"
+
+# There is no easy way to implement retries for actions.
+# There is an action in the community that can do it but
+# it has some limitations and doesn't support codecov/codecov-action@v3
+# Ref: https://github.com/Wandalen/wretry.action/issues/75
+
+runs:
+  using: composite
+  steps:
+    - name: "Upload to Codecov (attempt #1)"
+      id: codecov-upload-1
+      uses: codecov/codecov-action@v3
+      continue-on-error: true
+      with:
+        files: ${{ inputs.file }}
+        env_vars: OS,PYTHON
+        fail_ci_if_error: true
+        flags: ${{ inputs.flags }}
+        name: codecov-umbrella
+        verbose: true
+
+    - name: "Waiting (attempt #2)"
+      if: steps.codecov-upload-1.outcome == 'failure'
+      shell: bash
+      run: sleep ${{ inputs.retry-delay }}
+
+    - name: "Upload to Codecov (attempt #2)"
+      id: codecov-upload-2
+      if: steps.codecov-upload-1.outcome == 'failure'
+      uses: codecov/codecov-action@v3
+      continue-on-error: true
+      with:
+        files: ${{ inputs.file }}
+        env_vars: OS,PYTHON
+        fail_ci_if_error: true
+        flags: ${{ inputs.flags }}
+        name: codecov-umbrella
+        verbose: true
+
+    - name: "Waiting (attempt #3)"
+      if: steps.codecov-upload-2.outcome == 'failure'
+      shell: bash
+      run: sleep ${{ inputs.retry-delay }}
+
+    - name: "Upload to Codecov (attempt #3)"
+      id: codecov-upload-3
+      if: steps.codecov-upload-2.outcome == 'failure'
+      uses: codecov/codecov-action@v3
+      continue-on-error: false
+      with:
+        files: ${{ inputs.file }}
+        env_vars: OS,PYTHON
+        fail_ci_if_error: true
+        flags: ${{ inputs.flags }}
+        name: codecov-umbrella
+        verbose: true
