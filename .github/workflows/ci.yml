@@ -68,7 +68,7 @@ jobs:
       #     chmod +x codecov
       #     ./codecov --file coverage.xml --flags unittests-${{ matrix.python-version }}
 
-      - name: "Upload to Codecov"
+      - name: "Upload to Codecov "
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml
