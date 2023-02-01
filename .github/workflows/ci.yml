@@ -62,15 +62,21 @@ jobs:
       - name: Common tests
         uses: ./.github/actions/common-tests
 
-      - name: "Upload to Codecov (attempt #1)"
-        id: codecov-upload-1
-        uses: codecov/codecov-action@v3
-        continue-on-error: false
-        with:
-          files: ./coverage.xml
-          env_vars: OS,PYTHON
-          fail_ci_if_error: true
-          flags: unittests
-          name: codecov-umbrella
-          verbose: true
-          token: "${{ secrets.CODECOV_TOKEN }}"
+      - name: upload to codecov binary
+        run: |
+          curl --silent --show-error --output https://uploader.codecov.io/latest/linux/codecov
+          chmod +x codecov
+          ./codecov --file coverage.xml --flags unittests-{{ matrix.python-version }}
+
+      # - name: "Upload to Codecov (attempt #1)"
+      #   id: codecov-upload-1
+      #   uses: codecov/codecov-action@v3
+      #   continue-on-error: false
+      #   with:
+      #     files: ./coverage.xml
+      #     env_vars: OS,PYTHON
+      #     fail_ci_if_error: true
+      #     flags: unittests
+      #     name: codecov-umbrella
+      #     verbose: true
+      #     token: "${{ secrets.CODECOV_TOKEN }}"
