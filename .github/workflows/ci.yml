@@ -36,6 +36,8 @@ jobs:
 
       - name: black
         uses: psf/black@stable
+        with:
+          version: "22.12.0"
 
   common-tests:
     runs-on: ubuntu-latest

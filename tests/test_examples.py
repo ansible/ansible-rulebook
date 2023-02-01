@@ -24,6 +24,25 @@ from ansible_rulebook.util import load_inventory
 from .test_engine import load_rulebook, validate_events
 
 
+class SourceTask:
+    def __init__(self, source, source_dir, variables, queue):
+        self.source = source
+        self.source_dir = source_dir
+        self.variables = variables
+        self.queue = queue
+
+    def __enter__(self):
+        self.task = asyncio.create_task(
+            start_source(
+                self.source, [self.source_dir], self.variables, self.queue
+            )
+        )
+        return self.task
+
+    def __exit__(self, *args):
+        self.task.cancel()
+
+
 @pytest.mark.asyncio
 async def test_01_noop():
     ruleset_queues, event_log = load_rulebook("examples/01_noop.yml")
@@ -1184,27 +1203,23 @@ async def test_49_float():
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    source_task = asyncio.create_task(
-        start_source(rs.sources[0], ["sources"], {}, queue)
-    )
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "debug", "1"
-    assert event["matching_events"] == {"m": {"pi": 3.14159}}, "3"
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "3"
-    assert event["action"] == "debug", "4"
-    assert event["matching_events"] == {"m": {"mass": 5.97219}}, "5"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "7"
-    source_task.cancel()
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+        event = event_log.get_nowait()
+        assert event["type"] == "Action", "1"
+        assert event["action"] == "debug", "1"
+        assert event["matching_events"] == {"m": {"pi": 3.14159}}, "3"
+        event = event_log.get_nowait()
+        assert event["type"] == "Action", "3"
+        assert event["action"] == "debug", "4"
+        assert event["matching_events"] == {"m": {"mass": 5.97219}}, "5"
+        event = event_log.get_nowait()
+        assert event["type"] == "Shutdown", "7"
 
 
 @pytest.mark.asyncio
@@ -1213,31 +1228,27 @@ async def test_50_negation():
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    source_task = asyncio.create_task(
-        start_source(rs.sources[0], ["sources"], {}, queue)
-    )
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "print_event", "1"
-    assert event["matching_events"] == {"m": {"b": False}}, "1"
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "3"
-    assert event["action"] == "print_event", "3"
-    assert event["matching_events"] == {"m": {"bt": True}}, "3"
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "5"
-    assert event["action"] == "print_event", "5"
-    assert event["matching_events"] == {"m": {"i": 10}}, "5"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "7"
-    source_task.cancel()
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+        event = event_log.get_nowait()
+        assert event["type"] == "Action", "1"
+        assert event["action"] == "print_event", "1"
+        assert event["matching_events"] == {"m": {"b": False}}, "1"
+        event = event_log.get_nowait()
+        assert event["type"] == "Action", "3"
+        assert event["action"] == "print_event", "3"
+        assert event["matching_events"] == {"m": {"bt": True}}, "3"
+        event = event_log.get_nowait()
+        assert event["type"] == "Action", "5"
+        assert event["action"] == "print_event", "5"
+        assert event["matching_events"] == {"m": {"i": 10}}, "5"
+        event = event_log.get_nowait()
+        assert event["type"] == "Shutdown", "7"
 
 
 @pytest.mark.asyncio
@@ -1246,42 +1257,42 @@ async def test_51_vars_namespace():
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    source_task = asyncio.create_task(
-        start_source(rs.sources[0], ["sources"], {}, queue)
-    )
-    years = [2001, 2002, 2003, 2004]
-    address = dict(
-        street="123 Any Street", city="Bedrock", state="NJ", years_active=years
-    )
-    person = dict(
-        person=dict(
-            age=45,
-            name="Fred Flintstone",
-            active=True,
-            reliability=86.9,
-            address=address,
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        years = [2001, 2002, 2003, 2004]
+        address = dict(
+            street="123 Any Street",
+            city="Bedrock",
+            state="NJ",
+            years_active=years,
         )
-    )
+        person = dict(
+            person=dict(
+                age=45,
+                name="Fred Flintstone",
+                active=True,
+                reliability=86.9,
+                address=address,
+            )
+        )
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        person,
-        load_inventory("playbooks/inventory.yml"),
-    )
-    checks = {
-        "max_events": 6,
-        "shutdown_events": 1,
-        "actions": [
-            "51 vars namespace::str_test::echo",
-            "51 vars namespace::list_test::echo",
-            "51 vars namespace::bool_test::echo",
-            "51 vars namespace::int_test::echo",
-            "51 vars namespace::float_test::echo",
-        ],
-    }
-    validate_events(event_log, **checks)
-    source_task.cancel()
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            person,
+            load_inventory("playbooks/inventory.yml"),
+        )
+        checks = {
+            "max_events": 6,
+            "shutdown_events": 1,
+            "actions": [
+                "51 vars namespace::str_test::echo",
+                "51 vars namespace::list_test::echo",
+                "51 vars namespace::bool_test::echo",
+                "51 vars namespace::int_test::echo",
+                "51 vars namespace::float_test::echo",
+            ],
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1290,31 +1301,31 @@ async def test_51_vars_namespace_missing_key():
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    source_task = asyncio.create_task(
-        start_source(rs.sources[0], ["sources"], {}, queue)
-    )
-    years = [2001, 2002, 2003, 2004]
-    address = dict(
-        street="123 Any Street", city="Bedrock", state="NJ", years_active=years
-    )
-    person = dict(
-        person=dict(
-            name="Fred Flintstone",
-            active=True,
-            reliability=86.9,
-            address=address,
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        years = [2001, 2002, 2003, 2004]
+        address = dict(
+            street="123 Any Street",
+            city="Bedrock",
+            state="NJ",
+            years_active=years,
         )
-    )
+        person = dict(
+            person=dict(
+                name="Fred Flintstone",
+                active=True,
+                reliability=86.9,
+                address=address,
+            )
+        )
 
-    with pytest.raises(VarsKeyMissingException) as exc_info:
-        await run_rulesets(
-            event_log,
-            ruleset_queues,
-            person,
-            load_inventory("playbooks/inventory.yml"),
-        )
-    assert str(exc_info.value) == "vars does not contain key: person.age"
-    source_task.cancel()
+        with pytest.raises(VarsKeyMissingException) as exc_info:
+            await run_rulesets(
+                event_log,
+                ruleset_queues,
+                person,
+                load_inventory("playbooks/inventory.yml"),
+            )
+        assert str(exc_info.value) == "vars does not contain key: person.age"
 
 
 @pytest.mark.asyncio
@@ -1323,24 +1334,23 @@ async def test_52_once_within():
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    source_task = asyncio.create_task(
-        start_source(rs.sources[0], ["sources"], {}, queue)
-    )
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-
-    for i in range(2):
-        event = event_log.get_nowait()
-        assert event["type"] == "Action", f"{i}"
-        assert event["action"] == "debug", f"{i}"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "3"
-    source_task.cancel()
+        checks = {
+            "max_events": 3,
+            "shutdown_events": 1,
+            "actions": [
+                "52 once within::r1::debug",
+                "52 once within::r1::debug",
+            ],
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1351,26 +1361,23 @@ async def test_53_once_within_multiple_hosts():
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    source_task = asyncio.create_task(
-        start_source(rs.sources[0], ["sources"], {}, queue)
-    )
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "debug", "1"
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "3"
-    assert event["action"] == "debug", "3"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "6"
-    source_task.cancel()
+        checks = {
+            "max_events": 3,
+            "shutdown_events": 1,
+            "actions": [
+                "53 once within multiple hosts::r1::debug",
+                "53 once within multiple hosts::r1::debug",
+            ],
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1381,33 +1388,29 @@ async def test_54_time_window():
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    source_task = asyncio.create_task(
-        start_source(rs.sources[0], ["sources"], {}, queue)
-    )
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "print_event", "1"
-    assert event["matching_events"] == {
-        "m_1": {
-            "alert": {"code": 1002, "message": "Restarted"},
-            "event_index": 1,
-        },
-        "m_0": {
-            "alert": {"code": 1001, "message": "Applying maintenance"},
-            "event_index": 0,
-        },
-    }
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "6"
-    source_task.cancel()
+        event = event_log.get_nowait()
+        assert event["type"] == "Action", "1"
+        assert event["action"] == "print_event", "1"
+        assert event["matching_events"] == {
+            "m_1": {
+                "alert": {"code": 1002, "message": "Restarted"},
+                "event_index": 1,
+            },
+            "m_0": {
+                "alert": {"code": 1001, "message": "Applying maintenance"},
+                "event_index": 0,
+            },
+        }
+        event = event_log.get_nowait()
+        assert event["type"] == "Shutdown", "6"
 
 
 @pytest.mark.asyncio
@@ -1418,24 +1421,23 @@ async def test_55_not_all():
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    source_task = asyncio.create_task(
-        start_source(rs.sources[0], ["sources"], {}, queue)
-    )
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-
-    for i in range(2):
-        event = event_log.get_nowait()
-        assert event["type"] == "Action", f"{i}"
-        assert event["action"] == "echo", f"{i}"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "3"
-    source_task.cancel()
+        checks = {
+            "max_events": 3,
+            "shutdown_events": 1,
+            "actions": [
+                "55 not all::maint failed::echo",
+                "55 not all::maint failed::echo",
+            ],
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1446,52 +1448,45 @@ async def test_56_once_after():
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    source_task = asyncio.create_task(
-        start_source(rs.sources[0], ["sources"], {}, queue)
-    )
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "echo", "1"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "2"
-    source_task.cancel()
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "56 once after::r1::echo",
+            ],
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
 @pytest.mark.temporal
 @pytest.mark.long_run
-async def test_57_once_after_multi():
+async def test_57_once_after_multiple():
     ruleset_queues, event_log = load_rulebook(
         "examples/57_once_after_multi.yml"
     )
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    source_task = asyncio.create_task(
-        start_source(rs.sources[0], ["sources"], {}, queue)
-    )
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-
-    for i in range(6):
-        event = event_log.get_nowait()
-        assert event["type"] == "Action", f"{i}"
-        assert event["action"] == "echo", f"{i}"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "6"
-    source_task.cancel()
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+        checks = {
+            "max_events": 7,
+            "shutdown_events": 1,
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1500,24 +1495,26 @@ async def test_58_string_search():
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    source_task = asyncio.create_task(
-        start_source(rs.sources[0], ["sources"], {}, queue)
-    )
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-
-    for i in range(6):
-        event = event_log.get_nowait()
-        assert event["type"] == "Action", f"{i}"
-        assert event["action"] == "echo", f"{i}"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "6"
-    source_task.cancel()
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+        checks = {
+            "max_events": 7,
+            "shutdown_events": 1,
+            "actions": [
+                "58 String search::match::echo",
+                "58 String search::search::echo",
+                "58 String search::regex::echo",
+                "58 String search::not match::echo",
+                "58 String search::not search::echo",
+                "58 String search::not regex::echo",
+            ],
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1528,27 +1525,46 @@ async def test_59_multiple_actions():
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    source_task = asyncio.create_task(
-        start_source(rs.sources[0], ["sources"], {}, queue)
-    )
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+        checks = {
+            "max_events": 6,
+            "shutdown_events": 1,
+            "actions": [
+                "59 Multiple Actions::r1::debug",
+                "59 Multiple Actions::r1::print_event",
+                "59 Multiple Actions::r1::echo",
+                "59 Multiple Actions::r1::echo",
+                "59 Multiple Actions::r2::echo",
+            ],
+        }
+        validate_events(event_log, **checks)
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
 
-    checks = {
-        "max_events": 6,
-        "shutdown_events": 1,
-        "actions": [
-            "59 Multiple Actions::r1::debug",
-            "59 Multiple Actions::r1::print_event",
-            "59 Multiple Actions::r1::echo",
-            "59 Multiple Actions::r1::echo",
-            "59 Multiple Actions::r2::echo",
-        ],
-    }
-    validate_events(event_log, **checks)
-    source_task.cancel()
+@pytest.mark.asyncio
+async def test_60_json_filter():
+    ruleset_queues, event_log = load_rulebook("examples/60_json_filter.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "60 json filter::r1::echo",
+            ],
+        }
+        validate_events(event_log, **checks)

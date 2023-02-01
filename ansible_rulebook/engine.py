@@ -244,7 +244,7 @@ class RuleSetRunner:
         project_data_file: Optional[str] = None,
         parsed_args=None,
     ):
-        self.pa_runner = PlaybookActionRunner()
+        self.pa_runner = PlaybookActionRunner(event_log)
         self.pa_runner_task = None
         self.action_loop_task = None
         self.event_log = event_log
@@ -480,7 +480,8 @@ class PlaybookActionRunner:
     run_playbook, run_module, and run_job_template.
     """
 
-    def __init__(self):
+    def __init__(self, event_log):
+        self.event_log = event_log
         self.actions = asyncio.Queue()
         self.result = None
         self.stopped = True
