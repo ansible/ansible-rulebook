@@ -1548,3 +1548,31 @@ async def test_59_multiple_actions():
     }
     validate_events(event_log, **checks)
     source_task.cancel()
+
+
+@pytest.mark.asyncio
+async def test_60_json_filter():
+    ruleset_queues, event_log = load_rulebook("examples/60_json_filter.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    source_task = asyncio.create_task(
+        start_source(rs.sources[0], ["sources"], {}, queue)
+    )
+
+    await run_rulesets(
+        event_log,
+        ruleset_queues,
+        dict(),
+        load_inventory("playbooks/inventory.yml"),
+    )
+
+    checks = {
+        "max_events": 2,
+        "shutdown_events": 1,
+        "actions": [
+            "60 json filter::r1::echo",
+        ],
+    }
+    validate_events(event_log, **checks)
+    source_task.cancel()
