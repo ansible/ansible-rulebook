@@ -32,10 +32,10 @@
               name: playbooks/validate_args_playbook.yml
               extra_vars:
                 my_vars:
-                  fact.alpha: 1
-                  fact.beta.location: "{{ Naboo }}"
-                  fact.beta.name: R2D2
-                  fact.msg: hello world
+                  event.alpha: 1
+                  event.beta.location: "{{ Naboo }}"
+                  event.beta.name: R2D2
+                  event.msg: hello world
         condition:
           AllCondition:
           - EqualsExpression:

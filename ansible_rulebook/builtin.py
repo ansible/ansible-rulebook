@@ -834,9 +834,5 @@ def _collect_extra_vars(
         eda_vars["events"] = variables["events"]
     if "event" in variables:
         eda_vars["event"] = variables["event"]
-    if "facts" in variables:
-        eda_vars["facts"] = variables["events"]
-    if "fact" in variables:
-        eda_vars["fact"] = variables["event"]
     extra_vars[KEY_EDA_VARS] = eda_vars
     return extra_vars

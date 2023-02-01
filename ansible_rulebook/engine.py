@@ -385,14 +385,12 @@ class RuleSetRunner:
                 variables_copy = variables.copy()
                 if single_match is not None:
                     variables_copy["event"] = single_match
-                    variables_copy["fact"] = single_match
                     event = single_match
                     if "meta" in event:
                         if "hosts" in event["meta"]:
                             hosts = parse_hosts(event["meta"]["hosts"])
                 else:
                     variables_copy["events"] = multi_match
-                    variables_copy["facts"] = multi_match
                     new_hosts = []
                     for event in variables_copy["events"].values():
                         if "meta" in event:

@@ -23,8 +23,8 @@
           name: playbooks/validate_args_playbook.yml
           extra_vars:
             my_vars:
-              fact.msg: hello world
-              fact.alpha: 1
-              fact.beta.name: R2D2
-              fact.beta.location: "{{ Naboo }}"
+              event.msg: hello world
+              event.alpha: 1
+              event.beta.name: R2D2
+              event.beta.location: "{{ Naboo }}"
           copy_files: True
