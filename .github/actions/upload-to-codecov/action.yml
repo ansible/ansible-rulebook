@@ -34,39 +34,40 @@ runs:
         flags: ${{ inputs.flags }}
         name: codecov-umbrella
         verbose: true
+        token: ${{ secrets.CODECOV_TOKEN }}
 
-    - name: "Waiting (attempt #2)"
-      if: steps.codecov-upload-1.outcome == 'failure'
-      shell: bash
-      run: sleep ${{ inputs.retry-delay }}
+    # - name: "Waiting (attempt #2)"
+    #   if: steps.codecov-upload-1.outcome == 'failure'
+    #   shell: bash
+    #   run: sleep ${{ inputs.retry-delay }}
 
-    - name: "Upload to Codecov (attempt #2)"
-      id: codecov-upload-2
-      if: steps.codecov-upload-1.outcome == 'failure'
-      uses: codecov/codecov-action@v3
-      continue-on-error: true
-      with:
-        files: ${{ inputs.file }}
-        env_vars: OS,PYTHON
-        fail_ci_if_error: true
-        flags: ${{ inputs.flags }}
-        name: codecov-umbrella
-        verbose: true
+    # - name: "Upload to Codecov (attempt #2)"
+    #   id: codecov-upload-2
+    #   if: steps.codecov-upload-1.outcome == 'failure'
+    #   uses: codecov/codecov-action@v3
+    #   continue-on-error: true
+    #   with:
+    #     files: ${{ inputs.file }}
+    #     env_vars: OS,PYTHON
+    #     fail_ci_if_error: true
+    #     flags: ${{ inputs.flags }}
+    #     name: codecov-umbrella
+    #     verbose: true
 
-    - name: "Waiting (attempt #3)"
-      if: steps.codecov-upload-2.outcome == 'failure'
-      shell: bash
-      run: sleep ${{ inputs.retry-delay }}
+    # - name: "Waiting (attempt #3)"
+    #   if: steps.codecov-upload-2.outcome == 'failure'
+    #   shell: bash
+    #   run: sleep ${{ inputs.retry-delay }}
 
-    - name: "Upload to Codecov (attempt #3)"
-      id: codecov-upload-3
-      if: steps.codecov-upload-2.outcome == 'failure'
-      uses: codecov/codecov-action@v3
-      continue-on-error: false
-      with:
-        files: ${{ inputs.file }}
-        env_vars: OS,PYTHON
-        fail_ci_if_error: true
-        flags: ${{ inputs.flags }}
-        name: codecov-umbrella
-        verbose: true
+    # - name: "Upload to Codecov (attempt #3)"
+    #   id: codecov-upload-3
+    #   if: steps.codecov-upload-2.outcome == 'failure'
+    #   uses: codecov/codecov-action@v3
+    #   continue-on-error: false
+    #   with:
+    #     files: ${{ inputs.file }}
+    #     env_vars: OS,PYTHON
+    #     fail_ci_if_error: true
+    #     flags: ${{ inputs.flags }}
+    #     name: codecov-umbrella
+    #     verbose: true
