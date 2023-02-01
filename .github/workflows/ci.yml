@@ -64,7 +64,7 @@ jobs:
 
       - name: upload to codecov binary
         run: |
-          curl --silent --show-error --output https://uploader.codecov.io/latest/linux/codecov
+          curl --silent --show-error --output codecov https://uploader.codecov.io/latest/linux/codecov
           chmod +x codecov
           ./codecov --file coverage.xml --flags unittests-{{ matrix.python-version }}
 
