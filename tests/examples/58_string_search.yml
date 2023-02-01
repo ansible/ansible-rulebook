@@ -1,5 +1,5 @@
 ---
-- name: 58 String searches
+- name: 58 String search
   hosts: all
   sources:
     - name: generic
