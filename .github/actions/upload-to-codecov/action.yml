@@ -26,7 +26,7 @@ runs:
     - name: "Upload to Codecov (attempt #1)"
       id: codecov-upload-1
       uses: codecov/codecov-action@v3
-      continue-on-error: true
+      continue-on-error: false
       with:
         files: ${{ inputs.file }}
         env_vars: OS,PYTHON
