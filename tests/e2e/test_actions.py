@@ -93,5 +93,5 @@ def test_actions_sanity():
     assert "Echo action executed" in result.stdout
 
     assert (
-        len(result.stdout.splitlines()) == 42
+        len(result.stdout.splitlines()) == 45
     ), "unexpected output from the rulebook"
