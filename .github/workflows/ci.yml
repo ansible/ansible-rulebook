@@ -66,7 +66,7 @@ jobs:
         run: |
           curl --silent --show-error --output codecov https://uploader.codecov.io/latest/linux/codecov
           chmod +x codecov
-          ./codecov --file coverage.xml --flags unittests-{{ matrix.python-version }}
+          ./codecov --file coverage.xml --flags unittests-${{ matrix.python-version }}
 
       # - name: "Upload to Codecov (attempt #1)"
       #   id: codecov-upload-1
