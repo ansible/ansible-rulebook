@@ -103,7 +103,7 @@ run_job_template
 Run a job template.
 
 .. note::
-    ``--controller_url`` and ``--controller_token`` cmd options must be provided to use this action
+    ``--controller-url`` and ``--controller-token`` cmd options must be provided to use this action
 
 .. list-table::
    :widths: 25 150 10
