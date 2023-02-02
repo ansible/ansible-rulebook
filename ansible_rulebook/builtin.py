@@ -52,7 +52,6 @@ async def none(
     inventory: Dict,
     hosts: List,
     variables: Dict,
-    facts: Dict,
     project_data_file: str,
     source_ruleset_name: str,
     source_rule_name: str,
@@ -99,7 +98,6 @@ async def print_event(
     inventory: Dict,
     hosts: List,
     variables: Dict,
-    facts: Dict,
     project_data_file: str,
     source_ruleset_name: str,
     source_rule_name: str,
@@ -140,7 +138,6 @@ async def echo(
     inventory: Dict,
     hosts: List,
     variables: Dict,
-    facts: Dict,
     project_data_file: str,
     source_ruleset_name: str,
     source_rule_name: str,
@@ -173,7 +170,6 @@ async def set_fact(
     inventory: Dict,
     hosts: List,
     variables: Dict,
-    facts: Dict,
     project_data_file: str,
     source_ruleset_name: str,
     source_rule_name: str,
@@ -202,7 +198,6 @@ async def retract_fact(
     inventory: Dict,
     hosts: List,
     variables: Dict,
-    facts: Dict,
     project_data_file: str,
     source_ruleset_name: str,
     source_rule_name: str,
@@ -230,7 +225,6 @@ async def post_event(
     inventory: Dict,
     hosts: List,
     variables: Dict,
-    facts: Dict,
     project_data_file: str,
     source_ruleset_name: str,
     source_rule_name: str,
@@ -257,7 +251,6 @@ async def run_playbook(
     inventory: Dict,
     hosts: List,
     variables: Dict,
-    facts: Dict,
     project_data_file: str,
     source_ruleset_name: str,
     source_rule_name: str,
@@ -281,7 +274,6 @@ async def run_playbook(
         event_log,
         inventory,
         variables,
-        facts,
         name,
         "run_playbook",
         var_root,
@@ -356,7 +348,6 @@ async def run_module(
     inventory: Dict,
     hosts: List,
     variables: Dict,
-    facts: Dict,
     project_data_file: str,
     source_ruleset_name: str,
     source_rule_name: str,
@@ -380,7 +371,6 @@ async def run_module(
         event_log,
         inventory,
         variables,
-        facts,
         name,
         "run_module",
         var_root,
@@ -541,7 +531,6 @@ async def pre_process_runner(
     event_log,
     inventory: Dict,
     variables: Dict,
-    facts: Dict,
     name: str,
     action: str,
     var_root: Union[str, Dict, None] = None,
@@ -555,9 +544,7 @@ async def pre_process_runner(
     private_data_dir = tempfile.mkdtemp(prefix=action)
     logger.debug("private data dir %s", private_data_dir)
     logger.debug("variables %s", variables)
-    logger.debug("facts %s", facts)
 
-    variables["facts"] = facts
     for k, v in kwargs.items():
         variables[k] = v
 
@@ -663,7 +650,6 @@ async def run_job_template(
     inventory: Dict,
     hosts: List,
     variables: Dict,
-    facts: Dict,
     project_data_file: str,
     source_ruleset_name: str,
     source_rule_name: str,
@@ -784,7 +770,6 @@ async def shutdown(
     inventory: Dict,
     hosts: List,
     variables: Dict,
-    facts: Dict,
     project_data_file: str,
     source_ruleset_name: str,
     source_rule_name: str,

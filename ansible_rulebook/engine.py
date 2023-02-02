@@ -318,7 +318,6 @@ class RuleSetRunner:
                     action_item.variables,
                     action_item.inventory,
                     action_item.hosts,
-                    action_item.facts,
                     action_item.rule_engine_results,
                 )
 
@@ -333,7 +332,6 @@ class RuleSetRunner:
         variables: Dict,
         inventory: Dict,
         hosts: List,
-        facts: Dict,
         rules_engine_result,
     ) -> None:
 
@@ -384,10 +382,6 @@ class RuleSetRunner:
                 }
                 logger.info("action args: %s", action_args)
 
-                if facts is None:
-                    facts = lang.get_facts(ruleset)
-                    logger.info("facts: %s", facts)
-
                 if "ruleset" not in action_args:
                     action_args["ruleset"] = ruleset
 
@@ -396,7 +390,6 @@ class RuleSetRunner:
                     action_args["inventory"] = inventory
                     action_args["hosts"] = hosts
                     action_args["variables"] = variables_copy
-                    action_args["facts"] = facts
                     action_args["project_data_file"] = self.project_data_file
                     action_args["source_ruleset_name"] = ruleset
                     action_args["source_rule_name"] = rule
@@ -409,7 +402,6 @@ class RuleSetRunner:
                         inventory=inventory,
                         hosts=hosts,
                         variables=variables_copy,
-                        facts=facts,
                         project_data_file=self.project_data_file,
                         source_ruleset_name=ruleset,
                         source_rule_name=rule,
