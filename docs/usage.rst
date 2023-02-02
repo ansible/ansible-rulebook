@@ -23,9 +23,13 @@ The `ansible-rulebook` CLI supports the following options::
     --project-tarball PROJECT_TARBALL
                             A tarball of the project
     --controller-url CONTROLLER_URL
-                            Controller API base url, e.g. http://host1:8080
+                            Controller API base url, e.g. https://host1:8080
     --controller-token CONTROLLER_TOKEN
                             Controller API authentication token
+    --controller-ssl-verify
+                            How to verify SSL when connecting to the
+                            controller, yes|no|<path to a CA bundle>,
+                            default to yes for https connection
     --print-events        Print events to stdout, disabled if used with --debug
 
 To get help from `ansible-rulebook` run the following:

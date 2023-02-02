@@ -2,7 +2,9 @@ import asyncio
 import json
 import logging
 import os
-from typing import Any, Callable
+import ssl
+from functools import cached_property
+from typing import Any, Callable, Union
 from urllib.parse import parse_qsl, quote, urljoin, urlparse
 
 import aiohttp
@@ -32,9 +34,12 @@ class JobTemplateRunner:
     VALID_POST_CODES = [200, 201, 202]
     JOB_COMPLETION_STATUSES = ["successful", "failed", "error", "canceled"]
 
-    def __init__(self, host: str = "", token: str = ""):
+    def __init__(
+        self, host: str = "", token: str = "", verify_ssl: str = "yes"
+    ):
         self.token = token
         self.host = host
+        self.verify_ssl = verify_ssl
         self.refresh_delay = int(
             os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10)
         )
@@ -43,7 +48,9 @@ class JobTemplateRunner:
         self, session: aiohttp.ClientSession, href_slug: str, params: dict
     ) -> dict:
         url = urljoin(self.host, href_slug)
-        async with session.get(url, params=params) as response:
+        async with session.get(
+            url, params=params, ssl=self._sslcontext
+        ) as response:
             response_text = dict(
                 status=response.status, body=await response.text()
             )
@@ -60,6 +67,15 @@ class JobTemplateRunner:
 
     def _auth_headers(self) -> dict:
         return dict(Authorization=f"Bearer {self.token}")
+
+    @cached_property
+    def _sslcontext(self) -> Union[bool, ssl.SSLContext]:
+        if self.host.startswith("https"):
+            if self.verify_ssl.lower() == "yes":
+                return True
+            elif not self.verify_ssl.lower() == "no":
+                return ssl.create_default_context(cafile=self.verify_ssl)
+        return False
 
     async def run_job_template(
         self,
@@ -118,7 +134,9 @@ class JobTemplateRunner:
         async with aiohttp.ClientSession(
             headers=self._auth_headers()
         ) as session:
-            async with session.post(url, json=job_params) as post_response:
+            async with session.post(
+                url, json=job_params, ssl=self._sslcontext
+            ) as post_response:
                 response = dict(
                     status=post_response.status,
                     body=await post_response.text(),
