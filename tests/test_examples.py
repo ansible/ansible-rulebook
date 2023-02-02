@@ -1016,64 +1016,67 @@ async def test_38_shutdown_action():
 @pytest.mark.asyncio
 async def test_40_in():
     ruleset_queues, event_log = load_rulebook("examples/40_in.yml")
-
     queue = ruleset_queues[0][1]
-    queue.put_nowait(dict(i=1))
-    queue.put_nowait(Shutdown())
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "debug", "1"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "3"
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "40 in::r1::debug",
+            ],
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
 async def test_41_not_in():
     ruleset_queues, event_log = load_rulebook("examples/41_not_in.yml")
-
     queue = ruleset_queues[0][1]
-    queue.put_nowait(dict(i=1))
-    queue.put_nowait(Shutdown())
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "debug", "1"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "3"
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "41 not in::r1::debug",
+            ],
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
 async def test_42_contains():
     ruleset_queues, event_log = load_rulebook("examples/42_contains.yml")
-
     queue = ruleset_queues[0][1]
-    queue.put_nowait(dict(id_list=[1, 2, 3]))
-    queue.put_nowait(Shutdown())
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "debug", "1"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "3"
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "42 contains::r1::debug",
+            ],
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1081,45 +1084,44 @@ async def test_43_not_contains():
     ruleset_queues, event_log = load_rulebook("examples/43_not_contains.yml")
 
     queue = ruleset_queues[0][1]
-    queue.put_nowait(dict(id_list=[1, 2, 3]))
-    queue.put_nowait(Shutdown())
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "debug", "1"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "3"
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "43 not contains::r1::debug",
+            ],
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
 async def test_44_in_and():
     ruleset_queues, event_log = load_rulebook("examples/44_in_and.yml")
-
     queue = ruleset_queues[0][1]
-    queue.put_nowait(dict(i=0))
-    queue.put_nowait(dict(i=1))
-    queue.put_nowait(dict(i=2))
-    queue.put_nowait(dict(i=3))
-    queue.put_nowait(dict(i=4))
-    queue.put_nowait(Shutdown())
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "debug", "1"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "3"
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "44 in and::r1::debug",
+            ],
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1127,49 +1129,48 @@ async def test_45_in_or():
     ruleset_queues, event_log = load_rulebook("examples/45_in_or.yml")
 
     queue = ruleset_queues[0][1]
-    queue.put_nowait(dict(i=4))
-    queue.put_nowait(dict(i=8))
-    queue.put_nowait(Shutdown())
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "debug", "1"
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "3"
-    assert event["action"] == "debug", "3"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "5"
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+        checks = {
+            "max_events": 5,
+            "shutdown_events": 1,
+            "actions": [
+                "45 in or::r1::debug",
+                "45 in or::r1::debug",
+                "45 in or::r1::debug",
+                "45 in or::r1::debug",
+            ],
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
 async def test_47_generic_plugin():
     ruleset_queues, event_log = load_rulebook("examples/47_generic_plugin.yml")
-
     queue = ruleset_queues[0][1]
-    queue.put_nowait(dict(i=42))
-    queue.put_nowait(dict(b=True))
-    queue.put_nowait(Shutdown())
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "print_event", "1"
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "3"
-    assert event["action"] == "print_event", "3"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "5"
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+        checks = {
+            "max_events": 3,
+            "shutdown_events": 1,
+            "actions": [
+                "47 Generic Plugin::r1::print_event",
+                "47 Generic Plugin::r2::print_event",
+            ],
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1177,20 +1178,22 @@ async def test_48_echo():
     ruleset_queues, event_log = load_rulebook("examples/48_echo.yml")
 
     queue = ruleset_queues[0][1]
-    queue.put_nowait(dict(i=1))
-    queue.put_nowait(Shutdown())
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "echo", "1"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "5"
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "48 echo::r1::echo",
+            ],
+        }
+        validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio

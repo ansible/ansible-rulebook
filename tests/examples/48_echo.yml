@@ -1,5 +1,5 @@
 ---
-- name: 53 echo
+- name: 48 echo
   hosts: all
   sources:
     - name: range
