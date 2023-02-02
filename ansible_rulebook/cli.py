@@ -33,8 +33,11 @@ Options:
     --id=<i>                    Identifier
     --worker                    Enable worker mode
     --project-tarball=<p>       Project tarball
-    --controller_url=<u>        Controller API base url, e.g. http://host1:8080
-    --controller_token=<t>      Controller API authentication token
+    --controller-url=<u>        Controller API base url, e.g. http://host1:8080
+    --controller-token=<t>      Controller API authentication token
+    --controller-ssl-verify=<v> How to verify SSL when connecting to the
+                                controller, yes|no|<path to a CA bundle>,
+                                default to yes for https connection
 """
 import argparse
 import asyncio
@@ -120,11 +123,17 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--controller-url",
-        help="Controller API base url, e.g. http://host1:8080",
+        help="Controller API base url, e.g. https://host1:8080",
     )
     parser.add_argument(
         "--controller-token",
         help="Controller API authentication token",
+    )
+    parser.add_argument(
+        "--controller-ssl-verify",
+        help="How to verify SSL when connecting to the "
+        "controller, yes|no|<path to a CA bundle>, "
+        "default to yes for https connection",
     )
     parser.add_argument(
         "--print-events",
@@ -186,6 +195,8 @@ def main(args: List[str] = None) -> int:
         if args.controller_token:
             job_template_runner.host = args.controller_url
             job_template_runner.token = args.controller_token
+            if args.controller_ssl_verify:
+                job_template_runner.verify_ssl = args.controller_ssl_verify
         else:
             print("Error: controller_token is required")
             return 1
