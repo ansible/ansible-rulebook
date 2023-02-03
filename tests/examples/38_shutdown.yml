@@ -10,3 +10,5 @@
       condition: event.i == 1
       action:
         shutdown:
+          delay: 1.1845
+          message: My rule has triggered a shutdown

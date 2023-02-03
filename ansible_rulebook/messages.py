@@ -16,5 +16,6 @@ from typing import NamedTuple
 
 
 class Shutdown(NamedTuple):
-
-    pass
+    message: str = "Not specified"
+    delay: float = 0.0
+    source_plugin: str = ""

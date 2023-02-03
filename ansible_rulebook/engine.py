@@ -155,16 +155,32 @@ async def start_source(
             raise Exception("Entrypoint is not a coroutine function.")
 
         await entrypoint(fqueue, args)
+        shutdown_msg = (
+            f"Source {source.source_name} initiated shutdown at "
+            f"{str(datetime.now())}"
+        )
 
     except KeyboardInterrupt:
+        shutdown_msg = (
+            f"Source {source.source_name} keyboard interrupt, "
+            f"initiated shutdown at {str(datetime.now())}"
+        )
         pass
     except asyncio.CancelledError:
-        logger.info("Task cancelled")
-    except BaseException:
+        shutdown_msg = (
+            f"Source {source.source_name} task cancelled, "
+            "initiated shutdown at {str(datetime.now())}"
+        )
+        logger.info("Task cancelled " + shutdown_msg)
+    except BaseException as e:
         logger.exception("Source error")
+        shutdown_msg = (
+            f"Shutting down source: {source.source_name} error : {e}"
+        )
+        logger.error(shutdown_msg)
         raise
     finally:
-        await queue.put(Shutdown())
+        await queue.put(Shutdown(shutdown_msg, 0.0, source.source_name))
 
 
 async def run_rulesets(
@@ -252,7 +268,7 @@ class RuleSetRunner:
         source_loop_task = asyncio.create_task(self._drain_source_queue())
         await asyncio.wait([source_loop_task])
 
-    async def _stop(self):
+    async def _stop(self, obj):
         # Wait for items in queues to be completed. Mainly for spec tests.
         await asyncio.sleep(0.01)
 
@@ -266,7 +282,14 @@ class RuleSetRunner:
             pass
 
         await asyncio.wait([self.pa_runner_task, self.action_loop_task])
-        await self.event_log.put(dict(type="Shutdown"))
+        await self.event_log.put(
+            dict(
+                type="Shutdown",
+                message=obj.message,
+                delay=obj.delay,
+                source_plugin=obj.source_plugin,
+            )
+        )
         lang.end_session(self.name)
 
     async def _drain_source_queue(self):
@@ -279,7 +302,8 @@ class RuleSetRunner:
             logger.debug("Received event : " + str(data))
             json_count(data)
             if isinstance(data, Shutdown):
-                await self._stop()
+                logger.info("Shutdown message received: " + str(data))
+                await self._stop(data)
                 logger.info("Stopped waiting on events from %s", self.name)
                 return
             if not data:

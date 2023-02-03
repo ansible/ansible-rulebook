@@ -997,6 +997,10 @@ async def test_38_shutdown_action():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "shutdown", "1"
+    assert event["message"] == "My rule has triggered a shutdown"
+    assert event["delay"] == 1.1845
+    assert event["ruleset"] == "Test shutdown action"
+    assert event["rule"] == "Host 1 rule"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "2"
 

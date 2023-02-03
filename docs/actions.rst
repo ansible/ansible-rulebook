@@ -317,8 +317,21 @@ Example with multiple event match:
 
 shutdown
 ********
+.. list-table:: Shutdown ansible-rulebook
+   :widths: 25 150 10
+   :header-rows: 1
 
-| Generate a shutdown event which will terminate the rulebook engine. If there are multiple
+   * - Name
+     - Description
+     - Required
+   * - delay
+     - A numeric value about how long to wait before shutting down, default 0.0
+     - No
+   * - message
+     - A message to be associated with this shutdown 
+     - No
+
+| Generate a shutdown event which will terminate the ansible-rulebook process.
 | If there are multiple rule-sets running in your rule book, issuing a shutdown will cause
 | all other rule-sets to end, care needs to be taken to account for running playbooks which
 | can be impacted when one of the rule set decides to shutdown.
@@ -331,6 +344,8 @@ Example:
        condition: event.i >= 5
        action:
           shutdown:
+            delay: 0.125
+            message: Shutting down after 5 events
 
 Results
 *******

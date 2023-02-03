@@ -385,7 +385,12 @@
             "type": "object",
             "properties": {
                 "shutdown": {
-                    "type": ["object","null"]
+                    "type": ["object","null"],
+                    "properties": {
+                        "delay": {"type": "number" },
+                        "message": {"type": "string" }
+                    },
+                    "additionalProperties": false
                 }
             },
             "required": [
