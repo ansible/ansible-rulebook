@@ -4,7 +4,7 @@
   sources:
     - name: range
       range:
-        limit: 5
+        limit: 1
   rules:
     - name: r1
       condition: event.i not in [11,21,31,41]

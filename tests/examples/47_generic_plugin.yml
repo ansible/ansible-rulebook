@@ -1,5 +1,5 @@
 ---
-- name: 47 Generic Plugin with boolean and integer test
+- name: 47 Generic Plugin
   hosts: all
   sources:
     - name: generic
@@ -9,7 +9,7 @@
            - i: 42
   rules:
     - name: r1
-      condition: event.b == true
+      condition: event.b
       action:
         print_event:
     - name: r2
