@@ -36,3 +36,8 @@ class ControllerApiException(Exception):
 class VarsKeyMissingException(Exception):
 
     pass
+
+
+class InvalidAssignmentException(Exception):
+
+    pass
