@@ -149,7 +149,6 @@ all_terms = (
 condition = infix_notation(
     all_terms,
     [
-        ("not", 1, OpAssoc.RIGHT, lambda toks: NegateExpression(*toks[0])),
         (
             one_of("* /"),
             2,
@@ -208,6 +207,7 @@ condition = infix_notation(
             OpAssoc.LEFT,
             lambda toks: OperatorExpressionFactory(toks[0]),
         ),
+        ("not", 1, OpAssoc.RIGHT, lambda toks: NegateExpression(*toks[0])),
         (
             one_of(["and", "or"]),
             2,

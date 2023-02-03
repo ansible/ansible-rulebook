@@ -30,7 +30,10 @@ from ansible_rulebook.condition_types import (
     SearchType,
     String,
 )
-from ansible_rulebook.exception import VarsKeyMissingException
+from ansible_rulebook.exception import (
+    InvalidAssignmentException,
+    VarsKeyMissingException,
+)
 from ansible_rulebook.rule_types import (
     Action,
     Condition as RuleCondition,
@@ -119,6 +122,9 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
             value=visit_condition(parsed_condition.value, variables),
         )
     elif isinstance(parsed_condition, OperatorExpression):
+        if parsed_condition.operator == "<<":
+            validate_assignment_expression(parsed_condition.left.value)
+
         if parsed_condition.operator in OPERATOR_MNEMONIC:
             return create_binary_node(
                 OPERATOR_MNEMONIC[parsed_condition.operator],
@@ -281,3 +287,22 @@ def visit_ruleset(ruleset: RuleSet, variables: Dict):
 def generate_dict_rulesets(ruleset: List[RuleSet], variables: Dict):
     """Generate JSON compatible rulesets."""
     return [visit_ruleset(ruleset, variables) for ruleset in ruleset]
+
+
+def validate_assignment_expression(value):
+    tokens = value.split(".")
+    if len(tokens) != 2:
+        msg = (
+            f"Assignment variable: {value} is invalid."
+            + "Valid values start with events or facts. e.g events.var1 "
+            + "or facts.var1 "
+            + "Where var1 can only contain alpha numeric and _ charachters"
+        )
+        raise InvalidAssignmentException(msg)
+
+    if tokens[0] not in ["events", "facts"]:
+        msg = (
+            "Only events and facts can be used in assignment. "
+            + f"{value} is invalid."
+        )
+        raise InvalidAssignmentException(msg)

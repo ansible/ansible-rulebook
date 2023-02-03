@@ -18,6 +18,7 @@ import pytest
 import yaml
 
 from ansible_rulebook.condition_parser import parse_condition
+from ansible_rulebook.exception import InvalidAssignmentException
 from ansible_rulebook.json_generator import (
     generate_dict_rulesets,
     visit_condition,
@@ -418,3 +419,18 @@ def test_generate_dict_ruleset(rulebook):
         ast = yaml.safe_load(f.read())
 
     assert ruleset == ast
+
+
+def test_invalid_assignment_operator():
+    with pytest.raises(InvalidAssignmentException):
+        visit_condition(
+            parse_condition("event.first << fact.range.i == 'Hello'"), {}
+        )
+
+
+def test_invalid_nested_assignment_operator():
+    with pytest.raises(InvalidAssignmentException):
+        visit_condition(
+            parse_condition("events.first.abc.xyz << fact.range.i == 'Hello'"),
+            {},
+        )

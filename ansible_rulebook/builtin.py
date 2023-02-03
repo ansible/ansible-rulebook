@@ -76,6 +76,9 @@ async def debug(event_log, **kwargs):
     print("kwargs:")
     pprint(kwargs)
     print(get_horizontal_rule("="))
+    print("facts:")
+    pprint(lang.get_facts(kwargs["source_ruleset_name"]))
+    print(get_horizontal_rule("="))
     sys.stdout.flush()
     await event_log.put(
         dict(

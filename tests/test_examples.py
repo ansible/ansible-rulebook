@@ -1248,7 +1248,15 @@ async def test_50_negation():
         assert event["action"] == "print_event", "5"
         assert event["matching_events"] == {"m": {"i": 10}}, "5"
         event = event_log.get_nowait()
-        assert event["type"] == "Shutdown", "7"
+        assert event["type"] == "Action", "6"
+        assert event["action"] == "print_event", "6"
+        assert event["matching_events"] == {"m": {"msg": "Fred"}}, "6"
+        event = event_log.get_nowait()
+        assert event["type"] == "Action", "7"
+        assert event["action"] == "print_event", "7"
+        assert event["matching_events"] == {"m": {"j": 9}}, "7"
+        event = event_log.get_nowait()
+        assert event["type"] == "Shutdown", "8"
 
 
 @pytest.mark.asyncio
