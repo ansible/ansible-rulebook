@@ -57,8 +57,7 @@ def test_actions_sanity():
         "{'action': 'print_event'}" in result.stdout
     ), "print_event action failed"
 
-    event_debug_expected_output = """{'facts': {},
- 'hosts': ['all'],
+    event_debug_expected_output = """{'hosts': ['all'],
  'inventory': {'all': {'hosts': {'localhost': {'ansible_connection': 'local'}}}},
  'project_data_file': None,
  'ruleset': 'Test actions sanity',
@@ -93,5 +92,5 @@ def test_actions_sanity():
     assert "Echo action executed" in result.stdout
 
     assert (
-        len(result.stdout.splitlines()) == 45
+        len(result.stdout.splitlines()) == 44
     ), "unexpected output from the rulebook"
