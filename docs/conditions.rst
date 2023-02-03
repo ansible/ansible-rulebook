@@ -380,9 +380,9 @@ Negation Example
 | In this example the boolean expression is evaluated first and then negated.
 
 .. note::
-    ``not`` operator can work without parenthesis when the value is a boolean, E.g ``condition: not event.disabled``
+    ``not`` operator can work without parenthesis when the value is a single logical statement
 
-    In the rest of the cases the expression must be enclosed in parenthesis. E.g ``condition: not (event.i == 4)``
+    If there are multiple logical statements with **or** or **and** please use round brackets like shown above.
 
 
 Adding time constraints for rules with multiple conditions
