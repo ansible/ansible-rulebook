@@ -711,37 +711,25 @@ async def test_26_print_events():
 @pytest.mark.asyncio
 async def test_27_var_root():
     ruleset_queues, event_log = load_rulebook("examples/27_var_root.yml")
-
     queue = ruleset_queues[0][1]
-    queue.put_nowait(
-        dict(
-            webhook=dict(
-                payload=dict(url="http://www.example.com", action="merge")
-            )
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
         )
-    )
-    queue.put_nowait(
-        dict(kafka=dict(message=dict(topic="testing", channel="red")))
-    )
-    queue.put_nowait(Shutdown())
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        dict(),
-    )
-
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "print_event", "2"
-    assert event["matching_events"] == {
-        "webhook": {"url": "http://www.example.com", "action": "merge"},
-        "kafka": {"topic": "testing", "channel": "red"},
-    }
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "7"
-    assert event_log.empty()
+        event = event_log.get_nowait()
+        assert event["type"] == "Action", "1"
+        assert event["action"] == "print_event", "2"
+        assert event["matching_events"] == {
+            "webhook": {"url": "http://www.example.com", "action": "merge"},
+            "kafka": {"topic": "testing", "channel": "red"},
+        }
+        event = event_log.get_nowait()
+        assert event["type"] == "Shutdown", "7"
+        assert event_log.empty()
 
 
 @pytest.mark.asyncio

@@ -2,9 +2,17 @@
 - name: 27 multiple events all with var_root
   hosts: all
   sources:
-    - name: range
-      range:
-        limit: 5
+    - name: generic
+      generic:
+        payload:
+          - webhook:
+              payload:
+                url: http://www.example.com
+                action: merge
+          - kafka:
+              message:
+                topic: testing
+                channel: red
   rules:
     - name: r1
       condition:
