@@ -11,31 +11,35 @@ Requirements
 * Python >= 3.8
 * Python 3 pip
 
-  * Fedora: python3-devel
-  * Ubuntu: python3-dev
-
 * Java development kit >= 17
 
   * Fedora: java-17-openjdk
   * Ubuntu: openjdk-17-jdk
 
-* Maven >=3.8
 
 Installation via pip
 --------------------
+
 
 1. Ensure the `JAVA_HOME` environment variable is set if you have multiple Java installations.
 On Fedora-like systems it should be::
 
     JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 
+
 2. Install `ansible-rulebook` and dependencies via `pip`::
 
-    pip install wheel ansible-rulebook ansible ansible-runner
+    pip install ansible-rulebook ansible ansible-runner
 
-3. Install the required Ansible collections::
+.. note::
 
-    ansible-galaxy collection install community.general ansible.eda
+    ansible-rulebook relies on the `jpy` Python package to communicate with the Java runtime. This package provide wheels for the most common platforms,
+    `but not for all <https://github.com/jpy-consortium/jpy#automated-builds>`_. If you are using a platform that is not supported by `jpy` wheels, you will need to compile it by yourself.
+    Look at the `Compiling jpy section <#compiling-jpy>`_ for more information.
+
+
+3. Install the `optional ansible collection <https://github.com/ansible/event-driven-ansible/blob/main/COLLECTION.md#install>`_ for EDA
+
 
 Installation examples
 ---------------------
@@ -44,19 +48,37 @@ On Fedora-like systems:
 
 .. code-block:: shell
 
-    dnf --assumeyes install java-17-openjdk maven python3-pip
-    export JDK_HOME=/usr/lib/jvm/java-17-openjdk
-    export JAVA_HOME=$JDK_HOME
-    pip3 install -U Jinja2
-    pip3 install ansible ansible-rulebook ansible-runner wheel
+    dnf --assumeyes install java-17-openjdk python3-pip
+    export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+    pip3 install ansible ansible-rulebook ansible-runner
 
 On Ubuntu systems:
 
 .. code-block:: shell
 
-    apt-get --assume-yes install maven openjdk-17-jdk python3-pip
-    export JDK_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-    export JAVA_HOME=$JDK_HOME
+    apt-get --assume-yes install openjdk-17-jdk python3-pip
+    export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
     export PATH=$PATH:~/.local/bin
-    pip3 install -U Jinja2
-    pip3 install ansible ansible-rulebook ansible-runner wheel
+    pip3 install ansible ansible-rulebook ansible-runner
+
+
+Compiling jpy
+---------------------
+
+To compile `jpy` from source at installation time, you will need to install the additional dependencies:
+
+* maven
+* gcc
+* python-devel package
+    * Fedora: python3-devel
+    * Ubuntu: python3-dev
+* Environment variable `JAVA_HOME` set to the path of your Java installation
+
+Then, you can run:
+
+.. code-block:: shell
+
+    pip install ansible-rulebook --no-binary jpy
+
+
+Refer to the `jpy project <https://github.com/jpy-consortium/jpy>`_ for more information.

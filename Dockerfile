@@ -5,7 +5,7 @@ ARG DEVEL_COLLECTION_LIBRARY=0
 WORKDIR $HOME
 
 USER 0
-RUN dnf install -y java-17-openjdk-devel maven
+RUN dnf install -y java-17-openjdk-devel
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 RUN pip install -U pip \
     && pip install ansible \
