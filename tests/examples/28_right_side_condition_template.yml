@@ -1,5 +1,5 @@
 ---
-- name: 28 test jinja templating on the right side of the condition
+- name: 28 test vars
   hosts: all
   sources:
     - name: range
@@ -7,9 +7,6 @@
         limit: 5
   rules:
     - name: r1
-      condition:
-        all:
-          - facts.first << fact.custom.expected_index is defined
-          - event.i == facts.first.custom.expected_index
+      condition: event.i == vars.custom.expected_index
       action:
         debug:

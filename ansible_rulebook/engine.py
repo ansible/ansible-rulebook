@@ -258,7 +258,7 @@ class RuleSetRunner:
 
     async def run_ruleset(self):
         self.stopped = False
-        prime_facts(self.name, self.hosts_facts, self.variables)
+        prime_facts(self.name, self.hosts_facts)
         self.pa_runner_task = asyncio.create_task(
             self.pa_runner.start(self.name), name=self.name
         )
@@ -535,15 +535,9 @@ class PlaybookActionRunner:
         await self.actions.put(action_args)
 
 
-def prime_facts(name: str, hosts_facts: List[Dict], variables: Dict):
+def prime_facts(name: str, hosts_facts: List[Dict]):
     for data in hosts_facts:
         try:
             lang.assert_fact(name, data)
-        except MessageNotHandledException:
-            pass
-
-    if variables:
-        try:
-            lang.assert_fact(name, variables)
         except MessageNotHandledException:
             pass
