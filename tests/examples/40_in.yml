@@ -4,9 +4,9 @@
   sources:
     - name: range
       range:
-        limit: 5
+        limit: 1
   rules:
     - name: r1
-      condition: event.i in [1,2,3,4]
+      condition: event.i in [0,1,2,3,4]
       action:
         debug:
