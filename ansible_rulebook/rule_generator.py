@@ -39,7 +39,6 @@ def add_to_plan(
     variables: Dict,
     inventory: Dict,
     hosts: List,
-    facts: Dict,
     plan: Plan,
     rule_engine_results: Any,
 ) -> None:
@@ -51,7 +50,6 @@ def add_to_plan(
             variables,
             inventory,
             hosts,
-            facts,
             rule_engine_results,
         )
     )
@@ -63,7 +61,6 @@ def make_fn(
     variables: Dict,
     inventory: Dict,
     hosts: List,
-    facts: Dict,
     plan: Plan,
 ) -> Callable:
     def fn(rule_engine_results):
@@ -75,7 +72,6 @@ def make_fn(
             variables,
             inventory,
             hosts,
-            facts,
             plan,
             rule_engine_results,
         )
@@ -106,7 +102,6 @@ def generate_rulesets(
                     variables,
                     inventory,
                     ansible_ruleset.hosts,
-                    {},
                     plan,
                 )
                 drools_ruleset.add_rule(
