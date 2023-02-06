@@ -1,0 +1,33 @@
+---
+- name: 62 select 2
+  hosts: all
+  sources:
+    - generic:
+        payload:
+          - name: Fred
+            age: 54
+            addresses:
+               - 123 Main St, Bedrock, MI
+               - 545 Spring St, Cresskill, NJ
+               - 435 Wall Street, New York, NY
+          - name: Barney
+            age: 53
+            addresses:
+               - 345 Bleeker St, Bedrock, MI
+               - 145 Wall St, Dumont, NJ
+          - name: Wilma
+            age: 47
+            addresses:
+               - 123 Main St, Bedrock, MI
+               - 432 Raymond Blvd, Newark, NJ
+  rules:
+    - name: r1
+      condition: event.addresses is select('regex', 'Main St')
+      action:
+        echo:
+          message: Some one lives on Main Street
+    - name: r2
+      condition: event.addresses is not select('regex', 'Major St')
+      action:
+        echo:
+          message: No one lives on Major St

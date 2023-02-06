@@ -1,0 +1,17 @@
+---
+- name: 65 selectattr 3
+  hosts: all
+  sources:
+    - generic:
+        payload:
+             - person:
+                 name: Fred
+                 age: 54
+  rules:
+    - name: r1
+      # event.person is not an array here its an object
+      # we convert it to an array of 1 
+      condition: event.person is selectattr('age', '>', 30)
+      action:
+        echo:
+          message: Has a person greater than 30

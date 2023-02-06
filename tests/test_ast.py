@@ -18,7 +18,11 @@ import pytest
 import yaml
 
 from ansible_rulebook.condition_parser import parse_condition
-from ansible_rulebook.exception import InvalidAssignmentException
+from ansible_rulebook.exception import (
+    InvalidAssignmentException,
+    SelectattrOperatorException,
+    SelectOperatorException,
+)
 from ansible_rulebook.json_generator import (
     generate_dict_rulesets,
     visit_condition,
@@ -381,6 +385,68 @@ def test_parse_condition():
         ),
         {},
     )
+
+    assert {
+        "SelectAttrExpression": {
+            "lhs": {"Event": "persons"},
+            "rhs": {
+                "key": {"String": "person.age"},
+                "operator": {"String": ">="},
+                "value": {"Integer": 50},
+            },
+        }
+    } == visit_condition(
+        parse_condition('event.persons is selectattr("person.age", ">=", 50)'),
+        {},
+    )
+
+    assert {
+        "SelectAttrNotExpression": {
+            "lhs": {"Event": "persons"},
+            "rhs": {
+                "key": {"String": "person.name"},
+                "operator": {"String": "=="},
+                "value": {"String": "fred"},
+            },
+        }
+    } == visit_condition(
+        parse_condition(
+            'event.persons is not selectattr("person.name", "==", "fred")'
+        ),
+        {},
+    )
+
+    assert {
+        "SelectExpression": {
+            "lhs": {"Event": "ids"},
+            "rhs": {"operator": {"String": ">="}, "value": {"Integer": 10}},
+        }
+    } == visit_condition(parse_condition('event.ids is select(">=", 10)'), {})
+
+    assert {
+        "SelectNotExpression": {
+            "lhs": {"Event": "persons"},
+            "rhs": {
+                "operator": {"String": "regex"},
+                "value": {"String": "fred|barney"},
+            },
+        }
+    } == visit_condition(
+        parse_condition('event.persons is not select("regex", "fred|barney")'),
+        {},
+    )
+
+
+def test_invalid_select_operator():
+    with pytest.raises(SelectOperatorException):
+        parse_condition('event.persons is not select("in", ["fred","barney"])')
+
+
+def test_invalid_selectattr_operator():
+    with pytest.raises(SelectattrOperatorException):
+        parse_condition(
+            'event.persons is not selectattr("name", "cmp", "fred")'
+        )
 
 
 @pytest.mark.parametrize(

@@ -1,0 +1,39 @@
+---
+- name: 63 selectattr 1
+  hosts: all
+  sources:
+    - generic:
+        payload:
+          - people:
+             - person:
+                 name: Fred
+                 age: 54
+             - person:
+                 name: Barney
+                 age: 45
+             - person:
+                 name: Wilma
+                 age: 23
+             - person:
+                 name: Betty
+                 age: 25
+          - friends:
+             - person:
+                 name: Barney
+                 hobby: golf
+             - person:
+                 name: Fred
+                 hobby: driving
+
+
+  rules:
+    - name: r1
+      condition: event.people is selectattr('person.age', '>', 30)
+      action:
+        echo:
+          message: Has a person greater than 30
+    - name: r2
+      condition: event.friends is selectattr('person.name', 'regex', 'Barney|Fred')
+      action:
+        echo:
+          message: Barney or Fred in friends list
