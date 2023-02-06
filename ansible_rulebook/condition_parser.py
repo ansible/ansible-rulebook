@@ -32,6 +32,11 @@ from pyparsing import (
     pyparsing_common,
 )
 
+from ansible_rulebook.exception import (
+    SelectattrOperatorException,
+    SelectOperatorException,
+)
+
 ParserElement.enable_packrat()
 
 from ansible_rulebook.condition_types import (  # noqa: E402
@@ -44,9 +49,38 @@ from ansible_rulebook.condition_types import (  # noqa: E402
     NegateExpression,
     OperatorExpression,
     SearchType,
+    SelectattrType,
+    SelectType,
     String,
 )
 
+VALID_SELECT_ATTR_OPERATORS = [
+    "==",
+    "!=",
+    ">",
+    ">=",
+    "<",
+    "<=",
+    "regex",
+    "search",
+    "match",
+    "in",
+    "not in",
+    "contains",
+    "not contains",
+]
+
+VALID_SELECT_OPERATORS = [
+    "==",
+    "!=",
+    ">",
+    ">=",
+    "<",
+    "<=",
+    "regex",
+    "search",
+    "match",
+]
 SUPPORTED_SEARCH_KINDS = ("match", "regex", "search")
 
 logger = logging.getLogger(__name__)
@@ -95,11 +129,41 @@ delim_value = Group(
 )
 list_values = Suppress("[") + delim_value + Suppress("]")
 
+selectattr_t = (
+    Literal("selectattr")
+    + Suppress("(")
+    + Group(delimitedList(ident | allowed_values | list_values))
+    + Suppress(")")
+)
+
+select_t = (
+    Literal("select")
+    + Suppress("(")
+    + Group(delimitedList(ident | allowed_values | list_values))
+    + Suppress(")")
+)
+
 
 def as_list(var):
     if hasattr(var.__class__, "as_list"):
         return var.as_list()
     return var
+
+
+def SelectattrTypeFactory(tokens):
+    if tokens[1].value not in VALID_SELECT_ATTR_OPERATORS:
+        raise SelectattrOperatorException(
+            f"Operator {tokens[1]} is not supported"
+        )
+
+    return SelectattrType(tokens[0], tokens[1], as_list(tokens[2]))
+
+
+def SelectTypeFactory(tokens):
+    if tokens[0].value not in VALID_SELECT_OPERATORS:
+        raise SelectOperatorException(f"Operator {tokens[0]} is not supported")
+
+    return SelectType(tokens[0], as_list(tokens[1]))
 
 
 def SearchTypeFactory(kind, tokens):
@@ -123,6 +187,18 @@ def OperatorExpressionFactory(tokens):
                     tokens[0], tokens[1], search_type
                 )
                 tokens = tokens[4:]
+            elif tokens[2] == "selectattr":
+                select_attr_type = SelectattrTypeFactory(tokens[3])
+                return_value = OperatorExpression(
+                    tokens[0], tokens[1], select_attr_type
+                )
+                tokens = tokens[4:]
+            elif tokens[2] == "select":
+                select_type = SelectTypeFactory(tokens[3])
+                return_value = OperatorExpression(
+                    tokens[0], tokens[1], select_type
+                )
+                tokens = tokens[4:]
             else:
                 return_value = OperatorExpression(
                     as_list(tokens[0]), tokens[1], as_list(tokens[2])
@@ -137,7 +213,9 @@ def OperatorExpressionFactory(tokens):
 
 
 all_terms = (
-    string_search_t
+    selectattr_t
+    | select_t
+    | string_search_t
     | list_values
     | float_t
     | integer
