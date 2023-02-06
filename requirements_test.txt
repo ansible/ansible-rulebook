@@ -12,3 +12,4 @@ pytest-asyncio
 pytest-timeout
 pytest-xdist
 pytest-cov
+pytest-vcr
