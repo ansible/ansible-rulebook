@@ -38,8 +38,8 @@ A condition can contain
  * Multiple conditions where any one of them has to match
  * Multiple conditions where not all one of them have to match
 
-Supported datatypes
-*******************
+Supported data types
+********************
 The data type is of great importance for the rules engine. The following types are supported
 
 * integers
@@ -96,6 +96,14 @@ Conditions support the following operators:
      - To check if the regular expression pattern exists in the string
    * - is not regex(pattern,ignorecase=true)
      - To check if the regular expression pattern does not exist in the string
+   * - is select(operator, value)
+     - To check if an item exists in the list, that satisfies the test defined by operator and value
+   * - is not select(operator, value)
+     - To check if an item does not exist in the list, that does not satisfy the test defined by operator and value
+   * - is selectattr(key, operator, value)
+     - To check if an object exists in the list, that satisfies the test defined by key, operator and value
+   * - is not selectattr(key, operator, value)
+     - To check if an object does not exist in the list, that does not satisfy the test defined by key, operator and value
    * - `<<`
      - Assignment operator, to save the matching events or facts with events or facts prefix
    * - not
@@ -581,6 +589,83 @@ String regular expression
 
 | In the above example we check if the event.url does not have "example.com" in its value
 | And the option controls that this is a case insensitive search.
+
+Check if an item exists in a list based on a test
+-------------------------------------------------
+
+    .. code-block:: yaml
+
+        name: check if an item exist in list
+        condition: event.levels is select('>=', 10)
+        action:
+          echo:
+            message: The list has an item with the value greater than or equal to 10
+
+| In the above example "levels" is a list of integers e.g. [1,2,3,20], the test says
+| check if any item exists in the list with a value >= 10. This test passes because
+| of the presence of 20 in the list. If the value of "levels" is [1,2,3] then the
+| test would yield False.
+
+Check if an item does not exist in a list based on a test
+---------------------------------------------------------
+
+    .. code-block:: yaml
+
+        name: check if an item does not exist in list
+        condition: event.levels is not select('>=', 10)
+        action:
+          echo:
+            message: The list does not have item with the value greater than or equal to 10
+
+| In the above example "levels" is a list of integers e.g. [1,2,3], the test says
+| check if *no* item exists with a value >= 10. This test passes because none of the items
+| in the list is greater than or equal to 10. If the value of "levels" is [1,2,3,20] then
+| the test would yield False because of the presence of 20 in the list.
+
+| The result of the *select* condition is either True or False. It doesn't return the item or items.
+| The select takes 2 arguments which are comma delimited, **operator** and **value**. 
+| The different operators we support are >,>=,<,<=,==,!=,match,search,regex
+| The value is based on the operator used, if the operator is regex then the value is a pattern.
+| If the operator is one of >,>=,<,<= then the value is either an integer or a float
+
+Checking if an object exists in a list based on a test
+------------------------------------------------------
+
+    .. code-block:: yaml
+
+        name: check if an object exist in list
+        condition: event.objects is selectattr('age', '>=', 20)
+        action:
+          echo:
+            message: An object with age greater than 20 found
+
+| In the above example "objects" is a list of object's, with multiple properties. One of the
+| properties is age, the test says check if any object exists in the list with an age >= 20.
+
+Checking if an object does not exist in a list based on a test
+---------------------------------------------------------------
+
+    .. code-block:: yaml
+
+        name: check if an object does not exist in list
+        condition: event.objects is not selectattr('age', '>=', 20)
+        action:
+          echo:
+            message: No object with age greater than 20 found
+
+| In the above example "objects" is a list of object's, with multiple properties. One of the
+| properties is age, the test says check if *no* object exists in the list with an age >= 20.
+
+| The result of the *selectattr* condition is either True or False. It doesn't return the
+| matching object or objects.
+| The *selectattr* takes 3 arguments which are comma delimited, **key**, **operator** and **value**.
+| The key is a valid key name in the object.
+| The different operators we support are >, >=, <, <=, ==, !=, match, search, regex, in, not in,
+| contains, not contains.
+| The value is based on the operator used, if the operator is regex then the value is a pattern.
+| If the operator is one of >, >=, <, <= then the value is either an integer or a float.
+| If the operator is in or not in then the value is list of integer, float or string.
+
 
 FAQ
 ***
