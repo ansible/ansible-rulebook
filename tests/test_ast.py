@@ -19,7 +19,9 @@ import yaml
 
 from ansible_rulebook.condition_parser import parse_condition
 from ansible_rulebook.exception import (
+    ConditionParsingException,
     InvalidAssignmentException,
+    InvalidIdentifierException,
     SelectattrOperatorException,
     SelectOperatorException,
 )
@@ -498,5 +500,27 @@ def test_invalid_nested_assignment_operator():
     with pytest.raises(InvalidAssignmentException):
         visit_condition(
             parse_condition("events.first.abc.xyz << fact.range.i == 'Hello'"),
+            {},
+        )
+
+
+def test_invalid_identifier():
+    with pytest.raises(InvalidIdentifierException):
+        visit_condition(
+            parse_condition("event is defined"),
+            {},
+        )
+
+
+@pytest.mark.parametrize(
+    "invalid_condition",
+    [
+        "event. is defined",
+    ],
+)
+def test_invalid_conditions(invalid_condition):
+    with pytest.raises(ConditionParsingException):
+        visit_condition(
+            parse_condition(invalid_condition),
             {},
         )

@@ -48,6 +48,16 @@ class SelectattrOperatorException(Exception):
     pass
 
 
+class InvalidIdentifierException(Exception):
+
+    pass
+
+
 class SelectOperatorException(Exception):
+
+    pass
+
+
+class ConditionParsingException(Exception):
 
     pass
