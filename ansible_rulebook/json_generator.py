@@ -34,6 +34,7 @@ from ansible_rulebook.condition_types import (
 )
 from ansible_rulebook.exception import (
     InvalidAssignmentException,
+    InvalidIdentifierException,
     VarsKeyMissingException,
 )
 from ansible_rulebook.rule_types import (
@@ -99,7 +100,12 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
                     f"vars does not contain key: {key}"
                 )
         else:
-            raise Exception(f"Unhandled identifier {parsed_condition.value}")
+            msg = (
+                f"Invalid identifier : {parsed_condition.value} "
+                + "Should start with event., events.,fact., facts. or vars."
+            )
+            raise InvalidIdentifierException(msg)
+
     elif isinstance(parsed_condition, String):
         return {
             "String": substitute_variables(parsed_condition.value, variables)

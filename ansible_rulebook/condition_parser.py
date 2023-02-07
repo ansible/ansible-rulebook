@@ -13,7 +13,6 @@
 #  limitations under the License.
 
 import logging
-import sys
 
 from pyparsing import (
     Combine,
@@ -33,6 +32,7 @@ from pyparsing import (
 )
 
 from ansible_rulebook.exception import (
+    ConditionParsingException,
     SelectattrOperatorException,
     SelectOperatorException,
 )
@@ -306,6 +306,6 @@ def parse_condition(condition_string: str) -> Condition:
     try:
         return condition.parseString(condition_string, parse_all=True)[0]
     except ParseException as pe:
-        print(pe.explain(depth=0), file=sys.stderr)
-        logger.error(pe.explain(depth=0))
-        raise
+        msg = f"Error parsing: {condition_string}. {pe}"
+        logger.debug(pe.explain(depth=0))
+        raise ConditionParsingException(msg)
