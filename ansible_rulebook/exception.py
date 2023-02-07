@@ -23,6 +23,16 @@ class RulenameEmptyException(Exception):
     pass
 
 
+class RulesetNameDuplicateException(Exception):
+
+    pass
+
+
+class RulesetNameEmptyException(Exception):
+
+    pass
+
+
 class RulenameDuplicateException(Exception):
 
     pass
