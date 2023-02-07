@@ -47,6 +47,18 @@ def load_rulebook(rules_file):
     return ruleset_queues, event_log
 
 
+async def get_queue_item(queue, timeout=0.5, times=1):
+    for _ in range(times):
+        try:
+            item = queue.get_nowait()
+        except asyncio.QueueEmpty:
+            await asyncio.sleep(timeout)
+            continue
+        if item:
+            return item
+    return None
+
+
 def validate_events(event_log, **kwargs):
     shutdown_events = 0
     job_events = 0
