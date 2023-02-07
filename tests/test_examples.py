@@ -21,7 +21,7 @@ from ansible_rulebook.exception import VarsKeyMissingException
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.util import load_inventory
 
-from .test_engine import load_rulebook, validate_events
+from .test_engine import get_queue_item, load_rulebook, validate_events
 
 
 class SourceTask:
@@ -1395,7 +1395,7 @@ async def test_54_time_window():
             load_inventory("playbooks/inventory.yml"),
         )
 
-        event = event_log.get_nowait()
+        event = await get_queue_item(event_log, 10, 2)
         assert event["type"] == "Action", "1"
         assert event["action"] == "print_event", "1"
         assert event["matching_events"] == {
