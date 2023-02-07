@@ -20,6 +20,10 @@ import pytest
 import yaml
 from drools.ruleset import assert_fact as set_fact, post
 
+from ansible_rulebook.exception import (
+    RulesetNameDuplicateException,
+    RulesetNameEmptyException,
+)
 from ansible_rulebook.rule_generator import generate_rulesets
 from ansible_rulebook.rules_parser import parse_rule_sets
 
@@ -131,3 +135,42 @@ async def test_generate_rules_multiple_conditions_all_3():
         durable_rulesets[0].plan.queue.get_nowait().actions[0].action
         == "debug"
     )
+
+
+@pytest.mark.asyncio
+async def test_duplicate_ruleset_names():
+    os.chdir(HERE)
+    with open("rules/test_duplicate_ruleset_names.yml") as f:
+        data = yaml.safe_load(f.read())
+
+    with pytest.raises(RulesetNameDuplicateException) as exc_info:
+        parse_rule_sets(data)
+
+    assert (
+        str(exc_info.value)
+        == "Ruleset with name: ruleset1 defined multiple times"
+    )
+
+
+@pytest.mark.asyncio
+async def test_blank_ruleset_names():
+    os.chdir(HERE)
+    with open("rules/test_blank_ruleset_name.yml") as f:
+        data = yaml.safe_load(f.read())
+
+    with pytest.raises(RulesetNameEmptyException) as exc_info:
+        parse_rule_sets(data)
+
+    assert str(exc_info.value) == "Ruleset name cannot be an empty string"
+
+
+@pytest.mark.asyncio
+async def test_missing_ruleset_names():
+    os.chdir(HERE)
+    with open("rules/test_missing_ruleset_name.yml") as f:
+        data = yaml.safe_load(f.read())
+
+    with pytest.raises(RulesetNameEmptyException) as exc_info:
+        parse_rule_sets(data)
+
+    assert str(exc_info.value) == "Ruleset name not provided"

@@ -20,7 +20,12 @@ from ansible_rulebook.condition_parser import (
 )
 from ansible_rulebook.job_template_runner import job_template_runner
 
-from .exception import RulenameDuplicateException, RulenameEmptyException
+from .exception import (
+    RulenameDuplicateException,
+    RulenameEmptyException,
+    RulesetNameDuplicateException,
+    RulesetNameEmptyException,
+)
 
 
 def parse_hosts(hosts):
@@ -34,10 +39,28 @@ def parse_hosts(hosts):
 
 def parse_rule_sets(rule_sets: Dict) -> List[rt.RuleSet]:
     rule_set_list = []
+    ruleset_names = []
     for rule_set in rule_sets:
+        name = rule_set.get("name")
+        if name is None:
+            raise RulesetNameEmptyException("Ruleset name not provided")
+
+        name = name.strip()
+        if name == "":
+            raise RulesetNameEmptyException(
+                "Ruleset name cannot be an empty string"
+            )
+
+        if name in ruleset_names:
+            raise RulesetNameDuplicateException(
+                f"Ruleset with name: {name} defined multiple times"
+            )
+
+        ruleset_names.append(name)
+
         rule_set_list.append(
             rt.RuleSet(
-                name=rule_set["name"],
+                name=name,
                 hosts=parse_hosts(rule_set["hosts"]),
                 sources=parse_event_sources(rule_set["sources"]),
                 rules=parse_rules(rule_set.get("rules", {})),
