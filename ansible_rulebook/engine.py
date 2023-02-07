@@ -47,11 +47,7 @@ from ansible_rulebook.rule_types import (
     RuleSetQueue,
 )
 from ansible_rulebook.rules_parser import parse_hosts
-from ansible_rulebook.util import (
-    collect_ansible_facts,
-    json_count,
-    substitute_variables,
-)
+from ansible_rulebook.util import collect_ansible_facts, substitute_variables
 
 logger = logging.getLogger(__name__)
 
@@ -233,7 +229,10 @@ async def run_rulesets(
 
 
 class RuleSetRunner:
-    ANSIBLE_ACTIONS = ("run_playbook", "run_module", "run_job_template")
+    ANSIBLE_ACTIONS = (
+        "run_playbook",
+        "run_module",
+    )
 
     def __init__(
         self,
@@ -300,7 +299,6 @@ class RuleSetRunner:
                 PrettyPrinter(indent=4).pprint(data)
 
             logger.debug("Received event : " + str(data))
-            json_count(data)
             if isinstance(data, Shutdown):
                 logger.info("Shutdown message received: " + str(data))
                 await self._stop(data)

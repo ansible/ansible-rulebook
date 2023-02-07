@@ -1,0 +1,302 @@
+interactions:
+- request:
+    body: null
+    headers:
+      authorization:
+      - Bearer DUMMY
+    method: POST
+    uri: https://examples.com/api/v2/job_templates/Hello%20World++Default/launch/
+  response:
+    body:
+      string: '{"job":435,"ignored_fields":{},"id":435,"type":"job","url":"/api/v2/jobs/435/","related":{"created_by":"/api/v2/users/1/","modified_by":"/api/v2/users/1/","labels":"/api/v2/jobs/435/labels/","inventory":"/api/v2/inventories/1/","project":"/api/v2/projects/8/","organization":"/api/v2/organizations/1/","credentials":"/api/v2/jobs/435/credentials/","unified_job_template":"/api/v2/job_templates/9/","stdout":"/api/v2/jobs/435/stdout/","job_events":"/api/v2/jobs/435/job_events/","job_host_summaries":"/api/v2/jobs/435/job_host_summaries/","activity_stream":"/api/v2/jobs/435/activity_stream/","notifications":"/api/v2/jobs/435/notifications/","create_schedule":"/api/v2/jobs/435/create_schedule/","job_template":"/api/v2/job_templates/9/","cancel":"/api/v2/jobs/435/cancel/","relaunch":"/api/v2/jobs/435/relaunch/"},"summary_fields":{"organization":{"id":1,"name":"Default","description":""},"inventory":{"id":1,"name":"Demo
+        Inventory","description":"","has_active_failures":false,"total_hosts":1,"hosts_with_active_failures":0,"total_groups":0,"has_inventory_sources":false,"total_inventory_sources":0,"inventory_sources_with_failures":0,"organization_id":1,"kind":""},"project":{"id":8,"name":"mkanoor","description":"mkanoor","status":"successful","scm_type":"git","allow_override":false},"job_template":{"id":9,"name":"Hello
+        World","description":"Hello World 490"},"unified_job_template":{"id":9,"name":"Hello
+        World","description":"Hello World 490","unified_job_type":"job"},"created_by":{"id":1,"username":"admin","first_name":"","last_name":""},"modified_by":{"id":1,"username":"admin","first_name":"","last_name":""},"user_capabilities":{"delete":true,"start":true},"labels":{"count":0,"results":[]},"credentials":[]},"created":"2023-02-06T16:21:48.170337Z","modified":"2023-02-06T16:21:48.195584Z","name":"Hello
+        World","description":"Hello World 490","job_type":"run","inventory":1,"project":8,"playbook":"hello_world.yml","scm_branch":"","forks":0,"limit":"","verbosity":0,"extra_vars":"{\"secret\":
+        \"$encrypted$\"}","job_tags":"","force_handlers":false,"skip_tags":"","start_at_task":"","timeout":0,"use_fact_cache":false,"organization":1,"unified_job_template":9,"launch_type":"manual","status":"pending","execution_environment":null,"failed":false,"started":null,"finished":null,"canceled_on":null,"elapsed":0.0,"job_args":"","job_cwd":"","job_env":{},"job_explanation":"","execution_node":"","controller_node":"","result_traceback":"","event_processing_finished":false,"launched_by":{"id":1,"name":"admin","type":"user","url":"/api/v2/users/1/"},"work_unit_id":null,"job_template":9,"passwords_needed_to_start":[],"allow_simultaneous":false,"artifacts":{},"scm_revision":"","instance_group":null,"diff_mode":false,"job_slice_number":0,"job_slice_count":1,"webhook_service":"","webhook_credential":null,"webhook_guid":""}'
+    headers:
+      Access-Control-Expose-Headers:
+      - X-API-Request-Id
+      Allow:
+      - GET, POST, HEAD, OPTIONS
+      Cache-Control:
+      - no-cache, no-store, must-revalidate
+      Connection:
+      - keep-alive
+      Content-Language:
+      - en
+      Content-Length:
+      - '2833'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 06 Feb 2023 16:21:48 GMT
+      Expires:
+      - '0'
+      Location:
+      - /api/v2/jobs/435/
+      Pragma:
+      - no-cache
+      Server:
+      - nginx
+      Vary:
+      - Accept, Accept-Language, Origin, Cookie
+      X-API-Node:
+      - localhost
+      X-API-Product-Name:
+      - Red Hat Ansible Automation Platform
+      X-API-Product-Version:
+      - 4.1.0
+      X-API-Request-Id:
+      - 95e47944ff9a462782f8a627bd4eb45a
+      X-API-Time:
+      - 0.322s
+      X-API-Total-Time:
+      - 0.810s
+      X-Frame-Options:
+      - DENY
+    status:
+      code: 201
+      message: Created
+    url: https://examples.com/api/v2/job_templates/Hello%20World++Default/launch/
+- request:
+    body: null
+    headers:
+      authorization:
+      - Bearer DUMMY
+    method: GET
+    uri: https://examples.com/api/v2/jobs/435/job_events/
+  response:
+    body:
+      string: '{"count":0,"next":null,"previous":null,"results":[]}'
+    headers:
+      Access-Control-Expose-Headers:
+      - X-API-Request-Id
+      Allow:
+      - GET, HEAD, OPTIONS
+      Cache-Control:
+      - no-cache, no-store, must-revalidate
+      Connection:
+      - keep-alive
+      Content-Language:
+      - en
+      Content-Length:
+      - '52'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 06 Feb 2023 16:21:48 GMT
+      Expires:
+      - '0'
+      Pragma:
+      - no-cache
+      Server:
+      - nginx
+      Vary:
+      - Accept, Accept-Language, Origin, Cookie
+      X-API-Node:
+      - localhost
+      X-API-Product-Name:
+      - Red Hat Ansible Automation Platform
+      X-API-Product-Version:
+      - 4.1.0
+      X-API-Request-Id:
+      - 48d6703b253c49419aaf54dfefb74cdd
+      X-API-Time:
+      - 0.019s
+      X-API-Total-Time:
+      - 0.056s
+      X-Frame-Options:
+      - DENY
+      X-UI-Max-Events:
+      - '4000'
+    status:
+      code: 200
+      message: OK
+    url: https://examples.com/api/v2/jobs/435/job_events/
+- request:
+    body: null
+    headers:
+      authorization:
+      - Bearer DUMMY
+    method: GET
+    uri: https://examples.com/api/v2/jobs/435/job_events/
+  response:
+    body:
+      string: '{"count":9,"next":null,"previous":null,"results":[{"id":2847,"type":"job_event","url":"/api/v2/job_events/2847/","related":{"job":"/api/v2/jobs/435/","children":"/api/v2/job_events/2847/children/"},"summary_fields":{"job":{"id":435,"name":"Hello
+        World","description":"Hello World 490","status":"successful","failed":false,"elapsed":7.4,"type":"job","job_template_id":9,"job_template_name":"Hello
+        World"},"role":{}},"created":"2023-02-06T16:21:51.229223Z","modified":"2023-02-06T16:21:51.361467Z","job":435,"event":"playbook_on_start","counter":1,"event_display":"Playbook
+        Started","event_data":{"playbook":"hello_world.yml","playbook_uuid":"6c58ffa9-d4d3-4b72-adea-dc4f16df9d70","uuid":"6c58ffa9-d4d3-4b72-adea-dc4f16df9d70","guid":"95e47944ff9a462782f8a627bd4eb45a"},"event_level":0,"failed":false,"changed":false,"uuid":"6c58ffa9-d4d3-4b72-adea-dc4f16df9d70","parent_uuid":"","host":null,"host_name":"","playbook":"hello_world.yml","play":"","task":"","role":"","stdout":"","start_line":0,"end_line":0,"verbosity":0},{"id":2845,"type":"job_event","url":"/api/v2/job_events/2845/","related":{"job":"/api/v2/jobs/435/","children":"/api/v2/job_events/2845/children/"},"summary_fields":{"job":{"id":435,"name":"Hello
+        World","description":"Hello World 490","status":"successful","failed":false,"elapsed":7.4,"type":"job","job_template_id":9,"job_template_name":"Hello
+        World"},"role":{}},"created":"2023-02-06T16:21:51.230477Z","modified":"2023-02-06T16:21:51.360386Z","job":435,"event":"playbook_on_play_start","counter":2,"event_display":"Play
+        Started (Echo Hello, world!)","event_data":{"playbook":"hello_world.yml","playbook_uuid":"6c58ffa9-d4d3-4b72-adea-dc4f16df9d70","play":"Echo
+        Hello, world!","play_uuid":"425d9dd7-83af-8766-beed-000000000006","play_pattern":"localhost","name":"Echo
+        Hello, world!","pattern":"localhost","uuid":"425d9dd7-83af-8766-beed-000000000006","guid":"95e47944ff9a462782f8a627bd4eb45a"},"event_level":1,"failed":false,"changed":false,"uuid":"425d9dd7-83af-8766-beed-000000000006","parent_uuid":"6c58ffa9-d4d3-4b72-adea-dc4f16df9d70","host":null,"host_name":"","playbook":"hello_world.yml","play":"Echo
+        Hello, world!","task":"","role":"","stdout":"\r\nPLAY [Echo Hello, world!]
+        ******************************************************","start_line":0,"end_line":2,"verbosity":0},{"id":2846,"type":"job_event","url":"/api/v2/job_events/2846/","related":{"job":"/api/v2/jobs/435/","children":"/api/v2/job_events/2846/children/"},"summary_fields":{"job":{"id":435,"name":"Hello
+        World","description":"Hello World 490","status":"successful","failed":false,"elapsed":7.4,"type":"job","job_template_id":9,"job_template_name":"Hello
+        World"},"role":{}},"created":"2023-02-06T16:21:51.238345Z","modified":"2023-02-06T16:21:51.365019Z","job":435,"event":"playbook_on_task_start","counter":3,"event_display":"Task
+        Started (Gathering Facts)","event_data":{"playbook":"hello_world.yml","playbook_uuid":"6c58ffa9-d4d3-4b72-adea-dc4f16df9d70","play":"Echo
+        Hello, world!","play_uuid":"425d9dd7-83af-8766-beed-000000000006","play_pattern":"localhost","task":"Gathering
+        Facts","task_uuid":"425d9dd7-83af-8766-beed-00000000000c","task_action":"gather_facts","task_args":"","task_path":"/runner/project/hello_world.yml:3","name":"Gathering
+        Facts","is_conditional":false,"uuid":"425d9dd7-83af-8766-beed-00000000000c","guid":"95e47944ff9a462782f8a627bd4eb45a"},"event_level":2,"failed":false,"changed":false,"uuid":"425d9dd7-83af-8766-beed-00000000000c","parent_uuid":"425d9dd7-83af-8766-beed-000000000006","host":null,"host_name":"","playbook":"hello_world.yml","play":"Echo
+        Hello, world!","task":"Gathering Facts","role":"","stdout":"\r\nTASK [Gathering
+        Facts] *********************************************************","start_line":2,"end_line":4,"verbosity":0},{"id":2848,"type":"job_event","url":"/api/v2/job_events/2848/","related":{"job":"/api/v2/jobs/435/","children":"/api/v2/job_events/2848/children/","host":"/api/v2/hosts/1/"},"summary_fields":{"host":{"id":1,"name":"localhost","description":""},"job":{"id":435,"name":"Hello
+        World","description":"Hello World 490","status":"successful","failed":false,"elapsed":7.4,"type":"job","job_template_id":9,"job_template_name":"Hello
+        World"},"role":{}},"created":"2023-02-06T16:21:51.238906Z","modified":"2023-02-06T16:21:51.366637Z","job":435,"event":"runner_on_start","counter":4,"event_display":"Host
+        Started","event_data":{"playbook":"hello_world.yml","playbook_uuid":"6c58ffa9-d4d3-4b72-adea-dc4f16df9d70","play":"Echo
+        Hello, world!","play_uuid":"425d9dd7-83af-8766-beed-000000000006","play_pattern":"localhost","task":"Gathering
+        Facts","task_uuid":"425d9dd7-83af-8766-beed-00000000000c","task_action":"gather_facts","task_args":"","task_path":"/runner/project/hello_world.yml:3","host":"localhost","uuid":"716d6b44-7c2d-4b47-b6d4-6d792318d995","guid":"95e47944ff9a462782f8a627bd4eb45a"},"event_level":3,"failed":false,"changed":false,"uuid":"716d6b44-7c2d-4b47-b6d4-6d792318d995","parent_uuid":"425d9dd7-83af-8766-beed-00000000000c","host":1,"host_name":"localhost","playbook":"hello_world.yml","play":"Echo
+        Hello, world!","task":"Gathering Facts","role":"","stdout":"","start_line":4,"end_line":4,"verbosity":0},{"id":2851,"type":"job_event","url":"/api/v2/job_events/2851/","related":{"job":"/api/v2/jobs/435/","children":"/api/v2/job_events/2851/children/","host":"/api/v2/hosts/1/"},"summary_fields":{"host":{"id":1,"name":"localhost","description":""},"job":{"id":435,"name":"Hello
+        World","description":"Hello World 490","status":"successful","failed":false,"elapsed":7.4,"type":"job","job_template_id":9,"job_template_name":"Hello
+        World"},"role":{}},"created":"2023-02-06T16:21:52.081490Z","modified":"2023-02-06T16:21:52.112657Z","job":435,"event":"runner_on_ok","counter":5,"event_display":"Host
+        OK","event_data":{"playbook":"hello_world.yml","playbook_uuid":"6c58ffa9-d4d3-4b72-adea-dc4f16df9d70","play":"Echo
+        Hello, world!","play_uuid":"425d9dd7-83af-8766-beed-000000000006","play_pattern":"localhost","task":"Gathering
+        Facts","task_uuid":"425d9dd7-83af-8766-beed-00000000000c","task_action":"gather_facts","task_args":"","task_path":"/runner/project/hello_world.yml:3","host":"localhost","remote_addr":"localhost","res":{"ansible_facts":{"ansible_user_id":"root","ansible_user_uid":0,"ansible_user_gid":0,"ansible_user_gecos":"root","ansible_user_dir":"/root","ansible_user_shell":"/bin/bash","ansible_real_user_id":0,"ansible_effective_user_id":0,"ansible_real_group_id":0,"ansible_effective_group_id":0,"ansible_system":"Linux","ansible_kernel":"4.18.0-348.el8.x86_64","ansible_kernel_version":"#1
+        SMP Mon Oct 4 12:17:22 EDT 2021","ansible_machine":"x86_64","ansible_python_version":"3.8.8","ansible_fqdn":"9ea060876798","ansible_hostname":"9ea060876798","ansible_nodename":"9ea060876798","ansible_domain":"","ansible_userspace_bits":"64","ansible_architecture":"x86_64","ansible_userspace_architecture":"x86_64","ansible_machine_id":"3eb9ced214a84a1a912a0bb61665d04e","ansible_dns":{"nameservers":["10.0.2.3","10.11.5.19","10.5.30.45"]},"ansible_is_chroot":false,"ansible_distribution":"RedHat","ansible_distribution_release":"Ootpa","ansible_distribution_version":"8.5","ansible_distribution_major_version":"8","ansible_distribution_file_path":"/etc/redhat-release","ansible_distribution_file_variety":"RedHat","ansible_distribution_file_parsed":true,"ansible_distribution_file_search_string":"Red
+        Hat","ansible_os_family":"RedHat","ansible_date_time":{"year":"2023","month":"02","weekday":"Monday","weekday_number":"1","weeknumber":"06","day":"06","hour":"16","minute":"21","second":"51","epoch":"1675700511","epoch_int":"1675700511","date":"2023-02-06","time":"16:21:51","iso8601_micro":"2023-02-06T16:21:51.816252Z","iso8601":"2023-02-06T16:21:51Z","iso8601_basic":"20230206T162151816252","iso8601_basic_short":"20230206T162151","tz":"UTC","tz_dst":"UTC","tz_offset":"+0000"},"ansible_local":{},"ansible_hostnqn":"","ansible_fibre_channel_wwn":[],"ansible_system_capabilities_enforced":"True","ansible_system_capabilities":["cap_chown","cap_dac_override","cap_fowner","cap_fsetid","cap_kill","cap_setgid","cap_setuid","cap_setpcap","cap_net_bind_service","cap_net_raw","cap_sys_chroot","cap_setfcap+eip"],"ansible_processor":["0","GenuineIntel","Intel
+        Xeon Processor (Skylake, IBRS)","1","GenuineIntel","Intel Xeon Processor (Skylake,
+        IBRS)","2","GenuineIntel","Intel Xeon Processor (Skylake, IBRS)","3","GenuineIntel","Intel
+        Xeon Processor (Skylake, IBRS)"],"ansible_processor_count":4,"ansible_processor_cores":1,"ansible_processor_threads_per_core":1,"ansible_processor_vcpus":4,"ansible_processor_nproc":4,"ansible_memtotal_mb":7768,"ansible_memfree_mb":5261,"ansible_swaptotal_mb":0,"ansible_swapfree_mb":0,"ansible_memory_mb":{"real":{"total":7768,"used":2507,"free":5261},"nocache":{"free":5860,"used":1908},"swap":{"total":0,"free":0,"used":0,"cached":0}},"ansible_bios_date":"04/01/2014","ansible_bios_vendor":"SeaBIOS","ansible_bios_version":"1.13.0-2.module+el8.2.1+7284+aa32a2c4","ansible_board_asset_tag":"NA","ansible_board_name":"NA","ansible_board_serial":"NA","ansible_board_vendor":"NA","ansible_board_version":"NA","ansible_chassis_asset_tag":"NA","ansible_chassis_serial":"NA","ansible_chassis_vendor":"Red
+        Hat","ansible_chassis_version":"RHEL 7.6.0 PC (i440FX + PIIX, 1996)","ansible_form_factor":"Other","ansible_product_name":"OpenStack
+        Compute","ansible_product_serial":"NA","ansible_product_uuid":"NA","ansible_product_version":"20.4.1-1.20220112153422.1ee93b9.el8ost","ansible_system_vendor":"Red
+        Hat","ansible_devices":{"vda":{"virtual":1,"links":{"ids":[],"uuids":[],"labels":[],"masters":[]},"vendor":"0x1af4","model":null,"sas_address":null,"sas_device_handle":null,"removable":"0","support_discard":"0","partitions":{"vda2":{"links":{"ids":[],"uuids":[],"labels":[],"masters":[]},"start":"4096","sectors":"204800","sectorsize":512,"size":"100.00
+        MB","uuid":null,"holders":[]},"vda3":{"links":{"ids":[],"uuids":[],"labels":[],"masters":[]},"start":"208896","sectors":"125620191","sectorsize":512,"size":"59.90
+        GB","uuid":null,"holders":[]},"vda1":{"links":{"ids":[],"uuids":[],"labels":[],"masters":[]},"start":"2048","sectors":"2048","sectorsize":512,"size":"1.00
+        MB","uuid":null,"holders":[]}},"rotational":"1","scheduler_mode":"mq-deadline","sectors":"125829120","sectorsize":"512","size":"60.00
+        GB","host":"","holders":[]}},"ansible_device_links":{"ids":{},"uuids":{},"labels":{},"masters":{}},"ansible_uptime_seconds":5502937,"ansible_mounts":[{"mount":"/runner","device":"/dev/vda3","fstype":"xfs","options":"rw,seclabel,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota,bind","size_total":64307048448,"size_available":59419504640,"block_size":4096,"block_total":15699963,"block_available":14506715,"block_used":1193248,"inode_total":31404992,"inode_available":31260041,"inode_used":144951,"uuid":"N/A"},{"mount":"/etc/hosts","device":"/dev/vda3","fstype":"xfs","options":"rw,seclabel,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota,bind","size_total":64307048448,"size_available":59419504640,"block_size":4096,"block_total":15699963,"block_available":14506715,"block_used":1193248,"inode_total":31404992,"inode_available":31260041,"inode_used":144951,"uuid":"N/A"},{"mount":"/etc/hostname","device":"/dev/vda3","fstype":"xfs","options":"rw,seclabel,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota,bind","size_total":64307048448,"size_available":59419504640,"block_size":4096,"block_total":15699963,"block_available":14506715,"block_used":1193248,"inode_total":31404992,"inode_available":31260041,"inode_used":144951,"uuid":"N/A"},{"mount":"/run/.containerenv","device":"/dev/vda3","fstype":"xfs","options":"rw,seclabel,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota,bind","size_total":64307048448,"size_available":59419504640,"block_size":4096,"block_total":15699963,"block_available":14506715,"block_used":1193248,"inode_total":31404992,"inode_available":31260041,"inode_used":144951,"uuid":"N/A"},{"mount":"/etc/resolv.conf","device":"/dev/vda3","fstype":"xfs","options":"rw,seclabel,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota,bind","size_total":64307048448,"size_available":59419504640,"block_size":4096,"block_total":15699963,"block_available":14506715,"block_used":1193248,"inode_total":31404992,"inode_available":31260041,"inode_used":144951,"uuid":"N/A"}],"ansible_iscsi_iqn":"","ansible_virtualization_type":"container","ansible_virtualization_role":"guest","ansible_virtualization_tech_guest":["openstack","container"],"ansible_virtualization_tech_host":["kvm"],"ansible_fips":false,"ansible_apparmor":{"status":"disabled"},"ansible_python":{"version":{"major":3,"minor":8,"micro":8,"releaselevel":"final","serial":0},"version_info":[3,8,8,"final",0],"executable":"/usr/bin/python3.8","has_sslcontext":true,"type":"cpython"},"ansible_pkg_mgr":"dnf","ansible_selinux_python_present":true,"ansible_selinux":{"status":"disabled"},"ansible_lsb":{},"ansible_cmdline":{"BOOT_IMAGE":"(hd0,gpt3)/boot/vmlinuz-4.18.0-348.el8.x86_64","root":"UUID=e4cb6c6d-5cfb-49e2-9584-7bc863570913","console":"ttyS0,115200n8","no_timer_check":true,"net.ifnames":"0","crashkernel":"auto"},"ansible_proc_cmdline":{"BOOT_IMAGE":"(hd0,gpt3)/boot/vmlinuz-4.18.0-348.el8.x86_64","root":"UUID=e4cb6c6d-5cfb-49e2-9584-7bc863570913","console":["tty0","ttyS0,115200n8"],"no_timer_check":true,"net.ifnames":"0","crashkernel":"auto"},"ansible_service_mgr":"dumb-init","gather_subset":["all"],"module_setup":true},"warnings":[],"deprecations":[],"_ansible_verbose_override":true,"_ansible_no_log":false,"changed":false},"start":"2023-02-06T16:21:51.238834","end":"2023-02-06T16:21:52.081301","duration":0.842467,"event_loop":null,"uuid":"bf1175d6-2e63-4ff3-8474-e52e8bc28977","guid":"95e47944ff9a462782f8a627bd4eb45a"},"event_level":3,"failed":false,"changed":false,"uuid":"bf1175d6-2e63-4ff3-8474-e52e8bc28977","parent_uuid":"425d9dd7-83af-8766-beed-00000000000c","host":1,"host_name":"localhost","playbook":"hello_world.yml","play":"Echo
+        Hello, world!","task":"Gathering Facts","role":"","stdout":"\u001b[0;32mok:
+        [localhost]\u001b[0m","start_line":4,"end_line":5,"verbosity":0},{"id":2849,"type":"job_event","url":"/api/v2/job_events/2849/","related":{"job":"/api/v2/jobs/435/","children":"/api/v2/job_events/2849/children/"},"summary_fields":{"job":{"id":435,"name":"Hello
+        World","description":"Hello World 490","status":"successful","failed":false,"elapsed":7.4,"type":"job","job_template_id":9,"job_template_name":"Hello
+        World"},"role":{}},"created":"2023-02-06T16:21:52.091772Z","modified":"2023-02-06T16:21:52.108352Z","job":435,"event":"playbook_on_task_start","counter":6,"event_display":"Task
+        Started (debug)","event_data":{"playbook":"hello_world.yml","playbook_uuid":"6c58ffa9-d4d3-4b72-adea-dc4f16df9d70","play":"Echo
+        Hello, world!","play_uuid":"425d9dd7-83af-8766-beed-000000000006","play_pattern":"localhost","task":"debug","task_uuid":"425d9dd7-83af-8766-beed-000000000008","task_action":"debug","task_args":"","task_path":"/runner/project/hello_world.yml:7","name":"debug","is_conditional":false,"uuid":"425d9dd7-83af-8766-beed-000000000008","guid":"95e47944ff9a462782f8a627bd4eb45a"},"event_level":2,"failed":false,"changed":false,"uuid":"425d9dd7-83af-8766-beed-000000000008","parent_uuid":"425d9dd7-83af-8766-beed-000000000006","host":null,"host_name":"","playbook":"hello_world.yml","play":"Echo
+        Hello, world!","task":"debug","role":"","stdout":"\r\nTASK [debug] *******************************************************************","start_line":5,"end_line":7,"verbosity":0},{"id":2850,"type":"job_event","url":"/api/v2/job_events/2850/","related":{"job":"/api/v2/jobs/435/","children":"/api/v2/job_events/2850/children/","host":"/api/v2/hosts/1/"},"summary_fields":{"host":{"id":1,"name":"localhost","description":""},"job":{"id":435,"name":"Hello
+        World","description":"Hello World 490","status":"successful","failed":false,"elapsed":7.4,"type":"job","job_template_id":9,"job_template_name":"Hello
+        World"},"role":{}},"created":"2023-02-06T16:21:52.092466Z","modified":"2023-02-06T16:21:52.108432Z","job":435,"event":"runner_on_start","counter":7,"event_display":"Host
+        Started","event_data":{"playbook":"hello_world.yml","playbook_uuid":"6c58ffa9-d4d3-4b72-adea-dc4f16df9d70","play":"Echo
+        Hello, world!","play_uuid":"425d9dd7-83af-8766-beed-000000000006","play_pattern":"localhost","task":"debug","task_uuid":"425d9dd7-83af-8766-beed-000000000008","task_action":"debug","task_args":"","task_path":"/runner/project/hello_world.yml:7","host":"localhost","uuid":"eea5e1bf-bddd-4943-8a7c-262833c01115","guid":"95e47944ff9a462782f8a627bd4eb45a"},"event_level":3,"failed":false,"changed":false,"uuid":"eea5e1bf-bddd-4943-8a7c-262833c01115","parent_uuid":"425d9dd7-83af-8766-beed-000000000008","host":1,"host_name":"localhost","playbook":"hello_world.yml","play":"Echo
+        Hello, world!","task":"debug","role":"","stdout":"","start_line":7,"end_line":7,"verbosity":0},{"id":2852,"type":"job_event","url":"/api/v2/job_events/2852/","related":{"job":"/api/v2/jobs/435/","children":"/api/v2/job_events/2852/children/","host":"/api/v2/hosts/1/"},"summary_fields":{"host":{"id":1,"name":"localhost","description":""},"job":{"id":435,"name":"Hello
+        World","description":"Hello World 490","status":"successful","failed":false,"elapsed":7.4,"type":"job","job_template_id":9,"job_template_name":"Hello
+        World"},"role":{}},"created":"2023-02-06T16:21:52.103135Z","modified":"2023-02-06T16:21:52.111117Z","job":435,"event":"runner_on_ok","counter":8,"event_display":"Host
+        OK","event_data":{"playbook":"hello_world.yml","playbook_uuid":"6c58ffa9-d4d3-4b72-adea-dc4f16df9d70","play":"Echo
+        Hello, world!","play_uuid":"425d9dd7-83af-8766-beed-000000000006","play_pattern":"localhost","task":"debug","task_uuid":"425d9dd7-83af-8766-beed-000000000008","task_action":"debug","task_args":"","task_path":"/runner/project/hello_world.yml:7","host":"localhost","remote_addr":"localhost","res":{"msg":"Hello,
+        world!","_ansible_verbose_always":true,"_ansible_no_log":false,"changed":false},"start":"2023-02-06T16:21:52.092397","end":"2023-02-06T16:21:52.102897","duration":0.0105,"event_loop":null,"uuid":"0f9753c8-b6a3-4561-a750-753c10064e11","guid":"95e47944ff9a462782f8a627bd4eb45a"},"event_level":3,"failed":false,"changed":false,"uuid":"0f9753c8-b6a3-4561-a750-753c10064e11","parent_uuid":"425d9dd7-83af-8766-beed-000000000008","host":1,"host_name":"localhost","playbook":"hello_world.yml","play":"Echo
+        Hello, world!","task":"debug","role":"","stdout":"\u001b[0;32mok: [localhost]
+        => {\u001b[0m\r\n\u001b[0;32m    \"msg\": \"Hello, world!\"\u001b[0m\r\n\u001b[0;32m}\u001b[0m","start_line":7,"end_line":10,"verbosity":0},{"id":2853,"type":"job_event","url":"/api/v2/job_events/2853/","related":{"job":"/api/v2/jobs/435/","children":"/api/v2/job_events/2853/children/"},"summary_fields":{"job":{"id":435,"name":"Hello
+        World","description":"Hello World 490","status":"successful","failed":false,"elapsed":7.4,"type":"job","job_template_id":9,"job_template_name":"Hello
+        World"},"role":{}},"created":"2023-02-06T16:21:52.114824Z","modified":"2023-02-06T16:21:52.434458Z","job":435,"event":"playbook_on_stats","counter":9,"event_display":"Playbook
+        Complete","event_data":{"playbook":"hello_world.yml","playbook_uuid":"6c58ffa9-d4d3-4b72-adea-dc4f16df9d70","changed":{},"dark":{},"failures":{},"ignored":{},"ok":{"localhost":2},"processed":{"localhost":1},"rescued":{},"skipped":{},"artifact_data":{},"uuid":"7bc634b9-5199-467e-9be2-782d44f1f14a","guid":"95e47944ff9a462782f8a627bd4eb45a"},"event_level":1,"failed":false,"changed":false,"uuid":"7bc634b9-5199-467e-9be2-782d44f1f14a","parent_uuid":"6c58ffa9-d4d3-4b72-adea-dc4f16df9d70","host":null,"host_name":"","playbook":"hello_world.yml","play":"","task":"","role":"","stdout":"\r\nPLAY
+        RECAP *********************************************************************\r\n\u001b[0;32mlocalhost\u001b[0m                  :
+        \u001b[0;32mok=2   \u001b[0m changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \r\n","start_line":10,"end_line":14,"verbosity":0}]}'
+    headers:
+      Access-Control-Expose-Headers:
+      - X-API-Request-Id
+      Allow:
+      - GET, HEAD, OPTIONS
+      Cache-Control:
+      - no-cache, no-store, must-revalidate
+      Connection:
+      - keep-alive
+      Content-Language:
+      - en
+      Content-Length:
+      - '20039'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 06 Feb 2023 16:21:59 GMT
+      Expires:
+      - '0'
+      Pragma:
+      - no-cache
+      Server:
+      - nginx
+      Vary:
+      - Accept, Accept-Language, Origin, Cookie
+      X-API-Node:
+      - localhost
+      X-API-Product-Name:
+      - Red Hat Ansible Automation Platform
+      X-API-Product-Version:
+      - 4.1.0
+      X-API-Request-Id:
+      - 874175954a6544b4bd2fc60c2ee532a2
+      X-API-Time:
+      - 0.265s
+      X-API-Total-Time:
+      - 0.591s
+      X-Frame-Options:
+      - DENY
+      X-UI-Max-Events:
+      - '4000'
+    status:
+      code: 200
+      message: OK
+    url: https://examples.com/api/v2/jobs/435/job_events/
+- request:
+    body: null
+    headers:
+      authorization:
+      - Bearer DUMMY
+    method: GET
+    uri: https://examples.com/api/v2/jobs/435/
+  response:
+    body:
+      string: '{"id":435,"type":"job","url":"/api/v2/jobs/435/","related":{"created_by":"/api/v2/users/1/","labels":"/api/v2/jobs/435/labels/","inventory":"/api/v2/inventories/1/","project":"/api/v2/projects/8/","organization":"/api/v2/organizations/1/","credentials":"/api/v2/jobs/435/credentials/","unified_job_template":"/api/v2/job_templates/9/","stdout":"/api/v2/jobs/435/stdout/","execution_environment":"/api/v2/execution_environments/3/","job_events":"/api/v2/jobs/435/job_events/","job_host_summaries":"/api/v2/jobs/435/job_host_summaries/","activity_stream":"/api/v2/jobs/435/activity_stream/","notifications":"/api/v2/jobs/435/notifications/","create_schedule":"/api/v2/jobs/435/create_schedule/","job_template":"/api/v2/job_templates/9/","cancel":"/api/v2/jobs/435/cancel/","relaunch":"/api/v2/jobs/435/relaunch/"},"summary_fields":{"organization":{"id":1,"name":"Default","description":""},"inventory":{"id":1,"name":"Demo
+        Inventory","description":"","has_active_failures":false,"total_hosts":1,"hosts_with_active_failures":0,"total_groups":0,"has_inventory_sources":false,"total_inventory_sources":0,"inventory_sources_with_failures":0,"organization_id":1,"kind":""},"execution_environment":{"id":3,"name":"Default
+        execution environment","description":"","image":"registry.redhat.io/ansible-automation-platform-21/ee-supported-rhel8:latest"},"project":{"id":8,"name":"mkanoor","description":"mkanoor","status":"successful","scm_type":"git","allow_override":false},"job_template":{"id":9,"name":"Hello
+        World","description":"Hello World 490"},"unified_job_template":{"id":9,"name":"Hello
+        World","description":"Hello World 490","unified_job_type":"job"},"instance_group":{"id":2,"name":"default","is_container_group":false},"created_by":{"id":1,"username":"admin","first_name":"","last_name":""},"user_capabilities":{"delete":true,"start":true},"labels":{"count":0,"results":[]},"credentials":[]},"created":"2023-02-06T16:21:48.170337Z","modified":"2023-02-06T16:21:48.665207Z","name":"Hello
+        World","description":"Hello World 490","job_type":"run","inventory":1,"project":8,"playbook":"hello_world.yml","scm_branch":"","forks":0,"limit":"","verbosity":0,"extra_vars":"{\"secret\":
+        \"$encrypted$\"}","job_tags":"","force_handlers":false,"skip_tags":"","start_at_task":"","timeout":0,"use_fact_cache":false,"organization":1,"unified_job_template":9,"launch_type":"manual","status":"successful","execution_environment":3,"failed":false,"started":"2023-02-06T16:21:48.754485Z","finished":"2023-02-06T16:21:56.154082Z","canceled_on":null,"elapsed":7.4,"job_args":"[\"podman\",
+        \"run\", \"--rm\", \"--tty\", \"--interactive\", \"--workdir\", \"/runner/project\",
+        \"-v\", \"/tmp/awx_435_admuk2gj/:/runner/:Z\", \"--authfile=/tmp/ansible_runner_registry_435_dm6dcn0z/auth.json\",
+        \"--env-file\", \"/tmp/awx_435_admuk2gj/artifacts/435/env.list\", \"--quiet\",
+        \"--name\", \"ansible_runner_435\", \"--user=root\", \"registry.redhat.io/ansible-automation-platform-21/ee-supported-rhel8:latest\",
+        \"ansible-playbook\", \"-u\", \"root\", \"-i\", \"/runner/inventory/hosts\",
+        \"-e\", \"@/runner/env/extravars\", \"hello_world.yml\"]","job_cwd":"/runner/project","job_env":{"LAUNCHED_BY_RUNNER":"1","ANSIBLE_UNSAFE_WRITES":"1","AWX_ISOLATED_DATA_DIR":"/runner/artifacts/435","ANSIBLE_FORCE_COLOR":"True","ANSIBLE_HOST_KEY_CHECKING":"False","ANSIBLE_INVENTORY_UNPARSED_FAILED":"True","ANSIBLE_PARAMIKO_RECORD_HOST_KEYS":"False","AWX_PRIVATE_DATA_DIR":"/tmp/awx_435_admuk2gj","JOB_ID":"435","INVENTORY_ID":"1","PROJECT_REVISION":"7dc5aa7f7bfb0b7ba2a26c9f5d99194be3c9a670","ANSIBLE_RETRY_FILES_ENABLED":"False","MAX_EVENT_RES":"700000","AWX_HOST":"https://examples.com","ANSIBLE_SSH_CONTROL_PATH_DIR":"/runner/cp","ANSIBLE_COLLECTIONS_PATHS":"/runner/requirements_collections:~/.ansible/collections:/usr/share/ansible/collections","ANSIBLE_ROLES_PATH":"/runner/requirements_roles:~/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles","ANSIBLE_STDOUT_CALLBACK":"awx_display","RUNNER_OMIT_EVENTS":"False","RUNNER_ONLY_FAILED_EVENTS":"False"},"job_explanation":"","execution_node":"localhost","controller_node":"localhost","result_traceback":"","event_processing_finished":true,"launched_by":{"id":1,"name":"admin","type":"user","url":"/api/v2/users/1/"},"work_unit_id":"Subu66Uq","job_template":9,"passwords_needed_to_start":[],"allow_simultaneous":false,"artifacts":{},"scm_revision":"7dc5aa7f7bfb0b7ba2a26c9f5d99194be3c9a670","instance_group":2,"diff_mode":false,"job_slice_number":0,"job_slice_count":1,"webhook_service":"","webhook_credential":null,"webhook_guid":"","host_status_counts":{"ok":1},"playbook_counts":{"play_count":1,"task_count":2},"custom_virtualenv":null}'
+    headers:
+      Access-Control-Expose-Headers:
+      - X-API-Request-Id
+      Allow:
+      - GET, DELETE, HEAD, OPTIONS
+      Cache-Control:
+      - no-cache, no-store, must-revalidate
+      Connection:
+      - keep-alive
+      Content-Language:
+      - en
+      Content-Length:
+      - '4659'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 06 Feb 2023 16:22:00 GMT
+      Expires:
+      - '0'
+      Pragma:
+      - no-cache
+      Server:
+      - nginx
+      Vary:
+      - Accept, Accept-Language, Origin, Cookie
+      X-API-Node:
+      - localhost
+      X-API-Product-Name:
+      - Red Hat Ansible Automation Platform
+      X-API-Product-Version:
+      - 4.1.0
+      X-API-Request-Id:
+      - 4d1b1c26067c4177ae31bcc9adaba41c
+      X-API-Time:
+      - 0.257s
+      X-API-Total-Time:
+      - 0.576s
+      X-Frame-Options:
+      - DENY
+    status:
+      code: 200
+      message: OK
+    url: https://examples.com/api/v2/jobs/435/
+version: 1
