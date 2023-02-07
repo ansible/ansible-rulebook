@@ -1,3 +1,17 @@
+#  Copyright 2022 Red Hat, Inc.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import asyncio
 import json
 import logging
@@ -82,12 +96,12 @@ class JobTemplateRunner:
         name: str,
         organization: str,
         job_params: dict,
-        event_handler: Callable[[dict], Any],
+        event_handler: Union[Callable[[dict], Any], None] = None,
     ) -> dict:
         job = await self.launch(name, organization, job_params)
 
         url_info = urlparse(job["url"])
-        url = f"{url_info.path}/job_events/"
+        url = f"{url_info.path}job_events/"
         counters = []
         params = dict(parse_qsl(url_info.query))
 
