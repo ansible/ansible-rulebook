@@ -233,7 +233,10 @@ async def run_rulesets(
 
 
 class RuleSetRunner:
-    ANSIBLE_ACTIONS = ("run_playbook", "run_module", "run_job_template")
+    ANSIBLE_ACTIONS = (
+        "run_playbook",
+        "run_module",
+    )
 
     def __init__(
         self,
