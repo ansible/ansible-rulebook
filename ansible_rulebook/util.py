@@ -21,7 +21,6 @@ import subprocess
 import sys
 import tempfile
 import typing
-from pprint import pprint
 from typing import Any, Dict, List, Union
 
 import ansible_runner
@@ -75,28 +74,6 @@ def load_inventory(inventory_file: str) -> Any:
     with open(inventory_file) as f:
         inventory_data = yaml.safe_load(f.read())
     return inventory_data
-
-
-def json_count(data):
-    s = 0
-    q = []
-    q.append(data)
-    while q:
-        o = q.pop()
-        if isinstance(o, dict):
-            s += len(o)
-            if len(o) > 255:
-                pprint(data)
-                raise Exception(
-                    f"Only 255 values supported per dictionary found {len(o)}"
-                )
-            if s > 255:
-                pprint(data)
-                raise Exception(
-                    f"Only 255 values supported per dictionary found {s}"
-                )
-            for i in o.values():
-                q.append(i)
 
 
 def collect_ansible_facts(inventory: Dict) -> List[Dict]:
