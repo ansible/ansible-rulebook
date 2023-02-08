@@ -68,14 +68,6 @@ jobs:
           name: test-results
           path: test-report.xml
 
-      - name: Test Report
-        uses: phoenix-actions/test-reporting@v8
-        if: success() || failure() # run this step even if previous step failed
-        with:
-          name: common-tests
-          path: test-report.xml
-          reporter: java-junit
-
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
