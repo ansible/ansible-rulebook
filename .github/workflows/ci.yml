@@ -82,10 +82,11 @@ jobs:
     needs: common-tests
     runs-on: ubuntu-latest
     steps:
-      - uses: dorny/test-reporter@v1
+      - uses: phoenix-actions/test-reporting@v8
+        # uses: dorny/test-reporter@v1
         id: common-tests-report # Set ID reference for step
         with:
-          artifact: common-tests-results # artifact name
+          artifact: common-tests-results
           name: common-tests-results
           path: common-tests-report.xml
           reporter: java-junit
