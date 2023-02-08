@@ -65,7 +65,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         if: success() || failure() # run this step even if previous step failed
         with:
-          name: common-tests-results
+          name: common-tests-results-${{ matrix.python-version }}
           path: common-tests-report.xml
 
       - name: Upload coverage to Codecov
@@ -79,14 +79,24 @@ jobs:
           verbose: true
 
   tests-report:
+    strategy:
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+    permissions:
+      checks: write
+      pull-requests: write
+      actions: read
     needs: common-tests
     runs-on: ubuntu-latest
     steps:
-      - uses: phoenix-actions/test-reporting@v8
-        # uses: dorny/test-reporter@v1
+      - uses: dorny/test-reporter@v1
         id: common-tests-report # Set ID reference for step
         with:
-          artifact: common-tests-results
-          name: common-tests-results
+          artifact: common-tests-results-${{ matrix.python-version }}
+          name: common-tests-results-${{ matrix.python-version }}
           path: common-tests-report.xml
           reporter: java-junit
