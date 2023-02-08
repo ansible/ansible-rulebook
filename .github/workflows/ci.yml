@@ -63,7 +63,7 @@ jobs:
         uses: ./.github/actions/common-tests
 
       - name: Test Report
-        uses: dorny/test-reporter@v1
+        uses: phoenix-actions/test-reporting@v8
         if: success() || failure() # run this step even if previous step failed
         with:
           name: common-tests
