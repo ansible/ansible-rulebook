@@ -9,10 +9,7 @@
           house: Martell
   rules:
     - name: r1
-      condition:
-        all:
-          - facts.custom << fact.houses is defined
-          - event.extra_payload.house not in facts.custom.houses
+      condition: event.extra_payload.house not in vars.houses
       action:
         run_playbook:
           name: ./playbooks/print_event.yml

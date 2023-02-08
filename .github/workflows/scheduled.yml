@@ -1,4 +1,4 @@
-name: scheduled
+name: Scheduled full tests
 
 on:
   schedule:
@@ -69,11 +69,14 @@ jobs:
           name: codecov-umbrella
           verbose: true
 
-      # WAITING FOR APPROVAL
-
-      # - name: Notify to slack if failure
-      #   if: ${{ failure() }}
-      #   uses: rtCamp/action-slack-notify@v2
-      #   env:
-      #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-      #     SLACK_MESSAGE: Failure of scheduled executed tests for ansible rulebook
+      - name: Notify to slack if failure
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_USERNAME: GH Slack Notifier for EDA
+          SLACK_TITLE: Failure of scheduled tests for ansible-rulebook
+          SLACK_MESSAGE: |
+            Scheduled tests for ansible-rulebook failed.
+            Id: ${{ github.run_id }}"
+            Workflow: ${{ github.workflow }}

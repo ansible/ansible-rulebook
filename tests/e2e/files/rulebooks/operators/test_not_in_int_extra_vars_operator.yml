@@ -13,10 +13,7 @@
             - Baratheon
   rules:
     - name: r1
-      condition:
-        all:
-          - facts.custom << fact.in_operator_int_array is defined
-          - event.i not in facts.custom.in_operator_int_array
+      condition: event.i not in vars.in_operator_int_array
       action:
         run_playbook:
           name: ./playbooks/print_event.yml
