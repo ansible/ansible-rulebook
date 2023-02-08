@@ -13,10 +13,7 @@
             - Baratheon
   rules:
     - name: r1
-      condition:
-        all:
-          - facts.custom << fact.houses is defined
-          - event.extra_payload.houses contains "Stark" and event.i in facts.custom.in_operator_int_array
+      condition: event.extra_payload.houses contains "Stark" and event.i in vars.in_operator_int_array
       action:
         run_playbook:
           name: ./playbooks/print_event.yml

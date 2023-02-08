@@ -217,7 +217,12 @@ Condition with fact and event
         action:
           debug:
 
-In the above example the custom.expected_index was set using the set_fact action in the running of the rulebook
+| In the above example the custom.expected_index was set using the set_fact action in 
+| the running of the rulebook. You cannot compare a fact and event directly in the same
+| condition. First the fact has to be assigned to a local variable, **facts.first** in the
+| above example and then that local variable can be compared with event.i. When you use a 
+| fact and event it would always have to be in the context of multiple conditions using **all**.
+| `Differences between facts and events <events_and_facts.html>`_
 
 
 Condition with vars and event
@@ -233,8 +238,21 @@ Condition with vars and event
         action:
           debug:
 
-In the above example the person.year and person.age was passed in a variables file via ``--vars`` from the
-command line to ansible-rulebook.
+| In the above example the person.year and person.age was passed in a variables file via 
+| ``--vars`` from the command line to ansible-rulebook. The usage of vars allows us to 
+| preserve the data type.  Environment variable values are always treated as strings and 
+| you would have to do the type conversion in the playbook or job template.
+
+    .. code-block:: yaml
+
+        name: Single condition comparing vars and event
+        condition: event.name == vars.name
+        action:
+          debug:
+
+| Vars can be used in single condition rules, like above because vars are resolved when
+| the ruleset is loaded before being passed into the rule engine. If the vars is missing
+| ansible-rulebook reports an error.
 
 | When evaluating a single event you can compare multiple
 | properties/attributes from the event using **and** or **or**

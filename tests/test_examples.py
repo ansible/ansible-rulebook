@@ -754,11 +754,10 @@ async def test_28_right_side_condition_template():
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
     assert event["matching_events"] == {
-        "first": {"custom": {"expected_index": 2}},
-        "m_1": {"i": 2},
+        "m": {"i": 2},
     }, "3"
     event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "7"
+    assert event["type"] == "Shutdown", "4"
     assert event_log.empty()
 
 
