@@ -1,0 +1,63 @@
+---
+- name: Test variable usage by simulating an intruder alarm activation
+  hosts: all
+  sources:
+    - generic:
+        event_delay: "{{ DEFAULT_EVENT_DELAY }}"
+        payload:
+          - action: "intruder_detected"
+            meta:
+              location: "hobart"
+          - action: "initiate_lockdown"
+            meta:
+              lockdown_level: 9.0
+              lockdown_zone: 5
+
+  rules:
+      # use location var in rule name when bug resolved: https://issues.redhat.com/browse/AAP-8921
+    - name: Intruder detected in hobart
+      condition: >
+        event.action == "intruder_detected" and
+        event.meta.location == vars.alarm_location and
+        (vars.alarm_monitoring != "disabled" or vars.alarm_monitoring != "maintenance")
+      actions:
+        - debug:
+            msg: "Intruder detected in {{ alarm_location }}"
+        - set_fact:
+            fact:
+              agent_name: "Maxwell Smart"
+        - set_fact:
+            fact:
+              agent_id: "86"
+        - post_event:
+            event:
+              notify_police: true
+        - run_playbook:
+            name: ./playbooks/print_rule_name.yml
+
+    - name: Notify agent 86
+      condition:
+        all:
+          - event.agent_id == vars.E2E_AGENT_ID
+          - event.agent_name == vars.E2E_AGENT_NAME
+      action:
+        debug:
+          msg: >
+            Notifying agent {{ E2E_AGENT_NAME }},
+            ID {{ E2E_AGENT_ID }}
+
+    - name: Ping law enforcement
+      condition: event.notify_police == vars.notify_police
+      action:
+        debug:
+          msg: "Notifying law enforcement"
+
+    - name: Initiate lockdown
+      condition: >
+        event.action == "initiate_lockdown" and
+        vars.lockdown_enabled == true and
+        event.meta.lockdown_level >= vars.lockdown_threshold and
+        event.meta.lockdown_zone in vars.zones
+      action:
+        debug:
+          msg: "Lockdown level {{ event.meta.lockdown_level }} initiated"

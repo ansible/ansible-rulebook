@@ -1,0 +1,6 @@
+alarm_location: hobart
+alarm_monitoring: enabled
+notify_police: true
+lockdown_enabled: true
+lockdown_threshold: 7.5
+zones: [1, 3, 5, 7, 11]
