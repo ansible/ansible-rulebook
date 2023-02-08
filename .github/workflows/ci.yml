@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: dorny/test-reporter@v1
-        id: Common tests Report # Set ID reference for step
+        id: common-tests-report # Set ID reference for step
         with:
           artifact: common-tests-results # artifact name
           name: common-tests-results
