@@ -6,4 +6,4 @@ runs:
   steps:
     - name: Run common tests
       shell: bash
-      run: pytest -m "not e2e and not long_run" -vv -n auto --cov=./ --cov-report=xml
+      run: pytest -m "not e2e and not long_run" -vv -n auto --cov=./ --cov-report=xml --junitxml test-report.xml
