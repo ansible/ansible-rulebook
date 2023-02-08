@@ -2,7 +2,7 @@ name: "Test Report"
 on:
   workflow_run:
     workflows:
-      - "ci" # runs after CI workflow
+      - "ci" # runs after ci workflow
     types:
       - completed
 jobs:

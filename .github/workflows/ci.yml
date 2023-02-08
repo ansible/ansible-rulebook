@@ -65,8 +65,8 @@ jobs:
       - uses: actions/upload-artifact@v3
         if: success() || failure() # run this step even if previous step failed
         with:
-          name: test-results
-          path: test-report.xml
+          name: common-tests-results
+          path: common-tests-report.xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -77,3 +77,15 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           verbose: true
+
+  tests-report:
+    needs: common-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dorny/test-reporter@v1
+        id: Common tests Report # Set ID reference for step
+        with:
+          artifact: common-tests-results # artifact name
+          name: common-tests-results
+          path: common-tests-report.xml
+          reporter: java-junit
