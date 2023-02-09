@@ -66,8 +66,8 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           env_vars: OS,PYTHON
-          fail_ci_if_error: true
+          fail_ci_if_error: false
           files: ./coverage.xml
-          flags: unittests
+          flags: "unittests-${{ matrix.python-version }}"
           name: codecov-umbrella
           verbose: true
