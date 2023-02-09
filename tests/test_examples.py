@@ -907,6 +907,7 @@ async def test_35_multiple_rulesets_1_fired():
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
+    queue.put_nowait(Shutdown())
 
     queue = ruleset_queues[1][1]
     queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
@@ -921,8 +922,8 @@ async def test_35_multiple_rulesets_1_fired():
     )
 
     checks = {
-        "max_events": 3,
-        "shutdown_events": 1,
+        "max_events": 4,
+        "shutdown_events": 2,
         "actions": [
             "35 multiple rulesets 1::r1::set_fact",
             "35 multiple rulesets 1::r2::noop",
@@ -937,30 +938,30 @@ async def test_36_multiple_rulesets_both_fired():
         "examples/36_multiple_rulesets_both_fired.yml"
     )
 
-    queue = ruleset_queues[0][1]
-    queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
-    queue.put_nowait(dict(i=2, meta=dict(hosts="localhost")))
-
-    queue = ruleset_queues[1][1]
-    queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
-
-    queue.put_nowait(Shutdown())
-
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        dict(),
-    )
-    checks = {
-        "max_events": 3,
-        "shutdown_events": 1,
-        "actions": [
-            "36 multiple rulesets 1::r1::set_fact",
-            "36 multiple rulesets 2::r1::debug",
-        ],
-    }
-    validate_events(event_log, **checks)
+    with SourceTask(
+        ruleset_queues[0][0].sources[0], "sources", {}, ruleset_queues[0][1]
+    ):
+        with SourceTask(
+            ruleset_queues[1][0].sources[0],
+            "sources",
+            {},
+            ruleset_queues[1][1],
+        ):
+            await run_rulesets(
+                event_log,
+                ruleset_queues,
+                dict(),
+                load_inventory("playbooks/inventory.yml"),
+            )
+            checks = {
+                "max_events": 4,
+                "shutdown_events": 2,
+                "actions": [
+                    "36 multiple rulesets 1::r1::set_fact",
+                    "36 multiple rulesets 2::r1::debug",
+                ],
+            }
+            validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -991,23 +992,24 @@ async def test_38_shutdown_action():
     ruleset_queues, event_log = load_rulebook("examples/38_shutdown.yml")
 
     queue = ruleset_queues[0][1]
-    queue.put_nowait(dict(i=1))
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "shutdown", "1"
-    assert event["message"] == "My rule has triggered a shutdown"
-    assert event["delay"] == 1.1845
-    assert event["ruleset"] == "Test shutdown action"
-    assert event["rule"] == "Host 1 rule"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "2"
+        event = event_log.get_nowait()
+        assert event["type"] == "Action", "1"
+        assert event["action"] == "shutdown", "1"
+        assert event["message"] == "My rule has triggered a shutdown"
+        assert event["delay"] == 1.1845
+        assert event["ruleset"] == "Test shutdown action"
+        assert event["rule"] == "Host 1 rule"
+        event = event_log.get_nowait()
+        assert event["type"] == "Shutdown", "2"
 
 
 @pytest.mark.asyncio
@@ -1699,6 +1701,72 @@ async def test_65_selectattr_3():
             ],
         }
         validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_66_sleepy_playbook():
+    ruleset_queues, event_log = load_rulebook(
+        "examples/66_sleepy_playbook.yml"
+    )
+
+    with SourceTask(
+        ruleset_queues[0][0].sources[0], "sources", {}, ruleset_queues[0][1]
+    ):
+        with SourceTask(
+            ruleset_queues[1][0].sources[0],
+            "sources",
+            {},
+            ruleset_queues[1][1],
+        ):
+            await run_rulesets(
+                event_log,
+                ruleset_queues,
+                dict(),
+                load_inventory("playbooks/inventory.yml"),
+            )
+
+            checks = {
+                "drain_event_log": True,
+                "shutdown_events": 2,
+                "actions": [
+                    "66 sleepy playbook::r1::print_event",
+                    "terminate gracefully::r11::echo",
+                    "terminate gracefully::r12::shutdown",
+                ],
+            }
+            validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_67_shutdown_now():
+    ruleset_queues, event_log = load_rulebook("examples/67_shutdown_now.yml")
+
+    with SourceTask(
+        ruleset_queues[0][0].sources[0], "sources", {}, ruleset_queues[0][1]
+    ):
+        with SourceTask(
+            ruleset_queues[1][0].sources[0],
+            "sources",
+            {},
+            ruleset_queues[1][1],
+        ):
+            await run_rulesets(
+                event_log,
+                ruleset_queues,
+                dict(),
+                load_inventory("playbooks/inventory.yml"),
+            )
+
+            checks = {
+                "drain_event_log": True,
+                "shutdown_events": 2,
+                "actions": [
+                    "67 shutdown now::r1::print_event",
+                    "terminate now::r11::echo",
+                    "terminate now::r12::shutdown",
+                ],
+            }
+            validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio

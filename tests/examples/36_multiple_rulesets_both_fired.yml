@@ -2,8 +2,12 @@
 - name: 36 multiple rulesets 1
   hosts: all
   sources:
-    - range:
-        limit: 5
+    - generic:
+        loop_count: 5
+        startup_delay: 1
+        create_index: i
+        payload:
+          - x: 1
   rules:
     - name: r1
       condition: event.i == 1
@@ -19,8 +23,12 @@
 - name: 36 multiple rulesets 2
   hosts: all
   sources:
-    - range:
-        limit: 5
+    - generic:
+        loop_count: 5
+        shutdown_after: 10
+        payload:
+          - y: 1
+          - y: 2
   rules:
     - name: r1
       condition: event.fire_rule == True

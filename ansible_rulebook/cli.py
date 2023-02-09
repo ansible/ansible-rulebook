@@ -22,6 +22,7 @@ import sys
 from typing import List, NoReturn
 
 import ansible_rulebook.util as util
+from ansible_rulebook.messages import DEFAULT_SHUTDOWN_DELAY
 
 # ensure a valid JVM is available and configures JAVA_HOME if necessary
 # must be done before importing any other modules
@@ -122,6 +123,14 @@ def get_parser() -> argparse.ArgumentParser:
         "--print-events",
         action="store_true",
         help="Print events to stdout, redundant and disabled with -vv",
+    )
+    parser.add_argument(
+        "--shutdown-delay",
+        default=os.environ.get("EDA_SHUTDOWN_DELAY", DEFAULT_SHUTDOWN_DELAY),
+        type=float,
+        help="Maximum number of seconds to wait after issuing a "
+        " graceful shutdown, default: 60. The process will shutdown if "
+        " all actions complete before this time period",
     )
     return parser
 

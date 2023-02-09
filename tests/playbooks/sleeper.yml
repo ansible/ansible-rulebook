@@ -1,0 +1,13 @@
+---
+- name: Sleeps for 5 minutes
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Sleepy
+      ansible.builtin.debug:
+        msg: 'Hello from Sleepy, will sleep for next 5 minutes'
+
+    - name: snore
+      ansible.builtin.pause:
+        minutes: 5
+...

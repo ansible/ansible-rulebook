@@ -325,16 +325,20 @@ shutdown
      - Description
      - Required
    * - delay
-     - A numeric value about how long to wait before shutting down, default 0.0
+     - A numeric value about how long to wait in seconds before shutting down, default 60.0
      - No
    * - message
      - A message to be associated with this shutdown 
+     - No
+   * - kind
+     - Kind of shutdown can be either **graceful** or **now**. default is graceful.
      - No
 
 | Generate a shutdown event which will terminate the ansible-rulebook process.
 | If there are multiple rule-sets running in your rule book, issuing a shutdown will cause
 | all other rule-sets to end, care needs to be taken to account for running playbooks which
-| can be impacted when one of the rule set decides to shutdown.
+| can be impacted when one of the rule set decides to shutdown. A shutdown message is
+| broadcast to all running rule-sets.
 
 Example:
 

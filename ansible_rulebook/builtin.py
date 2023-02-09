@@ -41,6 +41,7 @@ from .exception import (
     ShutdownException,
 )
 from .job_template_runner import job_template_runner
+from .messages import Shutdown
 from .util import get_horizontal_rule
 
 logger = logging.getLogger(__name__)
@@ -449,6 +450,7 @@ async def call_runner(
 ):
 
     host_limit = ",".join(hosts)
+    shutdown = False
 
     loop = asyncio.get_running_loop()
 
@@ -475,30 +477,42 @@ async def call_runner(
                 val["run_at"] = event_data.get("created")
                 await event_log.put(val)
         except CancelledError:
-            pass
+            logger.info("Ansible Runner Queue task cancelled")
+
+    def cancel_callback():
+        return shutdown
 
     tasks = []
 
     tasks.append(asyncio.create_task(read_queue()))
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as task_pool:
-        await loop.run_in_executor(
-            task_pool,
-            partial(
-                ansible_runner.run,
-                private_data_dir=private_data_dir,
-                limit=host_limit,
-                verbosity=verbosity,
-                event_handler=event_callback,
-                json_mode=json_mode,
-                **runner_args,
-            ),
-        )
+        try:
+            await loop.run_in_executor(
+                task_pool,
+                partial(
+                    ansible_runner.run,
+                    private_data_dir=private_data_dir,
+                    limit=host_limit,
+                    verbosity=verbosity,
+                    event_handler=event_callback,
+                    cancel_callback=cancel_callback,
+                    json_mode=json_mode,
+                    **runner_args,
+                ),
+            )
+        except CancelledError:
+            logger.debug("Ansible Runner Thread Pool executor task cancelled")
+            shutdown = True
+            raise
+        finally:
+            # Cancel the queue reading task
+            for task in tasks:
+                if not task.done():
+                    logger.debug("Cancel Queue reading task")
+                    task.cancel()
 
-    # Cancel the queue reading task
-    for task in tasks:
-        task.cancel()
-    await asyncio.gather(*tasks)
+            await asyncio.gather(*tasks)
 
 
 async def untar_project(output_dir, project_data_file):
@@ -764,8 +778,9 @@ async def shutdown(
     source_ruleset_name: str,
     source_rule_name: str,
     ruleset: str,
-    delay: float = 0.0,
+    delay: float = 60.0,
     message: str = "Default shutdown message",
+    kind: str = "graceful",
 ):
     await event_log.put(
         dict(
@@ -778,16 +793,16 @@ async def shutdown(
             matching_events=_get_events(variables),
             delay=delay,
             message=message,
+            kind=kind,
         )
     )
 
     print(
-        "Ruleset: %s rule: %s has initiated shutdown. "
+        "Ruleset: %s rule: %s has initiated shutdown of type: %s. "
         "Delay: %.3f seconds, Message: %s"
-        % (source_ruleset_name, source_rule_name, delay, message)
+        % (source_ruleset_name, source_rule_name, kind, delay, message)
     )
-    await asyncio.sleep(delay)
-    raise ShutdownException()
+    raise ShutdownException(Shutdown(message=message, delay=delay, kind=kind))
 
 
 actions: Dict[str, Callable] = dict(
