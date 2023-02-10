@@ -44,3 +44,7 @@ Instead, the ``all`` operator must be used:
 
 
 You can combine `set_fact <actions.html#set-fact>`_ and `retract_fact <actions.html#retract-fact>`_ actions to manage the global state during the lifecycle of your rulebook.
+
+The text above describes how to use ``events`` or ``facts`` in a rulebook. A single matched ``event`` or multiple matched ``events`` are also
+sent to a playbook through extra_vars under namespace ``ansible_eda`` when a run_playbook or run_job_template action is executed. So in a playbook
+you should reference them as ``ansible_eda.event`` or ``ansible_eda.events``.

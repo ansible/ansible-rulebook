@@ -29,7 +29,6 @@ from pprint import pprint
 from typing import Callable, Dict, List, Optional, Union
 
 import ansible_runner
-import dpath
 import janus
 import yaml
 from drools import ruleset as lang
@@ -103,21 +102,15 @@ async def print_event(
     source_rule_name: str,
     ruleset: str,
     name: Optional[str] = None,
-    var_root: Union[str, Dict, None] = None,
     pretty: Optional[str] = None,
 ):
     print_fn: Callable = print
     if pretty:
         print_fn = pprint
 
-    if var_root:
-        update_variables(variables, var_root)
+    var_name = "events" if "events" in variables else "event"
 
-    var_name = "event"
-    if "events" in variables[KEY_EDA_VARS]:
-        var_name = "events"
-
-    print_fn(variables[KEY_EDA_VARS][var_name])
+    print_fn(variables[var_name])
     sys.stdout.flush()
     await event_log.put(
         dict(
@@ -143,11 +136,8 @@ async def echo(
     source_rule_name: str,
     ruleset: str,
     name: Optional[str] = None,
-    var_root: Union[str, Dict, None] = None,
     message: Optional[str] = None,
 ):
-    if var_root:
-        update_variables(variables, var_root)
 
     print(str(datetime.now()) + " : " + message)
     sys.stdout.flush()
@@ -259,7 +249,6 @@ async def run_playbook(
     set_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
     verbosity: int = 0,
-    var_root: Union[str, Dict, None] = None,
     copy_files: Optional[bool] = False,
     json_mode: Optional[bool] = False,
     retries: Optional[int] = 0,
@@ -274,9 +263,9 @@ async def run_playbook(
         event_log,
         inventory,
         variables,
+        ruleset,
         name,
         "run_playbook",
-        var_root,
         copy_files,
         True,
         project_data_file,
@@ -356,7 +345,6 @@ async def run_module(
     set_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
     verbosity: int = 0,
-    var_root: Union[str, Dict, None] = None,
     copy_files: Optional[bool] = False,
     json_mode: Optional[bool] = False,
     module_args: Union[Dict, None] = None,
@@ -371,9 +359,9 @@ async def run_module(
         event_log,
         inventory,
         variables,
+        ruleset,
         name,
         "run_module",
-        var_root,
         copy_files,
         False,
         project_data_file,
@@ -531,9 +519,9 @@ async def pre_process_runner(
     event_log,
     inventory: Dict,
     variables: Dict,
+    ruleset: str,
     name: str,
     action: str,
-    var_root: Union[str, Dict, None] = None,
     copy_files: Optional[bool] = False,
     check_files: Optional[bool] = True,
     project_data_file: Optional[str] = None,
@@ -543,15 +531,10 @@ async def pre_process_runner(
 
     private_data_dir = tempfile.mkdtemp(prefix=action)
     logger.debug("private data dir %s", private_data_dir)
-    logger.debug("variables %s", variables)
 
-    for k, v in kwargs.items():
-        variables[k] = v
-
-    if var_root:
-        update_variables(variables, var_root)
-
-    playbook_extra_vars = _collect_extra_vars(variables, extra_vars)
+    playbook_extra_vars = _collect_extra_vars(
+        variables, extra_vars, ruleset, name
+    )
 
     env_dir = os.path.join(private_data_dir, "env")
     inventory_dir = os.path.join(private_data_dir, "inventory")
@@ -660,7 +643,6 @@ async def run_job_template(
     set_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
     verbosity: int = 0,
-    var_root: Union[str, Dict, None] = None,
     copy_files: Optional[bool] = False,
     json_mode: Optional[bool] = False,
     retries: Optional[int] = 0,
@@ -679,10 +661,8 @@ async def run_job_template(
         job_args = {}
     job_args["limit"] = hosts_limit
 
-    if var_root:
-        update_variables(variables, var_root)
     job_args["extra_vars"] = _collect_extra_vars(
-        variables, job_args.get("extra_vars", {})
+        variables, job_args.get("extra_vars", {}), ruleset, name
     )
 
     job_id = str(uuid.uuid4())
@@ -815,26 +795,6 @@ actions: Dict[str, Callable] = dict(
 )
 
 
-def update_variables(variables: Dict, var_root: Union[str, Dict]):
-    var_roots = {var_root: var_root} if isinstance(var_root, str) else var_root
-    variables_eda = variables[KEY_EDA_VARS]
-    if "event" in variables_eda:
-        for key, _new_key in var_roots.items():
-            new_value = dpath.get(
-                variables_eda["event"], key, separator=".", default=None
-            )
-            if new_value:
-                variables_eda["event"] = new_value
-                break
-    elif "events" in variables_eda:
-        for _k, v in variables_eda["events"].items():
-            for old_key, new_key in var_roots.items():
-                new_value = dpath.get(v, old_key, separator=".", default=None)
-                if new_value:
-                    variables_eda["events"][new_key] = new_value
-                    break
-
-
 def _get_latest_artifact(data_dir: str, artifact: str, content: bool = True):
     files = glob.glob(os.path.join(data_dir, "artifacts", "*", artifact))
     files.sort(key=os.path.getmtime, reverse=True)
@@ -846,15 +806,25 @@ def _get_latest_artifact(data_dir: str, artifact: str, content: bool = True):
 
 
 def _get_events(variables: Dict):
-    variables_eda = variables[KEY_EDA_VARS]
-    if "event" in variables_eda:
-        return {"m": variables_eda["event"]}
-    elif "events" in variables_eda:
-        return variables_eda["events"]
+    if "event" in variables:
+        return {"m": variables["event"]}
+    elif "events" in variables:
+        return variables["events"]
     return {}
 
 
-def _collect_extra_vars(variables: Dict, user_extra_vars: Dict):
+def _collect_extra_vars(
+    variables: Dict, user_extra_vars: Dict, ruleset: str, rule: str
+):
     extra_vars = user_extra_vars.copy() if user_extra_vars else {}
-    extra_vars[KEY_EDA_VARS] = variables[KEY_EDA_VARS]
+    eda_vars = dict(ruleset=ruleset, rule=rule)
+    if "events" in variables:
+        eda_vars["events"] = variables["events"]
+    if "event" in variables:
+        eda_vars["event"] = variables["event"]
+    if "facts" in variables:
+        eda_vars["facts"] = variables["events"]
+    if "fact" in variables:
+        eda_vars["fact"] = variables["event"]
+    extra_vars[KEY_EDA_VARS] = eda_vars
     return extra_vars

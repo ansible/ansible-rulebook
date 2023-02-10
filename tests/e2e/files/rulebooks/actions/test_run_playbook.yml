@@ -18,7 +18,7 @@
           name: ./playbooks/run_playbook_test_playbook.yml
           post_events: true
           extra_vars:
-            target_host: "{{ ansible_eda.event.meta.hostname }}"
+            target_host: "{{ event.meta.hostname }}"
             remediation_required: true
           retry: true
           retries: 1
@@ -35,8 +35,7 @@
           var_root:
             results.remediation: results
           extra_vars:
-            # use var_root when bug resolved: https://issues.redhat.com/browse/AAP-8967
-            processed_host: "{{ ansible_eda.event.results.remediation.remediated_host }}"
+            processed_host: "{{ event.remediated_host }}"
             remediation_required: false
           json_mode: true
           verbosity: 4
@@ -53,4 +52,4 @@
             event.post_processing_host == "simba"
       action:
         echo:
-          message: "Post-processing complete on {{ ansible_eda.event.post_processing_host }}"
+          message: "Post-processing complete on {{ event.post_processing_host }}"
