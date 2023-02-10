@@ -15,6 +15,7 @@ Welcome to Ansible Rulebook documentation
    rules
    conditions
    events_and_facts
+   variables
    host_limit
    multi_events
    actions
