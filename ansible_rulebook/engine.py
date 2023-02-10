@@ -21,6 +21,7 @@ from datetime import datetime
 from pprint import PrettyPrinter, pformat
 from typing import Any, Dict, List, Optional, cast
 
+import dpath
 from drools import ruleset as lang
 from drools.dispatch import establish_async_channel, handle_async_messages
 from drools.exceptions import (
@@ -362,6 +363,17 @@ class RuleSetRunner:
         result = None
         if action in builtin_actions:
             try:
+                if action == "run_job_template":
+                    limit = dpath.get(
+                        action_args,
+                        "job_args.limit",
+                        separator=".",
+                        default=None,
+                    )
+                    if isinstance(limit, list):
+                        hosts = limit
+                    elif isinstance(limit, str):
+                        hosts = [limit]
                 single_match = None
                 keys = list(rules_engine_result.data.keys())
                 if len(keys) == 0:
