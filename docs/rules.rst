@@ -29,6 +29,9 @@ A rule comprises:
    * - action
      - See :doc:`actions`
      - or actions
+   * - enabled
+     - If the rule should be enabled, default is true. Can be set to false to disable a rule.
+     - No
 
 
 
@@ -63,3 +66,23 @@ Example: Multiple actions
 
 | In the above example the 2 actions are executed in order. First
 | we call run_playbook and then when it ends we call print_event
+
+Example: Disable a rule
+
+    .. code-block:: yaml
+
+        rules:
+          - name: An automatic remediation rule
+            condition: event.outage == true
+            enabled: false
+            action:
+              run_playbook:
+                name: remediate_outage.yml
+
+          - name: Print event with linux
+            condition: event.target_os == "linux" or
+            action:
+              debug:
+
+| In the above example the first rule is disabled by setting enabled to false
+| This can be used when testing to temporarily disable a rule.
