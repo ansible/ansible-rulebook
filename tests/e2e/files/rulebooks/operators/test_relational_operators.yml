@@ -1,0 +1,206 @@
+---
+- name: Test relational operators
+  hosts: all
+  sources:
+    - generic:
+        event_delay: 0.05
+        shutdown_after: "{{ DEFAULT_SHUTDOWN_AFTER }}" # This should not be needed with graceful shutdown
+        payload:
+          - id: "test_not_operator"
+            test_bool: false
+            test_str: "Hello there"
+          - id: "test_not_operator"
+            test_int: 79
+          - id: "test_not_operator"
+            test_float: 4.212
+          - id: "test_not_equal_operator"
+            motto: "{{ targaryen_motto }}"
+          - id: "test_not_equal_operator"
+            motto: "Fire and Blood"
+          - id: "test_not_equal_operator"
+            universe_meaning: 42
+          - id: "test_not_equal_operator"
+            universe_meaning: 42
+          - id: "test_not_equal_operator"
+            universe_meaning: 73
+          - id: "test_not_equal_operator"
+            flat_earth: false
+          - id: "test_less_than_operator"
+            number_of_swords: 1.64e+2
+          - id: "test_less_than_operator"
+            number_of_swords: 300.7
+          - id: "test_less_than_operator"
+            number_of_dragons: 3
+          - id: "test_less_than_operator"
+            number_of_dragons: 7
+          - id: "test_less_equal_operator"
+            numbers:
+              nested:
+                data: -20
+          - id: "test_less_equal_operator"
+            numbers:
+              nested:
+                data: -9
+          - id: "test_less_equal_operator"
+            pi: 3.141
+          - id: "test_equal_operator"
+            pi_for_engineers: 3
+          - id: "test_equal_operator"
+            stark_motto: |
+              Winter
+              is
+              coming
+          - id: "test_equal_operator"
+            stark_motto: Winter is coming
+          - id: "test_equal_operator"
+            e_for_engineers: 3
+          - id: "test_equal_operator"
+            intelligent_design: false
+          - id: "test_greater_than_operator"
+            best_number: 73
+          - id: "test_greater_than_operator"
+            golden_ratio: 1.61803398875
+          - id: "test_greater_than_operator"
+            golden_ratio: -0.61803398875
+          - id: "test_greater_equal_operator"
+            square_root_of_2: 1.41
+          - id: "test_greater_equal_operator"
+            square_root_of_2: 1.41421356237
+          - id: "test_greater_equal_operator"
+            square_root_of_2: 1.41421356238
+          - id: "test_plain_boolean_operator"
+            myboolean: true
+          - id: "test_plain_boolean_operator"
+            myboolean: false
+          - id: "test_null"
+            nullified: null
+          - id: "test_null"
+            nullable: null
+          - id: "finish"
+            finish: true
+  rules:
+    - name: Test negation round 1
+      condition: >
+        not event.test_bool and
+        not (event.test_str == "Goodbye" or event.test_str != "Hello there")
+      action:
+        echo:
+          message: "Negation round 1 passed"
+
+    - name: Test negation round 2
+      condition:
+        all:
+          - not (event.test_int > 80 and event.test_int < 79)
+          - not (event.test_float <= 3.14 or event.test_float >= 4.5)
+      action:
+        echo:
+          message: "Negation round 2 passed"
+
+    - name: Test not equal operator, string, variables
+      condition: event.motto != "Fire and Blood"
+      action:
+        echo:
+          message: "not-equal #1 passed"
+
+    - name: Test not equal operator, int
+      condition: 73 != event.universe_meaning
+      action:
+        echo:
+          message: "not-equal #2 passed"
+
+
+    - name: Test not equal operator, boolean
+      condition: true != event.flat_earth
+      action:
+        echo:
+          message: "not-equal #3 passed"
+
+    # TODO: Compare between floats and ints
+    - name: Test less than operator, float
+      condition: event.number_of_swords < 200.001
+      action:
+        echo:
+          message: "less-than #1 passed"
+
+    - name: Test less than operator, int
+      condition: event.number_of_dragons < 4
+      action:
+        echo:
+          message: "less-than #2 passed"
+
+    - name: Test less equal operator, int, nested
+      condition: event.numbers.nested.data <= -10
+      action:
+        echo:
+          message: "less-equal #1 passed"
+
+    - name: Test less equal operator, floats
+      condition: event.pi <= 3.1415
+      action:
+        echo:
+          message: "less-equal #2 passed"
+
+    - name: Test equal operator, int and float
+      condition: event.pi_for_engineers == 3.0
+      action:
+        echo:
+          message: "test equal #1 passed"
+
+    - name: Test equal operator, strings
+      condition: event.stark_motto == "Winter\nis\ncoming"
+      action:
+        echo:
+          message: "test equal #2 passed"
+
+    - name: Test equal operator, ints
+      condition: 3 == event.e_for_engineers
+      action:
+        echo:
+          message: "test equal #3 passed"
+
+    - name: Test equal operator, boolean
+      condition: event.intelligent_design == false
+      action:
+        echo:
+          message: "test equal #4 passed"
+
+    - name: Test greater than operator, ints
+      condition: event.best_number > vars.universe_meaning
+      action:
+        echo:
+          message: "test greater than #1 passed"
+
+    - name: Test greater than operator, floats
+      condition: event.golden_ratio > 1.6180339887
+      action:
+        echo:
+          message: "test greater than #2 passed"
+
+    - name: Test greater-equal operator, floats
+      condition: event.square_root_of_2 >= 1.41421356237
+      action:
+        echo:
+          message: "test greater-equal #2 passed"
+
+    - name: Test plain boolean
+      condition: event.myboolean
+      action:
+        echo:
+          message: "test plain boolean #1 passed"
+
+    - name: Test null boolean
+      condition: not event.nullified
+      action:
+        echo:
+          message: "test null boolean #1 passed"
+
+    - name: Test null equal
+      condition: event.nullable == false
+      action:
+        echo:
+          message: "null equal false should not be printed"
+
+    - name: Finish - test shutdown msg
+      condition: event.finish
+      action:
+        shutdown:

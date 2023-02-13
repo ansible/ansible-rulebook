@@ -1,0 +1,194 @@
+---
+- name: Test membership operators
+  hosts: all
+  sources:
+    - generic:
+        event_delay: 0.05
+        shutdown_after: "{{ DEFAULT_SHUTDOWN_AFTER }}" # This should not be needed with graceful shutdown
+        payload:
+          - id: "test_contains_1"
+            numbers:
+              - 42
+              - 2.7182
+              - 3.1415
+              - 173.035
+              - 20000000000000000426408380189087937446025157425359298935486676996 # > uint64
+              - -6000
+
+          - id: "test_not-in_operator"
+            data: "0"
+          - id: "test_not-in_operator"
+            data: "1"
+          - id: "test_not-in_operator"
+            data: "2"
+          - id: "test_not-in_operator"
+            house: "Martell"
+          - id: "test_not-in_operator"
+            myint: 1
+            some_list:
+              - "Jon"
+              - "Cersei"
+              - "Robert"
+          - id: "test_not-in_operator"
+            myint: 2
+            some_list:
+              - "Jon"
+              - "Cersei"
+              - "Robert"
+          - id: "test_not-in_operator"
+            myint: 3
+            some_list:
+              - "Jon"
+              - "Cersei"
+              - "Robert"
+          - id: "test_not-in_operator"
+            biggest_dragon: Balerion
+          - id: "test_not-in_operator"
+            biggest_dragon: Vhagar
+          - id: "test_not-contains_operator"
+            houses:
+              - Lannister
+              - Stark
+              - Targaryen
+              - Baratheon
+          - id: "test_not-contains_operator"
+            deaths: 5
+            houses:
+              - Lannister
+              - Stark
+              - Targaryen
+              - Baratheon
+          - id: "test_not-contains_operator"
+            some_numbers:
+              - 42
+              - 2.7182
+              - 3.1415
+              - 173.035
+              - 20000000000000000426408380189087937446025157425359298935486676996 # > uint64
+          - id: "test_in_operator"
+            weapon: "sword"
+          - id: "test_in_operator"
+            weapon: "bow"
+          - id: "test_in_operator"
+            value: "Stark"
+          - id: "test_in_operator"
+            value: "Martell"
+          - id: "test_in_operator"
+            value: 4
+          - id: "test_in_operator"
+            value: 2.7182
+          - id: "test_in_operator"
+            value: -6000
+          - id: "test_in_operator"
+            value: True
+          - id: "test_in_operator"
+            mylist:
+              - "Jon"
+              - 45
+              - True
+              - 6.9
+          - id: "test_in_operator"
+            nested:
+              mylist2:
+                - "Jon"
+                - 45
+                - True
+                - 6.9
+          - id: "test_in_operator"
+            mylist3:
+              - "Jon"
+              - 45
+              - True
+              - 6.9
+          - id: "test_in_operator"
+            mylist4: []
+  rules:
+    - name: Test CONTAINS operator, combined condition, ints
+      condition: >
+        event.numbers contains 20000000000000000426408380189087937446025157425359298935486676996
+        and event.id == "test_contains_1"
+      action:
+        run_playbook:
+          name: ./playbooks/print_event.yml
+          json_mode: false
+
+    - name: Test not-in operator str hardcoded values
+      condition: event.data not in ["2", "3", "one"]
+      action:
+        echo:
+          message: "not-in #1 passed"
+
+    # Requires operator_variables.yml
+    - name: Test not-in operator, string, using variables
+      condition: event.house not in vars.houses
+      action:
+        echo:
+          message: "not-in #2 passed"
+
+    # Requires operator_variables.yml
+    - name: Test not-in operator, int, using variables
+      condition: event.myint not in vars.in_operator_int_array
+      action:
+        echo:
+          message: "not-in #3 passed"
+
+    # Requires operator_variables.yml
+    - name: Test not-in operator, mixed types
+      condition: event.biggest_dragon not in vars.mixed_types
+      action:
+        echo:
+          message: "not-in #4 passed"
+
+    - name: Test not-contains operator, negative assertion, string
+      condition: event.houses not contains "Stark"
+      action:
+        echo:
+          message: "Winter is missing"
+
+    - name: Test not-contains operator, string, combined condition
+      condition: event.houses not contains "Martell" and event.deaths > 3
+      action:
+        echo:
+          message: "not-contains #2 passed"
+
+    - name: Test not-contains operator, int
+      condition: event.some_numbers not contains -6000
+      action:
+        echo:
+          message: "not-contains #3 passed"
+
+    - name: Test in operator str hardcoded values
+      condition: event.weapon in ["sword", "axe", "hammer"]
+      action:
+        echo:
+          message: "test in operator #1 passed"
+
+    - name: Test in operator
+      condition: event.value in vars.mixed_types
+      action:
+        echo:
+          message: "test in operator #2 passed"
+
+    - name: Test contains operator with str or int
+      condition: events.mylist contains "jon" or events.mylist contains 45
+      action:
+        echo:
+          message: "test contains operator #1 passed"
+
+    - name: Test contains operator boolean
+      condition: events.nested.mylist2 contains True
+      action:
+        echo:
+          message: "test contains operator #1 passed"
+
+    - name: Test contains operator float
+      condition: events.mylist3 contains 6.99
+      action:
+        echo:
+          message: "test contains operator #1 passed"
+
+    - name: Test contains operator empty list
+      condition: events.mylist4 contains ""
+      action:
+        echo:
+          message: "test contains operator #1 passed"

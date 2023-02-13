@@ -1,0 +1,132 @@
+- name: Test logical operators
+  hosts: all
+  sources:
+    - generic:
+        event_delay: 0.05
+        shutdown_after: "{{ DEFAULT_SHUTDOWN_AFTER }}" # This should not be needed with graceful shutdown
+        payload:
+          - myint: 73
+            mystring: "hello"
+          - myint: 73
+            mystring: "world"
+
+          - environment: apac-production
+            overload: 99.8
+          - environment: staging
+            overload: 101.9
+          - environment: staging
+            overload: 78.5
+          - environment: lab-prod
+            overload: 78.5
+
+          - service: "backend"
+            state: "restarting"
+          - service: "backend"
+            state: "shutdown"
+
+          - mem: 784.0
+            rc: null
+            threads: 10
+          - mem: 784.0
+            rc: 2
+            threads: 10
+          - mem: 784.0
+            rc: null
+            threads: 3
+          - mem: 854.3
+            rc: 0
+            threads: 10
+
+          - alert: "down"
+            appname: "backend"
+            instance: "rc-api_1-stage"
+          - alert: "up"
+            appname: "backend"
+            instance: "rc-api_1-stage"
+          - alert: "down"
+            appname: "redis"
+            instance: "rc-api_1-stage"
+          - alert: "down"
+            appname: "redis"
+            instance: "rc-api_1-prod"
+          - alert: "up"
+            appname: "redis"
+            instance: "rc-api_1-prod"
+
+          - nested: # match
+              env: prod
+            state: "down"
+            type: warning
+            cpus: 5
+          - nested: # match
+              env: prod
+            state: "up"
+            type: critical
+            cpus: 5
+          - nested: # match
+              env: stage
+            state: "unknown"
+            type: critical
+            cpus: 2
+          - nested: # no match
+              env: stage
+            state: "unknown"
+            type: warning
+            cpus: 8
+          - nested: # match
+              env: stage
+            state: "down"
+            type: warning
+            cpus: 2
+          - nested: # no match
+              env: stage
+            state: "down"
+            type: warning
+            cpus: 6
+          - nested: # no match
+              env: stage
+            state: "up"
+            type: critical
+            cpus: 6
+
+
+  rules:
+    - name: Test and operator simple
+      condition: event.myint == 73 and event.mystring == "hello"
+      action:
+        echo:
+          message: "Test and operator #1 passes"
+
+    - name: Test or operator simple
+      condition: event.environment is regex(".*-prod(uction)?") or event.overload > 100
+      action:
+        echo:
+          message: "Test or operator #1 passes"
+
+    - name: Test and-or operator simple
+      condition: event.state == "restarting" and (event.service == "backend" or event.state == "shutdown")
+      action:
+        echo:
+          message: "Test and-or operator #1 passes"
+
+    - name: "Test and-or operator #1"
+      condition: (event.rc > 1 and event.rc < 127) or (event.mem > 512.0 and event.threads < 4)
+      action:
+        echo:
+          message: "Test and-or operator #3 passes"
+
+    - name: "Test and-or operator #2"
+      condition: >
+        event.alert == "down"
+        and (event.appname in ["backend", "frontend"] or event.instance is regex(".*-prod"))
+      action:
+        echo:
+          message: "Test and-or operator #4 passes"
+
+    - name: "Test and-or operator #3"
+      condition: >
+        (event.state == "down" or event.type == "critical")
+        and (event.nested.env == "prod" or event.cpus <= 4)
+      action:
+        echo:
+          message: "Test and-or operator #5 passes"
