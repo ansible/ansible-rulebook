@@ -572,15 +572,15 @@ async def test_20_is_not_defined():
 
 
 PLAYBOOK_RULES = [
-    "examples/21_run_playbook.yml",
-    "examples/33_run_playbook_retry.yml",
-    "examples/34_run_playbook_retries.yml",
+    ("examples/21_run_playbook.yml", 12),
+    ("examples/33_run_playbook_retry.yml", 33),
+    ("examples/34_run_playbook_retries.yml", 33),
 ]
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("rule", PLAYBOOK_RULES)
-async def test_21_run_playbook(rule):
+@pytest.mark.parametrize("rule, ansible_events", PLAYBOOK_RULES)
+async def test_21_run_playbook(rule, ansible_events):
     ruleset_queues, event_log = load_rulebook(rule)
 
     queue = ruleset_queues[0][1]
@@ -591,14 +591,20 @@ async def test_21_run_playbook(rule):
         event_log,
         ruleset_queues,
         dict(),
-        dict(),
+        load_inventory("playbooks/inventory.yml"),
     )
 
     event = event_log.get_nowait()
     assert event["type"] == "Job", "0"
-    for i in range(4):
-        assert event_log.get_nowait()["type"] == "AnsibleEvent", f"0.{i}"
-    event = event_log.get_nowait()
+    ansible_event_count = 0
+    while True:
+        event = event_log.get_nowait()
+        if event["type"] == "AnsibleEvent":
+            ansible_event_count += 1
+        else:
+            break
+
+    assert ansible_event_count == ansible_events
     assert event["type"] == "Action", "1"
     assert event["action"] == "run_playbook", "2"
     assert event["matching_events"] == {"m": {"i": 1}}
