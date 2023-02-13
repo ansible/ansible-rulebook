@@ -1,5 +1,5 @@
 event_delay: 1
-shutdown_delay: 2
+operators_shutdown_after: 1
 cmd_timeout: 15
 controller_url: http://localhost:8080
 controller_token: secret

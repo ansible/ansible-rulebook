@@ -1,0 +1,224 @@
+---
+- name: Test relational operators
+  hosts: all
+  sources:
+    - generic:
+        event_delay: 0.05
+        shutdown_after: "{{ DEFAULT_SHUTDOWN_AFTER }}"
+        payload:
+          - id: "testcase #1"
+            test_bool: false
+            test_str: "Hello there"
+
+          - id: "testcase #2"
+            test_int: 79
+
+          - id: "testcase #2"
+            test_float: 4.212
+
+          - id: "testcase #3"
+            motto: "{{ targaryen_motto }}"
+          - id: "testcase #3"
+            motto: "Fire and Blood"
+
+          - id: "testcase #4"
+            universe_meaning: 42
+          - id: "testcase #4"
+            universe_meaning: 42
+          - id: "testcase #4"
+            universe_meaning: 73
+
+          - id: "testcase #5"
+            flat_earth: false
+
+          - id: "testcase #6"
+            number_of_swords: 1.64e+2
+          - id: "testcase #6"
+            number_of_swords: 300.7
+
+          - id: "testcase #7"
+            number_of_dragons: 3
+          - id: "testcase #7"
+            number_of_dragons: 7
+
+          - id: "testcase #8"
+            numbers:
+              nested:
+                data: -20
+          - id: "testcase #8"
+            numbers:
+              nested:
+                data: -9
+
+          - id: "testcase #9"
+            pi: 3.141
+
+          - id: "testcase #10"
+            pi_for_engineers: 3
+
+          - id: "testcase #11"
+            stark_motto: |
+              Winter
+              is
+              coming
+          - id: "testcase #11"
+            stark_motto: Winter is coming
+
+          - id: "testcase #12"
+            e_for_engineers: 3
+
+          - id: "testcase #13"
+            intelligent_design: false
+
+          - id: "testcase #14"
+            best_number: 73
+
+          - id: "testcase #15"
+            golden_ratio: 1.61803398875
+          - id: "testcase #15"
+            golden_ratio: -0.61803398875
+
+          - id: "testcase #16"
+            square_root_of_2: 1.41
+          - id: "testcase #16"
+            square_root_of_2: 1.41421356237
+          - id: "testcase #16"
+            square_root_of_2: 1.41421356238
+
+          - id: "testcase #11"
+            myboolean: true
+          - id: "testcase #17"
+            myboolean: false
+
+          - id: "testcase #18"
+            nullified: null
+
+          - id: "testcase #19"
+            nullable: null
+
+          - id: "finish"
+            finish: true
+  rules:
+    - name: "Testcase #1"
+      condition: >
+        not event.test_bool and
+        not (event.test_str == "Goodbye" or event.test_str != "Hello there")
+      action:
+        debug:
+          msg: "Output for testcase #01"
+
+    - name: "Testcase #2"
+      condition:
+        all:
+          - not (event.test_int > 80 and event.test_int < 79)
+          - not (event.test_float <= 3.14 or event.test_float >= 4.5)
+      action:
+        debug:
+          msg: "Output for testcase #02"
+
+    - name: "Testcase #3"
+      condition: event.motto != "Fire and Blood"
+      action:
+        debug:
+          msg: "Output for testcase #03"
+
+    - name: "Testcase #4"
+      condition: 73 != event.universe_meaning
+      action:
+        debug:
+          msg: "Output for testcase #04"
+
+    - name: "Testcase #5"
+      condition: true != event.flat_earth
+      action:
+        debug:
+          msg: "Output for testcase #05"
+
+    - name: "Testcase #6"
+      condition: event.number_of_swords < 200.001
+      action:
+        debug:
+          msg: "Output for testcase #06"
+
+    - name: "Testcase #7"
+      condition: event.number_of_dragons < 4
+      action:
+        debug:
+          msg: "Output for testcase #07"
+
+    - name: "Testcase #8"
+      condition: event.numbers.nested.data <= -10
+      action:
+        debug:
+          msg: "Output for testcase #08"
+
+    - name: "Testcase #9"
+      condition: event.pi <= 3.1415
+      action:
+        debug:
+          msg: "Output for testcase #09"
+
+    - name: "Testcase #10"
+      condition: event.pi_for_engineers == 3.0
+      action:
+        debug:
+          msg: "Output for testcase #10"
+
+    - name: "Testcase #11"
+      condition: event.stark_motto == "Winter\nis\ncoming"
+      action:
+        debug:
+          msg: "Output for testcase #11"
+
+    - name: "Testcase #12"
+      condition: 3 == event.e_for_engineers
+      action:
+        debug:
+          msg: "Output for testcase #12"
+
+    - name: "Testcase #13"
+      condition: event.intelligent_design == false
+      action:
+        debug:
+          msg: "Output for testcase #13"
+
+    - name: "Testcase #14"
+      condition: event.best_number > vars.universe_meaning
+      action:
+        debug:
+          msg: "Output for testcase #14"
+
+    - name: "Testcase #15"
+      condition: event.golden_ratio > 1.6180339887
+      action:
+        debug:
+          msg: "Output for testcase #15"
+
+    - name: "Testcase #16"
+      condition: event.square_root_of_2 >= 1.41421356237
+      action:
+        debug:
+          msg: "Output for testcase #16"
+
+    - name: "Testcase #17"
+      condition: event.myboolean
+      action:
+        debug:
+          msg: "Output for testcase #17"
+
+    - name: "Testcase #18"
+      condition: not event.nullified
+      action:
+        debug:
+          msg: "Output for testcase #18"
+
+    - name: "Testcase #19"
+      condition: event.nullable == false
+      action:
+        debug:
+          msg: "Output for testcase #19"
+
+    - name: "Finish - test shutdown msg"
+      condition: event.finish
+      action:
+        shutdown:
