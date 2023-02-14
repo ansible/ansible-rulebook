@@ -12,33 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-"""
-Usage:
-    ansible-rulebook [options]
 
-Options:
-    -h, --help                  Show this page
-    -v, --vars=<v>              Variables file
-    -i, --inventory=<i>         Inventory
-    --rulebook=<r>              The rulebook file or rulebook from a collection
-    -S=<S>, --source_dir=<S>    Source dir
-    --vars=<v>                  A vars file
-    --env-vars=<e>              Comma separated list of variables to import
-                                from the environment
-    --debug                     Show debug logging
-    --verbose                   Show verbose logging
-    --print-events              Print events after reading from source queue
-    --version                   Show the version and exit
-    --websocket-address=<w>     Connect the event log to a websocket
-    --id=<i>                    Identifier
-    --worker                    Enable worker mode
-    --project-tarball=<p>       Project tarball
-    --controller-url=<u>        Controller API base url, e.g. http://host1:8080
-    --controller-token=<t>      Controller API authentication token
-    --controller-ssl-verify=<v> How to verify SSL when connecting to the
-                                controller, yes|no|<path to a CA bundle>,
-                                default to yes for https connection
-"""
 import argparse
 import asyncio
 import importlib.metadata
@@ -63,34 +37,40 @@ from ansible_rulebook.job_template_runner import (  # noqa: E402
     job_template_runner,
 )
 
+DEFAULT_VERBOSITY = 0
+
 logger = logging.getLogger(__name__)
 
 
 def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "-r",
         "--rulebook",
         help="The rulebook file or rulebook from a collection",
     )
     parser.add_argument(
+        "-e",
         "--vars",
         help="Variables file",
     )
     parser.add_argument(
+        "-E",
         "--env-vars",
         help=(
             "Comma separated list of variables to import from the environment"
         ),
     )
     parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Show debug logging, written to stdout",
-    )
-    parser.add_argument(
+        "-v",
         "--verbose",
-        action="store_true",
-        help="Show verbose logging, written to stdout",
+        dest="verbosity",
+        default=DEFAULT_VERBOSITY,
+        action="count",
+        help="Causes ansible-rulebook to print more debug messages. "
+        "Adding multiple -v will increase the verbosity, "
+        "the default value is 0. The maximum value is 2. "
+        "Events debugging might require -vv.",
     )
     parser.add_argument(
         "--version",
@@ -108,16 +88,19 @@ def get_parser() -> argparse.ArgumentParser:
         help="Inventory",
     )
     parser.add_argument(
+        "-W",
         "--websocket-address",
         help="Connect the event log to a websocket",
     )
     parser.add_argument("--id", help="Identifier", type=int)
     parser.add_argument(
+        "-w",
         "--worker",
         action="store_true",
         help="Enable worker mode",
     )
     parser.add_argument(
+        "-T",
         "--project-tarball",
         help="A tarball of the project",
     )
@@ -138,7 +121,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--print-events",
         action="store_true",
-        help="Print events to stdout, disabled if used with --debug",
+        help="Print events to stdout, redundant and disabled with -vv",
     )
     return parser
 
@@ -163,10 +146,11 @@ def setup_logging(args: argparse.Namespace) -> None:
     stream = sys.stderr
     level = logging.WARNING
 
-    if args.debug:
+    if args.verbosity >= 2:
         level = logging.DEBUG
         stream = sys.stdout
-    elif args.verbose:
+        args.print_events = False
+    elif args.verbosity == 1:
         level = logging.INFO
         stream = sys.stdout
 
@@ -189,8 +173,6 @@ def main(args: List[str] = None) -> int:
         print("Error: inventory is required")
         return 1
 
-    if args.debug:
-        args.print_events = False
     if args.controller_url:
         if args.controller_token:
             job_template_runner.host = args.controller_url
