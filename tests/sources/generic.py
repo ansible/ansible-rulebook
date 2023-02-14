@@ -81,6 +81,8 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
         if randomize:
             random.shuffle(payload)
         for event in payload:
+            if not event:
+                continue
             for _ in range(repeat_count):
                 data = {}
                 if create_index:
