@@ -5,6 +5,7 @@ import logging
 import subprocess
 
 import pytest
+from pytest_check import check
 
 from . import utils
 
@@ -125,18 +126,22 @@ def test_run_playbook(update_environment):
         '"msg": "Remediation failed on simba"'
     )
 
-    assert (
-        retry_attempts == 1
-    ), "run_playbook retry attempt failed or did not match"
+    with check:
+        assert (
+            retry_attempts == 1
+        ), "run_playbook retry attempt failed or did not match"
 
-    assert (
-        "Remediation successful" in result.stdout
-    ), "run_playbook post_events failed"
+    with check:
+        assert (
+            "Remediation successful" in result.stdout
+        ), "run_playbook post_events failed"
 
-    assert (
-        "verbosity: 4" in result.stdout
-    ), "run_playbook verbosity setting failed"
+    with check:
+        assert (
+            "verbosity: 4" in result.stdout
+        ), "run_playbook verbosity setting failed"
 
-    assert (
-        "Post-processing complete on simba" in result.stdout
-    ), "run_playbook set_facts to secondary ruleset failed"
+    with check:
+        assert (
+            "Post-processing complete on simba" in result.stdout
+        ), "run_playbook set_facts to secondary ruleset failed"
