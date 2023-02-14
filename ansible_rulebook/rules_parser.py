@@ -128,15 +128,15 @@ def parse_rules(rules: Dict) -> List[rt.Rule]:
         else:
             throttle = None
 
-        rule_list.append(
-            rt.Rule(
-                name=name,
-                condition=parse_condition(rule["condition"]),
-                actions=parse_actions(rule),
-                enabled=rule.get("enabled", True),
-                throttle=throttle,
-            )
+        rule = rt.Rule(
+            name=name,
+            condition=parse_condition(rule["condition"]),
+            actions=parse_actions(rule),
+            enabled=rule.get("enabled", True),
+            throttle=throttle,
         )
+        if rule.enabled:
+            rule_list.append(rule)
 
     return rule_list
 

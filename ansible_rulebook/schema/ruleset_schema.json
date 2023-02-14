@@ -86,6 +86,7 @@
                     "minLength": 1,
                     "pattern": "\\S"
                 },
+                "enabled": { "type": "boolean" },
                 "throttle": {"$ref": "#/$defs/throttle"},
                 "condition": {
                     "anyOf": [

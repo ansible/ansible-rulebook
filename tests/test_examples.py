@@ -1689,3 +1689,27 @@ async def test_65_selectattr_3():
             ],
         }
         validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_68_disabled_rule():
+    ruleset_queues, event_log = load_rulebook("examples/68_disabled_rule.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "68 disabled rule::r1::echo",
+            ],
+        }
+        validate_events(event_log, **checks)
