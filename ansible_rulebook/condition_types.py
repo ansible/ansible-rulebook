@@ -14,6 +14,8 @@
 
 from typing import List, NamedTuple, Union
 
+from .exception import InvalidTypeException
+
 
 class Integer(NamedTuple):
     value: int
@@ -97,3 +99,18 @@ ConditionTypes = Union[
     SelectType,
     SelectattrType,
 ]
+
+
+def to_condition_type(value):
+    if isinstance(value, int):
+        return Integer(value)
+    elif isinstance(value, bool):
+        return Boolean(value)
+    elif isinstance(value, str):
+        return String(value)
+    elif isinstance(value, float):
+        return Float(value)
+    elif isinstance(value, list):
+        return [to_condition_type(v) for v in value]
+    else:
+        raise InvalidTypeException(f"Invalid type for {value}")

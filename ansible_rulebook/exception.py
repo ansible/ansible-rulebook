@@ -71,3 +71,8 @@ class SelectOperatorException(Exception):
 class ConditionParsingException(Exception):
 
     pass
+
+
+class InvalidTypeException(Exception):
+
+    pass

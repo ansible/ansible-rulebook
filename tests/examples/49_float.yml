@@ -7,6 +7,7 @@
         payload:
           - pi: 3.14159
           - mass: 5.97219
+          - radius: 300.42
   rules:
     - name: r1
       condition: event.pi == 3.14159
@@ -14,5 +15,9 @@
         debug:
     - name: r2
       condition: event.mass in [3.14159, 5.97219]
+      action:
+        debug:
+    - name: r3
+      condition: event.radius > 2.12345e+2
       action:
         debug:

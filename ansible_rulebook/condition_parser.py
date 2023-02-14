@@ -42,9 +42,7 @@ ParserElement.enable_packrat()
 from ansible_rulebook.condition_types import (  # noqa: E402
     Boolean,
     Condition,
-    Float,
     Identifier,
-    Integer,
     KeywordValue,
     NegateExpression,
     OperatorExpression,
@@ -52,6 +50,7 @@ from ansible_rulebook.condition_types import (  # noqa: E402
     SelectattrType,
     SelectType,
     String,
+    to_condition_type,
 )
 
 VALID_SELECT_ATTR_OPERATORS = [
@@ -85,12 +84,8 @@ SUPPORTED_SEARCH_KINDS = ("match", "regex", "search")
 
 logger = logging.getLogger(__name__)
 
-integer = pyparsing_common.signed_integer.copy().add_parse_action(
-    lambda toks: Integer(toks[0])
-)
-
-float_t = pyparsing_common.real.copy().add_parse_action(
-    lambda toks: Float(toks[0])
+number_t = pyparsing_common.number.copy().add_parse_action(
+    lambda toks: to_condition_type(toks[0])
 )
 
 ident = pyparsing_common.identifier
@@ -115,7 +110,7 @@ string2 = (
     QuotedString('"').copy().add_parse_action(lambda toks: String(toks[0]))
 )
 
-allowed_values = float_t | integer | boolean | string1 | string2
+allowed_values = number_t | boolean | string1 | string2
 key_value = ident + Suppress("=") + allowed_values
 string_search_t = (
     one_of("regex match search")
@@ -124,9 +119,7 @@ string_search_t = (
     + Suppress(")")
 )
 
-delim_value = Group(
-    delimitedList(float_t | integer | ident | string1 | string2)
-)
+delim_value = Group(delimitedList(number_t | ident | string1 | string2))
 list_values = Suppress("[") + delim_value + Suppress("]")
 
 selectattr_t = (
@@ -217,8 +210,7 @@ all_terms = (
     | select_t
     | string_search_t
     | list_values
-    | float_t
-    | integer
+    | number_t
     | boolean
     | varname
     | string1
