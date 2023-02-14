@@ -1,0 +1,62 @@
+---
+- name: Test the string search operator match
+  hosts: all
+  sources:
+    - generic:
+        payload:
+          - line1: I'm not the pheasant plucker
+          - line1: I'm the pheasant plucker's son
+          - line1: "I'm only plucking pheasants"
+            line2: "'til the pheasant plucker comes"
+          - line1: |
+              She sells 50 seashells
+              by the seashore
+          - line1: |
+              Peter Piper picked @ peck
+              of pickled peppers
+          - line1: |
+              How can a clam cram
+              in a clean cream can
+
+  rules:
+    - name: Single condition match, case sensitive
+      condition: event.line1 is match("I'm not", ignorecase=false)
+      action:
+        echo:
+          message: "Output for testcase #1"
+
+    - name: Single condition match, case insensitive
+      condition: event.line1 is match("I'm THE pheasant", ignorecase=true)
+      action:
+        echo:
+          message: "Output for testcase #2"
+
+    - name: Multi condition match case sensitive & insensitive with negation
+      condition: >
+        event.line1 is match("I'm only plucKING", ignorecase=true) and
+        event.line2 is not match("'til THE", ignorecase=false)
+      action:
+        echo:
+          message: "Output for testcase #3"
+
+    - name: Single condition multiline match, case sensitive
+      condition: event.line1 is match("She sells", ignorecase=false)
+      action:
+        echo:
+          message: "Output for testcase #4"
+
+    - name: Multi condition multiline match, case insensitive
+      condition: >
+        event.line1 is match("PeTEr PiPER", ignorecase=true) or
+        event.line1 is match("of piCKLED", ignorecase=false)
+      action:
+        echo:
+          message: "Output for testcase #5"
+
+    - name: Multi condition multiline match, case sensitive & insensitive with negation
+      condition: >
+        event.line1 is not match("In A clEAN", ignorecase=false) and
+        event.line1 is match("HoW CAN a clAm Cram", ignorecase=true)
+      action:
+        echo:
+          message: "Output for testcase #6"

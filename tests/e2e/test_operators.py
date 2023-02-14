@@ -5,6 +5,7 @@ import logging
 import subprocess
 
 import pytest
+from pytest_check import check
 
 from . import utils
 
@@ -399,3 +400,58 @@ def test_not_operator():
     ]
 
     assert len(printed_events) == 2
+
+
+@pytest.mark.e2e
+@pytest.mark.parametrize(
+    "rulebook",
+    [
+        pytest.param(
+            "test_string_search_match.yml",
+            id="string_search_match",
+        ),
+        pytest.param(
+            "test_string_search_search.yml",
+            id="string_search_search",
+        ),
+        pytest.param(
+            "test_string_search_regex.yml",
+            id="string_search_regex",
+        ),
+    ],
+)
+def test_string_search(rulebook):
+    """
+    Execute a rulebook that performs search, match and regex operations
+    on a string.
+    """
+
+    rulebook = utils.BASE_DATA_PATH / f"rulebooks/operators/{rulebook}"
+    cmd = utils.Command(rulebook=rulebook)
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+    )
+
+    with check:
+        assert "Output for testcase #1" in result.stdout, "testcase #1 failed"
+
+    with check:
+        assert "Output for testcase #2" in result.stdout, "testcase #2 failed"
+
+    with check:
+        assert "Output for testcase #3" in result.stdout, "testcase #3 failed"
+
+    with check:
+        assert "Output for testcase #4" in result.stdout, "testcase #4 failed"
+
+    with check:
+        assert "Output for testcase #5" in result.stdout, "testcase #5 failed"
+
+    with check:
+        assert "Output for testcase #6" in result.stdout, "testcase #6 failed"

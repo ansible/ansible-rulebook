@@ -1,0 +1,62 @@
+---
+- name: Test the string search operator search
+  hosts: all
+  sources:
+    - generic:
+        payload:
+          - line1: I'm not the pheasant plucker
+          - line1: I'm the pheasant plucker's son
+          - line1: "I'm only plucking pheasants"
+            line2: "'til the pheasant plucker comes"
+          - line1: |
+              She sells 50 seashells
+              by the seashore
+          - line1: |
+              Peter Piper picked @ peck
+              of pickled peppers
+          - line1: |
+              How can a clam cram
+              in a clean cream can
+
+  rules:
+    - name: Single condition search, case sensitive
+      condition: event.line1 is search("not the pheasant", ignorecase=false)
+      action:
+        echo:
+          message: "Output for testcase #1"
+
+    - name: Single condition search, case insensitive
+      condition: event.line1 is search("PluCKer'S soN", ignorecase=true)
+      action:
+        echo:
+          message: "Output for testcase #2"
+
+    - name: Multi condition search case sensitive & insensitive with negation
+      condition: >
+        event.line1 is search("PlUckinG pheaSANTs", ignorecase=true) and
+        event.line2 is not search("the plucker is not coming", ignorecase=false)
+      action:
+        echo:
+          message: "Output for testcase #3"
+
+    - name: Single condition multiline search, case sensitive
+      condition: event.line1 is search("50 seashells", ignorecase=false)
+      action:
+        echo:
+          message: "Output for testcase #4"
+
+    - name: Multi condition multiline search, case insensitive
+      condition: >
+        event.line1 is search("piCKed @ peck", ignorecase=true) or
+        event.line1 is search("pepper piCkles", ignorecase=false)
+      action:
+        echo:
+          message: "Output for testcase #5"
+
+    - name: Multi condition multiline search, case sensitive & insensitive with negation
+      condition: >
+        event.line1 is not search("can A clAM", ignorecase=false) and
+        event.line1 is search("CleaN cReam", ignorecase=true)
+      action:
+        echo:
+          message: "Output for testcase #6"
