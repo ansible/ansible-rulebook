@@ -2,7 +2,6 @@
 Module with tests for general CLI runtime
 """
 import logging
-import os
 import subprocess
 from pathlib import Path
 
@@ -48,7 +47,9 @@ DEFAULT_TIMEOUT = 15
         ),
     ],
 )
-def test_program_return_code(rulebook, inventory, range_limit, expected_rc):
+def test_program_return_code(
+    update_environment, rulebook, inventory, range_limit, expected_rc
+):
     """
     GIVEN a valid or invalid rulebook
         and a valid or invalid environment variable
@@ -56,7 +57,7 @@ def test_program_return_code(rulebook, inventory, range_limit, expected_rc):
     WHEN the program is executed
     THEN the program must exit with the correct return code
     """
-    os.environ["RANGE_LIMIT"] = range_limit
+    env = update_environment({"RANGE_LIMIT": range_limit})
 
     rulebook = utils.BASE_DATA_PATH / f"rulebooks/{rulebook}"
     cmd = utils.Command(
@@ -68,6 +69,7 @@ def test_program_return_code(rulebook, inventory, range_limit, expected_rc):
         cmd,
         timeout=DEFAULT_TIMEOUT,
         cwd=utils.BASE_DATA_PATH,
+        env=env,
     )
 
     assert result.returncode == expected_rc
