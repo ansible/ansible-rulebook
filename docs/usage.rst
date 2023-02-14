@@ -2,35 +2,40 @@
 Usage
 =====
 
-The `ansible-rulebook` CLI supports the following options::
+The `ansible-rulebook` CLI supports the following options:
+
+.. code-block:: console
+
+    usage: ansible-rulebook [-h] [-r RULEBOOK] [-e VARS] [-E ENV_VARS] [-v] [--version] [-S SOURCE_DIR] [-i INVENTORY] [-W WEBSOCKET_ADDRESS] [--id ID] [-w] [-T PROJECT_TARBALL] [--controller-url CONTROLLER_URL]
+                            [--controller-token CONTROLLER_TOKEN] [--controller-ssl-verify CONTROLLER_SSL_VERIFY] [--print-events]
 
     optional arguments:
     -h, --help            show this help message and exit
-    --rulebook RULEBOOK   The rulebook file or rulebook from a collection
-    --vars VARS           Variables file
-    --env-vars ENV_VARS   Comma separated list of variables to import from the environment
-    --debug               Show debug logging, written to stdout
-    --verbose             Show verbose logging, written to stdout
+    -r RULEBOOK, --rulebook RULEBOOK
+                            The rulebook file or rulebook from a collection
+    -e VARS, --vars VARS  Variables file
+    -E ENV_VARS, --env-vars ENV_VARS
+                            Comma separated list of variables to import from the environment
+    -v, --verbose         Causes ansible-rulebook to print more debug messages. Adding multiple -v will increase the verbosity, the default value is 0. The maximum value is 2. Events debugging might require -vv.
     --version             Show the version and exit
     -S SOURCE_DIR, --source-dir SOURCE_DIR
                             Source dir
     -i INVENTORY, --inventory INVENTORY
                             Inventory
-    --websocket-address WEBSOCKET_ADDRESS
+    -W WEBSOCKET_ADDRESS, --websocket-address WEBSOCKET_ADDRESS
                             Connect the event log to a websocket
     --id ID               Identifier
-    --worker              Enable worker mode
-    --project-tarball PROJECT_TARBALL
+    -w, --worker          Enable worker mode
+    -T PROJECT_TARBALL, --project-tarball PROJECT_TARBALL
                             A tarball of the project
     --controller-url CONTROLLER_URL
                             Controller API base url, e.g. https://host1:8080
     --controller-token CONTROLLER_TOKEN
                             Controller API authentication token
-    --controller-ssl-verify
-                            How to verify SSL when connecting to the
-                            controller, yes|no|<path to a CA bundle>,
-                            default to yes for https connection
-    --print-events        Print events to stdout, disabled if used with --debug
+    --controller-ssl-verify CONTROLLER_SSL_VERIFY
+                            How to verify SSL when connecting to the controller, yes|no|<path to a CA bundle>, default to yes for https connection
+    --print-events        Print events to stdout, redundant and disabled with -vv
+
 
 To get help from `ansible-rulebook` run the following:
 

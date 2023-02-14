@@ -34,6 +34,13 @@ class Command:
     websocket: Optional[str] = None
     project_tarball: Optional[Path] = None
     worker_mode: bool = False
+    verbosity: int = 0
+
+    def __post_init__(self):
+        # verbosity overrides verbose and debug
+        if self.verbosity > 0:
+            self.verbose = False
+            self.debug = False
 
     def __str__(self) -> str:
         return self.to_string()
@@ -65,9 +72,11 @@ class Command:
         if self.rulebook:
             result.extend(["--rulebook", str(self.rulebook.absolute())])
         if self.verbose:
-            result.append("--verbose")
+            result.append("-v")
         if self.debug:
-            result.append("--debug")
+            result.append("-vv")
+        if self.verbosity > 0:
+            result.append(f"-{'v'*self.verbosity}")
 
         return result
 
