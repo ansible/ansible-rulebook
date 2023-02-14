@@ -13,3 +13,4 @@ pytest-timeout
 pytest-xdist
 pytest-cov
 pytest-vcr
+pytest-check

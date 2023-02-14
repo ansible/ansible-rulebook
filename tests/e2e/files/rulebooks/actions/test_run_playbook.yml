@@ -1,0 +1,56 @@
+---
+- name: Ruleset 1
+  hosts: all
+  sources:
+    - generic:
+        shutdown_after: "{{ SOURCE_SHUTDOWN_AFTER }}"
+        payload:
+          - alert:
+              message: "upgrade failure"
+            meta: 
+              hostname: "simba"
+
+  rules:
+    - name: Run post_processing playbook and post_events to same ruleset
+      condition: event.alert.message == "upgrade failure"
+      action:
+        run_playbook:
+          name: ./playbooks/run_playbook_test_playbook.yml
+          post_events: true
+          extra_vars:
+            target_host: "{{ ansible_eda.event.meta.hostname }}"
+            remediation_required: true
+          retry: true
+          retries: 1
+          delay: 1
+          json_mode: true
+
+    - name: Verify the remediation and set_facts to Ruleset 2
+      condition: event.results.remediation.remediation_result == "Success"
+      action:
+        run_playbook:
+          name: ./playbooks/run_playbook_test_playbook.yml
+          set_facts: true
+          ruleset: "Ruleset 2"
+          var_root:
+            results.remediation: results
+          extra_vars:
+            # use var_root when bug resolved: https://issues.redhat.com/browse/AAP-8967
+            processed_host: "{{ ansible_eda.event.results.remediation.remediated_host }}"
+            remediation_required: false
+          json_mode: true
+          verbosity: 4
+
+- name: Ruleset 2
+  hosts: all
+  sources:
+    - generic:
+        startup_delay: 30  # never start, only triggered by Ruleset 1
+  rules:
+    - name: Validate the set_facts operation
+      condition: >
+            event.post_processing_state == "Complete" and
+            event.post_processing_host == "simba"
+      action:
+        echo:
+          message: "Post-processing complete on {{ ansible_eda.event.post_processing_host }}"

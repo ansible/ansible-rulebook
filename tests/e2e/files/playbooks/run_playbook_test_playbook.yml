@@ -1,0 +1,51 @@
+---
+- name: A playbook to run simulated post-processing tasks and emulate a first run failure
+  hosts: localhost
+  gather_facts: false
+  vars:
+    tempfile: "/tmp/eda-e2etest-tempfile"
+  tasks:
+    - name: Remediate a host
+      when: remediation_required
+      block:
+        - name: Check if temp file exists
+          ansible.builtin.stat:
+            path: "{{ tempfile }}"
+          register: file_status
+
+        - name: Create temp file
+          ansible.builtin.file:
+            path: "{{ tempfile }}"
+            state: touch
+            mode: "0644"
+          when: not file_status.stat.exists
+
+        - name: Fail if tempfile does not exist
+          ansible.builtin.fail:
+            msg: "Remediation failed on {{ target_host }}"
+          when: not file_status.stat.exists
+
+        - name: Set the result fact
+          ansible.builtin.set_fact:
+            results:
+              remediation:
+                remediation_result: "Success"
+                remediated_host: "{{ target_host }}"
+            cacheable: true
+
+        - name: Echo result
+          ansible.builtin.debug:
+            msg: "Remediation successful"
+
+        - name: Delete the file
+          ansible.builtin.file:
+            path: "{{ tempfile }}"
+            state: absent
+          when: file_status.stat.exists
+
+    - name: Mark complete
+      ansible.builtin.set_fact:
+        post_processing_state: "Complete"
+        post_processing_host: "{{ processed_host }}"
+        cacheable: true
+      when: not remediation_required

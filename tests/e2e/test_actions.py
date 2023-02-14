@@ -5,6 +5,7 @@ import logging
 import subprocess
 
 import pytest
+from pytest_check import check
 
 from . import utils
 
@@ -94,3 +95,53 @@ def test_actions_sanity():
     assert (
         len(result.stdout.splitlines()) == 44
     ), "unexpected output from the rulebook"
+
+
+@pytest.mark.e2e
+def test_run_playbook(update_environment):
+    """
+    Execute a rulebook that contains multiple run_playbook actions
+    to validate all params that are available with the action.
+    """
+
+    rulebook = utils.BASE_DATA_PATH / "rulebooks/actions/test_run_playbook.yml"
+    env = update_environment({"SOURCE_SHUTDOWN_AFTER": "6"})
+
+    cmd = utils.Command(rulebook=rulebook, envvars="SOURCE_SHUTDOWN_AFTER")
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0
+    assert not result.stderr
+
+    retry_attempts = result.stdout.count(
+        '"msg": "Remediation failed on simba"'
+    )
+
+    with check:
+        assert (
+            retry_attempts == 1
+        ), "run_playbook retry attempt failed or did not match"
+
+    with check:
+        assert (
+            "Remediation successful" in result.stdout
+        ), "run_playbook post_events failed"
+
+    with check:
+        assert (
+            "verbosity: 4" in result.stdout
+        ), "run_playbook verbosity setting failed"
+
+    with check:
+        assert (
+            "Post-processing complete on simba" in result.stdout
+        ), "run_playbook set_facts to secondary ruleset failed"
