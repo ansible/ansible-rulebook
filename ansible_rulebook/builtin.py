@@ -35,7 +35,11 @@ from drools import ruleset as lang
 
 from .collection import find_playbook, has_playbook, split_collection_name
 from .conf import settings
-from .exception import ShutdownException
+from .exception import (
+    PlaybookNotFoundException,
+    PlaybookStatusNotFoundException,
+    ShutdownException,
+)
 from .job_template_runner import job_template_runner
 from .util import get_horizontal_rule
 
@@ -573,9 +577,9 @@ async def pre_process_runner(
                 os.path.join(project_dir, name),
             )
         else:
-            logger.error(
-                "Could not find a playbook for %s from %s", name, os.getcwd()
-            )
+            msg = f"Could not find a playbook for {name} from {os.getcwd()}"
+            logger.error(msg)
+            raise PlaybookNotFoundException(msg)
 
     return (private_data_dir, playbook_name)
 
@@ -597,6 +601,12 @@ async def post_process_runner(
 
     rc = int(_get_latest_artifact(private_data_dir, "rc"))
     status = _get_latest_artifact(private_data_dir, "status")
+    logger.info("Playbook rc: %d, status: %s", rc, status)
+    if rc != 0:
+        error_message = _get_latest_artifact(private_data_dir, "stderr")
+        if not error_message:
+            error_message = _get_latest_artifact(private_data_dir, "stdout")
+        logger.error(error_message)
 
     result = dict(
         type="Action",
@@ -613,7 +623,7 @@ async def post_process_runner(
     )
     await event_log.put(result)
 
-    if set_facts or post_events:
+    if rc == 0 and (set_facts or post_events):
         logger.debug("set_facts")
         fact_folder = _get_latest_artifact(
             private_data_dir, "fact_cache", False
@@ -798,6 +808,8 @@ actions: Dict[str, Callable] = dict(
 def _get_latest_artifact(data_dir: str, artifact: str, content: bool = True):
     files = glob.glob(os.path.join(data_dir, "artifacts", "*", artifact))
     files.sort(key=os.path.getmtime, reverse=True)
+    if not files:
+        raise PlaybookStatusNotFoundException(f"No {artifact} file found")
     if content:
         with open(files[0], "r") as f:
             content = f.read()
