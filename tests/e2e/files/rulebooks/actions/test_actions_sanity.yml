@@ -35,7 +35,7 @@
         run_module:
           name: ansible.builtin.debug
           module_args:
-            msg: "Event matched: {{ ansible_eda.event }}"
+            msg: "Event matched: {{ event }}"
 
     - name: print_event
       condition: event.action == "print_event"
@@ -60,7 +60,7 @@
         run_module:
           name: ansible.builtin.debug
           module_args:
-            msg: "Event matched in same ruleset: {{ ansible_eda.event.post_event_state }}"
+            msg: "Event matched in same ruleset: {{ event.post_event_state }}"
 
     - name: post_event different ruleset
       condition: event.action == "post_event" and event.rulebook_scope == "different_ruleset"
@@ -83,7 +83,7 @@
         run_module:
           name: ansible.builtin.debug
           module_args:
-            msg: "Fact matched in same ruleset: {{ ansible_eda.event.my_fact }}"
+            msg: "Fact matched in same ruleset: {{ event.my_fact }}"
 
     - name: set_fact different ruleset
       condition: event.action == "set_fact" and event.rulebook_scope == "different_ruleset"
@@ -130,7 +130,7 @@
         run_module:
           name: ansible.builtin.debug
           module_args:
-            msg: "Event matched in different ruleset: {{ ansible_eda.event.post_event_state }}"
+            msg: "Event matched in different ruleset: {{ event.post_event_state }}"
 
     - name: print set_fact different ruleset
       condition: event.my_fact == "sent"
@@ -138,4 +138,4 @@
         run_module:
           name: ansible.builtin.debug
           module_args:
-            msg: "Fact matched in different ruleset: {{ ansible_eda.event.my_fact }}"
+            msg: "Fact matched in different ruleset: {{ event.my_fact }}"

@@ -19,7 +19,7 @@ import os
 import runpy
 from datetime import datetime
 from pprint import PrettyPrinter, pformat
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 import dpath
 from drools import ruleset as lang
@@ -30,7 +30,7 @@ from drools.exceptions import (
 )
 
 import ansible_rulebook.rule_generator as rule_generator
-from ansible_rulebook.builtin import KEY_EDA_VARS, actions as builtin_actions
+from ansible_rulebook.builtin import actions as builtin_actions
 from ansible_rulebook.collection import (
     find_source,
     find_source_filter,
@@ -383,20 +383,18 @@ class RuleSetRunner:
                 else:
                     multi_match = rules_engine_result.data
                 variables_copy = variables.copy()
-                variables_eda = {}
-                variables_copy[KEY_EDA_VARS] = variables_eda
                 if single_match is not None:
-                    variables_eda["event"] = single_match
-                    variables_eda["fact"] = single_match
+                    variables_copy["event"] = single_match
+                    variables_copy["fact"] = single_match
                     event = single_match
                     if "meta" in event:
                         if "hosts" in event["meta"]:
                             hosts = parse_hosts(event["meta"]["hosts"])
                 else:
-                    variables_eda["events"] = multi_match
-                    variables_eda["facts"] = multi_match
+                    variables_copy["events"] = multi_match
+                    variables_copy["facts"] = multi_match
                     new_hosts = []
-                    for event in variables_eda["events"].values():
+                    for event in variables_copy["events"].values():
                         if "meta" in event:
                             if "hosts" in event["meta"]:
                                 new_hosts.extend(
@@ -404,6 +402,15 @@ class RuleSetRunner:
                                 )
                     if new_hosts:
                         hosts = new_hosts
+
+                if "var_root" in action_args:
+                    var_root = action_args.pop("var_root")
+                    logger.info(
+                        "Update variables [%s] with new root [%s]",
+                        variables_copy,
+                        var_root,
+                    )
+                    _update_variables(variables_copy, var_root)
 
                 logger.info(
                     "substitute_variables [%s] [%s]",
@@ -551,3 +558,22 @@ def prime_facts(name: str, hosts_facts: List[Dict]):
             lang.assert_fact(name, data)
         except MessageNotHandledException:
             pass
+
+
+def _update_variables(variables: Dict, var_root: Union[str, Dict]):
+    var_roots = {var_root: var_root} if isinstance(var_root, str) else var_root
+    if "event" in variables:
+        for key, _new_key in var_roots.items():
+            new_value = dpath.get(
+                variables["event"], key, separator=".", default=None
+            )
+            if new_value:
+                variables["event"] = new_value
+                break
+    elif "events" in variables:
+        for _k, v in variables["events"].items():
+            for old_key, new_key in var_roots.items():
+                new_value = dpath.get(v, old_key, separator=".", default=None)
+                if new_value:
+                    variables["events"][new_key] = new_value
+                    break
