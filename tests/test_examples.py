@@ -1215,7 +1215,11 @@ async def test_49_float():
         assert event["action"] == "debug", "4"
         assert event["matching_events"] == {"m": {"mass": 5.97219}}, "5"
         event = event_log.get_nowait()
-        assert event["type"] == "Shutdown", "7"
+        assert event["type"] == "Action", "6"
+        assert event["action"] == "debug", "7"
+        assert event["matching_events"] == {"m": {"radius": 300.42}}, "8"
+        event = event_log.get_nowait()
+        assert event["type"] == "Shutdown", "9"
 
 
 @pytest.mark.asyncio

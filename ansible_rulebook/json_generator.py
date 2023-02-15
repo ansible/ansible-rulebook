@@ -31,6 +31,7 @@ from ansible_rulebook.condition_types import (
     SelectattrType,
     SelectType,
     String,
+    to_condition_type,
 )
 from ansible_rulebook.exception import (
     InvalidAssignmentException,
@@ -92,7 +93,9 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
             key = parsed_condition.value[5:]
             try:
                 return visit_condition(
-                    convert_to_type(dpath.get(variables, key, separator=".")),
+                    to_condition_type(
+                        dpath.get(variables, key, separator=".")
+                    ),
                     variables,
                 )
             except KeyError:
@@ -200,21 +203,6 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
         }
     else:
         raise Exception(f"Unhandled token {parsed_condition}")
-
-
-def convert_to_type(value):
-    if isinstance(value, int):
-        return Integer(value)
-    elif isinstance(value, bool):
-        return Boolean(value)
-    elif isinstance(value, str):
-        return String(value)
-    elif isinstance(value, float):
-        return Float(value)
-    elif isinstance(value, list):
-        return [convert_to_type(v) for v in value]
-    else:
-        raise Exception(f"Invalid type for {value}")
 
 
 def create_binary_node(name, parsed_condition, variables):
