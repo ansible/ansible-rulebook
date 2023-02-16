@@ -76,3 +76,13 @@ class ConditionParsingException(Exception):
 class InvalidTypeException(Exception):
 
     pass
+
+
+class PlaybookStatusNotFoundException(Exception):
+
+    pass
+
+
+class PlaybookNotFoundException(Exception):
+
+    pass
