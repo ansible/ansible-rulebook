@@ -50,6 +50,8 @@ from ansible_rulebook.rule_types import (
 from ansible_rulebook.rules_parser import parse_hosts
 from ansible_rulebook.util import collect_ansible_facts, substitute_variables
 
+from .eda_times import get_eda_times
+
 logger = logging.getLogger(__name__)
 
 
@@ -410,6 +412,7 @@ class RuleSetRunner:
                     )
                     _update_variables(variables_copy, var_root)
 
+                variables_copy.update(get_eda_times())
                 logger.info(
                     "substitute_variables [%s] [%s]",
                     action_args,

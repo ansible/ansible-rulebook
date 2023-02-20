@@ -47,6 +47,32 @@ The data type is of great importance for the rules engine. The following types a
 * booleans
 * floats (dot notation and scientific notation)
 
+
+Auto generated variables
+************************
+Before an action is executed we generate 2 attributes
+* ansible_eda_date_time_local
+* ansible_eda_date_time_utc
+
+The attributes are for each of the fields are
+* date  e.g. '2023-02-19'
+* time  e.g. '12:19:58'
+* year  e.g. 2023
+* month e.g. 02
+* day   e.g. 19
+* hour  e.g. 12
+* minute e.g. 19
+* second e.g. 58
+* epoch  e.g. 1676827198
+* iso8601 e.g. '2023-02-19T12:19:58.321434-05:00'
+* iso8601_micro e.g. '2023-02-19T12:19:58.321434'
+* weekday e.g. 'Sunday'
+* weekday_number e.g. 6
+* weeknumber e.g. 7
+* tz e.g. 'EST'
+
+This data can be used in action arguments
+
 Supported Operators
 *******************
 

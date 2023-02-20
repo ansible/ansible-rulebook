@@ -1723,3 +1723,32 @@ async def test_68_disabled_rule():
             ],
         }
         validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_71_eda_times():
+    ruleset_queues, event_log = load_rulebook("examples/71_eda_times.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+
+        checks = {
+            "max_events": 7,
+            "shutdown_events": 1,
+            "actions": [
+                "71 eda times::r1::debug",
+                "71 eda times::r2::debug",
+                "71 eda times::r3::debug",
+                "71 eda times::r4::debug",
+                "71 eda times::r5::debug",
+                "71 eda times::r6::debug",
+            ],
+        }
+        validate_events(event_log, **checks)

@@ -1,0 +1,44 @@
+---
+- name: 71 eda times
+  hosts: all
+  sources:
+    - name: generic
+      generic:
+        payload:
+          - url1: "https://example.com/users/foo/resources/bar"
+          - url2: "https://example.com/groups/foo/resources/bar"
+          - url3: "https://example.com/others/foo/resources/bar"
+          - url4: "https://redhat.com/users/foo/resources/bar"
+          - url5: "https://redhat.com/abc/foo/resources/bar"
+          - url6: "https://redhat.com/xyz/foo/resources/bar"
+  rules:
+    - name: r1
+      condition: event.url1 is match("https://example.com/users/.*/resources",ignorecase=true,multiline=true)
+      action:
+        debug:
+            first : "{{ ansible_eda_date_time_local.iso8601_micro }} match works"
+    - name: r2
+      condition: event.url2 is search("groups/.*/resources/.*")
+      action:
+        debug:
+            first : "{{ ansible_eda_date_time_local.date }} search works"
+    - name: r3
+      condition: event.url3 is regex("example\.com/others/foo")
+      action:
+        debug:
+            first : "{{ ansible_eda_date_time_local.time }} regex works"
+    - name: r4
+      condition: event.url4 is not match("https://example.com/users/.*/resources",ignorecase=true,multiline=true)
+      action:
+        debug:
+            first : "{{ ansible_eda_date_time_utc.time }} not match works"
+    - name: r5
+      condition: event.url5 is not search("groups/.*/resources/.*")
+      action:
+        debug:
+            first : "{{ ansible_eda_date_time_utc.date }} not search works"
+    - name: r6
+      condition: event.url6 is not regex("example\.com/others/foo")
+      action:
+        debug:
+            first : "{{ ansible_eda_date_time_utc.iso8601_micro }} not regex works"
