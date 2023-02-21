@@ -53,6 +53,14 @@ from ansible_rulebook.util import collect_ansible_facts, substitute_variables
 logger = logging.getLogger(__name__)
 
 
+all_source_queues = []
+
+
+def broadcast(shutdown: Shutdown):
+    for queue in all_source_queues:
+        queue.put_nowait(shutdown)
+
+
 class FilteredQueue:
     def __init__(self, filters, queue: asyncio.Queue):
         self.filters = filters
@@ -76,8 +84,10 @@ async def start_source(
     source_dirs: List[str],
     variables: Dict[str, Any],
     queue: asyncio.Queue,
+    shutdown_delay: float = 60.0,
 ) -> None:
 
+    all_source_queues.append(queue)
     try:
         logger.info("load source")
         if (
@@ -160,13 +170,13 @@ async def start_source(
     except KeyboardInterrupt:
         shutdown_msg = (
             f"Source {source.source_name} keyboard interrupt, "
-            f"initiated shutdown at {str(datetime.now())}"
+            + f"initiated shutdown at {str(datetime.now())}"
         )
         pass
     except asyncio.CancelledError:
         shutdown_msg = (
             f"Source {source.source_name} task cancelled, "
-            "initiated shutdown at {str(datetime.now())}"
+            + f"initiated shutdown at {str(datetime.now())}"
         )
         logger.info("Task cancelled " + shutdown_msg)
     except BaseException as e:
@@ -177,7 +187,13 @@ async def start_source(
         logger.error(shutdown_msg)
         raise
     finally:
-        await queue.put(Shutdown(shutdown_msg, 0.0, source.source_name))
+        broadcast(
+            Shutdown(
+                message=shutdown_msg,
+                source_plugin=source.source_name,
+                delay=shutdown_delay,
+            )
+        )
 
 
 async def run_rulesets(
@@ -207,8 +223,8 @@ async def run_rulesets(
 
     ruleset_tasks = []
     reader, writer = await establish_async_channel()
-    ruleset_tasks.append(
-        asyncio.create_task(handle_async_messages(reader, writer))
+    async_task = asyncio.create_task(
+        handle_async_messages(reader, writer), name="drools_async_task"
     )
 
     for ruleset_queue_plan in rulesets_queue_plans:
@@ -220,21 +236,27 @@ async def run_rulesets(
             project_data_file=project_data_file,
             parsed_args=parsed_args,
         )
-        ruleset_task = asyncio.create_task(ruleset_runner.run_ruleset())
+        task_name = f"main_ruleset :: {ruleset_queue_plan.ruleset.name}"
+        ruleset_task = asyncio.create_task(
+            ruleset_runner.run_ruleset(), name=task_name
+        )
         ruleset_tasks.append(ruleset_task)
 
-    await asyncio.wait(ruleset_tasks, return_when=asyncio.FIRST_COMPLETED)
-    logger.info("Canceling all ruleset tasks")
+    logger.info("Waiting for all ruleset tasks to end")
+    await asyncio.wait(ruleset_tasks, return_when=asyncio.FIRST_EXCEPTION)
+    async_task.cancel()
+    logger.info("Cancelling all ruleset tasks")
     for task in ruleset_tasks:
-        task.cancel()
+        if not task.done():
+            logger.info("Cancelling " + task.get_name())
+            task.cancel()
+
+    logger.info("Waiting on gather")
+    asyncio.gather(*ruleset_tasks)
+    logger.info("Returning from run_rulesets")
 
 
 class RuleSetRunner:
-    ANSIBLE_ACTIONS = (
-        "run_playbook",
-        "run_module",
-    )
-
     def __init__(
         self,
         event_log: asyncio.Queue,
@@ -244,8 +266,6 @@ class RuleSetRunner:
         project_data_file: Optional[str] = None,
         parsed_args=None,
     ):
-        self.pa_runner = PlaybookActionRunner(event_log)
-        self.pa_runner_task = None
         self.action_loop_task = None
         self.event_log = event_log
         self.ruleset_queue_plan = ruleset_queue_plan
@@ -254,97 +274,169 @@ class RuleSetRunner:
         self.variables = variables
         self.project_data_file = project_data_file
         self.parsed_args = parsed_args
-        self.stopped = True
+        self.shutdown = None
+        self.active_actions = set()
 
     async def run_ruleset(self):
-        self.stopped = False
-        prime_facts(self.name, self.hosts_facts)
-        self.pa_runner_task = asyncio.create_task(
-            self.pa_runner.start(self.name), name=self.name
-        )
-        self.action_loop_task = asyncio.create_task(
-            self._drain_actionplan_queue()
-        )
-        source_loop_task = asyncio.create_task(self._drain_source_queue())
-        await asyncio.wait([source_loop_task])
-
-    async def _stop(self, obj):
-        # Wait for items in queues to be completed. Mainly for spec tests.
-        await asyncio.sleep(0.01)
-
-        logger.info("Attempt to stop ruleset %s", self.name)
-        self.stopped = True
-        self.pa_runner.stop()
-        # helps to break waiting on the plan queue when it is empty
+        tasks = []
         try:
-            self.ruleset_queue_plan.plan.queue.put_nowait(Shutdown())
-        except asyncio.QueueFull:
-            pass
-
-        await asyncio.wait([self.pa_runner_task, self.action_loop_task])
-        await self.event_log.put(
-            dict(
-                type="Shutdown",
-                message=obj.message,
-                delay=obj.delay,
-                source_plugin=obj.source_plugin,
+            prime_facts(self.name, self.hosts_facts)
+            task_name = (
+                f"action_plan_task:: {self.ruleset_queue_plan.ruleset.name}"
             )
-        )
+            self.action_loop_task = asyncio.create_task(
+                self._drain_actionplan_queue(), name=task_name
+            )
+            tasks.append(self.action_loop_task)
+            task_name = (
+                f"source_reader_task:: {self.ruleset_queue_plan.ruleset.name}"
+            )
+            self.source_loop_task = asyncio.create_task(
+                self._drain_source_queue(), name=task_name
+            )
+            tasks.append(self.source_loop_task)
+            await asyncio.wait([self.action_loop_task])
+        except asyncio.CancelledError:
+            logger.info("Cancelled error caught in run_ruleset")
+            for task in tasks:
+                if not task.done():
+                    logger.info("Cancelling (2) task %s", task.get_name())
+                    task.cancel()
+
+        try:
+            await asyncio.gather(*tasks, return_exceptions=True)
+        except asyncio.CancelledError:
+            raise
+
+    async def _cleanup(self):
+        logger.info("Cleaning up ruleset %s", self.name)
+        if not self.source_loop_task.done():
+            self.source_loop_task.cancel()
+
+        for task in self.active_actions:
+            logger.info("Cancelling active task %s", task.get_name())
+            task.cancel()
+
+        if self.active_actions:
+            await asyncio.wait(
+                self.active_actions, return_when=asyncio.FIRST_EXCEPTION
+            )
+        if self.shutdown:
+            await self.event_log.put(
+                dict(
+                    type="Shutdown",
+                    message=self.shutdown.message,
+                    delay=self.shutdown.delay,
+                    source_plugin=self.shutdown.source_plugin,
+                    kind=self.shutdown.kind,
+                )
+            )
         lang.end_session(self.name)
 
+    async def _handle_shutdown(self):
+        logger.info(
+            "Ruleset: %s, received shutdown: %s",
+            self.name,
+            str(self.shutdown),
+        )
+        if self.shutdown.kind == "now":
+            logger.info(
+                "ruleset: %s has issued an immediate shutdown", self.name
+            )
+            self.action_loop_task.cancel()
+        elif (
+            self.ruleset_queue_plan.plan.queue.empty()
+            and not self.active_actions
+        ):
+            logger.info("ruleset: %s shutdown no pending work", self.name)
+            self.action_loop_task.cancel()
+        else:
+            logger.info(
+                "ruleset: %s waiting %f for shutdown",
+                self.name,
+                self.shutdown.delay,
+            )
+            await asyncio.sleep(self.shutdown.delay)
+            if not self.action_loop_task.done():
+                self.action_loop_task.cancel()
+
+        return
+
     async def _drain_source_queue(self):
-        logger.info("Waiting for events from %s", self.name)
-        while True:
-            data = await self.ruleset_queue_plan.source_queue.get()
-            if self.parsed_args and self.parsed_args.print_events:
-                PrettyPrinter(indent=4).pprint(data)
+        logger.info("Waiting for events, ruleset: %s", self.name)
+        try:
+            while True:
+                data = await self.ruleset_queue_plan.source_queue.get()
+                if self.parsed_args and self.parsed_args.print_events:
+                    PrettyPrinter(indent=4).pprint(data)
 
-            logger.debug("Received event : " + str(data))
-            if isinstance(data, Shutdown):
-                logger.info("Shutdown message received: " + str(data))
-                await self._stop(data)
-                logger.info("Stopped waiting on events from %s", self.name)
-                return
-            if not data:
-                # TODO: is it really necessary to add such event to event_log?
-                await self.event_log.put(dict(type="EmptyEvent"))
-                continue
+                logger.debug(
+                    "Ruleset: %s, received event: %s ", self.name, str(data)
+                )
+                if isinstance(data, Shutdown):
+                    self.shutdown = data
+                    return await self._handle_shutdown()
 
-            try:
-                lang.post(self.name, data)
-            except MessageObservedException:
-                logger.debug("MessageObservedException: %s", data)
-            except MessageNotHandledException:
-                logger.debug("MessageNotHandledException: %s", data)
-            finally:
-                logger.debug(lang.get_pending_events(self.name))
+                if not data:
+                    # TODO: is it really necessary to add such event
+                    # to event_log?
+                    await self.event_log.put(dict(type="EmptyEvent"))
+                    continue
+
+                try:
+                    logger.debug(
+                        "Posting data to ruleset %s => %s",
+                        self.name,
+                        str(data),
+                    )
+                    lang.post(self.name, data)
+                except MessageObservedException:
+                    logger.debug("MessageObservedException: %s", data)
+                except MessageNotHandledException:
+                    logger.debug("MessageNotHandledException: %s", data)
+                finally:
+                    logger.debug(lang.get_pending_events(self.name))
+        except asyncio.CancelledError:
+            logger.debug("Source Task Cancelled for ruleset %s", self.name)
+            raise
 
     async def _drain_actionplan_queue(self):
         logger.info("Waiting for actions on events from %s", self.name)
-        while not self.stopped:
-            queue_item = await self.ruleset_queue_plan.plan.queue.get()
-            if isinstance(queue_item, Shutdown):
-                break
-            # TODO: consider uncomment the following but it will fail a lot of
-            # spec tests because Shutdown is issued immediately after the last
-            # event. Spec tests assume every thing is processed without lossing
-            # if self.stopped:
-            #    break
+        try:
+            while True:
+                queue_item = await self.ruleset_queue_plan.plan.queue.get()
+                action_item = cast(ActionContext, queue_item)
+                for action in action_item.actions:
+                    task_name = (
+                        f"action::{self.ruleset_queue_plan.ruleset.name}"
+                    )
+                    task = asyncio.create_task(
+                        self._call_action(
+                            action_item.ruleset,
+                            action_item.rule,
+                            action.action,
+                            action.action_args,
+                            action_item.variables,
+                            action_item.inventory,
+                            action_item.hosts,
+                            action_item.rule_engine_results,
+                        ),
+                        name=task_name,
+                    )
+                    self.active_actions.add(task)
+                    task.add_done_callback(self.active_actions.discard)
+                    await task
 
-            action_item = cast(ActionContext, queue_item)
-            for action in action_item.actions:
-                await self._call_action(
-                    action_item.ruleset,
-                    action_item.rule,
-                    action.action,
-                    action.action_args,
-                    action_item.variables,
-                    action_item.inventory,
-                    action_item.hosts,
-                    action_item.rule_engine_results,
-                )
-
-        logger.info("Stopped waiting for actions on events from %s", self.name)
+                if (
+                    self.ruleset_queue_plan.plan.queue.empty()
+                    and self.shutdown
+                ):
+                    break
+        except asyncio.CancelledError:
+            logger.info("Action Plan Task Cancelled for ruleset %s", self.name)
+            raise
+        finally:
+            await self._cleanup()
 
     async def _call_action(
         self,
@@ -374,6 +466,10 @@ class RuleSetRunner:
                         hosts = limit
                     elif isinstance(limit, str):
                         hosts = [limit]
+                elif action == "shutdown":
+                    if self.parsed_args and "delay" not in action_args:
+                        action_args["delay"] = self.parsed_args.shutdown_delay
+
                 single_match = None
                 keys = list(rules_engine_result.data.keys())
                 if len(keys) == 0:
@@ -424,28 +520,16 @@ class RuleSetRunner:
                 if "ruleset" not in action_args:
                     action_args["ruleset"] = ruleset
 
-                if action in self.ANSIBLE_ACTIONS:
-                    action_args["event_log"] = self.event_log
-                    action_args["inventory"] = inventory
-                    action_args["hosts"] = hosts
-                    action_args["variables"] = variables_copy
-                    action_args["project_data_file"] = self.project_data_file
-                    action_args["source_ruleset_name"] = ruleset
-                    action_args["source_rule_name"] = rule
-                    result = await self.pa_runner.add_playbook(
-                        action, action_args
-                    )
-                else:
-                    await builtin_actions[action](
-                        event_log=self.event_log,
-                        inventory=inventory,
-                        hosts=hosts,
-                        variables=variables_copy,
-                        project_data_file=self.project_data_file,
-                        source_ruleset_name=ruleset,
-                        source_rule_name=rule,
-                        **action_args,
-                    )
+                await builtin_actions[action](
+                    event_log=self.event_log,
+                    inventory=inventory,
+                    hosts=hosts,
+                    variables=variables_copy,
+                    project_data_file=self.project_data_file,
+                    source_ruleset_name=ruleset,
+                    source_rule_name=rule,
+                    **action_args,
+                )
             except KeyError as e:
                 logger.exception(
                     "KeyError with variables %s", pformat(variables_copy)
@@ -457,8 +541,16 @@ class RuleSetRunner:
             except MessageObservedException as e:
                 logger.info("MessageObservedException: %s", action_args)
                 result = dict(error=e)
-            except ShutdownException:
-                await self.ruleset_queue_plan.source_queue.put(Shutdown())
+            except ShutdownException as e:
+                if self.shutdown:
+                    logger.info(
+                        "A shutdown is already in progress, ignoring this one"
+                    )
+                else:
+                    broadcast(e.shutdown)
+            except asyncio.CancelledError:
+                logger.info("Action task caught Cancelled error")
+                raise
             except Exception as e:
                 logger.exception("Error calling %s", action)
                 result = dict(error=e)
@@ -478,76 +570,6 @@ class RuleSetRunner:
                     reason=result,
                 )
             )
-
-
-class PlaybookActionRunner:
-    """Run playbook like actions in background. Queue such actions
-    and run them in sequential order.
-    These actions are defined in ANSIBLE_ACTIONS including
-    run_playbook, run_module, and run_job_template.
-    """
-
-    def __init__(self, event_log):
-        self.event_log = event_log
-        self.actions = asyncio.Queue()
-        self.result = None
-        self.stopped = True
-
-    async def start(self, name: str):
-        if not self.stopped:
-            return
-
-        logger.info("Start a playbook action runner for %s", name)
-        self.stopped = False
-        while not self.stopped:
-            action_args = await self.actions.get()
-            if isinstance(action_args, Shutdown):
-                break
-            # TODO: consider uncomment the following but it will fail some
-            # spec tests because Shutdown is issued immediately after the last
-            # event. Spec tests assume everything is processed with lossing
-            # if self.stopped:
-            #    break
-            await self.execute(action_args)
-
-        logger.info("Playbook action runner %s exits", name)
-
-    def stop(self):
-        self.stopped = True
-        # helps to break waiting on actions.get when the queue is empty
-        try:
-            self.actions.put_nowait(Shutdown())
-        except asyncio.QueueFull:
-            pass
-
-    async def execute(self, action_args: Dict):
-        action_method = action_args.pop("_action_method")
-
-        try:
-            await action_method(**action_args)
-        except Exception as e:
-            logger.exception("Error calling %s", action_method.__name__)
-            result = dict(error=e)
-            await self.event_log.put(
-                dict(
-                    type="Action",
-                    action=action_method.__name__,
-                    activation_id=settings.identifier,
-                    playbook_name=action_args.get("name"),
-                    status="failed",
-                    run_at=str(datetime.utcnow()),
-                    reason=result,
-                )
-            )
-
-    async def add_playbook(self, action: str, action_args: Dict):
-        name = {action_args["name"]}
-        logger.info(
-            "Queue playbook/module/job template %s for running later", name
-        )
-
-        action_args["_action_method"] = builtin_actions[action]
-        await self.actions.put(action_args)
 
 
 def prime_facts(name: str, hosts_facts: List[Dict]):

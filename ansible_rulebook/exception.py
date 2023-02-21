@@ -12,10 +12,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from .messages import Shutdown
+
 
 class ShutdownException(Exception):
+    def __init__(self, shutdown: Shutdown):
+        self.shutdown = shutdown
 
-    pass
+    def __str__(self):
+        return str(self.shutdown)
 
 
 class RulenameEmptyException(Exception):

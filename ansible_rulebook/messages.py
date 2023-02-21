@@ -12,10 +12,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import NamedTuple
+from dataclasses import dataclass
+
+DEFAULT_SHUTDOWN_DELAY = 60.0
 
 
-class Shutdown(NamedTuple):
+@dataclass(frozen=True)
+class Shutdown:
     message: str = "Not specified"
-    delay: float = 0.0
+    delay: float = DEFAULT_SHUTDOWN_DELAY
+    kind: str = "graceful"
     source_plugin: str = ""

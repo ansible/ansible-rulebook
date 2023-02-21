@@ -65,9 +65,15 @@ def validate_events(event_log, **kwargs):
     ansible_events = 0
     action_events = 0
     actions = []
+    max_events = 0
 
-    for _ in range(kwargs["max_events"]):
+    while True:
+        if event_log.empty() and kwargs.get("drain_event_log", False):
+            break
+        if "max_events" in kwargs and kwargs["max_events"] == max_events:
+            break
         event = event_log.get_nowait()
+        max_events += 1
         print(event)
         if event["type"] == "Action":
             action_events += 1

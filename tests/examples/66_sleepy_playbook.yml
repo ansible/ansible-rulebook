@@ -1,0 +1,42 @@
+---
+- name: 66 sleepy playbook
+  hosts: all
+  sources:
+    - generic:
+        create_index: i
+        loop_count: 5
+        shutdown_after: 45
+        payload:
+          - name: fred
+  rules:
+    - name: r1
+      condition: event.i == 0
+      action:
+        print_event:
+    - name: r2
+      condition: event.i == 1
+      action:
+        run_playbook:
+          name: playbooks/sleeper.yml
+- name: terminate gracefully
+  hosts: all
+  sources:
+    - generic:
+        create_index: j
+        loop_count: 5
+        shutdown_after: 45
+        payload:
+          - name: barney
+  rules:
+    - name: r11
+      condition: event.j == 0
+      action:
+        echo:
+          message: Next issuing shutdown 
+    - name: r12
+      condition: event.j == 1
+      action:
+        shutdown:
+          message: Issuing graceful shutdown after 5 seconds
+          delay: 5.0
+          kind: graceful

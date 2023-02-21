@@ -104,7 +104,7 @@ def test_run_playbook(update_environment):
     """
 
     rulebook = utils.BASE_DATA_PATH / "rulebooks/actions/test_run_playbook.yml"
-    env = update_environment({"SOURCE_SHUTDOWN_AFTER": "6"})
+    env = update_environment({"SOURCE_SHUTDOWN_AFTER": "10"})
 
     cmd = utils.Command(rulebook=rulebook, envvars="SOURCE_SHUTDOWN_AFTER")
 

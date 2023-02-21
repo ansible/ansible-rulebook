@@ -389,7 +389,11 @@
                     "type": ["object","null"],
                     "properties": {
                         "delay": {"type": "number" },
-                        "message": {"type": "string" }
+                        "message": {"type": "string" },
+                        "kind" : {
+                           "type": "string",
+                           "enum": ["graceful", "now"]
+                        }
                     },
                     "additionalProperties": false
                 }

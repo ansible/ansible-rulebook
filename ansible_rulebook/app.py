@@ -74,7 +74,10 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
 
     logger.info("Starting sources")
     tasks, ruleset_queues = spawn_sources(
-        rulesets, variables, [parsed_args.source_dir]
+        rulesets,
+        variables,
+        [parsed_args.source_dir],
+        parsed_args.shutdown_delay,
     )
 
     logger.info("Starting rules")
@@ -165,6 +168,7 @@ def spawn_sources(
     rulesets: List[RuleSet],
     variables: Dict[str, Any],
     source_dirs: List[str],
+    shutdown_delay: float,
 ) -> Tuple[List[asyncio.Task], List[RuleSetQueue]]:
     tasks = []
     ruleset_queues = []
@@ -177,6 +181,7 @@ def spawn_sources(
                     source_dirs,
                     variables,
                     source_queue,
+                    shutdown_delay,
                 )
             )
             tasks.append(task)

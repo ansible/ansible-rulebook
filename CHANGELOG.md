@@ -13,6 +13,7 @@
 - group_by_attributes
 - Support multiple actions for a rule
 - Support for search/match/regex 
+- Support for graceful shutdown, timeout to allow actions to complete
 
 ### Fixed
 

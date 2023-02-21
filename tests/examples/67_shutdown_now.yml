@@ -1,0 +1,41 @@
+---
+- name: 67 shutdown now
+  hosts: all
+  sources:
+    - generic:
+        create_index: i
+        loop_count: 5
+        shutdown_after: 45
+        payload:
+          - name: fred
+  rules:
+    - name: r1
+      condition: event.i == 0
+      action:
+        print_event:
+    - name: r2
+      condition: event.i == 1
+      action:
+        run_playbook:
+          name: playbooks/sleeper.yml
+- name: terminate now
+  hosts: all
+  sources:
+    - generic:
+        create_index: j
+        loop_count: 5
+        shutdown_after: 45
+        payload:
+          - name: barney
+  rules:
+    - name: r11
+      condition: event.j == 0
+      action:
+        echo:
+          message: Next issuing ungraceful shutdown 
+    - name: r12
+      condition: event.j == 1
+      action:
+        shutdown:
+          message: Issuing shutdown now
+          kind: now

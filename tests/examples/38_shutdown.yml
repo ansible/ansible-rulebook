@@ -4,7 +4,8 @@
   gather_facts: false
   sources:
     - range:
-        limit: 5
+        limit: 2
+        delay: 3
   rules:
     - name: "Host 1 rule"
       condition: event.i == 1

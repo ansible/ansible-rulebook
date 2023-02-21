@@ -35,6 +35,7 @@ The `ansible-rulebook` CLI supports the following options:
     --controller-ssl-verify CONTROLLER_SSL_VERIFY
                             How to verify SSL when connecting to the controller, yes|no|<path to a CA bundle>, default to yes for https connection
     --print-events        Print events to stdout, redundant and disabled with -vv
+    --shutdown-delay      Maximum number of seconds to wait after a graceful shutdown is issued, default is 60. Can also be set via an env var called EDA_SHUTDOWN_DELAY. The process will shutdown if all actions complete before this time period
 
 
 To get help from `ansible-rulebook` run the following:
