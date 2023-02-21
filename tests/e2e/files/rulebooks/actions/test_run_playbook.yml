@@ -51,5 +51,5 @@
             event.post_processing_state == "Complete" and
             event.post_processing_host == "simba"
       action:
-        echo:
-          message: "Post-processing complete on {{ event.post_processing_host }}"
+        debug:
+          msg: "Post-processing complete on {{ event.post_processing_host }}"

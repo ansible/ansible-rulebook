@@ -9,11 +9,11 @@
     - name: r1
       condition: event.i == 1
       action:
-        echo:
-          message: Should get fired
+        debug:
+          msg: Should get fired
     - name: r2
       enabled: false
       condition: event.i == 2
       action:
-        echo:
-          message: Should not get fired
+        debug:
+          msg: Should not get fired

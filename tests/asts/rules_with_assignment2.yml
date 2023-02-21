@@ -8,7 +8,7 @@
         - Action:
             action: debug
             action_args:
-              events_event: '{{events.first}}'
+              var: events.first
         condition:
           AllCondition:
           - AssignmentExpression:

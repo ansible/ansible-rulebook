@@ -13,5 +13,5 @@
       # we convert it to an array of 1 
       condition: event.person is selectattr('age', '>', 30)
       action:
-        echo:
-          message: Has a person greater than 30
+        debug:
+          msg: Has a person greater than 30

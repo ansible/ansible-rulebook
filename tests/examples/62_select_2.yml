@@ -24,10 +24,10 @@
     - name: r1
       condition: event.addresses is select('regex', 'Main St')
       action:
-        echo:
-          message: Some one lives on Main Street
+        debug:
+          msg: Some one lives on Main Street
     - name: r2
       condition: event.addresses is not select('regex', 'Major St')
       action:
-        echo:
-          message: No one lives on Major St
+        debug:
+          msg: No one lives on Major St

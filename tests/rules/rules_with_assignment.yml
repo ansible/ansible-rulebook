@@ -10,4 +10,4 @@
       condition: events.first << event.i == 0
       action:
         debug:
-          events_event: "{{events.first}}"
+          var: events.first

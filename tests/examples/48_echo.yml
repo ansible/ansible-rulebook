@@ -9,5 +9,5 @@
     - name: r1
       condition: event.i == 1
       action:
-        echo:
-          message: Hurray it works
+        debug:
+          msg: Hurray it works

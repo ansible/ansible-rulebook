@@ -23,8 +23,8 @@
     - name: r1
       condition: event.alert.level == "warning" or event.alert.level == "error"
       action:
-        echo:
-          message: Once after 10 seconds
+        debug:
+          msg: Once after 10 seconds
       throttle:
          once_after: 10 seconds
          group_by_attributes:

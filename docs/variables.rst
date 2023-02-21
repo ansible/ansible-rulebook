@@ -46,8 +46,8 @@ Let's take the following example rulebook:
             - name: Say Hello
               condition: event.i == vars.match_this_int
               action:
-                echo:
-                  message: "Hi, I'm {{ MY_NAME }}."
+                debug:
+                  msg: "Hi, I'm {{ MY_NAME }}."
 
 In this rulebook we use three different variables. One, **MY_NAME**, we will supply using an environment variable.
 The other two will be supplied in a file called `vars.yml` which looks like this:
