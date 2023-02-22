@@ -5,397 +5,435 @@ import logging
 import subprocess
 
 import pytest
+from pytest_check import check
 
 from . import utils
+from .settings import SETTINGS
 
 LOGGER = logging.getLogger(__name__)
-DEFAULT_TIMEOUT = 15
+DEFAULT_CMD_TIMEOUT = SETTINGS["cmd_timeout"]
+DEFAULT_SHUTDOWN_AFTER = SETTINGS["operators_shutdown_after"]
 
 
 @pytest.mark.e2e
-@pytest.mark.parametrize(
-    "rulebook",
-    [
-        pytest.param("test_lt_operator.yml", id="lt"),
-        pytest.param("test_le_operator.yml", id="le"),
-    ],
-)
-def test_less_operators(rulebook):
+def test_relational_operators(update_environment):
     """
-    GIVEN a rulebook with range source plugin that produces 8 events
-        and a condition like "i less than 4"
-        or a condition like "i less or equal 3"
-        and an action to run a playbook that prints the event
-    WHEN the program is executed
-    THEN the playbook must be executed 4 times printing each event
-        and the program must finish without errors
+    Run a rulebook with several rules to test relational operators
     """
-    rulebook = utils.BASE_DATA_PATH / f"rulebooks/operators/{rulebook}"
-    cmd = utils.Command(rulebook=rulebook)
-
-    LOGGER.info(f"Running command: {cmd}")
-    result = subprocess.run(
-        cmd,
-        timeout=DEFAULT_TIMEOUT,
-        capture_output=True,
-        cwd=utils.BASE_DATA_PATH,
+    env = update_environment(
+        {"DEFAULT_SHUTDOWN_AFTER": str(DEFAULT_SHUTDOWN_AFTER)}
     )
-
-    output = utils.assert_playbook_output(result)
-
-    printed_events = [
-        line for line in output if "Event matched" in line["stdout"]
-    ]
-
-    assert len(printed_events) == 4
-
-    for event, expected in zip(printed_events, range(4)):
-        assert f"{{'i': {expected}}}" in event["stdout"]
-
-
-@pytest.mark.e2e
-@pytest.mark.parametrize(
-    "rulebook, expected",
-    [
-        pytest.param("test_eq_operator_int.yml", "{'i': 4}", id="int"),
-        pytest.param("test_eq_operator_str.yml", "{'i': '4'}", id="str"),
-    ],
-)
-def test_eq_operator(rulebook, expected):
-    """
-    GIVEN a rulebook with range source plugin that produces 8 events
-        and a condition like "i equal 4"
-        or a condition like "i equal '4'" (str)
-        and an action to run a playbook that prints the event
-    WHEN the program is executed
-    THEN the playbook must be executed 1 time printing the event
-        and the program must finish without errors
-    """
-    rulebook = utils.BASE_DATA_PATH / f"rulebooks/operators/{rulebook}"
-    cmd = utils.Command(rulebook=rulebook)
-
-    LOGGER.info(f"Running command: {cmd}")
-    result = subprocess.run(
-        cmd,
-        timeout=DEFAULT_TIMEOUT,
-        capture_output=True,
-        cwd=utils.BASE_DATA_PATH,
-    )
-
-    output = utils.assert_playbook_output(result)
-
-    printed_event = next(
-        line for line in output if "Event matched" in line["stdout"]
-    )
-
-    assert expected in printed_event["stdout"]
-
-
-@pytest.mark.e2e
-@pytest.mark.parametrize(
-    "rulebook",
-    [
-        pytest.param("test_ge_operator.yml", id="ge_operator"),
-        pytest.param("test_gt_operator.yml", id="gt_operator"),
-    ],
-)
-def test_greater_operators(rulebook):
-    """
-    GIVEN a rulebook with range source plugin that produces 8 events
-        and a condition like "i greater or equal than 5"
-        or a condition like "i greater than 4"
-        and an action to run a playbook that prints the event
-    WHEN the program is executed
-    THEN the playbook must be executed 3 times printing the event
-        and the program must finish without errors
-    """
-    rulebook = utils.BASE_DATA_PATH / f"rulebooks/operators/{rulebook}"
-    cmd = utils.Command(rulebook=rulebook)
-
-    LOGGER.info(f"Running command: {cmd}")
-    result = subprocess.run(
-        cmd,
-        timeout=DEFAULT_TIMEOUT,
-        capture_output=True,
-        cwd=utils.BASE_DATA_PATH,
-    )
-
-    output = utils.assert_playbook_output(result)
-
-    printed_events = [
-        line for line in output if "Event matched" in line["stdout"]
-    ]
-
-    assert len(printed_events) == 3
-
-    for event, expected in zip(printed_events, range(5, 8)):
-        assert f"{{'i': {expected}}}" in event["stdout"]
-
-
-@pytest.mark.e2e
-@pytest.mark.parametrize(
-    "rulebook",
-    [
-        pytest.param("test_ne_operator_str.yml", id="str"),
-        pytest.param("test_ne_operator_int.yml", id="int"),
-    ],
-)
-def test_ne_operator(rulebook, request):
-    """
-    GIVEN a rulebook with range source plugin that produces 8 events
-        and a condition like "i not equal 5"
-        and an action to run a playbook that prints the event
-    WHEN the program is executed
-    THEN the playbook must be executed 7 times printing the event
-        and the program must finish without errors
-    """
-    rulebook = utils.BASE_DATA_PATH / f"rulebooks/operators/{rulebook}"
-    cmd = utils.Command(rulebook=rulebook)
-
-    LOGGER.info(f"Running command: {cmd}")
-    result = subprocess.run(
-        cmd,
-        timeout=DEFAULT_TIMEOUT,
-        capture_output=True,
-        cwd=utils.BASE_DATA_PATH,
-    )
-
-    output = utils.assert_playbook_output(result)
-
-    printed_events = [
-        line for line in output if "Event matched" in line["stdout"]
-    ]
-
-    assert len(printed_events) == 7
-    for event, expected in zip(printed_events, [0, 1, 2, 3, 4, 6, 7]):
-        if "str" in request.node.callspec.id:
-            expected = f"{{'i': {str(expected)!r}}}"
-        else:
-            expected = f"{{'i': {expected}}}"
-        assert expected in event["stdout"]
-
-
-@pytest.mark.e2e
-@pytest.mark.parametrize(
-    "rulebook",
-    [
-        pytest.param("test_is_defined_operator_str.yml", id="str"),
-        pytest.param("test_is_defined_operator_int.yml", id="int"),
-        pytest.param("test_is_defined_operator_nested.yml", id="nested"),
-        pytest.param(
-            "test_not_defined_operator.yml",
-            id="negative",
-            marks=pytest.mark.xfail(
-                reason="Bug https://issues.redhat.com/browse/AAP-7240"
-            ),
-        ),
-        pytest.param(
-            "test_not_defined_operator_nested.yml",
-            id="negative_nested",
-            marks=pytest.mark.xfail(
-                reason="Bug https://issues.redhat.com/browse/AAP-7240"
-            ),
-        ),
-    ],
-)
-def test_defined_operator(rulebook):
-    """
-    GIVEN a rulebook with range source plugin that produces 5 events
-        and a condition like "i is defined"
-        and an action to run a playbook that prints the event
-    WHEN the program is executed
-    THEN the playbook must be executed 5 times printing the event
-        and the program must finish without errors
-    """
-
-    rulebook = utils.BASE_DATA_PATH / f"rulebooks/operators/{rulebook}"
-    cmd = utils.Command(rulebook=rulebook)
-
-    LOGGER.info(f"Running command: {cmd}")
-    result = subprocess.run(
-        cmd,
-        timeout=DEFAULT_TIMEOUT,
-        capture_output=True,
-        cwd=utils.BASE_DATA_PATH,
-    )
-
-    output = utils.assert_playbook_output(result)
-
-    printed_events = [
-        line for line in output if "Event matched" in line["stdout"]
-    ]
-
-    assert len(printed_events) == 5
-
-
-@pytest.mark.e2e
-@pytest.mark.parametrize(
-    "rulebook,expected_count",
-    [
-        pytest.param(
-            "test_contains_str_single_operator.yml",
-            3,
-            id="contains_str_single",
-        ),
-        pytest.param(
-            "test_contains_str_single_neg_operator.yml",
-            0,
-            id="contains_str_single_neg",
-        ),
-        pytest.param(
-            "test_contains_str_combined_operator.yml",
-            1,
-            id="contains_str_combined",
-        ),
-        pytest.param(
-            "test_contains_int_single_operator.yml",
-            3,
-            id="contains_int_single",
-        ),
-        pytest.param(
-            "test_contains_int_combined_operator.yml",
-            1,
-            id="contains_int_combined",
-        ),
-        pytest.param(
-            "test_not_contains_str_single_operator.yml",
-            0,
-            id="not_contains_str_single",
-        ),
-        pytest.param(
-            "test_not_contains_str_combined_neg_operator.yml",
-            2,
-            id="not_contains_str_combined",
-        ),
-        pytest.param(
-            "test_not_contains_int_combined_operator.yml",
-            1,
-            id="not_contains_int_combined",
-        ),
-    ],
-)
-def test_contains_operator(rulebook, expected_count):
-    """
-    GIVEN a rulebook with range source plugin that produces events
-        and the event contains an array
-        and a condition like "{array} [not] contains {str|int}"
-        and an action to run a playbook that prints the event
-    WHEN the program is executed
-    THEN the playbook must be executed the expected times printing the event
-        and the program must finish without errors
-    """
-
-    rulebook = utils.BASE_DATA_PATH / f"rulebooks/operators/{rulebook}"
-    cmd = utils.Command(rulebook=rulebook)
-
-    LOGGER.info(f"Running command: {cmd}")
-    result = subprocess.run(
-        cmd,
-        timeout=DEFAULT_TIMEOUT,
-        capture_output=True,
-        cwd=utils.BASE_DATA_PATH,
-    )
-
-    output = utils.assert_playbook_output(result)
-
-    printed_events = [
-        line for line in output if "Event matched" in line["stdout"]
-    ]
-
-    assert len(printed_events) == expected_count
-
-
-@pytest.mark.e2e
-@pytest.mark.parametrize(
-    "rulebook,expected_count",
-    [
-        pytest.param(
-            "test_in_str_multiple_extra_vars_operator.yml",
-            2,
-            id="int_combined_multiple_extravars",
-        ),
-        pytest.param(
-            "test_in_int_single_operator.yml",
-            1,
-            id="int_single",
-        ),
-        pytest.param(
-            "test_not_in_int_extra_vars_operator.yml",
-            2,
-            id="not_in_int_extravars",
-        ),
-        pytest.param(
-            "test_not_in_str_extra_vars_operator.yml",
-            3,
-            id="not_in_str_extravars",
-        ),
-        pytest.param(
-            "test_in_str_single_operator.yml",
-            2,
-            id="str_single",
-        ),
-        pytest.param(
-            "test_not_in_str_single_operator.yml",
-            3,
-            id="not_in_str_single",
-        ),
-    ],
-)
-def test_in_operator(rulebook, expected_count):
-    """
-    GIVEN a rulebook with range source plugin that produces events
-        and the event contains an array
-        and a condition like "{array} [not] contains {str|int}"
-        and an action to run a playbook that prints the event
-    WHEN the program is executed
-    THEN the playbook must be executed the expected times printing the event
-        and the program must finish without errors
-    """
-
-    rulebook = utils.BASE_DATA_PATH / f"rulebooks/operators/{rulebook}"
-    vars_file = utils.BASE_DATA_PATH / "extra_vars/operator_variables.yml"
-    cmd = utils.Command(rulebook=rulebook, vars_file=vars_file)
-
-    LOGGER.info(f"Running command: {cmd}")
-    result = subprocess.run(
-        cmd,
-        timeout=DEFAULT_TIMEOUT,
-        capture_output=True,
-        cwd=utils.BASE_DATA_PATH,
-    )
-
-    output = utils.assert_playbook_output(result)
-
-    printed_events = [
-        line for line in output if "Event matched" in line["stdout"]
-    ]
-
-    assert len(printed_events) == expected_count
-
-
-@pytest.mark.e2e
-def test_not_operator():
-    """
-    Test to validate the functionality of the negation (not) operator
-    """
-
     rulebook = (
-        utils.BASE_DATA_PATH / "rulebooks/operators/test_not_operator.yml"
+        utils.BASE_DATA_PATH
+        / "rulebooks/operators/test_relational_operators.yml"
     )
-    cmd = utils.Command(rulebook=rulebook)
+    vars_file = utils.BASE_DATA_PATH / "extra_vars/operator_variables.yml"
+    cmd = utils.Command(
+        rulebook=rulebook,
+        vars_file=vars_file,
+        envvars="DEFAULT_SHUTDOWN_AFTER",
+    )
 
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
-        timeout=DEFAULT_TIMEOUT,
+        timeout=DEFAULT_CMD_TIMEOUT,
         capture_output=True,
         cwd=utils.BASE_DATA_PATH,
+        text=True,
+        env=env,
     )
 
-    output = utils.assert_playbook_output(result)
+    assert result.returncode == 0
+    assert not result.stderr
 
-    printed_events = [
-        line for line in output if "Event matched" in line["stdout"]
-    ]
+    with check:
+        assert "Output for testcase #01" in result.stdout, "testcase #1 failed"
 
-    assert len(printed_events) == 2
+    with check:
+        assert "Output for testcase #02" in result.stdout, "testcase #2 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #03" in line
+                ]
+            )
+            == 1
+        ), "testcase #3 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #04" in line
+                ]
+            )
+            == 2
+        ), "testcase #4 failed"
+
+    with check:
+        assert "Output for testcase #05" in result.stdout, "testcase #5 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #06" in line
+                ]
+            )
+            == 1
+        ), "testcase #6 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #07" in line
+                ]
+            )
+            == 1
+        ), "testcase #7 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #08" in line
+                ]
+            )
+            == 1
+        ), "testcase #8 failed"
+
+    with check:
+        assert "Output for testcase #09" in result.stdout, "testcase #9 failed"
+
+    with check:
+        assert (
+            "Output for testcase #10" in result.stdout
+        ), "testcase #10 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #11" in line
+                ]
+            )
+            == 1
+        ), "testcase #11 failed"
+
+    with check:
+        assert (
+            "Output for testcase #12" in result.stdout
+        ), "testcase #12 failed"
+
+    with check:
+        assert (
+            "Output for testcase #13" in result.stdout
+        ), "testcase #13 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #14" in line
+                ]
+            )
+            == 1
+        ), "Testcase #14 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #15" in line
+                ]
+            )
+            == 1
+        ), "testcase #15 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #16" in line
+                ]
+            )
+            == 3
+        ), "testcase #16, failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #17" in line
+                ]
+            )
+            == 1
+        ), "testcase #17 failed"
+
+    with check:
+        assert (
+            "Output for testcase #18" in result.stdout
+        ), "testcase #18 failed"
+
+    with check:
+        assert (
+            "Output for testcase #19" not in result.stdout
+        ), "testcase #19 failed"
+
+    with check:
+        assert (
+            "Ruleset: Test relational operators rule: Finish"
+            " - test shutdown msg has initiated shutdown" in result.stdout
+        ), "Shutdown message failed"
+
+    assert len(result.stdout.splitlines()) == 22, "Unexpected output"
+
+
+@pytest.mark.e2e
+def test_membership_operators(update_environment):
+    """
+    Run a rulebook with several rules to test membership operators
+    """
+    env = update_environment(
+        {"DEFAULT_SHUTDOWN_AFTER": str(DEFAULT_SHUTDOWN_AFTER)}
+    )
+    rulebook = (
+        utils.BASE_DATA_PATH
+        / "rulebooks/operators/test_membership_operators.yml"
+    )
+    vars_file = utils.BASE_DATA_PATH / "extra_vars/operator_variables.yml"
+    cmd = utils.Command(
+        rulebook=rulebook,
+        vars_file=vars_file,
+        envvars="DEFAULT_SHUTDOWN_AFTER",
+    )
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_CMD_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0
+    assert not result.stderr
+
+    with check:
+        assert "Output for Testcase #01" in result.stdout, "Testcase #1 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for Testcase #02" in line
+                ]
+            )
+            == 2
+        ), "Testcase #2 failed"
+
+    with check:
+        assert "Output for Testcase #03" in result.stdout, "Testcase #3"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for Testcase #04" in line
+                ]
+            )
+            == 1
+        ), "Testcase #4 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for Testcase #05" in line
+                ]
+            )
+            == 1
+        ), "Testcase #5 failed"
+
+    with check:
+        assert "Winter is missing" not in result.stdout, "Testcase #6 failed"
+
+    with check:
+        assert "Output for Testcase #07" in result.stdout, "Testcase #7 failed"
+
+    with check:
+        assert "Output for Testcase #08" in result.stdout, "Testcase #8 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for Testcase #09" in line
+                ]
+            )
+            == 1
+        ), "Testcase #9"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for Testcase #10" in line
+                ]
+            )
+            == 4
+        ), "Testcase #10 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for Testcase #11" in line
+                ]
+            )
+            == 3
+        ), "Testcase #11 failed"
+
+    assert len(result.stdout.splitlines()) == 16, "Unexpected output"
+
+
+@pytest.mark.e2e
+def test_logical_operators(update_environment):
+    """
+    Run a rulebook with several rules to test logical operators
+    """
+    env = update_environment(
+        {"DEFAULT_SHUTDOWN_AFTER": str(DEFAULT_SHUTDOWN_AFTER)}
+    )
+    rulebook = (
+        utils.BASE_DATA_PATH / "rulebooks/operators/test_logical_operators.yml"
+    )
+    vars_file = utils.BASE_DATA_PATH / "extra_vars/operator_variables.yml"
+    cmd = utils.Command(
+        rulebook=rulebook,
+        vars_file=vars_file,
+        envvars="DEFAULT_SHUTDOWN_AFTER",
+    )
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_CMD_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0
+    assert not result.stderr
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Testcase #01" in line
+                ]
+            )
+            == 1
+        ), "Testcase #1 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Testcase #02" in line
+                ]
+            )
+            == 3
+        ), "Testcase #2 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Testcase #03 passes" in line
+                ]
+            )
+            == 1
+        ), "Testcase #3 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Testcase #04 passes" in line
+                ]
+            )
+            == 2
+        ), "Testcase #4 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Testcase #05 passes" in line
+                ]
+            )
+            == 2
+        ), "Testcase #5 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Testcase #06 passes" in line
+                ]
+            )
+            == 4
+        ), "Testcase #6 failed"

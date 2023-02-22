@@ -22,3 +22,12 @@ houses:
   - Stark
   - Targaryen
   - Baratheon
+
+targaryen_motto: fire and blood
+
+mixed_types:
+  - 4
+  - 2.7182
+  - "Vhagar"
+  - true
+  - Stark
