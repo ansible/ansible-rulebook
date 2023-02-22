@@ -30,10 +30,10 @@
     - name: r1
       condition: event.people is selectattr('person.age', '>', 30)
       action:
-        echo:
-          message: Has a person greater than 30
+        debug:
+          msg: Has a person greater than 30
     - name: r2
       condition: event.friends is selectattr('person.name', 'regex', 'Barney|Fred')
       action:
-        echo:
-          message: Barney or Fred in friends list
+        debug:
+          msg: Barney or Fred in friends list

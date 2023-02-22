@@ -616,8 +616,8 @@ Check if an item exists in a list based on a test
         name: check if an item exist in list
         condition: event.levels is select('>=', 10)
         action:
-          echo:
-            message: The list has an item with the value greater than or equal to 10
+          debug:
+            msg: The list has an item with the value greater than or equal to 10
 
 | In the above example "levels" is a list of integers e.g. [1,2,3,20], the test says
 | check if any item exists in the list with a value >= 10. This test passes because
@@ -632,8 +632,8 @@ Check if an item does not exist in a list based on a test
         name: check if an item does not exist in list
         condition: event.levels is not select('>=', 10)
         action:
-          echo:
-            message: The list does not have item with the value greater than or equal to 10
+          debug:
+            msg: The list does not have item with the value greater than or equal to 10
 
 | In the above example "levels" is a list of integers e.g. [1,2,3], the test says
 | check if *no* item exists with a value >= 10. This test passes because none of the items
@@ -654,8 +654,8 @@ Checking if an object exists in a list based on a test
         name: check if an object exist in list
         condition: event.objects is selectattr('age', '>=', 20)
         action:
-          echo:
-            message: An object with age greater than 20 found
+          debug:
+            msg: An object with age greater than 20 found
 
 | In the above example "objects" is a list of object's, with multiple properties. One of the
 | properties is age, the test says check if any object exists in the list with an age >= 20.
@@ -668,8 +668,8 @@ Checking if an object does not exist in a list based on a test
         name: check if an object does not exist in list
         condition: event.objects is not selectattr('age', '>=', 20)
         action:
-          echo:
-            message: No object with age greater than 20 found
+          debug:
+            msg: No object with age greater than 20 found
 
 | In the above example "objects" is a list of object's, with multiple properties. One of the
 | properties is age, the test says check if *no* object exists in the list with an age >= 20.

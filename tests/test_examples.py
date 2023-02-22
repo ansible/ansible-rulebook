@@ -1189,7 +1189,7 @@ async def test_48_echo():
             "max_events": 2,
             "shutdown_events": 1,
             "actions": [
-                "48 echo::r1::echo",
+                "48 echo::r1::debug",
             ],
         }
         validate_events(event_log, **checks)
@@ -1295,11 +1295,11 @@ async def test_51_vars_namespace():
             "max_events": 6,
             "shutdown_events": 1,
             "actions": [
-                "51 vars namespace::str_test::echo",
-                "51 vars namespace::list_test::echo",
-                "51 vars namespace::bool_test::echo",
-                "51 vars namespace::int_test::echo",
-                "51 vars namespace::float_test::echo",
+                "51 vars namespace::str_test::debug",
+                "51 vars namespace::list_test::debug",
+                "51 vars namespace::bool_test::debug",
+                "51 vars namespace::int_test::debug",
+                "51 vars namespace::float_test::debug",
             ],
         }
         validate_events(event_log, **checks)
@@ -1443,8 +1443,8 @@ async def test_55_not_all():
             "max_events": 3,
             "shutdown_events": 1,
             "actions": [
-                "55 not all::maint failed::echo",
-                "55 not all::maint failed::echo",
+                "55 not all::maint failed::debug",
+                "55 not all::maint failed::debug",
             ],
         }
         validate_events(event_log, **checks)
@@ -1469,7 +1469,7 @@ async def test_56_once_after():
             "max_events": 2,
             "shutdown_events": 1,
             "actions": [
-                "56 once after::r1::echo",
+                "56 once after::r1::debug",
             ],
         }
         validate_events(event_log, **checks)
@@ -1516,12 +1516,12 @@ async def test_58_string_search():
             "max_events": 7,
             "shutdown_events": 1,
             "actions": [
-                "58 String search::match::echo",
-                "58 String search::search::echo",
-                "58 String search::regex::echo",
-                "58 String search::not match::echo",
-                "58 String search::not search::echo",
-                "58 String search::not regex::echo",
+                "58 String search::match::debug",
+                "58 String search::search::debug",
+                "58 String search::regex::debug",
+                "58 String search::not match::debug",
+                "58 String search::not search::debug",
+                "58 String search::not regex::debug",
             ],
         }
         validate_events(event_log, **checks)
@@ -1548,9 +1548,9 @@ async def test_59_multiple_actions():
             "actions": [
                 "59 Multiple Actions::r1::debug",
                 "59 Multiple Actions::r1::print_event",
-                "59 Multiple Actions::r1::echo",
-                "59 Multiple Actions::r1::echo",
-                "59 Multiple Actions::r2::echo",
+                "59 Multiple Actions::r1::debug",
+                "59 Multiple Actions::r1::debug",
+                "59 Multiple Actions::r2::debug",
             ],
         }
         validate_events(event_log, **checks)
@@ -1574,7 +1574,7 @@ async def test_60_json_filter():
             "max_events": 2,
             "shutdown_events": 1,
             "actions": [
-                "60 json filter::r1::echo",
+                "60 json filter::r1::debug",
             ],
         }
         validate_events(event_log, **checks)
@@ -1598,7 +1598,7 @@ async def test_61_select_1():
             "max_events": 2,
             "shutdown_events": 1,
             "actions": [
-                "61 select 1::r1::echo",
+                "61 select 1::r1::debug",
             ],
         }
         validate_events(event_log, **checks)
@@ -1622,9 +1622,9 @@ async def test_62_select_2():
             "max_events": 4,
             "shutdown_events": 1,
             "actions": [
-                "62 select 2::r1::echo",
-                "62 select 2::r2::echo",
-                "62 select 2::r1::echo",
+                "62 select 2::r1::debug",
+                "62 select 2::r2::debug",
+                "62 select 2::r1::debug",
             ],
         }
         validate_events(event_log, **checks)
@@ -1648,8 +1648,8 @@ async def test_63_selectattr_1():
             "max_events": 3,
             "shutdown_events": 1,
             "actions": [
-                "63 selectattr 1::r1::echo",
-                "63 selectattr 1::r2::echo",
+                "63 selectattr 1::r1::debug",
+                "63 selectattr 1::r2::debug",
             ],
         }
         validate_events(event_log, **checks)
@@ -1673,7 +1673,7 @@ async def test_64_selectattr_2():
             "max_events": 2,
             "shutdown_events": 1,
             "actions": [
-                "64 selectattr 2::r1::echo",
+                "64 selectattr 2::r1::debug",
             ],
         }
         validate_events(event_log, **checks)
@@ -1697,7 +1697,7 @@ async def test_65_selectattr_3():
             "max_events": 2,
             "shutdown_events": 1,
             "actions": [
-                "65 selectattr 3::r1::echo",
+                "65 selectattr 3::r1::debug",
             ],
         }
         validate_events(event_log, **checks)
@@ -1730,7 +1730,7 @@ async def test_66_sleepy_playbook():
                 "shutdown_events": 2,
                 "actions": [
                     "66 sleepy playbook::r1::print_event",
-                    "terminate gracefully::r11::echo",
+                    "terminate gracefully::r11::debug",
                     "terminate gracefully::r12::shutdown",
                 ],
             }
@@ -1762,7 +1762,7 @@ async def test_67_shutdown_now():
                 "shutdown_events": 2,
                 "actions": [
                     "67 shutdown now::r1::print_event",
-                    "terminate now::r11::echo",
+                    "terminate now::r11::debug",
                     "terminate now::r12::shutdown",
                 ],
             }
@@ -1787,7 +1787,34 @@ async def test_68_disabled_rule():
             "max_events": 2,
             "shutdown_events": 1,
             "actions": [
-                "68 disabled rule::r1::echo",
+                "68 disabled rule::r1::debug",
+            ],
+        }
+        validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_69_enhanced_debug():
+    ruleset_queues, event_log = load_rulebook("examples/69_enhanced_debug.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 5,
+            "shutdown_events": 1,
+            "actions": [
+                "69 enhanced debug::r1::debug",
+                "69 enhanced debug::r2::debug",
+                "69 enhanced debug::r3::debug",
+                "69 enhanced debug::r5::debug",
             ],
         }
         validate_events(event_log, **checks)

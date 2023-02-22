@@ -15,30 +15,30 @@
     - name: match
       condition: event.url1 is match("https://example.com/users/.*/resources",ignorecase=true,multiline=true)
       action:
-        echo:
-          message: match works
+        debug:
+          msg: match works
     - name: search
       condition: event.url2 is search("groups/.*/resources/.*")
       action:
-        echo:
-          message: search works
+        debug:
+          msg: search works
     - name: regex
       condition: event.url3 is regex("example\.com/others/foo")
       action:
-        echo:
-          message: Regex works
+        debug:
+          msg: Regex works
     - name: not match
       condition: event.url4 is not match("https://example.com/users/.*/resources",ignorecase=true,multiline=true)
       action:
-        echo:
-          message: not match works
+        debug:
+          msg: not match works
     - name: not search
       condition: event.url5 is not search("groups/.*/resources/.*")
       action:
-        echo:
-          message: not search works
+        debug:
+          msg: not search works
     - name: not regex
       condition: event.url6 is not regex("example\.com/others/foo")
       action:
-        echo:
-          message: not regex works
+        debug:
+          msg: not regex works

@@ -11,12 +11,12 @@
       - debug:
       - print_event:
            pretty: true
-      - echo:
-           message: "Multiple Action Message1"
-      - echo:
-           message: "Multiple Action Message2"
+      - debug:
+           msg: "Multiple Action Message1"
+      - debug:
+           msg: "Multiple Action Message2"
   - name: r2
     condition: event.i == 2
     action:
-      echo:
-        message: Single Action
+      debug:
+        msg: Single Action

@@ -23,5 +23,5 @@
            - event.alert.code == 1002
          timeout: 10 seconds
       action:
-        echo:
-          message: "Not all conditions met"
+        debug:
+          msg: "Not all conditions met"

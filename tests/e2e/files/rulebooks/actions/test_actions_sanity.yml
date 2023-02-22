@@ -21,7 +21,6 @@
             rulebook_scope: same_ruleset
           - action: "check_retract_fact"
             rulebook_scope: same_ruleset
-          - action: "echo"
   rules:
     - name: run_playbook
       condition: event.action == "run_playbook"
@@ -111,11 +110,6 @@
           module_args:
             msg: "Retracted fact in same ruleset, this should not be printed"
 
-    - name: echo
-      condition: event.action == "echo"
-      action:
-        echo:
-          message: "Echo action executed"
 
 - name: Second ruleset
   hosts: all

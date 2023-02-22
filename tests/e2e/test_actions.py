@@ -24,7 +24,6 @@ def test_actions_sanity():
         * post_event
         * set_fact
         * retract_fact
-        * echo
     Each rule has specific logic to be executed only one time
     and each action produces a specific output to be verified.
     """
@@ -89,10 +88,8 @@ def test_actions_sanity():
         not in result.stdout
     ), "retract_fact action failed"
 
-    assert "Echo action executed" in result.stdout
-
     assert (
-        len(result.stdout.splitlines()) == 43
+        len(result.stdout.splitlines()) == 42
     ), "unexpected output from the rulebook"
 
 

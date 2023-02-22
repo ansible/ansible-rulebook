@@ -15,7 +15,6 @@ The following actions are supported:
 - `shutdown`_
 - `debug`_
 - `none`_
-- `echo`_
 
 run_playbook
 ************
@@ -364,31 +363,57 @@ When a rule's condition(s) are satisfied we get the results back as:
 
 debug
 *****
-  Write the event to stdout
-  It accepts an arbitrary dict that it's injected into the event to be printed
-
-none
-****
-  No action, useful when writing tests
-  No arguments needed
-
-echo
-****
-.. list-table:: Write a user specified message to stdout
+.. list-table:: debug ansible-rulebook
    :widths: 25 150 10
    :header-rows: 1
 
    * - Name
      - Description
      - Required
-   * - message
-     - A terse message to display to stdout
-     - Yes
+   * - msg
+     - A simple string or an array of strings, which can have references to event or events
+     - No
+   * - var
+     - The variable to print, which can have references to event or events. Using {{ }} is optional.
+     - No
+
+| The debug action tries to mimic the debug command in ansible.
+| If no arguments are provided it prints the matching events along with other important properties
+| **msg** and **var** are mutually exclusive, you can have only 1 of them in the debug
+| msg can be a single string or an array of strings, with references to event or events.
+| With var using the Jinja style braces is optional like shown in the example below
 
 Example:
 
-.. code-block:: yaml
+    .. code-block:: yaml
 
-    action:
-      echo:
-        message: Hello World
+       name: debug with single message
+       condition: event.i >= 5
+       action:
+          debug:
+            msg: Simple debug message
+
+
+    .. code-block:: yaml
+
+       name: debug with multiple messages
+       condition: event.i >= 5
+       action:
+          debug:
+            msg: 
+               - "Message 1 {{ event }}"
+               - Second Message
+
+    .. code-block:: yaml
+
+       name: debug with var
+       condition: event.i >= 5
+       action:
+          debug:
+            var: event.i
+
+
+none
+****
+  No action, useful when writing tests
+  No arguments needed
