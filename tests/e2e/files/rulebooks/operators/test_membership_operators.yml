@@ -192,7 +192,7 @@
           msg: "Output for Testcase #11"
 
     - name: "Testcase #11-3"
-      condition: events.mylist3 contains 6.99
+      condition: events.mylist3 contains 6.99 # Expected to not match
       action:
         debug:
           msg: "Output for Testcase #11"
