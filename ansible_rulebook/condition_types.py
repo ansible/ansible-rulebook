@@ -33,6 +33,10 @@ class Boolean(NamedTuple):
     value: str
 
 
+class Null(NamedTuple):
+    value = None
+
+
 class Identifier(NamedTuple):
     value: str
 
@@ -110,6 +114,8 @@ def to_condition_type(value):
         return String(value)
     elif isinstance(value, float):
         return Float(value)
+    elif isinstance(value, type(None)):
+        return Null()
     elif isinstance(value, list):
         return [to_condition_type(v) for v in value]
     else:
