@@ -33,25 +33,25 @@
     - name: str_test
       condition: event.address.street == vars.person.address.street
       action:
-        echo:
-          message: String comparison works
+        debug:
+          msg: String comparison works
     - name: list_test
       condition: event.year in vars.person.address.years_active
       action:
-        echo:
-          message: List in works
+        debug:
+          msg: List in works
     - name: bool_test
       condition: event.active == vars.person.active
       action:
-        echo:
-          message: Boolean works
+        debug:
+          msg: Boolean works
     - name: int_test
       condition: event.age == vars.person.age
       action:
-        echo:
-          message: Int works
+        debug:
+          msg: Int works
     - name: float_test
       condition: event.threshold < vars.person.reliability
       action:
-        echo:
-          message: Float works
+        debug:
+          msg: Float works

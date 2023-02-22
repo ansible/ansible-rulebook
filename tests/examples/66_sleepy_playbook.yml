@@ -31,8 +31,8 @@
     - name: r11
       condition: event.j == 0
       action:
-        echo:
-          message: Next issuing shutdown 
+        debug:
+          msg: Next issuing shutdown 
     - name: r12
       condition: event.j == 1
       action:

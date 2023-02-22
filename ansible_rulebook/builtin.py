@@ -29,6 +29,7 @@ from pprint import pprint
 from typing import Callable, Dict, List, Optional, Union
 
 import ansible_runner
+import dpath
 import janus
 import yaml
 from drools import ruleset as lang
@@ -75,13 +76,27 @@ async def none(
 
 
 async def debug(event_log, **kwargs):
-    print(get_horizontal_rule("="))
-    print("kwargs:")
-    pprint(kwargs)
-    print(get_horizontal_rule("="))
-    print("facts:")
-    pprint(lang.get_facts(kwargs["source_ruleset_name"]))
-    print(get_horizontal_rule("="))
+    if "msg" in kwargs:
+        messages = kwargs.get("msg")
+        if not isinstance(messages, list):
+            messages = [messages]
+        for msg in messages:
+            print(msg)
+    elif "var" in kwargs:
+        key = kwargs.get("var")
+        try:
+            print(dpath.get(kwargs.get("variables"), key, separator="."))
+        except KeyError:
+            logger.error("Key %s not found in variable pool", key)
+            return
+    else:
+        print(get_horizontal_rule("="))
+        print("kwargs:")
+        pprint(kwargs)
+        print(get_horizontal_rule("="))
+        print("facts:")
+        pprint(lang.get_facts(kwargs["source_ruleset_name"]))
+        print(get_horizontal_rule("="))
     sys.stdout.flush()
     await event_log.put(
         dict(
@@ -121,35 +136,6 @@ async def print_event(
         dict(
             type="Action",
             action="print_event",
-            activation_id=settings.identifier,
-            ruleset=source_ruleset_name,
-            rule=source_rule_name,
-            playbook_name=name,
-            run_at=str(datetime.utcnow()),
-            matching_events=_get_events(variables),
-        )
-    )
-
-
-async def echo(
-    event_log,
-    inventory: Dict,
-    hosts: List,
-    variables: Dict,
-    project_data_file: str,
-    source_ruleset_name: str,
-    source_rule_name: str,
-    ruleset: str,
-    name: Optional[str] = None,
-    message: Optional[str] = None,
-):
-
-    print(str(datetime.now()) + " : " + message)
-    sys.stdout.flush()
-    await event_log.put(
-        dict(
-            type="Action",
-            action="echo",
             activation_id=settings.identifier,
             ruleset=source_ruleset_name,
             rule=source_rule_name,
@@ -816,7 +802,6 @@ actions: Dict[str, Callable] = dict(
     run_module=run_module,
     run_job_template=run_job_template,
     shutdown=shutdown,
-    echo=echo,
 )
 
 

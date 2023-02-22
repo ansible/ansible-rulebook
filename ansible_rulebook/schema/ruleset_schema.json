@@ -109,8 +109,7 @@
                                 {"$ref": "#/$defs/print-event-action"},
                                 {"$ref": "#/$defs/debug-action"},
                                 {"$ref": "#/$defs/none-action"},
-                                {"$ref": "#/$defs/shutdown-action"},
-                                {"$ref": "#/$defs/echo-action"}
+                                {"$ref": "#/$defs/shutdown-action"}
                          ]
                      }
                 },
@@ -125,8 +124,7 @@
                         {"$ref": "#/$defs/print-event-action"},
                         {"$ref": "#/$defs/debug-action"},
                         {"$ref": "#/$defs/none-action"},
-                        {"$ref": "#/$defs/shutdown-action"},
-                        {"$ref": "#/$defs/echo-action"}
+                        {"$ref": "#/$defs/shutdown-action"}
                     ]
                 }
             },
@@ -340,36 +338,46 @@
             ],
             "additionalProperties": false
         },
+	"debug-msg": {
+		"type": "object",
+                "properties": {
+			    "msg": {
+				    "anyOf": [
+					    {"type": "string"},
+					    {"type": "array",
+					     "items": {"type": "string"}
+					    }
+				    ]
+			    }
+		},
+                "additionalProperties": false
+
+	},
+	"debug-var": {
+		"type": "object",
+                "properties": {
+			    "var": { "type": "string" }
+		},
+                "additionalProperties": false
+	},
+
         "debug-action": {
             "type": "object",
             "properties": {
                 "debug": {
-                    "type": ["object","null"]
-                }
+                    "anyOf": [
+                        {"$ref": "#/$defs/debug-msg"},
+                        {"$ref": "#/$defs/debug-var"},
+			{"type": "null" }
+                    ]
+		}
             },
+            "additionalProperties": false,
             "required": [
                 "debug"
             ]
         },
-        "echo-action": {
-            "type": "object",
-            "properties": {
-                "echo": {
-                    "type": ["object"],
-                    "properties": {
-                        "message": {"type": "string" }
-                    }, 
-                    "additionalProperties": false
-                },
-		"required": [
-			"message"
-		]
-            },
-            "required": [
-                "echo"
-            ],
-            "additionalProperties": false
-        },
+
         "none-action": {
             "type": "object",
             "properties": {

@@ -43,8 +43,8 @@
     - name: r1
       condition: event.r1.level == "warning" or event.r1.level == "error"
       action:
-        echo:
-          message: r1 works
+        debug:
+          msg: r1 works
       throttle:
          once_after: 15 seconds
          group_by_attributes:
@@ -53,8 +53,8 @@
     - name: r2
       condition: event.r2.level == "warning" or event.r2.level == "error"
       action:
-        echo:
-          message: r2 works
+        debug:
+          msg: r2 works
       throttle:
          once_after: 30 seconds
          group_by_attributes:
@@ -63,8 +63,8 @@
     - name: r3
       condition: event.r3.level == "warning" or event.r3.level == "error"
       action:
-        echo:
-          message: r3 works
+        debug:
+          msg: r3 works
       throttle:
          once_after: 45 seconds
          group_by_attributes:

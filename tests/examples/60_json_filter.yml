@@ -25,10 +25,10 @@
     - name: r1
       condition: event.key3.key4.f_use_1 == 42
       action:
-        echo:
-          message: Hurray filtering works
+        debug:
+          msg: Hurray filtering works
     - name: r2
       condition: event.key1.key2.f_ignore_1 == 1
       action:
-        echo:
-          message: Should never fire
+        debug:
+          msg: Should never fire

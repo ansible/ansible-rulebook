@@ -26,5 +26,5 @@
     - name: r1
       condition: event.levels is select('>', 25)
       action:
-        echo:
-          message: Found a player with level greater than 25
+        debug:
+          msg: Found a player with level greater than 25
