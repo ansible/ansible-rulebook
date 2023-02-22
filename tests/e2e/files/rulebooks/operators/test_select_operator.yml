@@ -1,0 +1,97 @@
+- name: Test select operator
+  hosts: all
+  sources:
+    - generic:
+        event_delay: 0.05
+        payload:
+          - id: "testcase 01"
+            name: "arrokoth"
+          - id: "testcase 02"
+            type: "comet"
+            name: "hale-bopp"
+            description: |
+              AKA the 'Great Comet
+              of 1997'. It was visible
+              for a total of 18 months.
+          - id: "testcase negative"
+            type: "comet"
+            name: "bennu"
+            radius: 0.49
+            orbital_speed: 28.0
+          - id: "testcase 03"
+            type: "comet"
+            name: "tempel 1"
+            radius: 3.0
+            orbital_period: 2027
+          - id: "testcase 04"
+            type: "asteroid"
+            name: "didymos"
+            radius: 0.39
+            has_moons: true
+            sub_type: "s-type"
+          - id: "testcase 04"
+            type: "asteroid"
+            name: "iris"
+            has_moons: false
+            sub_type: "s-type"
+          - id: "testcase 05"
+            type: "comet"
+            name: "halleys"
+            radius: 11.0
+            orbital_period: 27284
+            has_moons: false
+
+  # TODO: add tests for variable substitution when bug
+  # is resolved: https://issues.redhat.com/browse/AAP-9324
+  rules:
+    - name: Single condition select with search, case insensitive
+      condition: event.name is select("search", "(?i)ArRo")
+      action:
+        debug:
+          msg: "Output for testcase #01"
+
+    - name: Multi condition select with string search, multiline
+      condition: >
+        event.name is select("search", "h.{3}(-bo).") and
+        event.type is select("match", "come") and
+        event.description is select("regex", "(?s)^AKA.*months\.$")
+      action:
+        debug:
+          msg: "Output for testcase #02"
+
+    - name: Multi condition select negative # should never fire
+      condition: >
+        event.orbital_speed is select("<", 30) and
+        (event.radius is select(">", 0.49) or
+        event.type is not select("match", "comet"))
+      action:
+        debug:
+          msg: "Negative testcase (should not fire)"
+
+    - name: Multi condition select float and int
+      condition: >
+        event.type is select("match", "comet") and
+        event.radius is select("<=", 3) and
+        event.orbital_period is select(">=", 2020)
+      action:
+        debug:
+          msg: "Output for testcase #03"
+
+    - name: Multi condition select bool and null
+      condition: >
+        event.type is select("search", "asteroid") and
+        (event.has_moons is select("==", true) or
+        event.sub_type is select("!=", null))
+      action:
+        debug:
+          msg: "Output for testcase #04"
+
+    - name: Multi condition select with negation
+      condition: >
+        event.type is not select("match", "planet") and
+        (event.radius is select("==", 11) or
+        event.orbital_period is select(">=", 27000.123)) and
+        event.has_moons is not select("==", true)
+      action:
+        debug:
+          msg: "Output for testcase #05"
