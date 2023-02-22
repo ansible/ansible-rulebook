@@ -179,7 +179,7 @@ def test_relational_operators(update_environment):
                     if "Output for testcase #16" in line
                 ]
             )
-            == 2
+            == 3
         ), "testcase #16, failed"
 
     with check:
@@ -210,7 +210,7 @@ def test_relational_operators(update_environment):
             " - test shutdown msg has initiated shutdown" in result.stdout
         ), "Shutdown message failed"
 
-    assert len(result.stdout.splitlines()) == 21, "Unexpected output"
+    assert len(result.stdout.splitlines()) == 22, "Unexpected output"
 
 
 @pytest.mark.e2e

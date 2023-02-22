@@ -84,6 +84,8 @@
             square_root_of_2: 1.41421356237
           - id: "testcase #16"
             square_root_of_2: 1.41421356238
+          - id: "testcase #16"
+            square_root_of_2: 2
 
           - id: "testcase #11"
             myboolean: true
