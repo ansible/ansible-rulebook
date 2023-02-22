@@ -1,0 +1,204 @@
+---
+- name: Test membership operators
+  hosts: all
+  sources:
+    - generic:
+        event_delay: 0.05
+        shutdown_after: "{{ DEFAULT_SHUTDOWN_AFTER }}"
+        payload:
+          - id: "Testcase #1"
+            numbers:
+              - 42
+              - 2.7182
+              - 3.1415
+              - 173.035
+              - 20000000000000000426408380189087937446025157425359298935486676996 # > uint64
+              - -6000
+
+          - id: "Testcase #2"
+            data: "0"
+          - id: "Testcase #2"
+            data: "1"
+          - id: "Testcase #2"
+            data: "2"
+
+          - id: "Testcase #3"
+            house: "Martell"
+
+          - id: "Testcase #4"
+            myint: 1
+            some_list:
+              - "Jon"
+              - "Cersei"
+              - "Robert"
+          - id: "Testcase #4"
+            myint: 2
+            some_list:
+              - "Jon"
+              - "Cersei"
+              - "Robert"
+          - id: "Testcase #4"
+            myint: 3
+            some_list:
+              - "Jon"
+              - "Cersei"
+              - "Robert"
+
+          - id: "Testcase #5"
+            biggest_dragon: Balerion
+          - id: "Testcase #5"
+            biggest_dragon: Vhagar
+
+          - id: "Testcase #6"
+            houses:
+              - Lannister
+              - Stark
+              - Targaryen
+              - Baratheon
+
+          - id: "Testcase #7"
+            deaths: 5
+            houses:
+              - Lannister
+              - Stark
+              - Targaryen
+              - Baratheon
+
+          - id: "Testcase #8"
+            some_numbers:
+              - 42
+              - 2.7182
+              - 3.1415
+              - 173.035
+              - 20000000000000000426408380189087937446025157425359298935486676996 # > uint64
+
+          - id: "Testcase #9"
+            weapon: "sword"
+          - id: "Testcase #9"
+            weapon: "bow"
+
+          - id: "Testcase #10"
+            value: "Stark"
+          - id: "Testcase #10"
+            value: "Martell"
+          - id: "Testcase #10"
+            value: 4
+          - id: "Testcase #10"
+            value: 2.7182
+          - id: "Testcase #10"
+            value: -6000
+          - id: "Testcase #10"
+            value: True
+
+          - id: "Testcase #11"
+            mylist:
+              - "Jon"
+              - 45
+              - True
+              - 6.9
+          - id: "Testcase #11"
+            nested:
+              mylist2:
+                - "Jon"
+                - 45
+                - True
+                - 6.9
+          - id: "Testcase #11"
+            mylist3:
+              - "Jon"
+              - 45
+              - True
+              - 6.9
+          - id: "Testcase #11"
+            mylist4: []
+          - id: "Testcase #11"
+            mylist4: [""]
+  rules:
+    - name: "Testcase #1"
+      condition: >
+        event.numbers contains 20000000000000000426408380189087937446025157425359298935486676996
+        and event.id == "Testcase #1"
+      action:
+        debug:
+          msg: "Output for Testcase #01"
+
+    - name: "Testcase #2"
+      condition: event.data not in ["2", "3", "one"]
+      action:
+        debug:
+          msg: "Output for Testcase #02"
+
+    # Requires operator_variables.yml
+    - name: "Testcase #3"
+      condition: event.house not in vars.houses
+      action:
+        debug:
+          msg: "Output for Testcase #03"
+
+    # Requires operator_variables.yml
+    - name: "Testcase #4"
+      condition: event.myint not in vars.in_operator_int_array
+      action:
+        debug:
+          msg: "Output for Testcase #04"
+
+    # Requires operator_variables.yml
+    - name: "Testcase #5"
+      condition: event.biggest_dragon not in vars.mixed_types
+      action:
+        debug:
+          msg: "Output for Testcase #05"
+
+    - name: "Testcase #6"
+      condition: event.houses not contains "Stark"
+      action:
+        debug:
+          msg: "Winter is missing"
+
+    - name: "Testcase #7"
+      condition: event.houses not contains "Martell" and event.deaths > 3
+      action:
+        debug:
+          msg: "Output for Testcase #07"
+
+    - name: "Testcase #8"
+      condition: event.some_numbers not contains -6000
+      action:
+        debug:
+          msg: "Output for Testcase #08"
+
+    - name: "Testcase #9"
+      condition: event.weapon in ["sword", "axe", "hammer"]
+      action:
+        debug:
+          msg: "Output for Testcase #09"
+
+    - name: "Testcase #10"
+      condition: event.value in vars.mixed_types
+      action:
+        debug:
+          msg: "Output for Testcase #10"
+
+    - name: "Testcase #11-1"
+      condition: events.mylist contains "jon" or events.mylist contains 45
+      action:
+        debug:
+          msg: "Output for Testcase #11"
+
+    - name: "Testcase #11-2"
+      condition: events.nested.mylist2 contains True
+      action:
+        debug:
+          msg: "Output for Testcase #11"
+
+    - name: "Testcase #11-3"
+      condition: events.mylist3 contains 6.99 # Expected to not match
+      action:
+        debug:
+          msg: "Output for Testcase #11"
+
+    - name: "Testcase #11-4"
+      condition: events.mylist4 contains ""
+      action:
+        debug:
+          msg: "Output for Testcase #11"
