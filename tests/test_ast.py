@@ -403,6 +403,22 @@ def test_parse_condition():
     )
 
     assert {
+        "SelectAttrExpression": {
+            "lhs": {"Event": "persons"},
+            "rhs": {
+                "key": {"String": "person.employed"},
+                "operator": {"String": "=="},
+                "value": {"Boolean": True},
+            },
+        }
+    } == visit_condition(
+        parse_condition(
+            'event.persons is selectattr("person.employed", "==", true)'
+        ),
+        {},
+    )
+
+    assert {
         "SelectAttrNotExpression": {
             "lhs": {"Event": "persons"},
             "rhs": {
@@ -436,6 +452,15 @@ def test_parse_condition():
     } == visit_condition(
         parse_condition('event.persons is not select("regex", "fred|barney")'),
         {},
+    )
+
+    assert {
+        "SelectExpression": {
+            "lhs": {"Event": "is_true"},
+            "rhs": {"operator": {"String": "=="}, "value": {"Boolean": False}},
+        }
+    } == visit_condition(
+        parse_condition('event.is_true is select("==", False)'), {}
     )
 
 

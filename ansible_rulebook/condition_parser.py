@@ -125,14 +125,14 @@ list_values = Suppress("[") + delim_value + Suppress("]")
 selectattr_t = (
     Literal("selectattr")
     + Suppress("(")
-    + Group(delimitedList(ident | allowed_values | list_values))
+    + Group(delimitedList(allowed_values | ident | list_values))
     + Suppress(")")
 )
 
 select_t = (
     Literal("select")
     + Suppress("(")
-    + Group(delimitedList(ident | allowed_values | list_values))
+    + Group(delimitedList(allowed_values | ident | list_values))
     + Suppress(")")
 )
 
