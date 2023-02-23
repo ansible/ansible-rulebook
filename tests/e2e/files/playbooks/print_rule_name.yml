@@ -1,0 +1,8 @@
+- name: Print rule name that called this playbook
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Print rule name
+      when: ansible_eda.rule is defined
+      ansible.builtin.debug:
+        msg: "Rule name: {{ ansible_eda.rule }}"
