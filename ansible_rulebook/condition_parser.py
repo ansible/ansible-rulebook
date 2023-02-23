@@ -45,6 +45,7 @@ from ansible_rulebook.condition_types import (  # noqa: E402
     Identifier,
     KeywordValue,
     NegateExpression,
+    Null,
     OperatorExpression,
     SearchType,
     SelectattrType,
@@ -102,6 +103,7 @@ boolean = (
     .add_parse_action(lambda toks: Boolean(toks[0].lower()))
 )
 
+null_t = Literal("null").copy().add_parse_action(lambda toks: Null())
 
 string1 = (
     QuotedString("'").copy().add_parse_action(lambda toks: String(toks[0]))
@@ -110,7 +112,7 @@ string2 = (
     QuotedString('"').copy().add_parse_action(lambda toks: String(toks[0]))
 )
 
-allowed_values = number_t | boolean | string1 | string2
+allowed_values = number_t | boolean | null_t | string1 | string2
 key_value = ident + Suppress("=") + allowed_values
 string_search_t = (
     one_of("regex match search")
@@ -119,13 +121,15 @@ string_search_t = (
     + Suppress(")")
 )
 
-delim_value = Group(delimitedList(number_t | ident | string1 | string2))
+delim_value = Group(
+    delimitedList(number_t | null_t | ident | string1 | string2)
+)
 list_values = Suppress("[") + delim_value + Suppress("]")
 
 selectattr_t = (
     Literal("selectattr")
     + Suppress("(")
-    + Group(delimitedList(ident | allowed_values | list_values))
+    + Group(delimitedList(allowed_values | ident | list_values))
     + Suppress(")")
 )
 
@@ -211,6 +215,7 @@ all_terms = (
     | string_search_t
     | list_values
     | number_t
+    | null_t
     | boolean
     | varname
     | string1
