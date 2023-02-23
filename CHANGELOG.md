@@ -15,6 +15,7 @@
 - Support for search/match/regex 
 - Support for graceful shutdown, timeout to allow actions to complete
 - Removed the echo command in favor of debug with msg
+- Support for null type in conditions
 
 ### Fixed
 

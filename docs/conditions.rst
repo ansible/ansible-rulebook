@@ -46,6 +46,7 @@ The data type is of great importance for the rules engine. The following types a
 * strings
 * booleans
 * floats (dot notation and scientific notation)
+* null
 
 Supported Operators
 *******************

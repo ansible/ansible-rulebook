@@ -1,0 +1,33 @@
+---
+- name: 70 null
+  hosts: all
+  sources:
+    - generic:
+        payload:
+          - x: 1
+            y: null
+          - persons:
+              - age: 45
+                name: Fred
+                occupation: Dino Driver
+              - age: 46
+                name: Barney
+                occupation: null
+          - z : null
+
+  rules:
+    - name: r1
+      condition: event.x == 1 and event.y == null
+      action:
+        print_event:
+          pretty: true
+    - name: r2
+      condition: event.persons is selectattr('occupation', '==', null)
+      action:
+        print_event:
+          pretty: true
+    - name: r3
+      condition: event.z in [5,6,7, null]
+      action:
+        print_event:
+          pretty: true

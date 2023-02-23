@@ -1818,3 +1818,29 @@ async def test_69_enhanced_debug():
             ],
         }
         validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_70_null():
+    ruleset_queues, event_log = load_rulebook("examples/70_null.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 4,
+            "shutdown_events": 1,
+            "actions": [
+                "70 null::r1::print_event",
+                "70 null::r2::print_event",
+                "70 null::r3::print_event",
+            ],
+        }
+        validate_events(event_log, **checks)

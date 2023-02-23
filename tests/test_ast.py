@@ -476,6 +476,15 @@ def test_invalid_selectattr_operator():
         )
 
 
+def test_null_type():
+    assert {
+        "EqualsExpression": {
+            "lhs": {"Fact": "friend"},
+            "rhs": {"NullType": None},
+        }
+    } == visit_condition(parse_condition("fact.friend == null"), {})
+
+
 @pytest.mark.parametrize(
     "rulebook",
     [
