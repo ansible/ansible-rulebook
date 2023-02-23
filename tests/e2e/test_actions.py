@@ -8,9 +8,11 @@ import pytest
 from pytest_check import check
 
 from . import utils
+from .settings import SETTINGS
 
 LOGGER = logging.getLogger(__name__)
-DEFAULT_TIMEOUT = 15
+DEFAULT_CMD_TIMEOUT = SETTINGS["cmd_timeout"]
+DEFAULT_SHUTDOWN_AFTER = SETTINGS["run_playbook_shutdown_after"]
 
 
 @pytest.mark.e2e
@@ -35,7 +37,7 @@ def test_actions_sanity():
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
-        timeout=DEFAULT_TIMEOUT,
+        timeout=DEFAULT_CMD_TIMEOUT,
         capture_output=True,
         cwd=utils.BASE_DATA_PATH,
         text=True,
@@ -101,14 +103,16 @@ def test_run_playbook(update_environment):
     """
 
     rulebook = utils.BASE_DATA_PATH / "rulebooks/actions/test_run_playbook.yml"
-    env = update_environment({"SOURCE_SHUTDOWN_AFTER": "10"})
+    env = update_environment(
+        {"DEFAULT_SHUTDOWN_AFTER": str(DEFAULT_SHUTDOWN_AFTER)}
+    )
 
-    cmd = utils.Command(rulebook=rulebook, envvars="SOURCE_SHUTDOWN_AFTER")
+    cmd = utils.Command(rulebook=rulebook, envvars="DEFAULT_SHUTDOWN_AFTER")
 
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
-        timeout=DEFAULT_TIMEOUT,
+        timeout=DEFAULT_CMD_TIMEOUT,
         capture_output=True,
         cwd=utils.BASE_DATA_PATH,
         text=True,
@@ -121,6 +125,11 @@ def test_run_playbook(update_environment):
     retry_attempts = result.stdout.count(
         '"msg": "Remediation failed on simba"'
     )
+
+    with check:
+        assert (
+            "Post-processing complete on nala" in result.stdout
+        ), "run_playbook set_facts to secondary ruleset failed"
 
     with check:
         assert (
@@ -140,4 +149,4 @@ def test_run_playbook(update_environment):
     with check:
         assert (
             "Post-processing complete on simba" in result.stdout
-        ), "run_playbook set_facts to secondary ruleset failed"
+        ), "run_playbook set_facts to same ruleset failed"
