@@ -86,13 +86,13 @@ Conditions support the following operators:
    * - is not defined
      - To check if a variable is not defined
    * - is match(pattern,ignorecase=true)
-     - To check if the pattern exists in the beginning
+     - To check if the pattern exists in the beginning of the string. Regex supported
    * - is not match(pattern,ignorecase=true)
-     - To check if the pattern does not exist in the beginning of the string
+     - To check if the pattern does not exist in the beginning of the string. Regex supported
    * - is search(pattern,ignorecase=true)
-     - To check if the pattern exists anywhere in the string
+     - To check if the pattern exists anywhere in the string. Regex supported
    * - is not search(pattern,ignorecase=true)
-     - To check if the pattern does not exist anywhere in the string
+     - To check if the pattern does not exist anywhere in the string. Regex supported
    * - is regex(pattern,ignorecase=true)
      - To check if the regular expression pattern exists in the string
    * - is not regex(pattern,ignorecase=true)
