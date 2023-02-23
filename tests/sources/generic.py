@@ -30,15 +30,15 @@ from typing import Any, Dict
     time_format   local|iso8601|epoch  The time format of event timestamp,
                   default local
     create_index str   The index to create for each event starts at 0
-    startup_delay int  Number of seconds to wait before injecting events
+    startup_delay float  Number of seconds to wait before injecting events
                        into the queue. Default 0
-    event_delay int    Number of seconds to wait before injecting the next
+    event_delay float    Number of seconds to wait before injecting the next
                        event from the payload. Default 0
-    repeat_delay int   Number of seconds to wait before injecting a repeated
+    repeat_delay float   Number of seconds to wait before injecting a repeated
                        event from the payload. Default 0
-    loop_delay int     Number of seconds to wait before inserting the
+    loop_delay float     Number of seconds to wait before inserting the
                        next set of events. Default 0
-    shutdown_after int Number of seconds to wait before shutting down the
+    shutdown_after float Number of seconds to wait before shutting down the
                        plugin. Default 0
     loop_count int     Number of times the set of events in the playload
                        should be repeated. Default 0
