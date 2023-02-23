@@ -56,11 +56,11 @@ async def main(queue: asyncio.Queue, args: Dict[str, Any]):
     time_format = args.get("time_format", "local")
     create_index = args.get("create_index", "")
 
-    startup_delay = int(args.get("startup_delay", 0))
-    event_delay = int(args.get("event_delay", 0))
-    repeat_delay = int(args.get("repeat_delay", 0))
-    loop_delay = int(args.get("loop_delay", 0))
-    shutdown_after = int(args.get("shutdown_after", 0))
+    startup_delay = float(args.get("startup_delay", 0))
+    event_delay = float(args.get("event_delay", 0))
+    repeat_delay = float(args.get("repeat_delay", 0))
+    loop_delay = float(args.get("loop_delay", 0))
+    shutdown_after = float(args.get("shutdown_after", 0))
 
     loop_count = int(args.get("loop_count", 1))  # -1 infinite
     repeat_count = int(args.get("repeat_count", 1))
