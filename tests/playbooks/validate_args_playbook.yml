@@ -3,6 +3,14 @@
   hosts: localhost
   gather_facts: false
   tasks:
+    - name: Validate rule name
+      ansible.builtin.fail:
+        msg: "Rule name did not match"
+      when: ansible_eda.rule != "r2"
+    - name: Validate ruleset name
+      ansible.builtin.fail:
+        msg: "Rule name did not match"
+      when: ansible_eda.ruleset != "Test Assert Fact of different data types"
     - name: Convert vars to json so we can use nested keys
       ansible.builtin.set_fact:
         vars_json: "{{ ansible_eda | to_json }}"

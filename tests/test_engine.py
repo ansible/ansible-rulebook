@@ -387,7 +387,7 @@ async def test_run_assert_facts():
     assert event_log.get_nowait()["type"] == "EmptyEvent", "0"
     assert event_log.get_nowait()["type"] == "Action", "0.1"
     assert event_log.get_nowait()["type"] == "Job", "1.0"
-    for i in range(41):
+    for i in range(47):
         assert event_log.get_nowait()["type"] == "AnsibleEvent", f"1.{i}"
 
     event = event_log.get_nowait()

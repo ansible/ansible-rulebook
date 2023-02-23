@@ -254,7 +254,8 @@ async def run_playbook(
         event_log,
         inventory,
         variables,
-        ruleset,
+        source_ruleset_name,
+        source_rule_name,
         name,
         "run_playbook",
         copy_files,
@@ -350,7 +351,8 @@ async def run_module(
         event_log,
         inventory,
         variables,
-        ruleset,
+        source_ruleset_name,
+        source_rule_name,
         name,
         "run_module",
         copy_files,
@@ -524,6 +526,7 @@ async def pre_process_runner(
     inventory: Dict,
     variables: Dict,
     ruleset: str,
+    rulename: str,
     name: str,
     action: str,
     copy_files: Optional[bool] = False,
@@ -537,7 +540,7 @@ async def pre_process_runner(
     logger.debug("private data dir %s", private_data_dir)
 
     playbook_extra_vars = _collect_extra_vars(
-        variables, extra_vars, ruleset, name
+        variables, extra_vars, ruleset, rulename
     )
 
     env_dir = os.path.join(private_data_dir, "env")
@@ -672,7 +675,10 @@ async def run_job_template(
     job_args["limit"] = hosts_limit
 
     job_args["extra_vars"] = _collect_extra_vars(
-        variables, job_args.get("extra_vars", {}), ruleset, name
+        variables,
+        job_args.get("extra_vars", {}),
+        source_ruleset_name,
+        source_rule_name,
     )
 
     job_id = str(uuid.uuid4())
