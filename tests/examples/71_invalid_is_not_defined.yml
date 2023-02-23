@@ -1,0 +1,19 @@
+---
+- name: 71 invalid is not defined
+  hosts: all
+  sources:
+    - generic:
+        payload:
+          - x: 1
+
+  rules:
+    - name: r1
+      condition: event.x == 1 and event.y is not defined
+      action:
+        print_event:
+          pretty: true
+    - name: raise an error
+      condition: event.z is not defined
+      action:
+        print_event:
+          pretty: true

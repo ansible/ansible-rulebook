@@ -29,10 +29,13 @@
               lhs:
                 Facts: time
               rhs:
-                IsDefinedExpression:
-                  Fact: current_time
-          - IsNotDefinedExpression:
-              Event: initial_time
+                AndExpression:
+                  lhs:
+                    IsDefinedExpression:
+                      Fact: current_time
+                  rhs:
+                    IsNotDefinedExpression:
+                      Event: initial_time
         enabled: true
         name: set the initial time
     - Rule:

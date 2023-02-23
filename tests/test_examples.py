@@ -17,7 +17,10 @@ import json
 import pytest
 
 from ansible_rulebook.engine import run_rulesets, start_source
-from ansible_rulebook.exception import VarsKeyMissingException
+from ansible_rulebook.exception import (
+    InvalidIsNotDefinedException,
+    VarsKeyMissingException,
+)
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.util import load_inventory
 
@@ -561,11 +564,11 @@ async def test_20_is_not_defined():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "3"
     assert event["action"] == "retract_fact", "4"
-    assert event["matching_events"] == {"m": {"msg": "hello"}}
+    assert event["matching_events"] == {"m": {"level": 5, "msg": "hello"}}
     event = event_log.get_nowait()
     assert event["type"] == "Action", "5"
     assert event["action"] == "debug", "6"
-    assert event["matching_events"] == {"m": {"msg": "hello"}}
+    assert event["matching_events"] == {"m": {"level": 5, "msg": "hello"}}
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "8"
     assert event_log.empty()
@@ -1844,6 +1847,12 @@ async def test_70_null():
             ],
         }
         validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_71_invalid_is_not_defined():
+    with pytest.raises(InvalidIsNotDefinedException):
+        load_rulebook("examples/71_invalid_is_not_defined.yml")
 
 
 @pytest.mark.asyncio

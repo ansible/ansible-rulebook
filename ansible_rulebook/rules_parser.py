@@ -18,10 +18,16 @@ import ansible_rulebook.rule_types as rt
 from ansible_rulebook.condition_parser import (
     parse_condition as parse_condition_value,
 )
+from ansible_rulebook.condition_types import (
+    Condition,
+    Identifier,
+    OperatorExpression,
+)
 from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.util import substitute_variables
 
 from .exception import (
+    InvalidIsNotDefinedException,
     RulenameDuplicateException,
     RulenameEmptyException,
     RulesetNameDuplicateException,
@@ -176,17 +182,21 @@ def parse_action(action: Dict) -> rt.Action:
 
 def parse_condition(condition: Any) -> rt.Condition:
     if isinstance(condition, str):
-        return rt.Condition("all", [parse_condition_value(condition)])
+        cond = rt.Condition("all", [parse_condition_value(condition)])
+        _validate(cond)
+        return cond
     elif isinstance(condition, dict):
         timeout = condition.pop("timeout", None)
         keys = list(condition.keys())
         if len(condition) == 1 and keys[0] in ["any", "all", "not_all"]:
             when = keys[0]
-            return rt.Condition(
+            cond = rt.Condition(
                 when,
                 [parse_condition_value(c) for c in condition[when]],
                 timeout,
             )
+            _validate(cond)
+            return cond
         else:
             raise Exception(
                 f"Condition should have one of any, all, not_all: {condition}"
@@ -194,3 +204,28 @@ def parse_condition(condition: Any) -> rt.Condition:
 
     else:
         raise Exception(f"Unsupported condition {condition}")
+
+
+def _validate(cond: rt.Condition):
+    for c in cond.value:
+        _validate_is_not_defined(c.value, None)
+
+
+def _validate_is_not_defined(expr, group_operator):
+    if isinstance(expr, OperatorExpression):
+        if (
+            expr.operator == "is not"
+            and isinstance(expr.right, Identifier)
+            and expr.right.value == "defined"
+        ):
+            if group_operator and group_operator == "and":
+                return True
+            else:
+                raise InvalidIsNotDefinedException(
+                    "is not defined can only be used with 'and' : " + str(expr)
+                )
+        else:
+            _validate_is_not_defined(expr.right, expr.operator)
+            _validate_is_not_defined(expr.left, expr.operator)
+    elif isinstance(expr, Condition):
+        _validate_is_not_defined(expr.value, None)

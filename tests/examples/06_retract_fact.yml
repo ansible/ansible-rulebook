@@ -12,6 +12,7 @@
         set_fact:
           fact:
             msg: hello world
+            level: 5
     - name: r2
       condition: event.msg == "hello world"
       action:
@@ -19,7 +20,7 @@
           fact:
             msg: hello world
     - name: r3
-      condition: event.msg is not defined
+      condition: event.level == 5 and event.msg is not defined
       action:
         debug:
 

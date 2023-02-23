@@ -13,8 +13,7 @@
     - name: set the initial time
       condition:
         all:
-          - facts.time << fact.current_time is defined
-          - event.initial_time is not defined
+          - facts.time << fact.current_time is defined and event.initial_time is not defined
       action:
         set_fact:
           fact:

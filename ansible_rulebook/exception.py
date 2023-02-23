@@ -91,3 +91,8 @@ class PlaybookStatusNotFoundException(Exception):
 class PlaybookNotFoundException(Exception):
 
     pass
+
+
+class InvalidIsNotDefinedException(Exception):
+
+    pass

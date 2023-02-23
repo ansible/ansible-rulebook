@@ -17,6 +17,7 @@
 - Removed the echo command in favor of debug with msg
 - Support for null type in conditions
 - Support Jinja2 substitution in rule names
+- Fix the usage of is not defined
 
 ### Fixed
 

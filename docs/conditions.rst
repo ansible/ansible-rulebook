@@ -84,7 +84,7 @@ Conditions support the following operators:
    * - is defined
      - To check if a variable is defined
    * - is not defined
-     - To check if a variable is not defined
+     - To check if a variable is not defined can only be used in conjunction with an and expression
    * - is match(pattern,ignorecase=true)
      - To check if the pattern exists in the beginning of the string. Regex supported
    * - is not match(pattern,ignorecase=true)
@@ -736,13 +736,17 @@ Example:
 
 | **Q:** How do I check if an attribute in an object referred in a condition does not exist?
 
-| **Ans:** Use the is not defined
+| **Ans:** Usually you don't have to check if an attribute in the object exists, if its missing the 
+| condition will evaluate to false. In the rare case that you want to check for just the presence of
+| an attribute you can use an is not defined along with an and expression that checks for the presence
+| of another attribute in the object. A plain is not defined causes the rule engine to misinterpret the
+| rules in the ruleset, since an absence could be ambiguous.
 
 Example:
     .. code-block:: yaml
 
       name: rule2
-      condition: fact.msg is not defined
+      condition: fact.msg is not defined and fact.level is defined
       action:
         set_fact:
           fact:
