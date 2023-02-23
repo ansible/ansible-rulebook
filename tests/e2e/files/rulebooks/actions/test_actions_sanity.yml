@@ -3,7 +3,8 @@
   hosts: all
   sources:
     - generic:
-        event_delay: 1
+        event_delay: "{{ DEFAULT_EVENT_DELAY }}"
+        shutdown_after: "{{ DEFAULT_SHUTDOWN_AFTER }}"
         payload:
           - action: "run_playbook"
           - action: "run_module"
@@ -21,6 +22,7 @@
             rulebook_scope: same_ruleset
           - action: "check_retract_fact"
             rulebook_scope: same_ruleset
+          - action: "multiple_actions"
   rules:
     - name: run_playbook
       condition: event.action == "run_playbook"
@@ -110,13 +112,27 @@
           module_args:
             msg: "Retracted fact in same ruleset, this should not be printed"
 
+    - name: Test multiple actions
+      condition: event.action == "multiple_actions"
+      actions:
+        - run_module:
+            name: ansible.builtin.debug
+            module_args:
+              msg: "Multiple action #1 triggered"
+        - debug:
+            msg: "Multiple action #2 triggered"
+
+
 
 - name: Second ruleset
   hosts: all
   sources:
-    - ansible.eda.range:
-        limit: 60
-        delay: 1
+    - generic:
+        shutdown_after: "{{ DEFAULT_SHUTDOWN_AFTER }}"
+        repeat_delay: 1
+        repeat_count: 20
+        payload:
+          - empty: true
   rules:
     - name: print post_event different ruleset
       condition: event.post_event_state == "sent"

@@ -4,12 +4,8 @@ Rulebooks
 
 | Rulebooks contain a list of rulesets. Each ruleset within a rulebook
 | should have a unique name since they can post events to each other at runtime
-| based on the name. Sample rulebooks_. If a rulebook has multiple rulesets
+| based on the name. If a rulebook has multiple rulesets
 | shutting down one ruleset will shutdown all the other running rulesets.
-
-
-.. _rulebooks: https://github.com/ansible/ansible-rulebook/tree/main/tests/examples
-
 
 
 Rulesets
