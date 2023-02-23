@@ -26,6 +26,7 @@ from ansible_rulebook.condition_types import (
     Integer,
     KeywordValue,
     NegateExpression,
+    Null,
     OperatorExpression,
     SearchType,
     SelectattrType,
@@ -113,6 +114,8 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
         return {
             "String": substitute_variables(parsed_condition.value, variables)
         }
+    elif isinstance(parsed_condition, Null):
+        return {"NullType": None}
     elif isinstance(parsed_condition, Integer):
         return {"Integer": parsed_condition.value}
     elif isinstance(parsed_condition, Float):

@@ -403,6 +403,22 @@ def test_parse_condition():
     )
 
     assert {
+        "SelectAttrExpression": {
+            "lhs": {"Event": "persons"},
+            "rhs": {
+                "key": {"String": "person.employed"},
+                "operator": {"String": "=="},
+                "value": {"Boolean": True},
+            },
+        }
+    } == visit_condition(
+        parse_condition(
+            'event.persons is selectattr("person.employed", "==", true)'
+        ),
+        {},
+    )
+
+    assert {
         "SelectAttrNotExpression": {
             "lhs": {"Event": "persons"},
             "rhs": {
@@ -438,6 +454,15 @@ def test_parse_condition():
         {},
     )
 
+    assert {
+        "SelectExpression": {
+            "lhs": {"Event": "is_true"},
+            "rhs": {"operator": {"String": "=="}, "value": {"Boolean": False}},
+        }
+    } == visit_condition(
+        parse_condition('event.is_true is select("==", False)'), {}
+    )
+
 
 def test_invalid_select_operator():
     with pytest.raises(SelectOperatorException):
@@ -449,6 +474,15 @@ def test_invalid_selectattr_operator():
         parse_condition(
             'event.persons is not selectattr("name", "cmp", "fred")'
         )
+
+
+def test_null_type():
+    assert {
+        "EqualsExpression": {
+            "lhs": {"Fact": "friend"},
+            "rhs": {"NullType": None},
+        }
+    } == visit_condition(parse_condition("fact.friend == null"), {})
 
 
 @pytest.mark.parametrize(
