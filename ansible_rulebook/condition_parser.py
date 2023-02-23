@@ -136,7 +136,7 @@ selectattr_t = (
 select_t = (
     Literal("select")
     + Suppress("(")
-    + Group(delimitedList(ident | allowed_values | list_values))
+    + Group(delimitedList(allowed_values | ident | list_values))
     + Suppress(")")
 )
 
