@@ -113,7 +113,8 @@ class RuleSetRunner:
                     kind=self.shutdown.kind,
                 )
             )
-        lang.end_session(self.name)
+        stats = lang.end_session(self.name)
+        logger.info(pformat(stats))
 
     async def _handle_shutdown(self):
         logger.info(

@@ -437,3 +437,116 @@ def test_logical_operators(update_environment):
             )
             == 4
         ), "Testcase #6 failed"
+
+
+@pytest.mark.e2e
+def test_string_match():
+    """
+    Execute a rulebook that performs match operations on a string
+    """
+
+    rulebook = (
+        utils.BASE_DATA_PATH / "rulebooks/operators/test_string_match.yml"
+    )
+    cmd = utils.Command(rulebook=rulebook)
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_CMD_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+    )
+
+    with check:
+        assert "Output for testcase #01" in result.stdout, "testcase #1 failed"
+
+    with check:
+        assert "Output for testcase #02" in result.stdout, "testcase #2 failed"
+
+    with check:
+        assert "Output for testcase #03" in result.stdout, "testcase #3 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #04" in line
+                ]
+            )
+            == 2
+        ), "testcase #4 failed"
+
+    with check:
+        assert "Output for testcase #05" in result.stdout, "testcase #5 failed"
+
+    with check:
+        assert "Output for testcase #06" in result.stdout, "testcase #6 failed"
+
+    with check:
+        assert "Output for testcase #07" in result.stdout, "testcase #7 failed"
+
+
+@pytest.mark.e2e
+@pytest.mark.parametrize(
+    "rulebook",
+    [
+        pytest.param(
+            "test_string_search_search.yml",
+            id="string_search_search",
+        ),
+        pytest.param(
+            "test_string_search_regex.yml",
+            id="string_search_regex",
+        ),
+    ],
+)
+def test_string_search(rulebook):
+    """
+    Execute a rulebook that performs search and regex operations on a string
+    """
+
+    rulebook = utils.BASE_DATA_PATH / f"rulebooks/operators/{rulebook}"
+    cmd = utils.Command(rulebook=rulebook)
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_CMD_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+    )
+
+    with check:
+        assert "Output for testcase #01" in result.stdout, "testcase #1 failed"
+
+    with check:
+        assert "Output for testcase #02" in result.stdout, "testcase #2 failed"
+
+    with check:
+        assert "Output for testcase #03" in result.stdout, "testcase #3 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #04" in line
+                ]
+            )
+            == 2
+        ), "testcase #4 failed"
+
+    with check:
+        assert "Output for testcase #05" in result.stdout, "testcase #5 failed"
+
+    with check:
+        assert "Output for testcase #06" in result.stdout, "testcase #6 failed"
+
+    with check:
+        assert "Output for testcase #07" in result.stdout, "testcase #7 failed"
