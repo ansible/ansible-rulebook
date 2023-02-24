@@ -16,6 +16,7 @@
 - Support for graceful shutdown, timeout to allow actions to complete
 - Removed the echo command in favor of debug with msg
 - Support for null type in conditions
+- Support Jinja2 substitution in rule names
 
 ### Fixed
 

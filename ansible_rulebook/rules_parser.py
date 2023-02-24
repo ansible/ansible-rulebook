@@ -12,13 +12,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import ansible_rulebook.rule_types as rt
 from ansible_rulebook.condition_parser import (
     parse_condition as parse_condition_value,
 )
 from ansible_rulebook.job_template_runner import job_template_runner
+from ansible_rulebook.util import substitute_variables
 
 from .exception import (
     RulenameDuplicateException,
@@ -37,7 +38,9 @@ def parse_hosts(hosts):
         raise Exception(f"Unsupported hosts value {hosts}")
 
 
-def parse_rule_sets(rule_sets: Dict) -> List[rt.RuleSet]:
+def parse_rule_sets(
+    rule_sets: Dict, variables: Optional[Dict] = None
+) -> List[rt.RuleSet]:
     rule_set_list = []
     ruleset_names = []
     for rule_set in rule_sets:
@@ -58,12 +61,15 @@ def parse_rule_sets(rule_sets: Dict) -> List[rt.RuleSet]:
 
         ruleset_names.append(name)
 
+        if variables is None:
+            variables = {}
+
         rule_set_list.append(
             rt.RuleSet(
                 name=name,
                 hosts=parse_hosts(rule_set["hosts"]),
                 sources=parse_event_sources(rule_set["sources"]),
-                rules=parse_rules(rule_set.get("rules", {})),
+                rules=parse_rules(rule_set.get("rules", {}), variables),
                 gather_facts=rule_set.get("gather_facts", False),
             )
         )
@@ -102,14 +108,17 @@ def parse_source_filter(source_filter: Dict) -> rt.EventSourceFilter:
     return rt.EventSourceFilter(source_filter_name, source_filter_args)
 
 
-def parse_rules(rules: Dict) -> List[rt.Rule]:
+def parse_rules(rules: Dict, variables: Dict) -> List[rt.Rule]:
     rule_list = []
     rule_names = []
+    if variables is None:
+        variables = {}
     for rule in rules:
         name = rule.get("name")
         if name is None:
             raise RulenameEmptyException("Rule name not provided")
 
+        name = substitute_variables(name, variables)
         if name == "":
             raise RulenameEmptyException("Rule name cannot be an empty string")
 
