@@ -20,6 +20,8 @@
 ### Fixed
 
 - get_java_version, add compatibility with macs and tests for check_jvm
+- selectattr operator with negation using greater/less than operators
+- select operator and comparing ints and floats
 
 ### Removed
 
