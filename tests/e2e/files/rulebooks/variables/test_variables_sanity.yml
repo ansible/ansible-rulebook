@@ -14,8 +14,7 @@
               lockdown_zone: 5
 
   rules:
-      # use location var in rule name when bug resolved: https://issues.redhat.com/browse/AAP-8921
-    - name: Intruder detected in hobart
+    - name: "Intruder detected in {{ alarm_location }}"
       condition: >
         event.action == "intruder_detected" and
         event.meta.location == vars.alarm_location and
