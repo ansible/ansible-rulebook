@@ -17,7 +17,7 @@ import asyncio
 import logging
 import os
 from asyncio.exceptions import CancelledError
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
@@ -62,7 +62,7 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
     else:
         inventory = {}
         variables = load_vars(parsed_args)
-        rulesets = load_rulebook(parsed_args)
+        rulesets = load_rulebook(parsed_args, variables)
         if parsed_args.inventory:
             inventory = load_inventory(parsed_args.inventory)
         project_data_file = parsed_args.project_tarball
@@ -139,7 +139,9 @@ def load_vars(parsed_args) -> Dict[str, str]:
 
 
 # TODO(cutwater): Maybe move to util.py
-def load_rulebook(parsed_args) -> List[RuleSet]:
+def load_rulebook(
+    parsed_args: argparse.ArgumentParser, variables: Optional[Dict] = None
+) -> List[RuleSet]:
     if not parsed_args.rulebook:
         logger.debug("Loading no rules")
         return []
@@ -150,7 +152,9 @@ def load_rulebook(parsed_args) -> List[RuleSet]:
         with open(parsed_args.rulebook) as f:
             data = yaml.safe_load(f.read())
             Validate.rulebook(data)
-            return rules_parser.parse_rule_sets(data)
+            if variables is None:
+                variables = {}
+            return rules_parser.parse_rule_sets(data, variables)
     elif has_rulebook(*split_collection_name(parsed_args.rulebook)):
         logger.debug(
             "Loading rules from a collection %s", parsed_args.rulebook

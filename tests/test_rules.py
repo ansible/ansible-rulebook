@@ -19,8 +19,11 @@ from queue import Queue
 import pytest
 import yaml
 from drools.ruleset import assert_fact as set_fact, post
+from jinja2.exceptions import UndefinedError
 
 from ansible_rulebook.exception import (
+    RulenameDuplicateException,
+    RulenameEmptyException,
     RulesetNameDuplicateException,
     RulesetNameEmptyException,
 )
@@ -174,3 +177,63 @@ async def test_missing_ruleset_names():
         parse_rule_sets(data)
 
     assert str(exc_info.value) == "Ruleset name not provided"
+
+
+@pytest.mark.asyncio
+async def test_rule_name_substitution_duplicates():
+    os.chdir(HERE)
+    variables = {"custom": {"name1": "fred", "name2": "fred"}}
+    with open("rules/rule_names_with_substitution.yml") as f:
+        data = yaml.safe_load(f.read())
+
+    with pytest.raises(RulenameDuplicateException):
+        parse_rule_sets(data, variables)
+
+
+@pytest.mark.asyncio
+async def test_rule_name_substitution_empty():
+    os.chdir(HERE)
+    variables = {"custom": {"name1": "", "name2": "fred"}}
+    with open("rules/rule_names_with_substitution.yml") as f:
+        data = yaml.safe_load(f.read())
+
+    with pytest.raises(RulenameEmptyException):
+        parse_rule_sets(data, variables)
+
+
+@pytest.mark.asyncio
+async def test_rule_name_substitution_missing():
+    os.chdir(HERE)
+    variables = {"custom": {"name2": "fred"}}
+    with open("rules/rule_names_with_substitution.yml") as f:
+        data = yaml.safe_load(f.read())
+
+    with pytest.raises(UndefinedError):
+        parse_rule_sets(data, variables)
+
+
+@pytest.mark.asyncio
+async def test_rule_name_substitution():
+    os.chdir(HERE)
+    variables = {"custom": {"name1": "barney", "name2": "fred"}}
+    with open("rules/rule_names_with_substitution.yml") as f:
+        data = yaml.safe_load(f.read())
+    with open("playbooks/inventory.yml") as f:
+        inventory = yaml.safe_load(f.read())
+
+    rulesets = parse_rule_sets(data, variables)
+    ruleset_queues = [(ruleset, Queue()) for ruleset in rulesets]
+    durable_rulesets = generate_rulesets(ruleset_queues, dict(), inventory)
+    ruleset_name = durable_rulesets[0].ruleset.name
+
+    durable_rulesets[0].plan.queue = asyncio.Queue()
+    post(ruleset_name, {"i": 1})
+    assert durable_rulesets[0].plan.queue.qsize() == 1
+    event = durable_rulesets[0].plan.queue.get_nowait()
+    assert event.rule == "barney"
+    assert event.actions[0].action == "debug"
+    post(ruleset_name, {"i": 2})
+    assert durable_rulesets[0].plan.queue.qsize() == 1
+    event = durable_rulesets[0].plan.queue.get_nowait()
+    assert event.rule == "fred"
+    assert event.actions[0].action == "debug"

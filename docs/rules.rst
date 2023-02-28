@@ -18,7 +18,7 @@ A rule comprises:
      - Description
      - Required
    * - name
-     - The name is a string to identify the rule. This field is mandatory. Each rule in a ruleset must have an unique name across the rulebook.
+     - The name is a string to identify the rule. This field is mandatory. Each rule in a ruleset must have an unique name across the rulebook. You can use Jinja2 substitution in the name.
      - Yes
    * - condition
      - See :doc:`conditions`
