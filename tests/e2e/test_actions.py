@@ -13,8 +13,8 @@ from .settings import SETTINGS
 
 LOGGER = logging.getLogger(__name__)
 DEFAULT_CMD_TIMEOUT = SETTINGS["cmd_timeout"]
-DEFAULT_SHUTDOWN_AFTER = SETTINGS["run_playbook_shutdown_after"]
-DEFAULT_EVENT_DELAY = SETTINGS["event_delay"]
+DEFAULT_SHUTDOWN_AFTER = SETTINGS["default_shutdown_after"]
+DEFAULT_EVENT_DELAY = SETTINGS["default_event_delay"]
 
 
 @pytest.mark.e2e
