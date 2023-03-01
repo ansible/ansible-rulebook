@@ -24,6 +24,7 @@
 - selectattr operator with negation using greater/less than operators
 - select operator and comparing ints and floats
 - preserve native types when doing jinja substitution
+- inventory argument to the CLI is optional
 
 ### Removed
 
