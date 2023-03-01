@@ -26,6 +26,7 @@ from typing import Any, Dict, List, Union
 import ansible_runner
 import jinja2
 import yaml
+from jinja2.nativetypes import NativeTemplate
 from packaging import version
 
 logger = logging.getLogger(__name__)
@@ -39,9 +40,12 @@ def get_horizontal_rule(character):
 
 
 def render_string(value: str, context: Dict) -> str:
-    return jinja2.Template(value, undefined=jinja2.StrictUndefined).render(
-        context
-    )
+    if "{{" in value and "}}" in value:
+        return NativeTemplate(value, undefined=jinja2.StrictUndefined).render(
+            context
+        )
+
+    return value
 
 
 def render_string_or_return_value(value: Any, context: Dict) -> Any:

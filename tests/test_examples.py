@@ -1844,3 +1844,34 @@ async def test_70_null():
             ],
         }
         validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_72_set_fact_with_type():
+    ruleset_queues, event_log = load_rulebook(
+        "examples/72_set_fact_with_type.yml",
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(my_bool=True, my_int=2, my_float=3.123),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 7,
+            "shutdown_events": 1,
+            "actions": [
+                "72 set fact with type::r1::set_fact",
+                "72 set fact with type::Match the bool::debug",
+                "72 set fact with type::Match the int::debug",
+                "72 set fact with type::Match the float::debug",
+                "72 set fact with type::Match the literal int::debug",
+                "72 set fact with type::Match the string int::debug",
+            ],
+        }
+        validate_events(event_log, **checks)

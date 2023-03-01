@@ -1,0 +1,48 @@
+---
+- name: 72 set fact with type
+  hosts: all
+  sources:
+    - generic:
+        shutdown_after: 1
+        payload:
+          - action: "go"
+  rules:
+    - name: r1
+      condition: event.action == "go"
+      action:
+        set_fact:
+          fact:
+            var_bool: "{{ my_bool }}"
+            var_int: "{{ my_int }}"
+            var_float: "{{ my_float }}"
+            literal_int: 5
+            string_int: "5"
+
+    - name: Match the bool
+      condition: event.var_bool
+      action:
+        debug:
+          msg: "The var bool matches"
+
+    - name: Match the int
+      condition: event.var_int == 2
+      action:
+        debug:
+          msg: "The var int matches"
+
+    - name: Match the float
+      condition: event.var_float == 3.123
+      action:
+        debug:
+          msg: "The var int matches"
+
+    - name: Match the literal int
+      condition: event.literal_int == 5
+      action:
+        debug:
+          msg: "The literal int matches"
+    - name: Match the string int
+      condition: event.string_int == "5"
+      action:
+        debug:
+          msg: "The string int matches"
