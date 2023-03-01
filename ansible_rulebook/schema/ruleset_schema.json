@@ -1,6 +1,6 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "$id": "http://ansible.com/schema/ruleset.json",
+    "$schema": "https://json-schema.org/draft-04/schema",
+    "$id": "https://raw.githubusercontent.com/ansible/ansible-rulebook/main/ansible_rulebook/schema/ruleset_schema.json",
     "type": "array",
     "items": {"$ref": "#/$defs/ruleset"},
     "minItems": 1,
