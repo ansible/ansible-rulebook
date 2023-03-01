@@ -8,8 +8,8 @@ if sys.version_info >= (3, 9):
 else:
     import importlib_resources as resources
 
-from jsonschema import validate
-from jsonschema.exceptions import ValidationError
+from jsonschema import Draft4Validator, validate
+from jsonschema.exceptions import SchemaError, ValidationError
 
 DEFAULT_RULEBOOK_SCHEMA = "ruleset_schema"
 logger = logging.getLogger(__name__)
@@ -27,7 +27,15 @@ class Validate:
             f"./schema/{DEFAULT_RULEBOOK_SCHEMA}.json"
         )
         data = path.read_text(encoding="utf-8")
-        cls.schema = json.loads(data)
+        try:
+            cls.schema = json.loads(data)
+            Draft4Validator.check_schema(cls.schema)
+        except json.JSONDecodeError:
+            logger.exception("Can not deserialize JSON schema")
+            raise
+        except SchemaError:
+            logger.exception("Incorrect JSON schema")
+            raise
         return cls.schema
 
     @classmethod
