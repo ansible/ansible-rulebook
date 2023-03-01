@@ -16,10 +16,14 @@
 - Support for graceful shutdown, timeout to allow actions to complete
 - Removed the echo command in favor of debug with msg
 - Support for null type in conditions
+- Support Jinja2 substitution in rule names
 
 ### Fixed
 
 - get_java_version, add compatibility with macs and tests for check_jvm
+- selectattr operator with negation using greater/less than operators
+- select operator and comparing ints and floats
+- preserve native types when doing jinja substitution
 
 ### Removed
 

@@ -1,0 +1,15 @@
+---
+- name: Rules with names being substituted
+  hosts: localhost
+  sources:
+    - range:
+        limit: 5
+  rules:
+    - name: "{{ custom.name1 }}"
+      condition: event.i == 1
+      action:
+        debug:
+    - name: "{{ custom.name2 }}"
+      condition: event.i == 2
+      action:
+        debug:

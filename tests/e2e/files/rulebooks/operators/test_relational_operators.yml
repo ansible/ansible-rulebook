@@ -57,7 +57,7 @@
             pi_for_engineers: 3
 
           - id: "testcase #11"
-            stark_motto: |
+            stark_motto: |-
               Winter
               is
               coming
