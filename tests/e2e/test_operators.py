@@ -550,3 +550,156 @@ def test_string_search(rulebook):
 
     with check:
         assert "Output for testcase #07" in result.stdout, "testcase #7 failed"
+
+
+@pytest.mark.e2e
+def test_select_operator():
+    """
+    Run a rulebook with several rules to test the select operator
+    """
+    rulebook = (
+        utils.BASE_DATA_PATH / "rulebooks/operators/test_select_operator.yml"
+    )
+    cmd = utils.Command(rulebook=rulebook)
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_CMD_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert not result.stderr
+
+    with check:
+        assert (
+            "Negative testcase (should not fire)" not in result.stdout
+        ), "negative testcase fired unexpectedly"
+
+    with check:
+        assert (
+            "Output for testcase #01" in result.stdout
+        ), "testcase #01 failed"
+
+    with check:
+        assert (
+            "Output for testcase #02" in result.stdout
+        ), "testcase #02 failed"
+
+    with check:
+        assert (
+            "Output for testcase #03" in result.stdout
+        ), "testcase #03 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #04" in line
+                ]
+            )
+            == 2
+        ), "testcase #04 failed"
+
+    with check:
+        assert (
+            "Output for testcase #05" in result.stdout
+        ), "testcase #05 failed"
+
+
+@pytest.mark.e2e
+def test_selectattr_operator():
+    """
+    Run a rulebook with several rules to test the selectattr operator
+    """
+    rulebook = (
+        utils.BASE_DATA_PATH
+        / "rulebooks/operators/test_selectattr_operator.yml"
+    )
+    cmd = utils.Command(rulebook=rulebook)
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_CMD_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert not result.stderr
+
+    with check:
+        assert (
+            "Negative testcase (should not fire)" not in result.stdout
+        ), "negative testcase fired unexpectedly"
+
+    with check:
+        assert (
+            "Output for testcase #01" in result.stdout
+        ), "testcase #01 failed"
+
+    with check:
+        assert (
+            "Output for testcase #02" in result.stdout
+        ), "testcase #02 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #03" in line
+                ]
+            )
+            == 2
+        ), "testcase #03 failed"
+
+    with check:
+        assert (
+            "Output for testcase #04" in result.stdout
+        ), "testcase #04 failed"
+
+    with check:
+        assert (
+            "Output for testcase #05" in result.stdout
+        ), "testcase #05 failed"
+
+    with check:
+        assert (
+            "Output for testcase #06" in result.stdout
+        ), "testcase #06 failed"
+
+    with check:
+        assert (
+            "Output for testcase #07" in result.stdout
+        ), "testcase #07 failed"
+
+    with check:
+        assert (
+            "Output for testcase #08" in result.stdout
+        ), "testcase #08 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #09" in line
+                ]
+            )
+            == 2
+        ), "testcase #09 failed"
+
+    with check:
+        assert (
+            "Output for testcase #10" in result.stdout
+        ), "testcase #10 failed"
