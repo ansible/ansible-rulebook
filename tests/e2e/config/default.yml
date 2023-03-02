@@ -1,6 +1,6 @@
-event_delay: 1
+default_event_delay: 1
+default_shutdown_after: 5
 operators_shutdown_after: 1
-run_playbook_shutdown_after: 5
-cmd_timeout: 20
+cmd_timeout: 25
 controller_url: http://localhost:8080
 controller_token: secret
