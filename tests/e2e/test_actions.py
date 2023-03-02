@@ -13,8 +13,8 @@ from .settings import SETTINGS
 
 LOGGER = logging.getLogger(__name__)
 DEFAULT_CMD_TIMEOUT = SETTINGS["cmd_timeout"]
-DEFAULT_SHUTDOWN_AFTER = SETTINGS["run_playbook_shutdown_after"]
-DEFAULT_EVENT_DELAY = SETTINGS["event_delay"]
+DEFAULT_SHUTDOWN_AFTER = SETTINGS["default_shutdown_after"]
+DEFAULT_EVENT_DELAY = SETTINGS["default_event_delay"]
 
 
 @pytest.mark.e2e
@@ -89,7 +89,13 @@ def test_actions_sanity(update_environment):
     with check:
         assert (
             "{'action': 'print_event'}" in result.stdout
-        ), "print_event action failed"
+        ), "print_event action with single event failed"
+
+    with check:
+        assert (
+            "{'m_1': {'action': 'print_event_multi_2'}, 'm_0': "
+            "{'action': 'print_event_multi_1'}}" in result.stdout
+        ), "print_event action with multiple events failed"
 
     with check:
         assert (
@@ -133,7 +139,7 @@ def test_actions_sanity(update_environment):
         ), "multiple actions failed"
 
     assert (
-        len(result.stdout.splitlines()) == 48
+        len(result.stdout.splitlines()) == 49
     ), "unexpected output from the rulebook"
 
 
