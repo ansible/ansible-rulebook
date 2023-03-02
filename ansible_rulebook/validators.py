@@ -8,7 +8,7 @@ if sys.version_info >= (3, 9):
 else:
     import importlib_resources as resources
 
-from jsonschema import Draft7Validator, validate
+import jsonschema
 from jsonschema.exceptions import SchemaError, ValidationError
 
 DEFAULT_RULEBOOK_SCHEMA = "ruleset_schema"
@@ -29,7 +29,8 @@ class Validate:
         data = path.read_text(encoding="utf-8")
         try:
             cls.schema = json.loads(data)
-            Draft7Validator.check_schema(cls.schema)
+            validator = jsonschema.validators.validator_for(cls.schema)
+            validator.check_schema(cls.schema)
         except json.JSONDecodeError:
             logger.exception("Can not deserialize JSON schema")
             raise
@@ -41,7 +42,7 @@ class Validate:
     @classmethod
     def rulebook(cls, instance: List[Dict]) -> None:
         try:
-            validate(instance=instance, schema=cls._get_schema())
+            jsonschema.validate(instance=instance, schema=cls._get_schema())
         except ValidationError:
             logger.exception("Rulebook failed validation.")
             raise
