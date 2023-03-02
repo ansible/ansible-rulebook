@@ -122,7 +122,7 @@ string_search_t = (
 )
 
 delim_value = Group(
-    delimitedList(number_t | null_t | ident | string1 | string2)
+    delimitedList(number_t | null_t | boolean | ident | string1 | string2)
 )
 list_values = Suppress("[") + delim_value + Suppress("]")
 
