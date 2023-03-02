@@ -15,3 +15,15 @@ repos:
       - id: flake8
         additional_dependencies:
           - flake8-bugbear
+  - repo: local
+    language: javascript
+    hooks:
+      - id: ajv
+        name: ajv
+        description: Validate JSON schema
+        language: node
+        types: [json]
+        files: ^ansible_rulebook/schema/ruleset_schema.json$
+        additional_dependencies:
+          - ajv-cli
+        entry: ajv compile -s
