@@ -177,10 +177,6 @@ def main(args: List[str] = None) -> int:
         parser.print_help()
         sys.exit(0)
 
-    if args.rulebook and not args.inventory:
-        print("Error: inventory is required")
-        return 1
-
     if args.controller_url:
         if args.controller_token:
             job_template_runner.host = args.controller_url
