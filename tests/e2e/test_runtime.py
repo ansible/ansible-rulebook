@@ -15,53 +15,50 @@ DEFAULT_TIMEOUT = 15
 
 @pytest.mark.e2e
 @pytest.mark.parametrize(
-    "rulebook, inventory, range_limit, expected_rc",
+    "rulebook, inventory, event_delay, expected_rc",
     [
         pytest.param(
             "hello_events_with_var.yml",
             utils.DEFAULT_INVENTORY,
-            "5",
+            "0.1",
             0,
             id="successful_rc",
         ),
         pytest.param(
-            "test_check_rc.yml",
+            "hello_events_with_var.yml",
             Path("nonexistent.yml"),
-            "5",
+            "0.1",
             1,
             id="failed_rc_wrong_inventory",
         ),
         pytest.param(
-            "test_check_rc.yml",
+            "hello_events_with_var.yml",
             utils.DEFAULT_INVENTORY,
-            "notanint",
+            "notafloat",
             1,
-            id="failed_rc_bad_var",
+            id="failed_rc_bad_src_config",
         ),
         pytest.param(
             "malformed_rulebook.yml",
             utils.DEFAULT_INVENTORY,
-            "5",
+            "0.1",
             1,
             id="failed_rc_rulebook_validation",
         ),
     ],
 )
 def test_program_return_code(
-    update_environment, rulebook, inventory, range_limit, expected_rc
+    update_environment, rulebook, inventory, event_delay, expected_rc
 ):
     """
-    GIVEN a valid or invalid rulebook
-        and a valid or invalid environment variable
-        and a valid or invalid inventory
-    WHEN the program is executed
-    THEN the program must exit with the correct return code
+    Execute a rulebook with various potential failure
+    scenarios and validate that the return code is correct
     """
-    env = update_environment({"RANGE_LIMIT": range_limit})
+    env = update_environment({"EVENT_DELAY": event_delay})
 
     rulebook = utils.BASE_DATA_PATH / f"rulebooks/{rulebook}"
     cmd = utils.Command(
-        rulebook=rulebook, envvars="RANGE_LIMIT", inventory=inventory
+        rulebook=rulebook, envvars="EVENT_DELAY", inventory=inventory
     )
 
     LOGGER.info(f"Running command: {cmd}")
