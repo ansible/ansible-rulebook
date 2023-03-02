@@ -96,6 +96,7 @@
               - 45
               - True
               - 6.9
+              - null
           - id: "Testcase #11"
             nested:
               mylist2:
@@ -103,16 +104,34 @@
                 - 45
                 - True
                 - 6.9
+                - null
           - id: "Testcase #11"
             mylist3:
               - "Jon"
               - 45
               - True
               - 6.9
+              - null
           - id: "Testcase #11"
             mylist4: []
           - id: "Testcase #11"
             mylist4: [""]
+          - id: "Testcase #11"
+            mylist5:
+              - "Jon"
+              - 45
+              - True
+              - 6.9
+              - null
+          - id: "Testcase #11"
+            mylist6:
+              - "Jon"
+              - 45
+              - True
+              - 6.9
+          - id: "Testcase #12"
+            ned_stark: null
+
   rules:
     - name: "Testcase #1"
       condition: >
@@ -123,7 +142,7 @@
           msg: "Output for Testcase #01"
 
     - name: "Testcase #2"
-      condition: event.data not in ["2", "3", "one"]
+      condition: event.data not in ["2", "3", "one", null]
       action:
         debug:
           msg: "Output for Testcase #02"
@@ -202,3 +221,21 @@
       action:
         debug:
           msg: "Output for Testcase #11"
+
+    - name: "Testcase #11-5"
+      condition: events.mylist5 contains null
+      action:
+        debug:
+          msg: "Output for Testcase #11"
+
+    - name: "Testcase #11-6"
+      condition: events.mylist6 not contains null
+      action:
+        debug:
+          msg: "Output for Testcase #11"
+
+    - name: "Testcase #12"
+      condition: events.ned_stark in [null, "dead", 0, false]
+      action:
+        debug:
+          msg: "Output for Testcase #12"
