@@ -118,7 +118,6 @@ async def test_start_source():
 
 @pytest.mark.asyncio
 async def test_run_rulesets():
-
     ruleset_queues, event_log = load_rulebook("rules/test_rules.yml")
 
     queue = ruleset_queues[0][1]

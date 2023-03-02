@@ -17,7 +17,6 @@ from datetime import datetime
 
 
 def main(queue, args):
-
     while True:
         queue.put(
             dict(

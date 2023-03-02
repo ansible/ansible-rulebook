@@ -18,7 +18,6 @@ import psutil
 
 
 def main(queue, args):
-
     names = args.get("names", None)
 
     original_processes = {p.pid: p.name() for p in psutil.process_iter()}

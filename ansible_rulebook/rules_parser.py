@@ -101,7 +101,6 @@ def parse_event_sources(sources: Dict) -> List[rt.EventSource]:
 
 
 def parse_source_filter(source_filter: Dict) -> rt.EventSourceFilter:
-
     source_filter_name = list(source_filter.keys())[0]
     source_filter_args = source_filter[source_filter_name]
 

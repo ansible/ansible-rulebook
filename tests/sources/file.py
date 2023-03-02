@@ -44,7 +44,6 @@ def send_facts(queue, filename):
 
 
 def main(queue, args):
-
     files = [os.path.abspath(f) for f in args.get("files", [])]
 
     if not files:

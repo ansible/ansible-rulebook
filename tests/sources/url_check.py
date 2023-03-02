@@ -19,7 +19,6 @@ from requests.exceptions import ConnectionError, ReadTimeout
 
 
 def main(queue, args):
-
     urls = args.get("urls", [])
     delay = args.get("delay", 1)
 
@@ -27,7 +26,6 @@ def main(queue, args):
         return
 
     while True:
-
         for url in urls:
             try:
                 response = requests.get(url, timeout=10, verify=False)

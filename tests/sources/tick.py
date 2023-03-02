@@ -17,7 +17,6 @@ import time
 
 
 def main(queue, args):
-
     for i in itertools.count(start=1):
         queue.put(dict(time=dict(tick=i)))
         time.sleep(1)
