@@ -1,9 +1,10 @@
 {
-    "$schema": "https://json-schema.org/draft-04/schema",
+    "$schema": "https://json-schema.org/draft-07/schema",
     "$id": "https://raw.githubusercontent.com/ansible/ansible-rulebook/main/ansible_rulebook/schema/ruleset_schema.json",
     "type": "array",
     "items": {"$ref": "#/$defs/ruleset"},
     "minItems": 1,
+    "examples": ["rulebooks/*.yml", "rulebooks/*.yaml"],
     "$defs": {
         "ruleset": {
             "type": "object",
@@ -312,7 +313,7 @@
                     },
                     "required": [
                        "fact"
-                    ], 
+                    ],
                     "additionalProperties": false
                 }
             },
@@ -329,7 +330,7 @@
                     "properties": {
                         "var_root": {"type": ["string","object"] },
                         "pretty": {"type": "boolean" }
-                    }, 
+                    },
                     "additionalProperties": false
                 }
             },
