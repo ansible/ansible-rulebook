@@ -1,0 +1,35 @@
+---
+- name: Sample Rulebook
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name: r1
+      condition: event.i == 0
+      action:
+        debug:
+    - name: r2
+      condition: event.i == 1
+      action:
+        debug:
+          msg: "This is a sample message with {{ event.i }}"
+    - name: r3
+      condition: event.i == 2
+      action:
+        debug:
+          msg: 
+            - "Hello World {{ event }}"
+            - "Hello Java"
+            - "Hello Java again {{ event }}"
+    - name: r4
+      condition: event.i == 3
+      action:
+        debug:
+          var: event.does_not_exist
+    - name: r5
+      condition: event.i == 4
+      action:
+        debug:
+          var: event.i

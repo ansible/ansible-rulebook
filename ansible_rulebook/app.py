@@ -36,7 +36,7 @@ from ansible_rulebook.websocket import (
     send_event_log_to_websocket,
 )
 
-from .exception import InventoryNeededException
+from .exception import InventoryNeededException, RulebookNotFoundException
 
 
 class NullQueue:
@@ -168,7 +168,9 @@ def load_rulebook(
             )
         )
     else:
-        raise Exception(f"Could not find ruleset {parsed_args.rulebook}")
+        raise RulebookNotFoundException(
+            f"Could not find rulebook {parsed_args.rulebook}"
+        )
 
     validate_actions(rulesets, parsed_args)
     return rulesets
