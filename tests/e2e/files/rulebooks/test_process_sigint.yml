@@ -1,0 +1,15 @@
+---
+- name: Ruleset 1
+  hosts: all
+  sources:
+    - generic:
+        loop_count: 10
+        loop_delay: 1
+        payload:
+          - action: "long_loop"
+
+  rules:
+    - name: Trigger loop
+      condition: event.action == "long_loop"
+      action:
+        print_event:

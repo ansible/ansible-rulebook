@@ -1,0 +1,17 @@
+- name: A long running playbook
+  hosts: all
+  gather_facts: false
+  vars:
+    pause_time: "{{ sleep_seconds | default(5) }}"
+  tasks:
+    - name: Print sleep message
+      ansible.builtin.debug:
+        msg: "Sleeping..."
+
+    - name: Sleep
+      ansible.builtin.pause:
+        seconds: "{{ pause_time }}"
+
+    - name: Print wake-up message
+      ansible.builtin.debug:
+        msg: "Rise and shine..."
