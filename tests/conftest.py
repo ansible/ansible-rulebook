@@ -77,7 +77,7 @@ def create_rule(create_condition, create_action, **kwargs):
 
 
 @pytest.fixture
-def create_ruleset(create_event_source, create_rule, *kwargs):
+def create_ruleset(create_event_source, create_rule, **kwargs):
     def _ruleset(**kwargs):
         name = kwargs.pop("name", "ruleset1")
         hosts = kwargs.pop("hosts", ["host1"])
