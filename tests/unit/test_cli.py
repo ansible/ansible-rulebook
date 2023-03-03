@@ -3,15 +3,12 @@ from unittest.mock import patch
 
 import pytest
 
-from ansible_rulebook.cli import show_version
+from ansible_rulebook.cli import get_version
 from ansible_rulebook.util import check_jvm
 
 
-def test_show_version(capsys):
-    with pytest.raises(SystemExit):
-        show_version()
-    output = capsys.readouterr()
-    assert not output.err
+def test_get_version():
+    output = get_version()
     pattern = re.compile(
         r"""(.+)\d+\.\d+\.\d+'
   Executable location = (.+)
@@ -20,7 +17,7 @@ def test_show_version(capsys):
   Java version = \d+\.\d+\.\d+(\.\d+)?
   Python version = \d+\.\d+\.\d+ (.+)$"""
     )
-    assert pattern.match(output.out)
+    assert pattern.match(output)
 
 
 def test_check_jvm_bad_java_home():

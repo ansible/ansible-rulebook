@@ -36,6 +36,8 @@ from ansible_rulebook.websocket import (
     send_event_log_to_websocket,
 )
 
+from .exception import InventoryNeededException, RulebookNotFoundException
+
 
 class NullQueue:
     async def put(self, _data):
@@ -43,6 +45,7 @@ class NullQueue:
 
 
 logger = logging.getLogger(__name__)
+INVENTORY_ACTIONS = ("run_playbook", "run_module")
 
 
 # FIXME(cutwater): Replace parsed_args with clear interface
@@ -154,18 +157,23 @@ def load_rulebook(
             Validate.rulebook(data)
             if variables is None:
                 variables = {}
-            return rules_parser.parse_rule_sets(data, variables)
+            rulesets = rules_parser.parse_rule_sets(data, variables)
     elif has_rulebook(*split_collection_name(parsed_args.rulebook)):
         logger.debug(
             "Loading rules from a collection %s", parsed_args.rulebook
         )
-        return rules_parser.parse_rule_sets(
+        rulesets = rules_parser.parse_rule_sets(
             collection_load_rulebook(
                 *split_collection_name(parsed_args.rulebook)
             )
         )
     else:
-        raise Exception(f"Could not find ruleset {parsed_args.rulebook}")
+        raise RulebookNotFoundException(
+            f"Could not find rulebook {parsed_args.rulebook}"
+        )
+
+    validate_actions(rulesets, parsed_args)
+    return rulesets
 
 
 def spawn_sources(
@@ -191,3 +199,19 @@ def spawn_sources(
             tasks.append(task)
         ruleset_queues.append(RuleSetQueue(ruleset, source_queue))
     return tasks, ruleset_queues
+
+
+def validate_actions(
+    rulesets: List[RuleSet], parsed_args: argparse.ArgumentParser
+) -> None:
+    for ruleset in rulesets:
+        for rule in ruleset.rules:
+            for action in rule.actions:
+                if (
+                    action.action in INVENTORY_ACTIONS
+                    and parsed_args.inventory is None
+                ):
+                    raise InventoryNeededException(
+                        f"Rule {rule.name} has an action {action.action} "
+                        "which needs inventory to be defined"
+                    )

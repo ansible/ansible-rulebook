@@ -1875,3 +1875,33 @@ async def test_72_set_fact_with_type():
             ],
         }
         validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_73_mix_and_match_list():
+    ruleset_queues, event_log = load_rulebook(
+        "examples/73_mix_and_match_list.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 6,
+            "shutdown_events": 1,
+            "actions": [
+                "73 mix and match list::Match bool in list::print_event",
+                "73 mix and match list::Match str in list::print_event",
+                "73 mix and match list::Match null in list::print_event",
+                "73 mix and match list::Match int in list::print_event",
+                "73 mix and match list::Match float in list::print_event",
+            ],
+        }
+        validate_events(event_log, **checks)

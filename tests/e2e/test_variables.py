@@ -12,7 +12,7 @@ from .settings import SETTINGS
 
 LOGGER = logging.getLogger(__name__)
 DEFAULT_CMD_TIMEOUT = SETTINGS["cmd_timeout"]
-DEFAULT_EVENT_DELAY = SETTINGS["event_delay"]
+DEFAULT_EVENT_DELAY = SETTINGS["default_event_delay"]
 
 
 @pytest.mark.e2e

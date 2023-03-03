@@ -19,7 +19,7 @@ import importlib.metadata
 import logging
 import os
 import sys
-from typing import List, NoReturn
+from typing import List
 
 import ansible_rulebook.util as util
 from ansible_rulebook.messages import DEFAULT_SHUTDOWN_DELAY
@@ -44,7 +44,9 @@ logger = logging.getLogger(__name__)
 
 
 def get_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawTextHelpFormatter
+    )
     parser.add_argument(
         "-r",
         "--rulebook",
@@ -75,8 +77,9 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--version",
-        action="store_true",
+        action="version",
         help="Show the version and exit",
+        version=get_version(),
     )
     parser.add_argument(
         "-S",
@@ -135,7 +138,7 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def show_version() -> NoReturn:
+def get_version() -> str:
     java_home = util.get_java_home()
     java_version = util.get_java_version()
     result = [
@@ -146,8 +149,7 @@ def show_version() -> NoReturn:
         f"  Java version = {java_version}",
         f"  Python version = {''.join(sys.version.splitlines())}",
     ]
-    print("\n".join(result))
-    sys.exit(0)
+    return "\n".join(result)
 
 
 def setup_logging(args: argparse.Namespace) -> None:
@@ -174,13 +176,6 @@ def main(args: List[str] = None) -> int:
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(0)
-
-    if args.version:
-        show_version()
-
-    if args.rulebook and not args.inventory:
-        print("Error: inventory is required")
-        return 1
 
     if args.controller_url:
         if args.controller_token:

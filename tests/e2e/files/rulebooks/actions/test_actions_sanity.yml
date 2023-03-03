@@ -9,6 +9,8 @@
           - action: "run_playbook"
           - action: "run_module"
           - action: "print_event"
+          - action: "print_event_multi_1"
+          - action: "print_event_multi_2"
           - action: "debug"
           - action: "post_event"
             rulebook_scope: same_ruleset
@@ -38,8 +40,16 @@
           module_args:
             msg: "Event matched: {{ event }}"
 
-    - name: print_event
+    - name: print_event single event
       condition: event.action == "print_event"
+      action:
+        print_event:
+
+    - name: print_event multiple events
+      condition:
+        all:
+          - event.action == "print_event_multi_1"
+          - event.action == "print_event_multi_2"
       action:
         print_event:
 
@@ -121,7 +131,6 @@
               msg: "Multiple action #1 triggered"
         - debug:
             msg: "Multiple action #2 triggered"
-
 
 
 - name: Second ruleset

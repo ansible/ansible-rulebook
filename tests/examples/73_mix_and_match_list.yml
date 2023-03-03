@@ -1,0 +1,33 @@
+---
+- name: 73 mix and match list 
+  hosts: all
+  sources:
+    - generic:
+        payload:
+          - my_bool: false
+          - my_str: fred
+          - my_null: null
+          - my_int: 42
+          - my_float: 3.1415
+
+  rules:
+    - name: Match bool in list
+      condition: events.my_bool in [null, "fred", false, 42]
+      action:
+        print_event:
+    - name: Match str in list
+      condition: events.my_str in [null, "fred", false, 42]
+      action:
+        print_event:
+    - name: "Match null in list"
+      condition: events.my_null in [null, "fred", false, 42]
+      action:
+        print_event:
+    - name: Match int in list
+      condition: events.my_int in [null, "fred", false, 42]
+      action:
+        print_event:
+    - name: Match float in list
+      condition: events.my_float in [null, "fred", false, 42, 3.1415]
+      action:
+        print_event:
