@@ -266,7 +266,6 @@ def visit_source(parsed_source: EventSource, variables: Dict):
             ],
         }
     }
-    pass
 
 
 def visit_source_filter(parsed_source: EventSourceFilter, variables: Dict):
