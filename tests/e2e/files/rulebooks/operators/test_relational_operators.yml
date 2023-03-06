@@ -98,6 +98,18 @@
           - id: "testcase #19"
             nullable: null
 
+          - id: "testcase #20"
+            test_null: null
+
+          - id: "testcase #20" # should not match
+            test_null: "null"
+
+          - id: "testcase #21"
+            null_str1: "not a null value"
+
+          - id: "testcase #22"
+            null_str2: "not a null value"
+
           - id: "finish"
             finish: true
   rules:
@@ -219,6 +231,24 @@
       action:
         debug:
           msg: "Output for testcase #19"
+
+    - name: "Testcase #20"
+      condition: event.test_null == null
+      action:
+        debug:
+          msg: "Output for testcase #20"
+
+    - name: "Testcase #21"
+      condition: event.null_str1 != null
+      action:
+        debug:
+          msg: "Output for testcase #21"
+
+    - name: "Testcase #22"
+      condition: not event.null_str2 == null
+      action:
+        debug:
+          msg: "Output for testcase #22"
 
     - name: "Finish - test shutdown msg"
       condition: event.finish

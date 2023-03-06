@@ -17,6 +17,7 @@
 - Removed the echo command in favor of debug with msg
 - Support for null type in conditions
 - Support Jinja2 substitution in rule names
+- Support booleans in lists, which can contain mixed data types
 
 ### Fixed
 
@@ -25,6 +26,8 @@
 - select operator and comparing ints and floats
 - preserve native types when doing jinja substitution
 - inventory argument to the CLI is optional
+- select works with null
+- a race condition between threads in drools rule engine
 
 ### Removed
 
