@@ -58,17 +58,15 @@ Features
 
 
 ===============
+Installation
+===============
+Please follow the `Installation guide <https://ansible-rulebook.readthedocs.io/en/stable/installation.html>`_ to install ``ansible-rulebook``.
+
+===============
 Documentation
 ===============
-To learn more about using ``ansible-rulebook`` view the `Docs site <https://ansible-rulebook.readthedocs.io/>`_.
+Please refer to the `Getting Started guide <https://ansible-rulebook.readthedocs.io/en/stable/getting_started.html>`_ to get started with ``ansible-rulebook``.
 
-============
-Installation
-============
-
-Head over to the Installation_ page for details on how to install *ansible-rulebook*.
-
-.. _Installation: docs/installation.rst
 
 ===============
 Contributing
