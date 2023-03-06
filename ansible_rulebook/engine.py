@@ -185,7 +185,7 @@ async def run_rulesets(
     event_log: asyncio.Queue,
     ruleset_queues: List[RuleSetQueue],
     variables: Dict,
-    inventory: Dict,
+    inventory: str = "",
     parsed_args: argparse.ArgumentParser = None,
     project_data_file: Optional[str] = None,
 ):

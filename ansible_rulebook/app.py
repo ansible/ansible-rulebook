@@ -63,7 +63,7 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
             int(parsed_args.id), parsed_args.websocket_address
         )
     else:
-        inventory = {}
+        inventory = ""
         variables = load_vars(parsed_args)
         rulesets = load_rulebook(parsed_args, variables)
         if parsed_args.inventory:
