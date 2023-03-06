@@ -42,14 +42,11 @@ async def request_workload(activation_id, websocket_address):
             extra_vars = None
             private_key = None
             project_data_fh, project_data_file = tempfile.mkstemp()
-            while (
-                inventory is None
-                or rulebook is None
-                or extra_vars is None
-                or private_key is None
-            ):
+            while rulebook is None or extra_vars is None:
+                logger.info("Waiting for message")
                 msg = await websocket.recv()
                 data = json.loads(msg)
+                logger.info(f"message type {data.get('type')}")
                 if data.get("type") == "ProjectData":
                     if data.get("data") and data.get("more"):
                         os.write(
@@ -62,6 +59,7 @@ async def request_workload(activation_id, websocket_address):
                     rulebook = rules_parser.parse_rule_sets(
                         yaml.safe_load(base64.b64decode(data.get("data")))
                     )
+                    logger.info("rulebook received %s", rulebook)
                 if data.get("type") == "Inventory":
                     inventory = yaml.safe_load(
                         base64.b64decode(data.get("data"))
@@ -70,6 +68,7 @@ async def request_workload(activation_id, websocket_address):
                     extra_vars = yaml.safe_load(
                         base64.b64decode(data.get("data"))
                     )
+                    logger.info("extravars received %s", extra_vars)
                 if data.get("type") == "SSHPrivateKey":
                     private_key = True
                     await install_private_key(
@@ -81,6 +80,7 @@ async def request_workload(activation_id, websocket_address):
                     job_template_runner.token = data.get("data")
                 if data.get("type") == "ControllerSslVerify":
                     job_template_runner.verify_ssl = data.get("data")
+            logger.info("Ready to run")
             return inventory, extra_vars, rulebook, project_data_file
         except CancelledError:
             logger.info("closing websocket due to task cancelled")
