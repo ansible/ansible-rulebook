@@ -46,8 +46,6 @@
             type: null
 
 
-  # TODO: add tests for variable substitution when bug
-  # is resolved: https://issues.redhat.com/browse/AAP-9324
   rules:
     - name: Single condition select with search, case insensitive
       condition: event.name is select("search", "(?i)ArRo")
@@ -82,21 +80,21 @@
         debug:
           msg: "Output for testcase #03"
 
-    - name: Multi condition select bool and negated null
+    - name: Multi condition select bool with negated null and var
       condition: >
-        event.type is select("search", "asteroid") and
+        event.type is select("search", vars.type_asteroid) and
         (event.has_moons is select("==", true) or
         event.sub_type is select("!=", null))
       action:
         debug:
           msg: "Output for testcase #04"
 
-    - name: Multi condition select with negation
+    - name: Multi condition select with negation and vars
       condition: >
         event.type is not select("match", "planet") and
-        (event.radius is select("==", 11) or
-        event.orbital_period is select(">=", 27000.123)) and
-        event.has_moons is not select("==", true)
+        (event.radius is select("==", vars.halleys_radius) or
+        event.orbital_period is select(">=", vars.halleys_min_op)) and
+        event.has_moons is not select("==", vars.has_moons)
       action:
         debug:
           msg: "Output for testcase #05"
