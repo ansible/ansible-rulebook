@@ -779,7 +779,6 @@ async def test_29_run_module():
         event_log,
         ruleset_queues,
         dict(),
-        dict(),
     )
 
     event = event_log.get_nowait()
@@ -814,7 +813,6 @@ async def test_30_run_module_missing():
         event_log,
         ruleset_queues,
         dict(),
-        dict(),
     )
 
     event = event_log.get_nowait()
@@ -847,7 +845,6 @@ async def test_31_run_module_missing_args():
         event_log,
         ruleset_queues,
         dict(),
-        dict(),
     )
 
     event = event_log.get_nowait()
@@ -879,7 +876,6 @@ async def test_32_run_module_fail():
     await run_rulesets(
         event_log,
         ruleset_queues,
-        dict(),
         dict(),
     )
 
@@ -917,7 +913,6 @@ async def test_35_multiple_rulesets_1_fired():
     await run_rulesets(
         event_log,
         ruleset_queues,
-        dict(),
         dict(),
     )
 

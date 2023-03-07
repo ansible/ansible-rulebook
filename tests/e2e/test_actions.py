@@ -2,6 +2,7 @@
 Module with tests for operators
 """
 import logging
+import pprint
 import subprocess
 
 import jinja2
@@ -41,9 +42,15 @@ def test_actions_sanity(update_environment):
     rulebook = (
         utils.BASE_DATA_PATH / "rulebooks/actions/test_actions_sanity.yml"
     )
+    inventory = utils.BASE_DATA_PATH / "inventories/default_inventory.ini"
     cmd = utils.Command(
-        rulebook=rulebook, envvars="DEFAULT_SHUTDOWN_AFTER,DEFAULT_EVENT_DELAY"
+        rulebook=rulebook,
+        inventory=inventory,
+        envvars="DEFAULT_SHUTDOWN_AFTER,DEFAULT_EVENT_DELAY",
     )
+
+    with open(inventory) as f:
+        inventory_data = pprint.pformat(f.read())
 
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
@@ -59,7 +66,7 @@ def test_actions_sanity(update_environment):
     assert not result.stderr
     event_debug_expected_output_tpl = """kwargs:
 {'hosts': ['all'],
- 'inventory': {'all': {'hosts': {'localhost': {'ansible_connection': 'local'}}}},
+ 'inventory': {{INVENTORY_DATA}},
  'project_data_file': None,
  'ruleset': 'Test actions sanity',
  'source_rule_name': 'debug',
@@ -73,6 +80,7 @@ def test_actions_sanity(update_environment):
     ).render(
         DEFAULT_SHUTDOWN_AFTER=DEFAULT_SHUTDOWN_AFTER,
         DEFAULT_EVENT_DELAY=DEFAULT_EVENT_DELAY,
+        INVENTORY_DATA=inventory_data,
     )
 
     # assert each expected output per action tested
