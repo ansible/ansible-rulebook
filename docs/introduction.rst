@@ -50,10 +50,7 @@ how to respond to them. These rulebooks are also created in YAML and are
 used like traditional Ansible Playbooks, so this makes it easier to
 understand and build the rulebooks we need. One key difference between
 playbooks and rulebooks is the If-this-then-that coding that is needed
-in a rulebook to make an event driven automation approach work. The
-current ansible-rulebook is easy to learn and work with, and the
-graphical user interface EDA-Server will simplify this further.
-
+in a rulebook to make an event driven automation approach work.
 
 
 **A rulebook is comprised of three main components:**
@@ -125,7 +122,6 @@ there are a variety of resources to enhance your automation knowledge:
    2022 <https://www.redhat.com/en/events/webinar/event-driven-ansible-office-hours-december>`__.
 -  `Ansible Rulebook
    CLI <https://github.com/ansible/ansible-rulebook>`__
--  `EDA Server <https://github.com/ansible/eda-server>`__
 
 Office Hours
 ------------
