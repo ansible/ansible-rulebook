@@ -6,8 +6,8 @@ Welcome to Ansible Rulebook documentation
    :caption: Contents:
 
    introduction
-   installation
    getting_started
+   installation
    development_environment
    contributing
    usage

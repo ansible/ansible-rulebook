@@ -27,6 +27,7 @@
 - preserve native types when doing jinja substitution
 - inventory argument to the CLI is optional
 - select works with null
+- a race condition between threads in drools rule engine
 
 ### Removed
 

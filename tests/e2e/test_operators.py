@@ -206,11 +206,33 @@ def test_relational_operators(update_environment):
 
     with check:
         assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #20" in line
+                ]
+            )
+            == 1
+        ), "testcase #20 failed"
+
+    with check:
+        assert (
+            "Output for testcase #21" in result.stdout
+        ), "testcase #21 failed"
+
+    with check:
+        assert (
+            "Output for testcase #22" in result.stdout
+        ), "testcase #22 failed"
+
+    with check:
+        assert (
             "Ruleset: Test relational operators rule: Finish"
             " - test shutdown msg has initiated shutdown" in result.stdout
         ), "Shutdown message failed"
 
-    assert len(result.stdout.splitlines()) == 22, "Unexpected output"
+    assert len(result.stdout.splitlines()) == 25, "Unexpected output"
 
 
 @pytest.mark.e2e
@@ -329,10 +351,15 @@ def test_membership_operators(update_environment):
                     if "Output for Testcase #11" in line
                 ]
             )
-            == 3
+            == 5
         ), "Testcase #11 failed"
 
-    assert len(result.stdout.splitlines()) == 16, "Unexpected output"
+    with check:
+        assert (
+            "Output for Testcase #12" in result.stdout
+        ), "Testcase #12 failed"
+
+    assert len(result.stdout.splitlines()) == 19, "Unexpected output"
 
 
 @pytest.mark.e2e
@@ -437,6 +464,21 @@ def test_logical_operators(update_environment):
             )
             == 4
         ), "Testcase #6 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Testcase #07 passes" in line
+                ]
+            )
+            == 1
+        ), "Testcase #7 failed"
+
+    with check:
+        assert "Testcase #08 passes" in result.stdout, "Testcase #8 failed"
 
 
 @pytest.mark.e2e
@@ -610,6 +652,18 @@ def test_select_operator():
         assert (
             "Output for testcase #05" in result.stdout
         ), "testcase #05 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #06" in line
+                ]
+            )
+            == 2
+        ), "testcase #06 failed"
 
 
 @pytest.mark.e2e

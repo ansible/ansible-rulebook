@@ -6,11 +6,13 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from pytest_check import check
 
 from . import utils
+from .settings import SETTINGS
 
 LOGGER = logging.getLogger(__name__)
-DEFAULT_TIMEOUT = 15
+DEFAULT_CMD_TIMEOUT = SETTINGS["cmd_timeout"]
 
 
 @pytest.mark.e2e
@@ -64,9 +66,39 @@ def test_program_return_code(
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
-        timeout=DEFAULT_TIMEOUT,
+        timeout=DEFAULT_CMD_TIMEOUT,
         cwd=utils.BASE_DATA_PATH,
         env=env,
     )
 
     assert result.returncode == expected_rc
+
+
+@pytest.mark.e2e
+def test_disabled_rules():
+    """
+    Execute a rulebook that has disabled rules and
+    ensure they do not execute
+    """
+
+    rulebook = utils.BASE_DATA_PATH / "rulebooks/test_disabled_rules.yml"
+    cmd = utils.Command(rulebook=rulebook)
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_CMD_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+    )
+
+    with check:
+        assert (
+            "Enabled rule fired correctly" in result.stdout
+        ), "Enabled rule failed to fire"
+
+    with check:
+        assert (
+            "Disabled rule should not have fired" not in result.stdout
+        ), "A disabled rule fired unexpectedly"
