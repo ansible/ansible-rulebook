@@ -74,7 +74,7 @@ class ActionContext(NamedTuple):
     rule: str
     actions: List[Action]
     variables: Dict
-    inventory: Dict
+    inventory: str
     hosts: List[str]
     rule_engine_results: Any
 
