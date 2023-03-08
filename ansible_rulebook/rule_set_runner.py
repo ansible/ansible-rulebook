@@ -228,7 +228,7 @@ class RuleSetRunner:
         action: str,
         action_args: Dict,
         variables: Dict,
-        inventory: Dict,
+        inventory: str,
         hosts: List,
         rules_engine_result,
     ) -> None:

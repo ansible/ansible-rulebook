@@ -2,12 +2,9 @@
 Getting started
 ===============
 
-First, see the `installation docs <installation.html>`_ to install ansible-rulebook.
+If ansible-rulebook is not already installed, please follow the `installation guide <installation.html>`_ to install it.
 
-Also you may want to install the `ansible.eda collection <https://github.com/ansible/event-driven-ansible/blob/main/COLLECTION.md>`_
-that contains relevant source plugins.
-
-Let's get started with a simple hello world example to familiarize ourselves with the concepts:
+Now let's get started with a simple hello world example to familiarize ourselves with the concepts:
 
 .. code-block:: yaml
 
@@ -183,11 +180,10 @@ completes we can see we revert back to “Waiting for event”.
 Event-Driven Ansible opens up the possibilities of faster resolution and
 greater automated observation of our environments. It has the
 possibility of simplifying the lives of many technical and
-sleep-deprived engineers. The current ``ansible-rulebook`` is easy to
-learn and work with, and the graphical user interface ``EDA-Server``
-will simplify this further.
+sleep-deprived engineers.
 
-`EDA Server <https://github.com/ansible/eda-server>`__
 
-`Writing Rulebooks <https://www.youtube.com/watch?v=PtevBKX1SYI>`__
+Extras
+------
 
+Video: `Writing Rulebooks <https://www.youtube.com/watch?v=PtevBKX1SYI>`__

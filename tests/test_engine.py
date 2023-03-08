@@ -202,12 +202,7 @@ async def test_run_rules_simple():
     queue.put_nowait(dict(i=2))
     queue.put_nowait(Shutdown())
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        dict(),
-    )
+    await run_rulesets(event_log, ruleset_queues, dict(), "localhost")
 
     assert event_log.get_nowait()["type"] == "Action", "0"
     assert event_log.get_nowait()["type"] == "Action", "0.2"
@@ -216,7 +211,13 @@ async def test_run_rules_simple():
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.2"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.3"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.4"
-    assert event_log.get_nowait()["type"] == "Action", "1.5"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.5"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.6"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.7"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.8"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.9"
+    assert event_log.get_nowait()["type"] == "Action", "2.0"
+    assert event_log.get_nowait()["type"] == "Action", "2.1"
     assert event_log.get_nowait()["type"] == "Shutdown", "3"
     assert event_log.empty()
 
@@ -317,12 +318,7 @@ async def test_filters():
     queue.put_nowait(dict(i=2))
     queue.put_nowait(Shutdown())
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        dict(),
-    )
+    await run_rulesets(event_log, ruleset_queues, dict(), "localhost")
 
     assert event_log.get_nowait()["type"] == "Action", "0"
     assert event_log.get_nowait()["type"] == "Action", "0.2"
@@ -331,7 +327,13 @@ async def test_filters():
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.2"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.3"
     assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.4"
-    assert event_log.get_nowait()["type"] == "Action", "1.5"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.5"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.6"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.7"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.8"
+    assert event_log.get_nowait()["type"] == "AnsibleEvent", "1.9"
+    assert event_log.get_nowait()["type"] == "Action", "2.0"
+    assert event_log.get_nowait()["type"] == "Action", "2.1"
     assert event_log.get_nowait()["type"] == "Shutdown", "3"
     assert event_log.empty()
 
@@ -380,7 +382,7 @@ async def test_run_assert_facts():
         event_log,
         ruleset_queues,
         dict(Naboo="naboo"),
-        inventory,
+        yaml.dump(inventory),
     )
 
     assert event_log.get_nowait()["type"] == "EmptyEvent", "0"

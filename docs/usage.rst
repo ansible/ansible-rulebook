@@ -76,4 +76,4 @@ To run `ansible-rulebook` with worker mode enabled the `--worker` option can be 
     The `id` is the `activation_instance` id which allows the results to be communicated back to the websocket.
     The `--project-tarball` option can also be useful during development.
 
-The `--verbose` and `--debug` options can be added to any of the above commands to increase the logging output.
+The `-v` or `-vv` options can be added to any of the above commands to increase the logging output.

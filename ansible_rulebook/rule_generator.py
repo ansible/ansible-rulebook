@@ -37,7 +37,7 @@ def add_to_plan(
     rule: str,
     actions: List[Action],
     variables: Dict,
-    inventory: Dict,
+    inventory: str,
     hosts: List,
     plan: Plan,
     rule_engine_results: Any,
@@ -59,7 +59,7 @@ def make_fn(
     ruleset,
     ansible_rule,
     variables: Dict,
-    inventory: Dict,
+    inventory: str,
     hosts: List,
     plan: Plan,
 ) -> Callable:
@@ -82,7 +82,7 @@ def make_fn(
 def generate_rulesets(
     ruleset_queues: List[RuleSetQueue],
     variables: Dict,
-    inventory: Dict,
+    inventory: str,
 ) -> List[EngineRuleSetQueuePlan]:
     rulesets = []
 

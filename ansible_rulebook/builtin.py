@@ -54,7 +54,7 @@ KEY_EDA_VARS = "ansible_eda"
 
 async def none(
     event_log,
-    inventory: Dict,
+    inventory: str,
     hosts: List,
     variables: Dict,
     project_data_file: str,
@@ -114,7 +114,7 @@ async def debug(event_log, **kwargs):
 
 async def print_event(
     event_log,
-    inventory: Dict,
+    inventory: str,
     hosts: List,
     variables: Dict,
     project_data_file: str,
@@ -148,7 +148,7 @@ async def print_event(
 
 async def set_fact(
     event_log,
-    inventory: Dict,
+    inventory: str,
     hosts: List,
     variables: Dict,
     project_data_file: str,
@@ -176,7 +176,7 @@ async def set_fact(
 
 async def retract_fact(
     event_log,
-    inventory: Dict,
+    inventory: str,
     hosts: List,
     variables: Dict,
     project_data_file: str,
@@ -203,7 +203,7 @@ async def retract_fact(
 
 async def post_event(
     event_log,
-    inventory: Dict,
+    inventory: str,
     hosts: List,
     variables: Dict,
     project_data_file: str,
@@ -229,7 +229,7 @@ async def post_event(
 
 async def run_playbook(
     event_log,
-    inventory: Dict,
+    inventory: str,
     hosts: List,
     variables: Dict,
     project_data_file: str,
@@ -325,7 +325,7 @@ async def run_playbook(
 
 async def run_module(
     event_log,
-    inventory: Dict,
+    inventory: str,
     hosts: List,
     variables: Dict,
     project_data_file: str,
@@ -519,7 +519,7 @@ async def untar_project(output_dir, project_data_file):
 
 async def pre_process_runner(
     event_log,
-    inventory: Dict,
+    inventory: str,
     variables: Dict,
     ruleset: str,
     rulename: str,
@@ -549,7 +549,7 @@ async def pre_process_runner(
         f.write(yaml.dump(playbook_extra_vars))
     os.mkdir(inventory_dir)
     with open(os.path.join(inventory_dir, "hosts"), "w") as f:
-        f.write(yaml.dump(inventory))
+        f.write(inventory)
     os.mkdir(project_dir)
 
     logger.debug("project_data_file: %s", project_data_file)
@@ -637,7 +637,7 @@ async def post_process_runner(
 
 async def run_job_template(
     event_log,
-    inventory: Dict,
+    inventory: str,
     hosts: List,
     variables: Dict,
     project_data_file: str,
@@ -756,7 +756,7 @@ async def run_job_template(
 
 async def shutdown(
     event_log,
-    inventory: Dict,
+    inventory: str,
     hosts: List,
     variables: Dict,
     project_data_file: str,

@@ -40,6 +40,11 @@
             radius: 11.0
             orbital_period: 27284
             has_moons: false
+          - id: "testcase 06"
+            type: null
+          - id: "testcase 06"
+            type: null
+
 
   # TODO: add tests for variable substitution when bug
   # is resolved: https://issues.redhat.com/browse/AAP-9324
@@ -77,7 +82,7 @@
         debug:
           msg: "Output for testcase #03"
 
-    - name: Multi condition select bool and null
+    - name: Multi condition select bool and negated null
       condition: >
         event.type is select("search", "asteroid") and
         (event.has_moons is select("==", true) or
@@ -95,3 +100,15 @@
       action:
         debug:
           msg: "Output for testcase #05"
+
+    - name: Single condition select with null
+      condition: event.type is select("==", null)
+      action:
+        debug:
+          msg: "Output for testcase #06"
+
+    - name: Single condition select with null negated
+      condition: event.type is not select("!=", null)
+      action:
+        debug:
+          msg: "Output for testcase #06"

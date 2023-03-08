@@ -77,3 +77,13 @@ class PlaybookStatusNotFoundException(Exception):
 
 class PlaybookNotFoundException(Exception):
     pass
+
+
+class InventoryNeededException(Exception):
+
+    pass
+
+
+class RulebookNotFoundException(Exception):
+
+    pass

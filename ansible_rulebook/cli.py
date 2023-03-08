@@ -132,8 +132,8 @@ def get_parser() -> argparse.ArgumentParser:
         default=os.environ.get("EDA_SHUTDOWN_DELAY", DEFAULT_SHUTDOWN_DELAY),
         type=float,
         help="Maximum number of seconds to wait after issuing a "
-        " graceful shutdown, default: 60. The process will shutdown if "
-        " all actions complete before this time period",
+        "graceful shutdown, default: 60. The process will shutdown if "
+        "all actions complete before this time period",
     )
     return parser
 
@@ -176,10 +176,6 @@ def main(args: List[str] = None) -> int:
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(0)
-
-    if args.rulebook and not args.inventory:
-        print("Error: inventory is required")
-        return 1
 
     if args.controller_url:
         if args.controller_token:
