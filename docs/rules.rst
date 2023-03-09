@@ -64,8 +64,8 @@ Example: Multiple actions
               - print_event:
                   pretty: true
 
-| In the above example the 2 actions are executed in order. First
-| we call run_playbook and then when it ends we call print_event
+| In the above example the 2 actions are executed, they run in
+| parallel
 
 Example: Disable a rule
 
