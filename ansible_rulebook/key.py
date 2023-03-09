@@ -25,7 +25,6 @@ ssh_add = shutil.which("ssh-add")
 
 
 async def install_private_key(private_key):
-
     """
     Install a private key into the ssh-agent.
     """

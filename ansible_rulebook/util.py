@@ -73,7 +73,6 @@ def substitute_variables(
 
 
 def load_inventory(inventory_file: str) -> Any:
-
     with open(inventory_file) as f:
         inventory_data = f.read()
     return inventory_data

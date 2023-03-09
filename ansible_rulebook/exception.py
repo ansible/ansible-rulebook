@@ -24,72 +24,58 @@ class ShutdownException(Exception):
 
 
 class RulenameEmptyException(Exception):
-
     pass
 
 
 class RulesetNameDuplicateException(Exception):
-
     pass
 
 
 class RulesetNameEmptyException(Exception):
-
     pass
 
 
 class RulenameDuplicateException(Exception):
-
     pass
 
 
 class ControllerApiException(Exception):
-
     pass
 
 
 class VarsKeyMissingException(Exception):
-
     pass
 
 
 class InvalidAssignmentException(Exception):
-
     pass
 
 
 class SelectattrOperatorException(Exception):
-
     pass
 
 
 class InvalidIdentifierException(Exception):
-
     pass
 
 
 class SelectOperatorException(Exception):
-
     pass
 
 
 class ConditionParsingException(Exception):
-
     pass
 
 
 class InvalidTypeException(Exception):
-
     pass
 
 
 class PlaybookStatusNotFoundException(Exception):
-
     pass
 
 
 class PlaybookNotFoundException(Exception):
-
     pass
 
 

@@ -71,7 +71,6 @@ async def start_source(
     queue: asyncio.Queue,
     shutdown_delay: float = 60.0,
 ) -> None:
-
     all_source_queues.append(queue)
     try:
         logger.info("load source")
@@ -189,7 +188,6 @@ async def run_rulesets(
     parsed_args: argparse.ArgumentParser = None,
     project_data_file: Optional[str] = None,
 ):
-
     logger.info("run_ruleset")
     rulesets_queue_plans = rule_generator.generate_rulesets(
         ruleset_queues, variables, inventory

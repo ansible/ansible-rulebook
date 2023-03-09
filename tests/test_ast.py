@@ -509,7 +509,6 @@ def test_null_type():
     ],
 )
 def test_generate_dict_ruleset(rulebook):
-
     os.chdir(HERE)
     with open(os.path.join("rules", rulebook)) as f:
         data = yaml.safe_load(f.read())

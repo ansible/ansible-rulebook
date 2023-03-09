@@ -24,7 +24,6 @@ import ansible_rulebook.condition_types as ct
 
 
 class EventSourceFilter(NamedTuple):
-
     filter_name: str
     filter_args: dict
 

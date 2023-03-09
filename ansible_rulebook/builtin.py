@@ -248,7 +248,6 @@ async def run_playbook(
     extra_vars: Optional[Dict] = None,
     **kwargs,
 ):
-
     logger.info("running Ansible playbook: %s", name)
     temp_dir, playbook_name = await pre_process_runner(
         event_log,
@@ -435,7 +434,6 @@ async def call_runner(
     verbosity: int = 0,
     json_mode: Optional[bool] = False,
 ):
-
     host_limit = ",".join(hosts)
     shutdown = False
 
@@ -503,7 +501,6 @@ async def call_runner(
 
 
 async def untar_project(output_dir, project_data_file):
-
     cmd = [tar, "zxvf", project_data_file]
     proc = await asyncio.create_subprocess_exec(
         *cmd,
@@ -534,7 +531,6 @@ async def pre_process_runner(
     extra_vars: Optional[Dict] = None,
     **kwargs,
 ):
-
     private_data_dir = tempfile.mkdtemp(prefix=action)
     logger.debug("private data dir %s", private_data_dir)
 
@@ -600,7 +596,6 @@ async def post_process_runner(
     set_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
 ):
-
     rc = int(_get_latest_artifact(private_data_dir, "rc"))
     status = _get_latest_artifact(private_data_dir, "status")
     logger.info("Playbook rc: %d, status: %s", rc, status)
@@ -662,7 +657,6 @@ async def run_job_template(
     delay: Optional[int] = 0,
     **kwargs,
 ):
-
     logger.info(
         "running job template: %s, organization: %s", name, organization
     )

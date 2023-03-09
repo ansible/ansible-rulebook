@@ -19,7 +19,6 @@ from watchdog.observers import Observer
 
 
 def main(queue, args):
-
     log_file_patterns = {
         os.path.abspath(log_file): patterns
         for log_file, patterns in args.get("log_file_patterns", {}).items()

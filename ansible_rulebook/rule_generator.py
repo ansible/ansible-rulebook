@@ -84,7 +84,6 @@ def generate_rulesets(
     variables: Dict,
     inventory: str,
 ) -> List[EngineRuleSetQueuePlan]:
-
     rulesets = []
 
     for ansible_ruleset, source_queue in ruleset_queues:

@@ -252,7 +252,6 @@ class RuleSetRunner:
         hosts: List,
         rules_engine_result,
     ) -> None:
-
         logger.info("call_action %s", action)
 
         result = None
