@@ -1,0 +1,53 @@
+---
+- name: Ruleset 1
+  hosts: all
+  sources:
+    - generic:
+        event_delay: 0.5
+        payload:
+          - action: "trigger_enabled_rule"
+          - action: "trigger_disabled_rule"
+
+  rules:
+    - name: Enabled rule
+      enabled: true
+      condition: event.action == "trigger_enabled_rule"
+      actions:
+        - post_event:
+            ruleset: Ruleset 2
+            event:
+              action: "post_to_disabled_rule"
+        - set_fact:
+            fact:
+              action: "fact_to_disabled_rule"
+        - debug:
+            msg: "Enabled rule fired correctly"
+
+    - name: Disabled rule (from source event)
+      enabled: false
+      condition: event.action == "trigger_disabled_rule"
+      action:
+        debug:
+          msg: "Disabled rule should not have fired"
+
+    - name: Disabled rule (from set_fact)
+      enabled: false
+      condition: event.action == "fact_to_disabled_rule"
+      action:
+        debug:
+          msg: "Disabled rule should not have fired"
+
+
+- name: Ruleset 2
+  hosts: all
+  sources:
+    - generic:
+        startup_delay: 30  # never start, only triggered by Ruleset 1
+
+  rules:
+    - name: Disabled rule (from post_event)
+      enabled: false
+      condition: event.action == "post_to_disabled_rule"
+      action:
+        debug:
+          msg: "Disabled rule should not have fired"

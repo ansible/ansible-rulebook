@@ -2,17 +2,17 @@
 # Changelog
 
 
-##  [Unreleased]
+##  [0.11.0] - 2023-03-08
 
 ### Added
 
-- Scheduled workflow and split long-run tests 
-- Ansible_eda top key in variables 
-- Temporal use cases and handle async responses from Drools 
-- Time constraints in rules schema 
+- Scheduled workflow and split long-run tests
+- Ansible_eda top key in variables
+- Temporal use cases and handle async responses from Drools
+- Time constraints in rules schema
 - group_by_attributes
 - Support multiple actions for a rule
-- Support for search/match/regex 
+- Support for search/match/regex
 - Support for graceful shutdown, timeout to allow actions to complete
 - Removed the echo command in favor of debug with msg
 - Support for null type in conditions
@@ -24,10 +24,10 @@
 - get_java_version, add compatibility with macs and tests for check_jvm
 - selectattr operator with negation using greater/less than operators
 - select operator and comparing ints and floats
-- preserve native types when doing jinja substitution
-- inventory argument to the CLI is optional
+- Preserve native types when doing jinja substitution
+- Inventory argument to the CLI is optional
 - select works with null
-- a race condition between threads in drools rule engine
+- A race condition between threads in drools rule engine
 
 ### Removed
 
