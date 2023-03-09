@@ -24,7 +24,6 @@ import yaml
 
 from ansible_rulebook import rules_parser as rules_parser
 from ansible_rulebook.job_template_runner import job_template_runner
-from ansible_rulebook.key import install_private_key
 
 logger = logging.getLogger(__name__)
 
@@ -40,14 +39,8 @@ async def request_workload(activation_id, websocket_address):
             inventory = None
             rulebook = None
             extra_vars = None
-            private_key = None
             project_data_fh, project_data_file = tempfile.mkstemp()
-            while (
-                inventory is None
-                or rulebook is None
-                or extra_vars is None
-                or private_key is None
-            ):
+            while inventory is None or rulebook is None or extra_vars is None:
                 msg = await websocket.recv()
                 data = json.loads(msg)
                 if data.get("type") == "ProjectData":
@@ -69,11 +62,6 @@ async def request_workload(activation_id, websocket_address):
                 if data.get("type") == "ExtraVars":
                     extra_vars = yaml.safe_load(
                         base64.b64decode(data.get("data"))
-                    )
-                if data.get("type") == "SSHPrivateKey":
-                    private_key = True
-                    await install_private_key(
-                        base64.b64decode(data.get("data")).decode()
                     )
                 if data.get("type") == "ControllerUrl":
                     job_template_runner.host = data.get("data")
