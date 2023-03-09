@@ -6,7 +6,7 @@ Events come from event sources. Event driven automation supports many event
 sources using a plugin system. Event source plugins can be stored locally but
 are preferably distributed via collections.
 
-`Ansible.eda <https://github.com/ansible/event-driven-ansible/blob/main/COLLECTION.md>`_
+`Ansible.eda <https://github.com/ansible/event-driven-ansible>`_
 is the collection that includes our initial set of event source plugins.
 These include:
 
