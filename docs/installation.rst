@@ -38,7 +38,7 @@ Installation via pip
 
 
 3. Install the ansible.eda collection which comes with various event source plugins and filters to get you started. Please refer to the instructions in the
-`collection repository <https://github.com/ansible/event-driven-ansible/blob/main/COLLECTION.md#install>`_.
+`collection repository <https://github.com/ansible/event-driven-ansible#install>`_.
 
 
 Installation examples
