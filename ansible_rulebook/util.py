@@ -27,6 +27,7 @@ import ansible_runner
 import jinja2
 from jinja2.nativetypes import NativeTemplate
 from packaging import version
+from packaging.version import InvalidVersion
 
 logger = logging.getLogger(__name__)
 
@@ -187,10 +188,17 @@ def check_jvm():
         sys.exit(1)
 
     java_version = get_java_version()
-    if version.parse(java_version) < version.parse("17"):
+    try:
+        if version.parse(java_version) < version.parse("17"):
+            print(
+                "The minimum supported Java version is 17. "
+                f"Found version: {java_version}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+    except InvalidVersion as exinfo:
         print(
-            "The minimum supported Java version is 17. "
-            f"Found version: {java_version}",
+            exinfo,
             file=sys.stderr,
         )
         sys.exit(1)
