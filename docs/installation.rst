@@ -9,6 +9,7 @@ Requirements
 ------------
 
 * Python >= 3.9
+* tar
 * Python 3 pip
 
 * Java development kit >= 17

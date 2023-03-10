@@ -42,10 +42,11 @@ from .exception import (
     PlaybookNotFoundException,
     PlaybookStatusNotFoundException,
     ShutdownException,
+    UntarFailedException,
 )
 from .job_template_runner import job_template_runner
 from .messages import Shutdown
-from .util import get_horizontal_rule, run_at
+from .util import get_horizontal_rule, run_at, untar
 
 logger = logging.getLogger(__name__)
 
@@ -573,24 +574,6 @@ async def call_runner(
             await asyncio.gather(*tasks)
 
 
-async def untar_project(output_dir, project_data_file):
-
-    cmd = [tar, "zxvf", project_data_file]
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        cwd=output_dir,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-
-    stdout, stderr = await proc.communicate()
-
-    if stdout:
-        logger.debug(stdout.decode())
-    if stderr:
-        logger.debug(stderr.decode())
-
-
 async def pre_process_runner(
     event_log,
     inventory: str,
@@ -630,7 +613,10 @@ async def pre_process_runner(
     logger.debug("project_data_file: %s", project_data_file)
     if project_data_file:
         if os.path.exists(project_data_file):
-            await untar_project(project_dir, project_data_file)
+            rc = await untar(project_data_file, project_dir)
+            if rc != 0:
+                raise UntarFailedException("Untar of project file failed")
+
             return (private_data_dir, playbook_name)
 
     if check_files:

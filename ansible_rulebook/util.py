@@ -254,3 +254,40 @@ def _builtin_filter_path(name: str) -> Tuple[bool, str]:
     dirname = os.path.dirname(os.path.realpath(__file__))
     path = os.path.join(dirname, "event_filter", filter_name + ".py")
     return os.path.exists(path), path
+
+
+async def untar(filename: str, output_dir: str) -> int:
+    tar = shutil.which("tar")
+    if not tar:
+        logger.error("tar package not installed")
+        raise FileNotFoundError("tar")
+
+    cmd = [
+        tar,
+        "zxvf",
+        os.path.abspath(filename),
+        "--directory",
+        os.path.abspath(output_dir),
+    ]
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+
+    stdout, stderr = await proc.communicate()
+
+    if stdout:
+        logger.debug(stdout.decode())
+
+    if proc.returncode != 0:
+        if stderr:
+            logger.error(stderr.decode())
+        else:
+            logger.error(
+                "Could not untar file %s exit code %d",
+                filename,
+                proc.returncode,
+            )
+
+    return proc.returncode

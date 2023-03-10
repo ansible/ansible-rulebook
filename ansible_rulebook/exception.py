@@ -146,3 +146,8 @@ class WebSocketExchangeException(Exception):
 class UnsupportedActionException(Exception):
 
     pass
+
+
+class UntarFailedException(Exception):
+
+    pass
