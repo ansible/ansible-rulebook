@@ -101,3 +101,23 @@ class InventoryNeededException(Exception):
 class RulebookNotFoundException(Exception):
 
     pass
+
+
+class SourcePluginNotFoundException(Exception):
+
+    pass
+
+
+class SourceFilterNotFoundException(Exception):
+
+    pass
+
+
+class SourcePluginMainMissingException(Exception):
+
+    pass
+
+
+class SourcePluginNotAsyncioCompatibleException(Exception):
+
+    pass
