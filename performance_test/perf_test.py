@@ -31,6 +31,7 @@ import logging
 import subprocess
 import sys
 import time
+import psutil
 
 from docopt import docopt
 
@@ -49,19 +50,27 @@ def main(args=None):
         logging.basicConfig(level=logging.WARNING)
 
     writer = csv.DictWriter(
-        sys.stdout, fieldnames=["cmd", "name", "type", "n", "time"]
+        sys.stdout, fieldnames=["cmd", "name", "type", "n", "time", "cpu_percent", "memory_usage"]
     )
     if not parsed_args["--no-header"]:
         writer.writeheader()
     if parsed_args["--only-header"]:
         return
+    initial_cpu = psutil.cpu_percent()
     start = time.time()
+    memory_usage = [0]
     try:
-        subprocess.check_output(parsed_args["<cmd>"], shell=True)
+        p = subprocess.Popen(parsed_args["<cmd>"], shell=True)
+        process = psutil.Process(p.pid)
+        while p.poll() is None:
+            memory_usage.append(process.memory_info().rss)
+            time.sleep(0.1)
+        p.wait()
     except BaseException:
         print(parsed_args["<cmd>"])
         raise
     end = time.time()
+    cpu_percent = psutil.cpu_percent()
     writer.writerow(
         dict(
             cmd=parsed_args["<cmd>"],
@@ -69,6 +78,8 @@ def main(args=None):
             type=parsed_args["<type>"],
             n=parsed_args["<n>"],
             time=end - start,
+            cpu_percent=cpu_percent,
+            memory_usage=max(memory_usage)
         )
     )
 
