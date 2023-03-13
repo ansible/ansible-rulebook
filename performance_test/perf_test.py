@@ -79,6 +79,8 @@ def main(args=None):
                 memory_usage.append(process.memory_info().rss)
             except psutil.NoSuchProcess:
                 break
+            except psutil.ZombieProcess:
+                break
             time.sleep(0.1)
         p.wait()
     except BaseException:
