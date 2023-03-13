@@ -5,5 +5,5 @@
   tasks:
     - name:
       debug:
-        msg: 'Hello event {{event}}'
+        msg: 'Hello event {{ansible_eda.event}}'
 ...
