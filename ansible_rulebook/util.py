@@ -25,9 +25,9 @@ from typing import Any, Dict, List, Union
 
 import ansible_runner
 import jinja2
-import yaml
 from jinja2.nativetypes import NativeTemplate
 from packaging import version
+from packaging.version import InvalidVersion
 
 logger = logging.getLogger(__name__)
 
@@ -76,11 +76,11 @@ def substitute_variables(
 def load_inventory(inventory_file: str) -> Any:
 
     with open(inventory_file) as f:
-        inventory_data = yaml.safe_load(f.read())
+        inventory_data = f.read()
     return inventory_data
 
 
-def collect_ansible_facts(inventory: Dict) -> List[Dict]:
+def collect_ansible_facts(inventory: str) -> List[Dict]:
     hosts_facts = []
     with tempfile.TemporaryDirectory(
         prefix="gather_facts"
@@ -89,7 +89,7 @@ def collect_ansible_facts(inventory: Dict) -> List[Dict]:
         with open(
             os.path.join(private_data_dir, "inventory", "hosts"), "w"
         ) as f:
-            f.write(yaml.dump(inventory))
+            f.write(inventory)
 
         r = ansible_runner.run(
             private_data_dir=private_data_dir,
@@ -188,10 +188,17 @@ def check_jvm():
         sys.exit(1)
 
     java_version = get_java_version()
-    if version.parse(java_version) < version.parse("17"):
+    try:
+        if version.parse(java_version) < version.parse("17"):
+            print(
+                "The minimum supported Java version is 17. "
+                f"Found version: {java_version}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+    except InvalidVersion as exinfo:
         print(
-            "The minimum supported Java version is 17. "
-            f"Found version: {java_version}",
+            exinfo,
             file=sys.stderr,
         )
         sys.exit(1)

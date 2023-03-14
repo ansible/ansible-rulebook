@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from ansible_rulebook.cli import get_version
+from ansible_rulebook.cli import get_version, main
 from ansible_rulebook.util import check_jvm
 
 
@@ -20,14 +20,13 @@ def test_get_version():
     assert pattern.match(output)
 
 
-def test_check_jvm_bad_java_home():
-    @patch("ansible_rulebook.util.get_java_home")
-    def get_java_home(mock_response):
-        mock_response.return_value = None
+@patch("ansible_rulebook.util.get_java_home")
+def test_check_jvm_bad_java_home(mock_response):
+    mock_response.return_value = None
 
-        with pytest.raises(SystemExit) as excinfo:
-            check_jvm()
-            assert excinfo.value.code == 1
+    with pytest.raises(SystemExit) as excinfo:
+        check_jvm()
+        assert excinfo.value.code == 1
 
 
 @pytest.mark.parametrize(
@@ -40,13 +39,13 @@ def test_check_jvm_bad_java_home():
         pytest.param("Not found", id="not_found"),
     ],
 )
-def test_check_jvm_bad_version(mocked_version):
-    @patch("ansible_rulebook.util.get_java_version")
-    def get_java_version(mock_response):
-        mock_response.return_value = mocked_version
-        with pytest.raises(SystemExit) as excinfo:
-            check_jvm()
-            assert excinfo.value.code == 1
+@patch("ansible_rulebook.util.get_java_version")
+def test_check_jvm_bad_version(mock, mocked_version):
+    mock.return_value = mocked_version
+
+    with pytest.raises(SystemExit) as excinfo:
+        check_jvm()
+        assert excinfo.value.code == 1
 
 
 @pytest.mark.parametrize(
@@ -59,9 +58,45 @@ def test_check_jvm_bad_version(mocked_version):
         pytest.param("17.1.5.3", id="semantic_extended"),
     ],
 )
-def test_check_jvm_java_version(mocked_version):
-    @patch("ansible_rulebook.util.get_java_version")
-    def get_java_version(mock_response):
-        mock_response.return_value = mocked_version
-        result = check_jvm()
-        assert result is None
+@patch("ansible_rulebook.util.get_java_version")
+def test_check_jvm_java_version(mock, mocked_version):
+    mock.return_value = mocked_version
+    result = check_jvm()
+    assert result is None
+
+
+def test_main_no_args():
+    with pytest.raises(SystemExit) as excinfo:
+        main([])
+        assert excinfo.value.code == 1
+
+
+all_args = [
+    "-r",
+    "rulebook.yml",
+    "-vv",
+    "--id",
+    "12345",
+    "--controller-url",
+    "https://www.example.com",
+    "--controller-token",
+    "abc",
+    "--controller-ssl-verify",
+    "no",
+]
+test_data = [
+    (KeyboardInterrupt("Bail"), 0, ["-r", "rulebook.yml", "-v"], True),
+    (Exception("Kaboom"), 1, ["-r", "rulebook.yml"], True),
+    (None, 1, ["-r", "rulebook.yml", "--controller-url", "abc"], False),
+    (None, 0, all_args, True),
+]
+
+
+@pytest.mark.parametrize("ex, expected_rc, args, called", test_data)
+@patch("ansible_rulebook.cli.app.run")
+def test_main_raise_exception(mock, ex, expected_rc, args, called):
+    if ex:
+        mock.side_effect = ex
+    rc = main(args)
+    assert mock.called == called
+    assert rc == expected_rc

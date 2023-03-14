@@ -63,7 +63,7 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
             int(parsed_args.id), parsed_args.websocket_address
         )
     else:
-        inventory = {}
+        inventory = ""
         variables = load_vars(parsed_args)
         rulesets = load_rulebook(parsed_args, variables)
         if parsed_args.inventory:
@@ -145,10 +145,7 @@ def load_vars(parsed_args) -> Dict[str, str]:
 def load_rulebook(
     parsed_args: argparse.ArgumentParser, variables: Optional[Dict] = None
 ) -> List[RuleSet]:
-    if not parsed_args.rulebook:
-        logger.debug("Loading no rules")
-        return []
-    elif os.path.exists(parsed_args.rulebook):
+    if os.path.exists(parsed_args.rulebook):
         logger.debug(
             "Loading rules from the file system %s", parsed_args.rulebook
         )

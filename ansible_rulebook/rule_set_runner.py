@@ -95,14 +95,21 @@ class RuleSetRunner:
         if not self.source_loop_task.done():
             self.source_loop_task.cancel()
 
+        if (
+            self.active_actions
+            and self.shutdown
+            and self.shutdown.kind == "graceful"
+        ):
+            logger.info("Waiting for active actions to end")
+            await asyncio.wait(
+                self.active_actions,
+                return_when=asyncio.FIRST_EXCEPTION,
+                timeout=self.shutdown.delay,
+            )
+
         for task in self.active_actions:
             logger.info("Cancelling active task %s", task.get_name())
             task.cancel()
-
-        if self.active_actions:
-            await asyncio.wait(
-                self.active_actions, return_when=asyncio.FIRST_EXCEPTION
-            )
         if self.shutdown:
             await self.event_log.put(
                 dict(
@@ -183,6 +190,22 @@ class RuleSetRunner:
             logger.debug("Source Task Cancelled for ruleset %s", self.name)
             raise
 
+    def _handle_action_completion(self, task):
+        self.active_actions.discard(task)
+        logger.info(
+            "Task %s finished, active actions %d",
+            task.get_name(),
+            len(self.active_actions),
+        )
+        if (
+            self.ruleset_queue_plan.plan.queue.empty()
+            and self.shutdown
+            and len(self.active_actions) == 0
+        ):
+            logger.info("All actions done")
+            if not self.action_loop_task.done():
+                self.action_loop_task.cancel()
+
     async def _drain_actionplan_queue(self):
         logger.info("Waiting for actions on events from %s", self.name)
         try:
@@ -191,8 +214,11 @@ class RuleSetRunner:
                 action_item = cast(ActionContext, queue_item)
                 for action in action_item.actions:
                     task_name = (
-                        f"action::{self.ruleset_queue_plan.ruleset.name}"
+                        f"action::{action.action}::"
+                        f"{self.ruleset_queue_plan.ruleset.name}::"
+                        f"{action_item.rule}"
                     )
+                    logger.debug("Creating action task %s", task_name)
                     task = asyncio.create_task(
                         self._call_action(
                             action_item.ruleset,
@@ -207,14 +233,8 @@ class RuleSetRunner:
                         name=task_name,
                     )
                     self.active_actions.add(task)
-                    task.add_done_callback(self.active_actions.discard)
-                    await task
+                    task.add_done_callback(self._handle_action_completion)
 
-                if (
-                    self.ruleset_queue_plan.plan.queue.empty()
-                    and self.shutdown
-                ):
-                    break
         except asyncio.CancelledError:
             logger.info("Action Plan Task Cancelled for ruleset %s", self.name)
             raise
@@ -228,7 +248,7 @@ class RuleSetRunner:
         action: str,
         action_args: Dict,
         variables: Dict,
-        inventory: Dict,
+        inventory: str,
         hosts: List,
         rules_engine_result,
     ) -> None:

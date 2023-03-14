@@ -1,5 +1,5 @@
 ---
-exclude: '^docs/'
+exclude: "^docs/"
 repos:
   - repo: https://github.com/psf/black
     rev: 22.6.0
@@ -27,3 +27,8 @@ repos:
         additional_dependencies:
           - ajv-cli
         entry: ajv compile -s
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: pretty-format-json
+        language_version: python3

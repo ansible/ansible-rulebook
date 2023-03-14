@@ -21,8 +21,7 @@ Installation via pip
 --------------------
 
 
-1. Ensure the `JAVA_HOME` environment variable is set if you have multiple Java installations.
-On Fedora-like systems it should be::
+1. Ensure the `JAVA_HOME` environment variable is set if you have multiple Java installations. On Fedora-like systems it should be::
 
     JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 
@@ -35,10 +34,11 @@ On Fedora-like systems it should be::
 
     ansible-rulebook relies on the `jpy` Python package to communicate with the Java runtime. This package provide wheels for the most common platforms,
     `but not for all <https://github.com/jpy-consortium/jpy#automated-builds>`_. If you are using a platform that is not supported by `jpy` wheels, you will need to compile it by yourself.
-    Look at the `Compiling jpy section <#compiling-jpy>`_ for more information.
+    Refer to the `Compiling jpy section <#compiling-jpy>`_ for more information.
 
 
-3. Install the `optional ansible collection <https://github.com/ansible/event-driven-ansible/blob/main/COLLECTION.md#install>`_ for EDA
+3. Install the ansible.eda collection which comes with various event source plugins and filters to get you started. Please refer to the instructions in the
+`collection repository <https://github.com/ansible/event-driven-ansible#install>`_.
 
 
 Installation examples
