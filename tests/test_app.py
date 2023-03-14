@@ -45,7 +45,14 @@ def test_load_vars():
     os.chdir(HERE)
     parser = get_parser()
     cmdline_args = parser.parse_args(
-        ["-e", "./data/test_vars.yml", "-E", "TEST_ABC,TEST_XYZ"]
+        [
+            "-r",
+            "abc.yml",
+            "-e",
+            "./data/test_vars.yml",
+            "-E",
+            "TEST_ABC,TEST_XYZ",
+        ]
     )
     try:
         os.environ["TEST_ABC"] = "Barney"
@@ -63,7 +70,9 @@ def test_load_vars():
 
 def test_load_vars_missing_key():
     parser = get_parser()
-    cmdline_args = parser.parse_args(["-E", "TEST_ABC,TEST_XYZ"])
+    cmdline_args = parser.parse_args(
+        ["-r", "abc.yml", "-E", "TEST_ABC,TEST_XYZ"]
+    )
     with pytest.raises(KeyError):
         load_vars(cmdline_args)
 
@@ -87,12 +96,6 @@ def test_load_rulebook_via_collection():
     assert ruleset.name == "Hello Events"
     assert ruleset.rules[0].name == "Say Hello"
     assert ruleset.rules[0].actions[0].action == "run_playbook"
-
-
-def test_load_rulebook_empty():
-    parser = get_parser()
-    cmdline_args = parser.parse_args(["-E", "TEST"])
-    assert (len(load_rulebook(cmdline_args))) == 0
 
 
 def test_load_rulebook_missing():
