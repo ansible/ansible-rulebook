@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import asyncio
+import gc
 import logging
 from datetime import datetime
 from pprint import PrettyPrinter, pformat
@@ -62,6 +63,7 @@ class RuleSetRunner:
         self.shutdown = None
         self.active_actions = set()
         self.broadcast_method = broadcast_method
+        self.event_counter = 0
 
     async def run_ruleset(self):
         tasks = []
@@ -188,8 +190,17 @@ class RuleSetRunner:
                     logger.debug("MessageObservedException: %s", data)
                 except MessageNotHandledException:
                     logger.debug("MessageNotHandledException: %s", data)
+                except BaseException as e:
+                    print(e)
                 finally:
                     logger.debug(lang.get_pending_events(self.name))
+                    if self.event_counter > 100:
+                        self.event_counter = 0
+                        gc.collect()
+                    else:
+                        self.event_counter += 1
+                    while self.ruleset_queue_plan.plan.queue.qsize() > 10:
+                        await asyncio.sleep(0)
         except asyncio.CancelledError:
             logger.debug("Source Task Cancelled for ruleset %s", self.name)
             raise
@@ -228,6 +239,9 @@ class RuleSetRunner:
             logger.debug(
                 "Action Plan Task Cancelled for ruleset %s", self.name
             )
+            raise
+        except BaseException as e:
+            print(e)
             raise
         finally:
             await self._cleanup()
@@ -371,13 +385,16 @@ class RuleSetRunner:
                         "A shutdown is already in progress, ignoring this one"
                     )
                 else:
-                    self.broadcast_method(e.shutdown)
+                    await self.broadcast_method(e.shutdown)
             except asyncio.CancelledError:
                 logger.debug("Action task caught Cancelled error")
                 raise
             except Exception as e:
                 logger.exception("Error calling %s", action)
                 result = dict(error=e)
+            except BaseException as e:
+                print(e)
+                raise
         else:
             logger.error("Action %s not supported", action)
             result = dict(error=f"Action {action} not supported")

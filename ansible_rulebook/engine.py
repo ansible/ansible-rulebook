@@ -57,9 +57,9 @@ logger = logging.getLogger(__name__)
 all_source_queues = []
 
 
-def broadcast(shutdown: Shutdown):
+async def broadcast(shutdown: Shutdown):
     for queue in all_source_queues:
-        queue.put_nowait(shutdown)
+        await queue.put(shutdown)
 
 
 class FilteredQueue:
@@ -195,7 +195,7 @@ async def start_source(
         logger.error(shutdown_msg)
         raise
     finally:
-        broadcast(
+        await broadcast(
             Shutdown(
                 message=shutdown_msg,
                 source_plugin=source.source_name,
