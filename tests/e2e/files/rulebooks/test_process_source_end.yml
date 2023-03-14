@@ -1,0 +1,42 @@
+---
+- name: Ruleset 1
+  hosts: all
+  sources:
+    - generic:
+        event_delay: 0.3
+        payload:
+          - action: "long_running_playbook"
+          - action: "send_msg"
+          - action: "send_msg"
+          - action: "send_msg"
+
+  rules:
+    - name: Start long-running playbook
+      condition: event.action == "long_running_playbook"
+      actions:
+        - run_playbook:
+            name: ./playbooks/long_running.yml
+            extra_vars:
+              pause_time: 3
+
+    - name: Send message in parallel
+      condition: event.action == "send_msg"
+      action:
+        debug:
+          msg: "Parallel action triggered successfully"
+
+
+- name: Ruleset 2
+  hosts: all
+  sources:
+    - generic:
+        loop_count: -1  # source is in an infinite loop
+        loop_delay: 1
+        payload:
+          - action: "infinite_loop"
+
+  rules:
+    - name: Trigger loop
+      condition: event.action == "infinite_loop"
+      action:
+        none:
