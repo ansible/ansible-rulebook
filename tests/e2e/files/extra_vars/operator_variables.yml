@@ -46,7 +46,7 @@ pluto_moons: 5
 eris_moon: "dysnomia"
 total_moons:
   - 50
-  - 62
+  - 6.2e+1
   - 79.99
 best_moons:
   - "deimos"

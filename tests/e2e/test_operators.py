@@ -773,3 +773,15 @@ def test_selectattr_operator():
         assert (
             "Output for testcase #10" in result.stdout
         ), "testcase #10 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #11" in line
+                ]
+            )
+            == 1
+        ), "testcase #11 failed"
