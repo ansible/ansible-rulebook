@@ -35,6 +35,13 @@ from ansible_rulebook.rule_set_runner import RuleSetRunner
 from ansible_rulebook.rule_types import EventSource, RuleSetQueue
 from ansible_rulebook.util import collect_ansible_facts, substitute_variables
 
+from .exception import (
+    SourceFilterNotFoundException,
+    SourcePluginMainMissingException,
+    SourcePluginNotAsyncioCompatibleException,
+    SourcePluginNotFoundException,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -90,7 +97,7 @@ async def start_source(
                 find_source(*split_collection_name(source.source_name))
             )
         else:
-            raise Exception(
+            raise SourcePluginNotFoundException(
                 f"Could not find source plugin for {source.source_name}"
             )
 
@@ -118,7 +125,7 @@ async def start_source(
                     )
                 )
             else:
-                raise Exception(
+                raise SourceFilterNotFoundException(
                     f"Could not find source filter plugin "
                     f"for {source_filter.filter_name}"
                 )
@@ -136,15 +143,15 @@ async def start_source(
         try:
             entrypoint = module["main"]
         except KeyError:
-            # FIXME(cutwater): Replace with custom exception class
-            raise Exception(
+            raise SourcePluginMainMissingException(
                 "Entrypoint missing. Source module must have function 'main'."
             )
 
         # NOTE(cutwater): This check may be unnecessary.
         if not asyncio.iscoroutinefunction(entrypoint):
-            # FIXME(cutwater): Replace with custom exception class
-            raise Exception("Entrypoint is not a coroutine function.")
+            raise SourcePluginNotAsyncioCompatibleException(
+                "Entrypoint is not a coroutine function."
+            )
 
         await entrypoint(fqueue, args)
         shutdown_msg = (

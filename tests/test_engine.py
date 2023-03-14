@@ -21,7 +21,13 @@ import yaml
 from jsonschema.exceptions import ValidationError
 
 from ansible_rulebook.engine import run_rulesets, start_source
-from ansible_rulebook.exception import RulenameDuplicateException
+from ansible_rulebook.exception import (
+    RulenameDuplicateException,
+    SourceFilterNotFoundException,
+    SourcePluginMainMissingException,
+    SourcePluginNotAsyncioCompatibleException,
+    SourcePluginNotFoundException,
+)
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.rule_types import EventSource, EventSourceFilter
 from ansible_rulebook.rules_parser import parse_rule_sets
@@ -100,20 +106,106 @@ def validate_events(event_log, **kwargs):
         assert kwargs["action_events"] == action_events
 
 
+test_data = [
+    ("range", "noop", "Source range initiated shutdown at"),
+    (
+        "ansible.eda.range",
+        "ansible.eda.noop",
+        "Source ansible.eda.range initiated shutdown at",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "source_name,filter_name, shutdown_message", test_data
+)
 @pytest.mark.asyncio
-async def test_start_source():
+async def test_start_source(source_name, filter_name, shutdown_message):
     os.chdir(HERE)
 
     queue = asyncio.Queue()
     await start_source(
         EventSource(
-            "range", "range", dict(limit=1), [EventSourceFilter("noop", {})]
+            source_name,
+            source_name,
+            dict(limit=1),
+            [EventSourceFilter(filter_name, {})],
         ),
         ["sources"],
         dict(limit=1),
         queue,
     )
     assert queue.get_nowait() == dict(i=0)
+    last = await queue.get()
+    assert shutdown_message in last.message
+
+
+test_data = [
+    ("missing", "noop", "sources", SourcePluginNotFoundException),
+    ("range", "missing", "sources", SourceFilterNotFoundException),
+    ("bad_source", "noop", "data", SourcePluginMainMissingException),
+    ("not_asyncio", "noop", "data", SourcePluginNotAsyncioCompatibleException),
+]
+
+
+@pytest.mark.parametrize("source_name,filter_name,source_dir,ex", test_data)
+@pytest.mark.asyncio
+async def test_start_source_exceptions(
+    source_name, filter_name, source_dir, ex
+):
+    os.chdir(HERE)
+
+    queue = asyncio.Queue()
+    with pytest.raises(ex):
+        await start_source(
+            EventSource(
+                source_name,
+                source_name,
+                dict(limit=1),
+                [EventSourceFilter(filter_name, {})],
+            ),
+            [source_dir],
+            dict(limit=1),
+            queue,
+        )
+
+
+source_args = dict(
+    loop_count=-1, event_delay=1, startup_delay=30, payload=dict(i=1)
+)
+test_data = [
+    ("generic", "noop", "sources", source_args),
+]
+
+
+@pytest.mark.parametrize("source_name,filter_name,source_dir,args", test_data)
+@pytest.mark.asyncio
+async def test_start_source_with_args(
+    source_name, filter_name, source_dir, args
+):
+    os.chdir(HERE)
+
+    queue = asyncio.Queue()
+    task = asyncio.create_task(
+        start_source(
+            EventSource(
+                source_name,
+                source_name,
+                args,
+                [EventSourceFilter(filter_name, {})],
+            ),
+            [source_dir],
+            args,
+            queue,
+        )
+    )
+    await asyncio.sleep(0.02)
+    task.cancel()
+    last = await queue.get()
+    assert (
+        f"Source {source_name} task cancelled, initiated shutdown at"
+        in last.message
+    )
 
 
 @pytest.mark.asyncio

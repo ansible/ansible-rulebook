@@ -51,6 +51,7 @@ def get_parser() -> argparse.ArgumentParser:
         "-r",
         "--rulebook",
         help="The rulebook file or rulebook from a collection",
+        required=True,
     )
     parser.add_argument(
         "-e",
@@ -172,10 +173,6 @@ def setup_logging(args: argparse.Namespace) -> None:
 def main(args: List[str] = None) -> int:
     parser = get_parser()
     args = parser.parse_args(args)
-
-    if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(0)
 
     if args.controller_url:
         if args.controller_token:
