@@ -28,7 +28,8 @@
 - Inventory argument to the CLI is optional
 - select works with null
 - a race condition between threads in drools rule engine
-- running actions in parallel
+- actions in different rules to run in parallel
+- actions within a single rule to execute sequentially
 
 ### Removed
 
