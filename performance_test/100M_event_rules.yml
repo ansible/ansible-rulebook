@@ -1,0 +1,12 @@
+---
+- name: "100M event rules"
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 100000000
+  rules:
+    - name: r1
+      condition: event.i is defined
+      action:
+        none:
