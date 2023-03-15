@@ -17,6 +17,7 @@ import logging
 from pyparsing import (
     Combine,
     Group,
+    Keyword,
     Literal,
     OpAssoc,
     Optional,
@@ -24,7 +25,9 @@ from pyparsing import (
     ParserElement,
     QuotedString,
     Suppress,
+    Word,
     ZeroOrMore,
+    alphanums,
     delimitedList,
     infix_notation,
     one_of,
@@ -90,8 +93,15 @@ number_t = pyparsing_common.number.copy().add_parse_action(
 )
 
 ident = pyparsing_common.identifier
+valid_prefix = (
+    Keyword("events")
+    | Keyword("event")
+    | Keyword("facts")
+    | Keyword("vars")
+    | Keyword("fact")
+)
 varname = (
-    Combine(ident + ZeroOrMore("." + ident))
+    Combine(valid_prefix + ZeroOrMore("." + ident))
     .copy()
     .add_parse_action(lambda toks: Identifier(toks[0]))
 )
@@ -112,31 +122,35 @@ string2 = (
     QuotedString('"').copy().add_parse_action(lambda toks: String(toks[0]))
 )
 
+plain_string = (
+    Word(alphanums).copy().add_parse_action(lambda toks: String(toks[0]))
+)
+
 allowed_values = number_t | boolean | null_t | string1 | string2
 key_value = ident + Suppress("=") + allowed_values
 string_search_t = (
     one_of("regex match search")
     + Suppress("(")
-    + Group(Optional(delimitedList(string1 | string2 | key_value)))
+    + Group(Optional(delimitedList(string1 | string2 | varname | key_value)))
     + Suppress(")")
 )
 
 delim_value = Group(
-    delimitedList(number_t | null_t | boolean | ident | string1 | string2)
+    delimitedList(number_t | null_t | boolean | varname | string1 | string2)
 )
 list_values = Suppress("[") + delim_value + Suppress("]")
 
 selectattr_t = (
     Literal("selectattr")
     + Suppress("(")
-    + Group(delimitedList(allowed_values | ident | list_values))
+    + Group(delimitedList(allowed_values | list_values | varname))
     + Suppress(")")
 )
 
 select_t = (
     Literal("select")
     + Suppress("(")
-    + Group(delimitedList(allowed_values | ident | list_values))
+    + Group(delimitedList(allowed_values | list_values | varname))
     + Suppress(")")
 )
 
@@ -174,6 +188,7 @@ def SearchTypeFactory(kind, tokens):
 
 def OperatorExpressionFactory(tokens):
     return_value = None
+    logger.debug(tokens)
     while tokens:
         if return_value is None:
             if (tokens[1] == "is" or tokens[1] == "is not") and (
@@ -218,6 +233,7 @@ all_terms = (
     | null_t
     | boolean
     | varname
+    | plain_string
     | string1
     | string2
 )
