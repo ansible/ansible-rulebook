@@ -463,6 +463,47 @@ def test_parse_condition():
         parse_condition('event.is_true is select("==", False)'), {}
     )
 
+    assert {
+        "SelectExpression": {
+            "lhs": {"Event": "my_list"},
+            "rhs": {
+                "operator": {"String": "=="},
+                "value": {"Event": "my_int"},
+            },
+        }
+    } == visit_condition(
+        parse_condition("event.my_list is select('==', event.my_int)"), {}
+    )
+
+    assert {
+        "SelectExpression": {
+            "lhs": {"Event": "my_list"},
+            "rhs": {
+                "operator": {"String": "=="},
+                "value": {"Integer": 42},
+            },
+        }
+    } == visit_condition(
+        parse_condition("event.my_list is select('==', vars.my_int)"),
+        dict(my_int=42),
+    )
+
+    assert {
+        "SelectAttrExpression": {
+            "lhs": {"Event": "persons"},
+            "rhs": {
+                "key": {"String": "person.age"},
+                "operator": {"String": ">"},
+                "value": {"Integer": 42},
+            },
+        }
+    } == visit_condition(
+        parse_condition(
+            "event.persons is selectattr('person.age', '>', vars.minimum_age)"
+        ),
+        dict(minimum_age=42),
+    )
+
 
 def test_invalid_select_operator():
     with pytest.raises(SelectOperatorException):

@@ -157,7 +157,7 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
                 variables,
             )
         elif parsed_condition.operator == "is":
-            if isinstance(parsed_condition.right, Identifier):
+            if isinstance(parsed_condition.right, String):
                 if parsed_condition.right.value == "defined":
                     return {
                         "IsDefinedExpression": visit_condition(
@@ -177,7 +177,7 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
                     "SelectExpression", parsed_condition, variables
                 )
         elif parsed_condition.operator == "is not":
-            if isinstance(parsed_condition.right, Identifier):
+            if isinstance(parsed_condition.right, String):
                 if parsed_condition.right.value == "defined":
                     return {
                         "IsNotDefinedExpression": visit_condition(

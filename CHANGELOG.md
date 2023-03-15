@@ -18,6 +18,7 @@
 - Support for null type in conditions
 - Support Jinja2 substitution in rule names
 - Support booleans in lists, which can contain mixed data types
+- Support for identifiers in select and selectattr
 
 ### Fixed
 

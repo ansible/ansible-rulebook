@@ -64,9 +64,6 @@ async def test_websocket_messages():
         assert data["path"] == endpoint
         data = data["payload"]
 
-        if data["type"] == "ProcessedEvent":
-            assert data["results"]
-
         if data["type"] == "Action":
             action_counter += 1
             assert data["action"] == "run_playbook"

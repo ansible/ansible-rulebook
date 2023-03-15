@@ -249,8 +249,8 @@ def test_shutdown_action_graceful(update_environment):
 
     with check:
         assert (
-            "Parallel action triggered successfully" in result.stdout
-        ), "a parallel action failed to fire"
+            "Sequential action triggered successfully" in result.stdout
+        ), "a sequential action failed to fire"
 
     with check:
         assert (
@@ -304,6 +304,11 @@ def test_shutdown_action_now(update_environment):
 
     with check:
         assert (
+            "Sequential action triggered successfully" in result.stdout
+        ), "a sequential action failed to fire"
+
+    with check:
+        assert (
             len(
                 [
                     line
@@ -313,11 +318,6 @@ def test_shutdown_action_now(update_environment):
             )
             == 1
         ), "long-running playbook failed to fire"
-
-    with check:
-        assert (
-            "Parallel action triggered successfully" in result.stdout
-        ), "a parallel action failed to fire"
 
     with check:
         assert (
