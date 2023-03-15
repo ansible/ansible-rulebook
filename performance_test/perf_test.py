@@ -17,7 +17,7 @@
 
 """
 Usage:
-    perf_test [options] <cmd> <name> <type> <n>
+    perf_test [options] <csv> <cmd> <name> <type> <n>
 
 Options:
     -h, --help        Show this page
@@ -49,57 +49,60 @@ def main(args=None):
     else:
         logging.basicConfig(level=logging.WARNING)
 
-    writer = csv.DictWriter(
-        sys.stdout,
-        fieldnames=[
-            "cmd",
-            "name",
-            "type",
-            "n",
-            "time",
-            "cpu_percent",
-            "memory_usage",
-        ],
-    )
-    if not parsed_args["--no-header"]:
-        writer.writeheader()
-    if parsed_args["--only-header"]:
-        return
-    # Start the cpu measurement and ignore the current value.
-    _ = psutil.cpu_percent()
-    start = time.time()
-    # Take memory usage samples while the process is running and take the max
-    memory_usage = [0]
-    try:
-        p = subprocess.Popen(parsed_args["<cmd>"], shell=True)
-        process = psutil.Process(p.pid)
-        while p.poll() is None:
-            # Collect memory samples of RSS usage every 0.1 seconds
-            try:
-                memory_usage.append(process.memory_info().rss)
-            except psutil.NoSuchProcess:
-                break
-            except psutil.ZombieProcess:
-                break
-            time.sleep(0.1)
-        p.wait()
-    except BaseException:
-        print(parsed_args["<cmd>"])
-        raise
-    end = time.time()
-    # Record the CPU usage as a percent since the last cpu_percent call.
-    cpu_percent = psutil.cpu_percent()
-    writer.writerow(
-        dict(
-            cmd=parsed_args["<cmd>"],
-            name=parsed_args["<name>"],
-            type=parsed_args["<type>"],
-            n=parsed_args["<n>"],
-            time=end - start,
-            cpu_percent=cpu_percent,
-            memory_usage=max(memory_usage),
+    with open(parsed_args["<csv>"], "a") as f:
+
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "cmd",
+                "name",
+                "type",
+                "n",
+                "time",
+                "cpu_percent",
+                "memory_usage",
+            ],
         )
-    )
+        if not parsed_args["--no-header"]:
+            writer.writeheader()
+        if parsed_args["--only-header"]:
+            return
+        # Start the cpu measurement and ignore the current value.
+        _ = psutil.cpu_percent()
+        start = time.time()
+        # Take memory usage samples while the process is runnin
+        # and take the max
+        memory_usage = [0]
+        try:
+            p = subprocess.Popen(parsed_args["<cmd>"], shell=True)
+            process = psutil.Process(p.pid)
+            while p.poll() is None:
+                # Collect memory samples of RSS usage every 0.1 seconds
+                try:
+                    memory_usage.append(process.memory_info().rss)
+                except psutil.NoSuchProcess:
+                    break
+                except psutil.ZombieProcess:
+                    break
+                time.sleep(0.1)
+            p.wait()
+        except BaseException:
+            print(parsed_args["<cmd>"])
+            raise
+        end = time.time()
+        # Record the CPU usage as a percent since the last cpu_percent call.
+        cpu_percent = psutil.cpu_percent()
+        writer.writerow(
+            dict(
+                cmd=parsed_args["<cmd>"],
+                name=parsed_args["<name>"],
+                type=parsed_args["<type>"],
+                n=parsed_args["<n>"],
+                time=end - start,
+                cpu_percent=cpu_percent,
+                memory_usage=max(memory_usage),
+            )
+        )
 
     return 0
 
