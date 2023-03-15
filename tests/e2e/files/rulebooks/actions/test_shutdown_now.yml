@@ -12,12 +12,12 @@
     - name: Start long-running playbook
       condition: event.action == "long_running_playbook"
       actions:
+        - debug:
+            msg: "Sequential action triggered successfully"
         - run_playbook:
             name: ./playbooks/long_running.yml
             extra_vars:
               pause_time: 30
-        - debug:
-            msg: "Parallel action triggered successfully"
 
     - name: Send message after shutdown
       condition: event.action == "send_msg"

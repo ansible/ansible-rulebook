@@ -60,4 +60,4 @@
             extra_vars:
               pause_time: 2
         - debug:
-            msg: "Parallel action triggered successfully"
+            msg: "Sequential action triggered successfully"
