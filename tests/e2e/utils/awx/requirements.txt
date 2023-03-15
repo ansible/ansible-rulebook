@@ -1,0 +1,2 @@
+oauthlib>=3.2.0
+kubernetes

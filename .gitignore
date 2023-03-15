@@ -104,3 +104,6 @@ ENV/
 # IDE settings
 .vscode/
 .idea/
+
+# awx provision
+tests/e2e/utils/awx/artifacts
