@@ -83,10 +83,10 @@ class RuleSetRunner:
             tasks.append(self.source_loop_task)
             await asyncio.wait([self.action_loop_task])
         except asyncio.CancelledError:
-            logger.info("Cancelled error caught in run_ruleset")
+            logger.debug("Cancelled error caught in run_ruleset")
             for task in tasks:
                 if not task.done():
-                    logger.info("Cancelling (2) task %s", task.get_name())
+                    logger.debug("Cancelling (2) task %s", task.get_name())
                     task.cancel()
 
         try:
@@ -112,7 +112,7 @@ class RuleSetRunner:
             )
 
         for task in self.active_actions:
-            logger.info("Cancelling active task %s", task.get_name())
+            logger.debug("Cancelling active task %s", task.get_name())
             task.cancel()
         if self.shutdown:
             await self.event_log.put(
@@ -225,7 +225,9 @@ class RuleSetRunner:
                 else:
                     self._run_action(action_item.actions[0], action_item)
         except asyncio.CancelledError:
-            logger.info("Action Plan Task Cancelled for ruleset %s", self.name)
+            logger.debug(
+                "Action Plan Task Cancelled for ruleset %s", self.name
+            )
             raise
         finally:
             await self._cleanup()
@@ -371,7 +373,7 @@ class RuleSetRunner:
                 else:
                     self.broadcast_method(e.shutdown)
             except asyncio.CancelledError:
-                logger.info("Action task caught Cancelled error")
+                logger.debug("Action task caught Cancelled error")
                 raise
             except Exception as e:
                 logger.exception("Error calling %s", action)
