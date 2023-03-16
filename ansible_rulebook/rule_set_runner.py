@@ -191,7 +191,7 @@ class RuleSetRunner:
                 except MessageNotHandledException:
                     logger.debug("MessageNotHandledException: %s", data)
                 except BaseException as e:
-                    print(e)
+                    logger.error(e)
                 finally:
                     logger.debug(lang.get_pending_events(self.name))
                     if self.event_counter > 100:
@@ -241,7 +241,7 @@ class RuleSetRunner:
             )
             raise
         except BaseException as e:
-            print(e)
+            logger.error(e)
             raise
         finally:
             await self._cleanup()
@@ -393,7 +393,7 @@ class RuleSetRunner:
                 logger.exception("Error calling %s", action)
                 result = dict(error=e)
             except BaseException as e:
-                print(e)
+                logger.error(e)
                 raise
         else:
             logger.error("Action %s not supported", action)
