@@ -23,12 +23,14 @@ import websockets
 import yaml
 
 from ansible_rulebook import rules_parser as rules_parser
-from ansible_rulebook.job_template_runner import job_template_runner
+from ansible_rulebook.common import StartupArgs
 
 logger = logging.getLogger(__name__)
 
 
-async def request_workload(activation_id, websocket_address):
+async def request_workload(
+    activation_id: str, websocket_address: str
+) -> StartupArgs:
     logger.info("websocket %s connecting", websocket_address)
     async with websockets.connect(websocket_address) as websocket:
         try:
@@ -36,40 +38,41 @@ async def request_workload(activation_id, websocket_address):
             await websocket.send(
                 json.dumps(dict(type="Worker", activation_id=activation_id))
             )
-            inventory = None
-            rulebook = None
-            extra_vars = None
-            project_data_fh, project_data_file = tempfile.mkstemp()
-            while inventory is None or rulebook is None or extra_vars is None:
+
+            project_data_fh = None
+            response = StartupArgs()
+            while True:
                 msg = await websocket.recv()
                 data = json.loads(msg)
+                if data.get("type") == "EndOfResponse":
+                    break
                 if data.get("type") == "ProjectData":
+                    if not project_data_fh:
+                        (
+                            project_data_fh,
+                            response.project_data_file,
+                        ) = tempfile.mkstemp()
+
                     if data.get("data") and data.get("more"):
                         os.write(
                             project_data_fh, base64.b64decode(data.get("data"))
                         )
                     if not data.get("data") and not data.get("more"):
                         os.close(project_data_fh)
-                        logger.debug("wrote %s", project_data_file)
+                        logger.debug("wrote %s", response.project_data_file)
                 if data.get("type") == "Rulebook":
-                    rulebook = rules_parser.parse_rule_sets(
+                    response.rulesets = rules_parser.parse_rule_sets(
                         yaml.safe_load(base64.b64decode(data.get("data")))
                     )
-                if data.get("type") == "Inventory":
-                    inventory = yaml.safe_load(
-                        base64.b64decode(data.get("data"))
-                    )
                 if data.get("type") == "ExtraVars":
-                    extra_vars = yaml.safe_load(
+                    response.variables = yaml.safe_load(
                         base64.b64decode(data.get("data"))
                     )
-                if data.get("type") == "ControllerUrl":
-                    job_template_runner.host = data.get("data")
-                if data.get("type") == "ControllerToken":
-                    job_template_runner.token = data.get("data")
-                if data.get("type") == "ControllerSslVerify":
-                    job_template_runner.verify_ssl = data.get("data")
-            return inventory, extra_vars, rulebook, project_data_file
+                if data.get("type") == "ControllerInfo":
+                    response.controller_url = data.get("url")
+                    response.controller_token = data.get("token")
+                    response.controller_verify_ssl = data.get("ssl_verify")
+            return response
         except CancelledError:
             logger.info("closing websocket due to task cancelled")
             return
