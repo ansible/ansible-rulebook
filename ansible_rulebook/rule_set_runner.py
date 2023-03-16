@@ -194,7 +194,7 @@ class RuleSetRunner:
                     logger.error(e)
                 finally:
                     logger.debug(lang.get_pending_events(self.name))
-                    if self.event_counter > 100:
+                    if settings.gc_after and self.event_counter > settings.gc_after:
                         self.event_counter = 0
                         gc.collect()
                     else:

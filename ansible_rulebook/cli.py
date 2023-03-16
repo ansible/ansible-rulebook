@@ -38,6 +38,7 @@ from ansible_rulebook.job_template_runner import (  # noqa: E402
     job_template_runner,
 )
 
+DEFAULT_GC_AFTER = 1000
 DEFAULT_VERBOSITY = 0
 
 logger = logging.getLogger(__name__)
@@ -142,6 +143,12 @@ def get_parser() -> argparse.ArgumentParser:
         "graceful shutdown, default: 60. The process will shutdown if "
         "all actions complete before this time period",
     )
+    parser.add_argument(
+        "--gc-after",
+        default=os.environ.get("EDA_GC_AFTER", DEFAULT_GC_AFTER),
+        type=int,
+        help="Run the garbage collector after this number of events",
+    )
     return parser
 
 
@@ -206,6 +213,9 @@ def main(args: List[str] = None) -> int:
 
     if args.id:
         settings.identifier = args.id
+
+    if args.gc_after is not None:
+        settings.gc_after = args.gc_after
 
     setup_logging(args)
 
