@@ -145,7 +145,10 @@ def load_vars(parsed_args) -> Dict[str, str]:
 def load_rulebook(
     parsed_args: argparse.ArgumentParser, variables: Optional[Dict] = None
 ) -> List[RuleSet]:
-    if os.path.exists(parsed_args.rulebook):
+    if not parsed_args.rulebook:
+        logger.debug("Loading no rules")
+        return []
+    elif os.path.exists(parsed_args.rulebook):
         logger.debug(
             "Loading rules from the file system %s", parsed_args.rulebook
         )
