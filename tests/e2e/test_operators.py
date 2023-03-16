@@ -480,6 +480,17 @@ def test_logical_operators(update_environment):
     with check:
         assert "Testcase #08 passes" in result.stdout, "Testcase #8 failed"
 
+    with check:
+        assert (
+            "Testcase #09 passes, "
+            "output: Status: new york down, addis ababa down" in result.stdout
+        ), "Testcase #9 failed"
+
+    with check:
+        assert (
+            "Testcase #10 passes, output: IDS state: None" in result.stdout
+        ), "Testcase #10 failed"
+
 
 @pytest.mark.e2e
 def test_string_match():
