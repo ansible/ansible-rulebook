@@ -3,7 +3,7 @@
   hosts: all
   sources:
     - generic:
-        event_delay: 1.5
+        event_delay: "{{ DEFAULT_EVENT_DELAY }}"
         payload:
           - action: "long_running_playbook"
           - action: "send_msg"
@@ -30,7 +30,7 @@
   hosts: all
   sources:
     - generic:
-        startup_delay: "{{ DEFAULT_STARTUP_DELAY }}"
+        startup_delay: "{{ SHUTDOWN_NOW_STARTUP_DELAY }}"
         payload:
           - action: "trigger_shutdown"
 

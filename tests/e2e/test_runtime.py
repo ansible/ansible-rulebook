@@ -14,6 +14,8 @@ from .settings import SETTINGS
 
 LOGGER = logging.getLogger(__name__)
 DEFAULT_CMD_TIMEOUT = SETTINGS["cmd_timeout"]
+DEFAULT_STARTUP_DELAY = SETTINGS["default_startup_delay"]
+DISABLED_RULES_EVENT_DELAY = SETTINGS["disabled_rules_event_delay"]
 
 
 @pytest.mark.e2e
@@ -76,14 +78,24 @@ def test_program_return_code(
 
 
 @pytest.mark.e2e
-def test_disabled_rules():
+def test_disabled_rules(update_environment):
     """
     Execute a rulebook that has disabled rules and
     ensure they do not execute
     """
 
     rulebook = utils.BASE_DATA_PATH / "rulebooks/test_disabled_rules.yml"
-    cmd = utils.Command(rulebook=rulebook)
+    env = update_environment(
+        {
+            "DEFAULT_STARTUP_DELAY": str(DEFAULT_STARTUP_DELAY),
+            "DISABLED_RULES_EVENT_DELAY": str(DISABLED_RULES_EVENT_DELAY),
+        }
+    )
+
+    cmd = utils.Command(
+        rulebook=rulebook,
+        envvars="DEFAULT_STARTUP_DELAY,DISABLED_RULES_EVENT_DELAY",
+    )
 
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
@@ -92,6 +104,7 @@ def test_disabled_rules():
         capture_output=True,
         cwd=utils.BASE_DATA_PATH,
         text=True,
+        env=env,
     )
 
     with check:

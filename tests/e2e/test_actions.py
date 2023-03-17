@@ -17,6 +17,7 @@ DEFAULT_CMD_TIMEOUT = SETTINGS["cmd_timeout"]
 DEFAULT_SHUTDOWN_AFTER = SETTINGS["default_shutdown_after"]
 DEFAULT_EVENT_DELAY = SETTINGS["default_event_delay"]
 DEFAULT_STARTUP_DELAY = SETTINGS["default_startup_delay"]
+SHUTDOWN_NOW_STARTUP_DELAY = SETTINGS["shutdown_now_startup_delay"]
 
 
 @pytest.mark.e2e
@@ -37,6 +38,7 @@ def test_actions_sanity(update_environment):
         {
             "DEFAULT_SHUTDOWN_AFTER": str(DEFAULT_SHUTDOWN_AFTER),
             "DEFAULT_EVENT_DELAY": str(DEFAULT_EVENT_DELAY),
+            "DEFAULT_STARTUP_DELAY": str(DEFAULT_STARTUP_DELAY),
         }
     )
 
@@ -47,7 +49,9 @@ def test_actions_sanity(update_environment):
     cmd = utils.Command(
         rulebook=rulebook,
         inventory=inventory,
-        envvars="DEFAULT_SHUTDOWN_AFTER,DEFAULT_EVENT_DELAY",
+        envvars="DEFAULT_SHUTDOWN_AFTER,"
+        "DEFAULT_EVENT_DELAY,"
+        "DEFAULT_STARTUP_DELAY",
     )
 
     with open(inventory) as f:
@@ -74,6 +78,7 @@ def test_actions_sanity(update_environment):
  'source_ruleset_name': 'Test actions sanity',
  'variables': {'DEFAULT_EVENT_DELAY': '{{DEFAULT_EVENT_DELAY}}',
                'DEFAULT_SHUTDOWN_AFTER': '{{DEFAULT_SHUTDOWN_AFTER}}',
+               'DEFAULT_STARTUP_DELAY': '{{DEFAULT_STARTUP_DELAY}}',
                'event': {'action': 'debug'}}}"""  # noqa: E501
 
     event_debug_expected_output = jinja2.Template(
@@ -81,6 +86,7 @@ def test_actions_sanity(update_environment):
     ).render(
         DEFAULT_SHUTDOWN_AFTER=DEFAULT_SHUTDOWN_AFTER,
         DEFAULT_EVENT_DELAY=DEFAULT_EVENT_DELAY,
+        DEFAULT_STARTUP_DELAY=DEFAULT_STARTUP_DELAY,
         INVENTORY_DATA=inventory_data,
     )
 
@@ -151,7 +157,7 @@ def test_actions_sanity(update_environment):
         ), "multiple sequential actions failed"
 
     assert (
-        len(result.stdout.splitlines()) == 48
+        len(result.stdout.splitlines()) == 49
     ), "unexpected output from the rulebook"
 
 
@@ -164,10 +170,16 @@ def test_run_playbook(update_environment):
 
     rulebook = utils.BASE_DATA_PATH / "rulebooks/actions/test_run_playbook.yml"
     env = update_environment(
-        {"DEFAULT_SHUTDOWN_AFTER": str(DEFAULT_SHUTDOWN_AFTER)}
+        {
+            "DEFAULT_SHUTDOWN_AFTER": str(DEFAULT_SHUTDOWN_AFTER),
+            "DEFAULT_STARTUP_DELAY": str(DEFAULT_STARTUP_DELAY),
+        }
     )
 
-    cmd = utils.Command(rulebook=rulebook, envvars="DEFAULT_SHUTDOWN_AFTER")
+    cmd = utils.Command(
+        rulebook=rulebook,
+        envvars="DEFAULT_SHUTDOWN_AFTER,DEFAULT_STARTUP_DELAY",
+    )
 
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
@@ -287,10 +299,16 @@ def test_shutdown_action_now(update_environment):
 
     rulebook = utils.BASE_DATA_PATH / "rulebooks/actions/test_shutdown_now.yml"
     env = update_environment(
-        {"DEFAULT_STARTUP_DELAY": str(DEFAULT_STARTUP_DELAY)}
+        {
+            "SHUTDOWN_NOW_STARTUP_DELAY": str(SHUTDOWN_NOW_STARTUP_DELAY),
+            "DEFAULT_EVENT_DELAY": str(DEFAULT_EVENT_DELAY),
+        }
     )
 
-    cmd = utils.Command(rulebook=rulebook, envvars="DEFAULT_STARTUP_DELAY")
+    cmd = utils.Command(
+        rulebook=rulebook,
+        envvars="SHUTDOWN_NOW_STARTUP_DELAY,DEFAULT_EVENT_DELAY",
+    )
 
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
