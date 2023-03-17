@@ -137,18 +137,21 @@ def test_actions_sanity(update_environment):
             not in result.stdout
         ), "retract_fact action failed"
 
-    multiple_actions_expected_outputs = [
-        f"Multiple action #{n} triggered" for n in range(1, 3)
-    ]
+    multiple_actions_expected_output = (
+        "{'action': 'multiple_actions'}\n"
+        "Ruleset: Test actions sanity rule: Test multiple actions in "
+        "sequential order has initiated shutdown of type: graceful. "
+        "Delay: 0.000 seconds, Message: Sequential action #2: shutdown\n"
+        "Sequential action #3: debug"
+    )
 
     with check:
-        assert all(
-            expected in result.stdout
-            for expected in multiple_actions_expected_outputs
-        ), "multiple actions failed"
+        assert (
+            multiple_actions_expected_output in result.stdout
+        ), "multiple sequential actions failed"
 
     assert (
-        len(result.stdout.splitlines()) == 49
+        len(result.stdout.splitlines()) == 48
     ), "unexpected output from the rulebook"
 
 
