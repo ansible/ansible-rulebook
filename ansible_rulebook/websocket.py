@@ -40,7 +40,7 @@ async def request_workload(activation_id, websocket_address):
             rulebook = None
             extra_vars = None
             project_data_fh, project_data_file = tempfile.mkstemp()
-            while inventory is None or rulebook is None or extra_vars is None:
+            while rulebook is None or extra_vars is None:
                 msg = await websocket.recv()
                 data = json.loads(msg)
                 logger.info("Received data %s", data.get("type"))
