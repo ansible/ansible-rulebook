@@ -49,7 +49,7 @@ class JobTemplateRunner:
     JOB_COMPLETION_STATUSES = ["successful", "failed", "error", "canceled"]
 
     def __init__(
-        self, host: str = "", token: str = "", verify_ssl: str = "yes"
+        self, host: str = "", token: str = "", verify_ssl: bool = True
     ):
         self.token = token
         self.host = host
@@ -63,7 +63,7 @@ class JobTemplateRunner:
     ) -> dict:
         url = urljoin(self.host, href_slug)
         async with session.get(
-            url, params=params, ssl=self._sslcontext
+            url, params=params
         ) as response:
             response_text = dict(
                 status=response.status, body=await response.text()
@@ -85,10 +85,10 @@ class JobTemplateRunner:
     @cached_property
     def _sslcontext(self) -> Union[bool, ssl.SSLContext]:
         if self.host.startswith("https"):
-            if self.verify_ssl.lower() == "yes":
+            if self.verify_ssl:
                 return True
-            elif not self.verify_ssl.lower() == "no":
-                return ssl.create_default_context(cafile=self.verify_ssl)
+            elif not self.verify_ssl:
+                return ssl.create_default_context()
         return False
 
     async def run_job_template(
@@ -105,8 +105,11 @@ class JobTemplateRunner:
         counters = []
         params = dict(parse_qsl(url_info.query))
 
+        connector = connector=aiohttp.TCPConnector(verify_ssl=False)
+
         async with aiohttp.ClientSession(
-            headers=self._auth_headers()
+            headers=self._auth_headers(),
+            connector=connector
         ) as session:
             while True:
                 # fetch and process job events
@@ -145,11 +148,14 @@ class JobTemplateRunner:
             self.host, f"{self.JOB_TEMPLATE_SLUG}/{resource_uri}/launch/"
         )
 
+        connector = connector=aiohttp.TCPConnector(verify_ssl=False)
+
         async with aiohttp.ClientSession(
-            headers=self._auth_headers()
+            headers=self._auth_headers(),
+            connector=connector
         ) as session:
             async with session.post(
-                url, json=job_params, ssl=self._sslcontext
+                url, json=job_params
             ) as post_response:
                 response = dict(
                     status=post_response.status,
