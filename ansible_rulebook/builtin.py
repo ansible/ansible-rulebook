@@ -23,7 +23,7 @@ import sys
 import tempfile
 import uuid
 from asyncio.exceptions import CancelledError
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import partial
 from pprint import pprint
 from typing import Callable, Dict, List, Optional, Union
@@ -37,6 +37,7 @@ from drools import ruleset as lang
 from .collection import find_playbook, has_playbook, split_collection_name
 from .conf import settings
 from .exception import (
+    ControllerApiException,
     PlaybookNotFoundException,
     PlaybookStatusNotFoundException,
     ShutdownException,
@@ -69,7 +70,7 @@ async def none(
             ruleset=source_ruleset_name,
             rule=source_rule_name,
             activation_id=settings.identifier,
-            run_at=str(datetime.utcnow()),
+            run_at=_run_at(),
             matching_events=_get_events(variables),
         )
     )
@@ -106,7 +107,7 @@ async def debug(event_log, **kwargs):
             ruleset=kwargs.get("source_ruleset_name"),
             rule=kwargs.get("source_rule_name"),
             activation_id=settings.identifier,
-            run_at=str(datetime.utcnow()),
+            run_at=_run_at(),
             matching_events=_get_events(kwargs.get("variables")),
         )
     )
@@ -140,7 +141,7 @@ async def print_event(
             ruleset=source_ruleset_name,
             rule=source_rule_name,
             playbook_name=name,
-            run_at=str(datetime.utcnow()),
+            run_at=_run_at(),
             matching_events=_get_events(variables),
         )
     )
@@ -168,7 +169,7 @@ async def set_fact(
             ruleset=source_ruleset_name,
             rule=source_rule_name,
             playbook_name=name,
-            run_at=str(datetime.utcnow()),
+            run_at=_run_at(),
             matching_events=_get_events(variables),
         )
     )
@@ -195,7 +196,7 @@ async def retract_fact(
             rule=source_rule_name,
             activation_id=settings.identifier,
             playbook_name=name,
-            run_at=str(datetime.utcnow()),
+            run_at=_run_at(),
             matching_events=_get_events(variables),
         )
     )
@@ -221,7 +222,7 @@ async def post_event(
             ruleset=source_ruleset_name,
             rule=source_rule_name,
             activation_id=settings.identifier,
-            run_at=str(datetime.utcnow()),
+            run_at=_run_at(),
             matching_events=_get_events(variables),
         )
     )
@@ -293,7 +294,7 @@ async def run_playbook(
                 "Previous run_playbook failed. Retry %d of %d", i, retries
             )
 
-        run_at = str(datetime.utcnow())
+        run_at = _run_at()
         await call_runner(
             event_log,
             job_id,
@@ -392,7 +393,7 @@ async def run_module(
             logger.info(
                 "Previous run_module failed. Retry %d of %d", i, retries
             )
-        run_at = str(datetime.utcnow())
+        run_at = _run_at()
         await call_runner(
             event_log,
             job_id,
@@ -719,18 +720,29 @@ async def run_job_template(
 
     if retry:
         retries = max(retries, 1)
-    for i in range(retries + 1):
-        if i > 0:
-            if delay > 0:
-                await asyncio.sleep(delay)
-            logger.info(
-                "Previous run_job_template failed. Retry %d of %d", i, retries
+
+    try:
+        for i in range(retries + 1):
+            if i > 0:
+                if delay > 0:
+                    await asyncio.sleep(delay)
+                logger.info(
+                    "Previous run_job_template failed. Retry %d of %d",
+                    i,
+                    retries,
+                )
+            controller_job = await job_template_runner.run_job_template(
+                name,
+                organization,
+                job_args,
             )
-        controller_job = await job_template_runner.run_job_template(
-            name, organization, job_args, event_callback
-        )
-        if controller_job["status"] != "failed":
-            break
+            if controller_job["status"] != "failed":
+                break
+    except ControllerApiException as ex:
+        logger.error(ex)
+        controller_job = {}
+        controller_job["status"] = "failed"
+        controller_job["created"] = _run_at()
 
     await event_log.put(
         dict(
@@ -744,6 +756,7 @@ async def run_job_template(
             rule=source_rule_name,
             status=controller_job["status"],
             run_at=controller_job["created"],
+            matching_events=_get_events(variables),
         )
     )
 
@@ -780,7 +793,7 @@ async def shutdown(
             activation_id=settings.identifier,
             ruleset=source_ruleset_name,
             rule=source_rule_name,
-            run_at=str(datetime.utcnow()),
+            run_at=_run_at(),
             matching_events=_get_events(variables),
             delay=delay,
             message=message,
@@ -841,3 +854,7 @@ def _collect_extra_vars(
         eda_vars["event"] = variables["event"]
     extra_vars[KEY_EDA_VARS] = eda_vars
     return extra_vars
+
+
+def _run_at() -> str:
+    return f"{datetime.now(timezone.utc).isoformat()}".replace("+00:00", "Z")
