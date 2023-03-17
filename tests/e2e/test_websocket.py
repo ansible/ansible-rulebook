@@ -24,7 +24,7 @@ async def test_websocket_messages():
     # variables
     host = "localhost"
     endpoint = "/api/ws2"
-    proc_id = 42
+    proc_id = "42"
     port = 31415
     rulebook = (
         utils.BASE_DATA_PATH / "rulebooks/websockets/test_websocket_range.yml"

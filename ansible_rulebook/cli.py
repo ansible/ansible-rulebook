@@ -51,7 +51,6 @@ def get_parser() -> argparse.ArgumentParser:
         "-r",
         "--rulebook",
         help="The rulebook file or rulebook from a collection",
-        required=True,
     )
     parser.add_argument(
         "-e",
@@ -97,12 +96,13 @@ def get_parser() -> argparse.ArgumentParser:
         "--websocket-address",
         help="Connect the event log to a websocket",
     )
-    parser.add_argument("--id", help="Identifier", type=int)
+    parser.add_argument("--id", help="Identifier")
     parser.add_argument(
         "-w",
         "--worker",
         action="store_true",
         help="Enable worker mode",
+        default=False,
     )
     parser.add_argument(
         "-T",
@@ -153,6 +153,15 @@ def get_version() -> str:
     return "\n".join(result)
 
 
+def validate_args(args: argparse.Namespace) -> None:
+    if args.worker and (not args.id or not args.websocket_address):
+        raise ValueError(
+            "Worker mode needs an id and websocket address specfied"
+        )
+    if not args.worker and not args.rulebook:
+        raise ValueError("Rulebook must be specified in non worker mode")
+
+
 def setup_logging(args: argparse.Namespace) -> None:
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     stream = sys.stderr
@@ -172,7 +181,12 @@ def setup_logging(args: argparse.Namespace) -> None:
 
 def main(args: List[str] = None) -> int:
     parser = get_parser()
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+
     args = parser.parse_args(args)
+    validate_args(args)
 
     if args.controller_url:
         if args.controller_token:
