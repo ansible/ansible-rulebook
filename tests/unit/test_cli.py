@@ -37,6 +37,10 @@ def test_check_jvm_bad_java_home(mock_response):
             "11.0.2",
             id="lower",
         ),
+        pytest.param(
+            "1.8.0_875",
+            id="lower_wrong_semantic",
+        ),
         pytest.param("Not found", id="not_found"),
     ],
 )
@@ -57,6 +61,7 @@ def test_check_jvm_bad_version(mock, mocked_version):
             id="semantic",
         ),
         pytest.param("17.1.5.3", id="semantic_extended"),
+        pytest.param("17.1.5_3", id="wrong_semantic"),
     ],
 )
 @patch("ansible_rulebook.util.get_java_version")
