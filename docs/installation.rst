@@ -23,7 +23,7 @@ Installation via pip
 
 1. Ensure the `JAVA_HOME` environment variable is set if you have multiple Java installations. On Fedora-like systems it should be::
 
-    JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+    JAVA_HOME=/usr/lib/jvm/jre-17-openjdk
 
 
 2. Install `ansible-rulebook` and dependencies via `pip`::
@@ -49,7 +49,7 @@ On Fedora-like systems:
 .. code-block:: shell
 
     dnf --assumeyes install java-17-openjdk python3-pip
-    export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+    export JAVA_HOME=/usr/lib/jvm/jre-17-openjdk
     pip3 install ansible ansible-rulebook ansible-runner
 
 On Ubuntu systems:

@@ -64,8 +64,9 @@ Example: Multiple actions
               - print_event:
                   pretty: true
 
-| In the above example the 2 actions are executed, they run in
-| parallel
+| In the above example 2 actions are executed when the condition matches,
+| The actions run sequentially in the order they are listed under actions.
+| We wait for each action to finish before executing the next action.
 
 Example: Disable a rule
 

@@ -4,6 +4,7 @@
   - name: range
     range:
       limit: 5
+      delay: 0.05
   rules:
   - name: r1
     condition: event.i == 1

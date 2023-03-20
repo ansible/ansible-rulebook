@@ -24,7 +24,7 @@ async def test_websocket_messages():
     # variables
     host = "localhost"
     endpoint = "/api/ws2"
-    proc_id = 42
+    proc_id = "42"
     port = 31415
     rulebook = (
         utils.BASE_DATA_PATH / "rulebooks/websockets/test_websocket_range.yml"
@@ -63,9 +63,6 @@ async def test_websocket_messages():
         data = await queue.get()
         assert data["path"] == endpoint
         data = data["payload"]
-
-        if data["type"] == "ProcessedEvent":
-            assert data["results"]
 
         if data["type"] == "Action":
             action_counter += 1

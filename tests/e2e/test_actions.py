@@ -16,6 +16,7 @@ LOGGER = logging.getLogger(__name__)
 DEFAULT_CMD_TIMEOUT = SETTINGS["cmd_timeout"]
 DEFAULT_SHUTDOWN_AFTER = SETTINGS["default_shutdown_after"]
 DEFAULT_EVENT_DELAY = SETTINGS["default_event_delay"]
+DEFAULT_STARTUP_DELAY = SETTINGS["default_startup_delay"]
 
 
 @pytest.mark.e2e
@@ -136,18 +137,21 @@ def test_actions_sanity(update_environment):
             not in result.stdout
         ), "retract_fact action failed"
 
-    multiple_actions_expected_outputs = [
-        f"Multiple action #{n} triggered" for n in range(1, 3)
-    ]
+    multiple_actions_expected_output = (
+        "{'action': 'multiple_actions'}\n"
+        "Ruleset: Test actions sanity rule: Test multiple actions in "
+        "sequential order has initiated shutdown of type: graceful. "
+        "Delay: 0.000 seconds, Message: Sequential action #2: shutdown\n"
+        "Sequential action #3: debug"
+    )
 
     with check:
-        assert all(
-            expected in result.stdout
-            for expected in multiple_actions_expected_outputs
-        ), "multiple actions failed"
+        assert (
+            multiple_actions_expected_output in result.stdout
+        ), "multiple sequential actions failed"
 
     assert (
-        len(result.stdout.splitlines()) == 49
+        len(result.stdout.splitlines()) == 48
     ), "unexpected output from the rulebook"
 
 
@@ -206,3 +210,129 @@ def test_run_playbook(update_environment):
         assert (
             "Post-processing complete on simba" in result.stdout
         ), "run_playbook set_facts to same ruleset failed"
+
+
+@pytest.mark.e2e
+def test_shutdown_action_graceful(update_environment):
+    """
+    Execute a rulebook to validate the shutdown action with kind graceful
+    """
+
+    rulebook = (
+        utils.BASE_DATA_PATH / "rulebooks/actions/test_shutdown_graceful.yml"
+    )
+    env = update_environment({"DEFAULT_EVENT_DELAY": str(DEFAULT_EVENT_DELAY)})
+
+    cmd = utils.Command(rulebook=rulebook, envvars="DEFAULT_EVENT_DELAY")
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_CMD_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0
+    assert not result.stderr
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if '"msg": "Sleeping..."' in line
+                ]
+            )
+            == 1
+        ), "long-running playbook failed to fire"
+
+    with check:
+        assert (
+            "Sequential action triggered successfully" in result.stdout
+        ), "a sequential action failed to fire"
+
+    with check:
+        assert (
+            "Shutdown gracefully has initiated shutdown "
+            "of type: graceful." in result.stdout
+        ), "graceful shutdown failed to initiate"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if '"msg": "Rise and shine..."' in line
+                ]
+            )
+            == 1
+        ), "long-running playbook failed to finish"
+
+    with check:
+        assert (
+            "This condition should not fire" not in result.stdout
+        ), "a post-shutdown condition fired when it should not have"
+
+
+@pytest.mark.e2e
+def test_shutdown_action_now(update_environment):
+    """
+    Execute a rulebook to validate the shutdown action with kind now
+    """
+
+    rulebook = utils.BASE_DATA_PATH / "rulebooks/actions/test_shutdown_now.yml"
+    env = update_environment(
+        {"DEFAULT_STARTUP_DELAY": str(DEFAULT_STARTUP_DELAY)}
+    )
+
+    cmd = utils.Command(rulebook=rulebook, envvars="DEFAULT_STARTUP_DELAY")
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_CMD_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0
+    assert not result.stderr
+
+    with check:
+        assert (
+            "Sequential action triggered successfully" in result.stdout
+        ), "a sequential action failed to fire"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if '"msg": "Sleeping..."' in line
+                ]
+            )
+            == 1
+        ), "long-running playbook failed to fire"
+
+    with check:
+        assert (
+            "Shutdown has initiated shutdown of type: now" in result.stdout
+        ), "shutdown now failed to initiate"
+
+    with check:
+        assert (
+            '"msg": "Rise and shine..."' not in result.stdout
+        ), "long-running playbook should not have finished executing"
+
+    with check:
+        assert (
+            "This condition should not fire" not in result.stdout
+        ), "a post-shutdown condition fired when it should not have"
