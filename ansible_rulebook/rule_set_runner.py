@@ -29,7 +29,11 @@ from ansible_rulebook.builtin import actions as builtin_actions
 from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import ShutdownException
 from ansible_rulebook.messages import Shutdown
-from ansible_rulebook.rule_types import ActionContext, EngineRuleSetQueuePlan
+from ansible_rulebook.rule_types import (
+    Action,
+    ActionContext,
+    EngineRuleSetQueuePlan,
+)
 from ansible_rulebook.rules_parser import parse_hosts
 from ansible_rulebook.util import substitute_variables
 
@@ -79,10 +83,10 @@ class RuleSetRunner:
             tasks.append(self.source_loop_task)
             await asyncio.wait([self.action_loop_task])
         except asyncio.CancelledError:
-            logger.info("Cancelled error caught in run_ruleset")
+            logger.debug("Cancelled error caught in run_ruleset")
             for task in tasks:
                 if not task.done():
-                    logger.info("Cancelling (2) task %s", task.get_name())
+                    logger.debug("Cancelling (2) task %s", task.get_name())
                     task.cancel()
 
         try:
@@ -108,7 +112,7 @@ class RuleSetRunner:
             )
 
         for task in self.active_actions:
-            logger.info("Cancelling active task %s", task.get_name())
+            logger.debug("Cancelling active task %s", task.get_name())
             task.cancel()
         if self.shutdown:
             await self.event_log.put(
@@ -212,34 +216,51 @@ class RuleSetRunner:
             while True:
                 queue_item = await self.ruleset_queue_plan.plan.queue.get()
                 action_item = cast(ActionContext, queue_item)
-                for action in action_item.actions:
-                    task_name = (
-                        f"action::{action.action}::"
-                        f"{self.ruleset_queue_plan.ruleset.name}::"
-                        f"{action_item.rule}"
-                    )
-                    logger.debug("Creating action task %s", task_name)
+                if len(action_item.actions) > 1:
                     task = asyncio.create_task(
-                        self._call_action(
-                            action_item.ruleset,
-                            action_item.rule,
-                            action.action,
-                            action.action_args,
-                            action_item.variables,
-                            action_item.inventory,
-                            action_item.hosts,
-                            action_item.rule_engine_results,
-                        ),
-                        name=task_name,
+                        self._run_multiple_actions(action_item)
                     )
                     self.active_actions.add(task)
                     task.add_done_callback(self._handle_action_completion)
-
+                else:
+                    self._run_action(action_item.actions[0], action_item)
         except asyncio.CancelledError:
-            logger.info("Action Plan Task Cancelled for ruleset %s", self.name)
+            logger.debug(
+                "Action Plan Task Cancelled for ruleset %s", self.name
+            )
             raise
         finally:
             await self._cleanup()
+
+    async def _run_multiple_actions(self, action_item: ActionContext) -> None:
+        for action in action_item.actions:
+            await self._run_action(action, action_item)
+
+    def _run_action(
+        self, action: Action, action_item: ActionContext
+    ) -> asyncio.Task:
+        task_name = (
+            f"action::{action.action}::"
+            f"{self.ruleset_queue_plan.ruleset.name}::"
+            f"{action_item.rule}"
+        )
+        logger.debug("Creating action task %s", task_name)
+        task = asyncio.create_task(
+            self._call_action(
+                action_item.ruleset,
+                action_item.rule,
+                action.action,
+                action.action_args,
+                action_item.variables,
+                action_item.inventory,
+                action_item.hosts,
+                action_item.rule_engine_results,
+            ),
+            name=task_name,
+        )
+        self.active_actions.add(task)
+        task.add_done_callback(self._handle_action_completion)
+        return task
 
     async def _call_action(
         self,
@@ -352,7 +373,7 @@ class RuleSetRunner:
                 else:
                     self.broadcast_method(e.shutdown)
             except asyncio.CancelledError:
-                logger.info("Action task caught Cancelled error")
+                logger.debug("Action task caught Cancelled error")
                 raise
             except Exception as e:
                 logger.exception("Error calling %s", action)

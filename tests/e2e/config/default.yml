@@ -1,5 +1,6 @@
 default_event_delay: 1
 default_shutdown_after: 5
+default_startup_delay: 1
 operators_shutdown_after: 1
 cmd_timeout: 25
 controller_url: http://localhost:8080

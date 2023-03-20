@@ -77,3 +77,8 @@ def test_variables_sanity(update_environment):
         assert (
             "Lockdown level 9.0 initiated" in result.stdout
         ), "Failure parsing multi-condition variables from file"
+
+    with check:
+        assert (
+            "Intruder neutralized" in result.stdout
+        ), "Failure parsing null value from variables file"

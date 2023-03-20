@@ -1,0 +1,63 @@
+---
+- name: Ruleset 1
+  hosts: all
+  sources:
+    - generic:
+        event_delay: "{{ DEFAULT_EVENT_DELAY }}"
+        payload:
+          - action: "post_event"
+          - action: "shutdown_graceful"
+          - action: "post_event_2"
+          - action: "send_msg"
+
+  rules:
+    - name: Trigger post_event to ruleset 2
+      condition: event.action == "post_event"
+      action:
+        post_event:
+          ruleset: "Ruleset 2"
+          event:
+            action: "long_running_playbook"
+
+    - name: Shutdown gracefully
+      condition: event.action == "shutdown_graceful"
+      action:
+        shutdown:
+          delay: 10
+          kind: graceful
+          message: "Shutting down gracefully"
+
+    - name: Post second event to ruleset 2 (should not fire)
+      condition: event.action == "post_event_2"
+      action:
+        post_event:
+          ruleset: "Ruleset 2"
+          event:
+            action: "long_running_playbook"
+
+    - name: Send message after shutdown
+      condition: event.action == "send_msg"
+      action:
+        debug:
+          msg: "This condition should not fire"
+
+
+- name: Ruleset 2
+  hosts: all
+  sources:
+    - generic:
+        loop_count: -1  # source is in an infinite loop
+        loop_delay: 2
+        payload:
+          - action: "infinite_loop"
+
+  rules:
+    - name: Start long-running playbook
+      condition: event.action == "long_running_playbook"
+      actions:
+        - run_playbook:
+            name: ./playbooks/long_running.yml
+            extra_vars:
+              pause_time: 2
+        - debug:
+            msg: "Sequential action triggered successfully"

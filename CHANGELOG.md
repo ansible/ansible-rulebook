@@ -18,6 +18,7 @@
 - Support for null type in conditions
 - Support Jinja2 substitution in rule names
 - Support booleans in lists, which can contain mixed data types
+- Support for identifiers in select and selectattr
 
 ### Fixed
 
@@ -28,7 +29,8 @@
 - Inventory argument to the CLI is optional
 - select works with null
 - a race condition between threads in drools rule engine
-- running actions in parallel
+- actions in different rules to run in parallel
+- actions within a single rule to execute sequentially
 
 ### Removed
 
