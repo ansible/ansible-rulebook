@@ -4,3 +4,4 @@ notify_police: true
 lockdown_enabled: true
 lockdown_threshold: 7.5
 zones: [1, 3, 5, 7, 11]
+intruder_status: null

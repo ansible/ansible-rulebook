@@ -12,6 +12,7 @@
             meta:
               lockdown_level: 9.0
               lockdown_zone: 5
+          - intruder_status: null
 
   rules:
     - name: "Intruder detected in {{ alarm_location }}"
@@ -27,17 +28,17 @@
               agent_name: "Maxwell Smart"
         - set_fact:
             fact:
-              agent_id: "86"
+              agent_id: "{{ E2E_AGENT_ID }}"
         - post_event:
             event:
-              notify_police: true
+              notify_police: "{{ notify_police }}"
         - run_playbook:
             name: ./playbooks/print_rule_name.yml
 
     - name: Notify agent 86
       condition:
         all:
-          - event.agent_id == vars.E2E_AGENT_ID
+          - event.agent_id == 86
           - event.agent_name == vars.E2E_AGENT_NAME
       action:
         debug:
@@ -46,7 +47,7 @@
             ID {{ E2E_AGENT_ID }}
 
     - name: Ping law enforcement
-      condition: event.notify_police == vars.notify_police
+      condition: event.notify_police == true
       action:
         debug:
           msg: "Notifying law enforcement"
@@ -60,3 +61,9 @@
       action:
         debug:
           msg: "Lockdown level {{ event.meta.lockdown_level }} initiated"
+
+    - name: Intruder neutralized
+      condition: event.intruder_status == vars.intruder_status
+      action:
+        debug:
+          msg: "Intruder neutralized"
