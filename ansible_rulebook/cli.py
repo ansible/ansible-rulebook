@@ -111,17 +111,23 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--controller-url",
-        help="Controller API base url, e.g. https://host1:8080",
+        help="Controller API base url, e.g. https://host1:8080 can also be "
+        "passed via the env var EDA_CONTROLLER_URL",
+        default=os.environ.get("EDA_CONTROLLER_URL", ""),
     )
     parser.add_argument(
         "--controller-token",
-        help="Controller API authentication token",
+        help="Controller API authentication token, can also be passed "
+        "via env var EDA_CONTROLLER_TOKEN",
+        default=os.environ.get("EDA_CONTROLLER_TOKEN", ""),
     )
     parser.add_argument(
         "--controller-ssl-verify",
         help="How to verify SSL when connecting to the "
         "controller, yes|no|<path to a CA bundle>, "
-        "default to yes for https connection",
+        "default to yes for https connection."
+        "can also be passed via env var EDA_CONTROLLER_SSL_VERIFY",
+        default=os.environ.get("EDA_CONTROLLER_SSL_VERIFY", "yes"),
     )
     parser.add_argument(
         "--print-events",
