@@ -20,6 +20,7 @@ from functools import lru_cache
 import yaml
 
 ANSIBLE_GALAXY = shutil.which("ansible-galaxy")
+EDA_PATH_PREFIX = "extensions/eda"
 
 
 def split_collection_name(collection_resource):
@@ -49,35 +50,52 @@ def find_collection(name):
     return None
 
 
-def has_object(collection, name, object_type, extension):
+def has_object(collection, name, object_types, extension):
     if find_collection(collection) is None:
         return False
-    return os.path.exists(
-        os.path.join(find_collection(collection), object_type, name)
-        + extension
-    )
+
+    for object_type in object_types:
+        if os.path.exists(
+            os.path.join(find_collection(collection), object_type, name)
+            + extension
+        ):
+            return True
+    return False
 
 
-def find_object(collection, name, object_type, extension):
+def find_object(collection, name, object_types, extension):
     if find_collection(collection) is None:
         return False
-    location = (
-        os.path.join(find_collection(collection), object_type, name)
-        + extension
-    )
-    if not os.path.exists(location):
-        raise Exception(
-            f"Cannot find {object_type} {name} in {collection} at {location}"
+
+    for object_type in object_types:
+        location = (
+            os.path.join(find_collection(collection), object_type, name)
+            + extension
         )
-    return location
+        if os.path.exists(location):
+            return location
+
+    raise FileNotFoundError(
+        f"Cannot find {object_type} {name} in {collection} at {location}"
+    )
 
 
 def has_rulebook(collection, rulebook):
-    return has_object(collection, rulebook, "rulebooks", ".yml")
+    return has_object(
+        collection,
+        rulebook,
+        [f"{EDA_PATH_PREFIX}/rulebooks", "rulebooks"],
+        ".yml",
+    )
 
 
 def load_rulebook(collection, rulebook):
-    location = find_object(collection, rulebook, "rulebooks", ".yml")
+    location = find_object(
+        collection,
+        rulebook,
+        [f"{EDA_PATH_PREFIX}/rulebooks", "rulebooks"],
+        ".yml",
+    )
     if not location:
         return False
     with open(location) as f:
@@ -86,20 +104,38 @@ def load_rulebook(collection, rulebook):
 
 
 def has_source(collection, source):
-    return has_object(collection, source, "plugins/event_source", ".py")
+    return has_object(
+        collection,
+        source,
+        [f"{EDA_PATH_PREFIX}/plugins/event_source", "plugins/event_source"],
+        ".py",
+    )
 
 
 def find_source(collection, source):
-    return find_object(collection, source, "plugins/event_source", ".py")
+    return find_object(
+        collection,
+        source,
+        [f"{EDA_PATH_PREFIX}/plugins/event_source", "plugins/event_source"],
+        ".py",
+    )
 
 
 def has_source_filter(collection, source_filter):
-    return has_object(collection, source_filter, "plugins/event_filter", ".py")
+    return has_object(
+        collection,
+        source_filter,
+        [f"{EDA_PATH_PREFIX}/plugins/event_filter", "plugins/event_filter"],
+        ".py",
+    )
 
 
 def find_source_filter(collection, source_filter):
     return find_object(
-        collection, source_filter, "plugins/event_filter", ".py"
+        collection,
+        source_filter,
+        [f"{EDA_PATH_PREFIX}/plugins/event_filter", "plugins/event_filter"],
+        ".py",
     )
 
 
