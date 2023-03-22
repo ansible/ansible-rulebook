@@ -48,4 +48,22 @@ e.g.
 | Keys in the event payload can only contain letters, numbers and underscores.
 | The period (.) is used to access nested keys.
 
+| Since every event should record the origin of the event we have a filter 
+| eda.builtin.insert_meta_info which will be added automatically by
+| ansible-rulebook to add the source name and type and received_at.
+| The received_at stores a date time in UTC ISO8601 format and includes
+| the microseconds.
+| The uuid stores the unique id for the event.
+| The event payload would be modified to include the following  data
+
+.. code-block:: yaml
+   event = { ..., 'meta': {'source': {'name': 'azure_service_bus',
+                                      'type': 'ansible.eda.azure_service_bus'},
+                           'received_at': '2023-03-23T19:11:15.802274Z',
+                           'uuid': 'eb7de03f-6f8f-4943-b69e-3c90db346edf'}
+           }
+
+| The meta key is used to store metadata about the event and its needed to
+| correctly report about the events in the aap-server.
+
 .. _collection: https://github.com/ansible/event-driven-ansible/tree/main/plugins/event_filter

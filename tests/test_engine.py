@@ -15,9 +15,11 @@
 import asyncio
 import os
 from pprint import pprint
+from unittest.mock import patch
 
 import pytest
 import yaml
+from freezegun import freeze_time
 from jsonschema.exceptions import ValidationError
 
 from ansible_rulebook.engine import run_rulesets, start_source
@@ -35,6 +37,9 @@ from ansible_rulebook.util import load_inventory
 from ansible_rulebook.validators import Validate
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+DUMMY_UUID = "eb7de03f-6f8f-4943-b69e-3c90db346edf"
 
 
 def load_rulebook(rules_file):
@@ -116,28 +121,34 @@ test_data = [
 ]
 
 
+@freeze_time("2023-03-23 11:11:11")
 @pytest.mark.parametrize(
     "source_name,filter_name, shutdown_message", test_data
 )
 @pytest.mark.asyncio
 async def test_start_source(source_name, filter_name, shutdown_message):
     os.chdir(HERE)
-
+    meta = {
+        "source": {"name": source_name, "type": source_name},
+        "received_at": "2023-03-23T11:11:11Z",
+        "uuid": DUMMY_UUID,
+    }
     queue = asyncio.Queue()
-    await start_source(
-        EventSource(
-            source_name,
-            source_name,
+    with patch("uuid.uuid4", return_value=DUMMY_UUID):
+        await start_source(
+            EventSource(
+                source_name,
+                source_name,
+                dict(limit=1),
+                [EventSourceFilter(filter_name, {})],
+            ),
+            ["sources"],
             dict(limit=1),
-            [EventSourceFilter(filter_name, {})],
-        ),
-        ["sources"],
-        dict(limit=1),
-        queue,
-    )
-    assert queue.get_nowait() == dict(i=0)
-    last = await queue.get()
-    assert shutdown_message in last.message
+            queue,
+        )
+        assert queue.get_nowait() == dict(i=0, meta=meta)
+        last = await queue.get()
+        assert shutdown_message in last.message
 
 
 test_data = [

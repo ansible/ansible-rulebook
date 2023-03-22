@@ -36,6 +36,7 @@ from drools import ruleset as lang
 
 from .collection import find_playbook, has_playbook, split_collection_name
 from .conf import settings
+from .event_filters.insert_meta_info import main as insert_meta
 from .exception import (
     ControllerApiException,
     PlaybookNotFoundException,
@@ -160,7 +161,7 @@ async def set_fact(
     name: Optional[str] = None,
 ):
     logger.debug("set_fact %s %s", ruleset, fact)
-    lang.assert_fact(ruleset, fact)
+    lang.assert_fact(ruleset, _embellish_internal_event(fact, "set_fact"))
     await event_log.put(
         dict(
             type="Action",
@@ -187,7 +188,7 @@ async def retract_fact(
     fact: Dict,
     name: Optional[str] = None,
 ):
-    lang.retract_fact(ruleset, fact)
+    lang.retract_fact(ruleset, _embellish_internal_event(fact, "retract_fact"))
     await event_log.put(
         dict(
             type="Action",
@@ -213,7 +214,7 @@ async def post_event(
     ruleset: str,
     event: Dict,
 ):
-    lang.post(ruleset, event)
+    lang.post(ruleset, _embellish_internal_event(event, "post_event"))
 
     await event_log.put(
         dict(
@@ -634,6 +635,7 @@ async def post_process_runner(
         for host_facts in glob.glob(os.path.join(fact_folder, "*")):
             with open(host_facts) as f:
                 fact = json.loads(f.read())
+            fact = _embellish_internal_event(fact, action)
             logger.debug("fact %s", fact)
             if set_facts:
                 lang.assert_fact(ruleset, fact)
@@ -764,6 +766,7 @@ async def run_job_template(
         logger.debug("set_facts")
         facts = controller_job["artifacts"]
         if facts:
+            facts = _embellish_internal_event(facts, "run_job_template")
             logger.debug("facts %s", facts)
             if set_facts:
                 lang.assert_fact(ruleset, facts)
@@ -858,3 +861,9 @@ def _collect_extra_vars(
 
 def _run_at() -> str:
     return f"{datetime.now(timezone.utc).isoformat()}".replace("+00:00", "Z")
+
+
+def _embellish_internal_event(event: Dict, method_name: str) -> Dict:
+    return insert_meta(
+        event, **dict(source_name=method_name, source_type="internal")
+    )

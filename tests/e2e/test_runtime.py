@@ -215,7 +215,7 @@ def test_terminate_process_sigint():
 
     start = time.time()
     while line := process.stdout.readline():
-        if "{'action': 'long_loop'}" in line:
+        if "'action': 'long_loop'" in line:
             process.send_signal(subprocess.signal.SIGINT)
             process.wait()
             break
