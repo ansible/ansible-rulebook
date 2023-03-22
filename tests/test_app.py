@@ -12,7 +12,9 @@ from ansible_rulebook.app import (
     validate_actions,
 )
 from ansible_rulebook.cli import get_parser
+from ansible_rulebook.common import StartupArgs
 from ansible_rulebook.exception import (
+    ControllerNeededException,
     InventoryNeededException,
     RulebookNotFoundException,
 )
@@ -25,6 +27,7 @@ TEST_ACTIONS = [
     ("post_event", does_not_raise()),
     ("run_playbook", pytest.raises(InventoryNeededException)),
     ("run_module", pytest.raises(InventoryNeededException)),
+    ("run_job_template", pytest.raises(ControllerNeededException)),
 ]
 
 
@@ -34,11 +37,9 @@ def test_validate_action(
 ):
     actions = [create_action(**dict(action=action))]
     rules = [create_rule(**dict(actions=actions))]
-    rulesets = [create_ruleset(**dict(rules=rules))]
-    parser = get_parser()
-    cmdline_args = parser.parse_args(["-r", "dummy.yml"])
+    startup_args = StartupArgs(rulesets=[create_ruleset(**dict(rules=rules))])
     with expectation:
-        validate_actions(rulesets, cmdline_args)
+        validate_actions(startup_args)
 
 
 def test_load_vars():
@@ -149,7 +150,12 @@ async def test_run_with_websocket(create_ruleset):
             with mock.patch(
                 "ansible_rulebook.app.request_workload"
             ) as mock_request_workload:
-                mock_request_workload.return_value = ("a", "b", rulesets, "d")
+                mock_request_workload.return_value = StartupArgs(
+                    rulesets=rulesets,
+                    controller_url="abc",
+                    controller_token="token",
+                    controller_ssl_verify="no",
+                )
 
                 await run(cmdline_args)
 

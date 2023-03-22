@@ -8,7 +8,6 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.websocket import (
     request_workload,
     send_event_log_to_websocket,
@@ -71,35 +70,33 @@ async def test_request_workload():
     tar_file = "./data/test.tar"
     sha1 = "9691bc9ed954cb3302240fb83ccb60dc2dd999ee24ab2bf5af7427433f9ce2ca"
     test_data.append(
-        dict2json({"type": "ControllerUrl", "data": controller_url})
-    )
-    test_data.append(
-        dict2json({"type": "ControllerToken", "data": controller_token})
-    )
-    test_data.append(
         dict2json(
-            {"type": "ControllerSslVerify", "data": controller_ssl_verify}
+            dict(
+                type="ControllerInfo",
+                url=controller_url,
+                token=controller_token,
+                ssl_verify=controller_ssl_verify,
+            )
         )
     )
     load_file(tar_file, "ProjectData", test_data, False)
     load_file("./rules/rules.yml", "Rulebook", test_data, True)
     load_file("./playbooks/inventory.yml", "Inventory", test_data, True)
     load_file("./data/test_vars.yml", "ExtraVars", test_data, True)
+    test_data.append(dict2json({"type": "EndOfResponse"}))
 
     with patch("ansible_rulebook.websocket.websockets.connect") as mo:
         mo.return_value.__aenter__.return_value.recv.side_effect = test_data
         mo.return_value.__aenter__.return_value.send.return_value = None
 
-        inventory, extra_vars, rulesets, project_tar = await request_workload(
-            "dummy", "dummy"
-        )
-        sha2 = file_sha256(project_tar)
+        response = await request_workload("dummy", "dummy")
+        sha2 = file_sha256(response.project_data_file)
         assert sha1 == sha2
-        assert job_template_runner.host == controller_url
-        assert job_template_runner.token == controller_token
-        assert job_template_runner.verify_ssl == controller_ssl_verify
-        assert rulesets[0].name == "Demo rules"
-        assert len(rulesets[0].rules) == 6
+        assert response.controller_url == controller_url
+        assert response.controller_token == controller_token
+        assert response.controller_verify_ssl == controller_ssl_verify
+        assert response.rulesets[0].name == "Demo rules"
+        assert len(response.rulesets[0].rules) == 6
 
 
 @pytest.mark.asyncio
