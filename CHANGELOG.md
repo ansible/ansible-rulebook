@@ -19,6 +19,9 @@
 - Support Jinja2 substitution in rule names
 - Support booleans in lists, which can contain mixed data types
 - Support for identifiers in select and selectattr
+- Support for controller url via env var EDA_CONTROLLER_URL
+- Support for controller token via env var EDA_CONTROLLER_TOKEN
+- Support for controller token ssl verify via env var EDA_CONTROLLER_SSL_VERIFY
 
 ### Fixed
 
