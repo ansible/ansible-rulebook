@@ -122,24 +122,22 @@
           module_args:
             msg: "Retracted fact in same ruleset, this should not be printed"
 
-    - name: Test multiple actions
+    - name: Test multiple actions in sequential order
       condition: event.action == "multiple_actions"
       actions:
-        - run_module:
-            name: ansible.builtin.debug
-            module_args:
-              msg: "Multiple action #1 triggered"
+        - print_event:
+        - shutdown:
+            kind: "graceful"
+            delay: 0
+            message: "Sequential action #2: shutdown"
         - debug:
-            msg: "Multiple action #2 triggered"
-
+            msg: "Sequential action #3: debug"
 
 - name: Second ruleset
   hosts: all
   sources:
     - generic:
-        shutdown_after: "{{ DEFAULT_SHUTDOWN_AFTER }}"
-        repeat_delay: 1
-        repeat_count: 20
+        startup_delay: 30  # never start, only triggered by Ruleset 1
         payload:
           - empty: true
   rules:

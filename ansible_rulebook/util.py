@@ -16,6 +16,7 @@ import glob
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -188,7 +189,12 @@ def check_jvm():
         sys.exit(1)
 
     java_version = get_java_version()
+
     try:
+        # Keep only "x.y.z" section
+        clean_version = re.match(r"(\d+\.\d+\.\d+).*", java_version)
+        if clean_version:
+            java_version = clean_version.groups()[0]
         if version.parse(java_version) < version.parse("17"):
             print(
                 "The minimum supported Java version is 17. "

@@ -124,7 +124,14 @@
             device_type: "switch"
             tap_state: null
             span_state: "mirroring"
-
+          - id: "Testcase #9"
+            location: "new york"
+            link_state: "down"
+          - id: "Testcase #9"
+            location: "addis ababa"
+            link_state: "down"
+          - id: "Testcase #10"
+            ids_state: null
 
   rules:
     - name: "Testcase #1"
@@ -180,3 +187,26 @@
       action:
         debug:
           msg: "Testcase #08 passes"
+
+    - name: "Testcase #9"
+      condition:
+        all:
+          - events.ny << event.location == "new york"
+          - events.ab << event.location == "addis ababa"
+      action:
+        debug:
+          msg: >
+            Testcase #09 passes, output:
+            Status: {{ events.ny.location }} {{ events.ny.link_state }},
+            {{ events.ab.location }} {{ events.ab.link_state }}
+
+    - name: "Testcase #10"
+      condition:
+        any:
+          - events.status << event.ids_state == "disabled"
+          - events.status << event.ids_state == null
+      action:
+        debug:
+          msg: >
+            Testcase #10 passes, output:
+            IDS state: {{ events.status.ids_state }}
