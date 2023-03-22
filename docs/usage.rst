@@ -29,11 +29,11 @@ The `ansible-rulebook` CLI supports the following options:
     -T PROJECT_TARBALL, --project-tarball PROJECT_TARBALL
                             A tarball of the project
     --controller-url CONTROLLER_URL
-                            Controller API base url, e.g. https://host1:8080
+                            Controller API base url, e.g. https://host1:8080, can also be passed in via env var EDA_CONTROLLER_URL
     --controller-token CONTROLLER_TOKEN
-                            Controller API authentication token
+                            Controller API authentication token, can also be passed in via env var EDA_CONTROLLER_TOKEN
     --controller-ssl-verify CONTROLLER_SSL_VERIFY
-                            How to verify SSL when connecting to the controller, yes|no|<path to a CA bundle>, default to yes for https connection
+                            How to verify SSL when connecting to the controller, yes|no|<path to a CA bundle>, default to yes for https connection. Can also be passed via env var EDA_CONTROLLER_SSL_VERIFY
     --print-events        Print events to stdout, redundant and disabled with -vv
     --shutdown-delay      Maximum number of seconds to wait after a graceful shutdown is issued, default is 60. Can also be set via an env var called EDA_SHUTDOWN_DELAY. The process will shutdown if all actions complete before this time period
 
