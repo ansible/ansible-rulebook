@@ -1,3 +1,4 @@
+# logical, membership & relational vars
 universe_meaning: 42
 in_operator_int_array:
   - 42
@@ -31,3 +32,22 @@ mixed_types:
   - "Vhagar"
   - true
   - Stark
+
+# is select vars
+type_asteroid: "asteroid"
+has_moons: true
+halleys_radius: 11
+halleys_min_op: 27000.123
+
+# is selectattr vars
+not_planet: false
+pluto_radius: 1188.30
+pluto_moons: 5
+eris_moon: "dysnomia"
+total_moons:
+  - 50
+  - 62
+  - 79.99
+best_moons:
+  - "deimos"
+  - "phobos"
