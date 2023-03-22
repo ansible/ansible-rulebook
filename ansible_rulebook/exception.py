@@ -121,3 +121,8 @@ class SourcePluginMainMissingException(Exception):
 class SourcePluginNotAsyncioCompatibleException(Exception):
 
     pass
+
+
+class ControllerNeededException(Exception):
+
+    pass
