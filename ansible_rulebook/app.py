@@ -27,7 +27,9 @@ from ansible_rulebook.collection import (
     load_rulebook as collection_load_rulebook,
     split_collection_name,
 )
+from ansible_rulebook.common import StartupArgs
 from ansible_rulebook.engine import run_rulesets, start_source
+from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.rule_types import RuleSet, RuleSetQueue
 from ansible_rulebook.util import load_inventory
 from ansible_rulebook.validators import Validate
@@ -36,7 +38,11 @@ from ansible_rulebook.websocket import (
     send_event_log_to_websocket,
 )
 
-from .exception import InventoryNeededException, RulebookNotFoundException
+from .exception import (
+    ControllerNeededException,
+    InventoryNeededException,
+    RulebookNotFoundException,
+)
 
 
 class NullQueue:
@@ -53,22 +59,24 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
 
     if parsed_args.worker and parsed_args.websocket_address and parsed_args.id:
         logger.info("Starting worker mode")
-
-        (
-            inventory,
-            variables,
-            rulesets,
-            project_data_file,
-        ) = await request_workload(
-            int(parsed_args.id), parsed_args.websocket_address
+        startup_args = await request_workload(
+            parsed_args.id, parsed_args.websocket_address
         )
     else:
-        inventory = ""
-        variables = load_vars(parsed_args)
-        rulesets = load_rulebook(parsed_args, variables)
+        startup_args = StartupArgs()
+        startup_args.variables = load_vars(parsed_args)
+        startup_args.rulesets = load_rulebook(
+            parsed_args, startup_args.variables
+        )
         if parsed_args.inventory:
-            inventory = load_inventory(parsed_args.inventory)
-        project_data_file = parsed_args.project_tarball
+            startup_args.inventory = load_inventory(parsed_args.inventory)
+        startup_args.project_data_file = parsed_args.project_tarball
+        startup_args.controller_url = parsed_args.controller_url
+        startup_args.controller_token = parsed_args.controller_token
+        startup_args.controller_ssl_verify = parsed_args.controller_ssl_verify
+
+    validate_actions(startup_args)
+    set_controller_params(startup_args)
 
     if parsed_args.websocket_address:
         event_log = asyncio.Queue()
@@ -77,8 +85,8 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
 
     logger.info("Starting sources")
     tasks, ruleset_queues = spawn_sources(
-        rulesets,
-        variables,
+        startup_args.rulesets,
+        startup_args.variables,
         [parsed_args.source_dir],
         parsed_args.shutdown_delay,
     )
@@ -97,10 +105,10 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
     await run_rulesets(
         event_log,
         ruleset_queues,
-        variables,
-        inventory,
+        startup_args.variables,
+        startup_args.inventory,
         parsed_args,
-        project_data_file,
+        startup_args.project_data_file,
     )
 
     logger.info("Cancelling event source tasks")
@@ -172,7 +180,6 @@ def load_rulebook(
             f"Could not find rulebook {parsed_args.rulebook}"
         )
 
-    validate_actions(rulesets, parsed_args)
     return rulesets
 
 
@@ -201,17 +208,33 @@ def spawn_sources(
     return tasks, ruleset_queues
 
 
-def validate_actions(
-    rulesets: List[RuleSet], parsed_args: argparse.ArgumentParser
-) -> None:
-    for ruleset in rulesets:
+def validate_actions(startup_args: StartupArgs) -> None:
+    for ruleset in startup_args.rulesets:
         for rule in ruleset.rules:
             for action in rule.actions:
                 if (
                     action.action in INVENTORY_ACTIONS
-                    and parsed_args.inventory is None
+                    and not startup_args.inventory
                 ):
                     raise InventoryNeededException(
                         f"Rule {rule.name} has an action {action.action} "
                         "which needs inventory to be defined"
                     )
+
+                if (
+                    action.action == "run_job_template"
+                    and not startup_args.controller_url
+                    and not startup_args.controller_token
+                ):
+                    raise ControllerNeededException(
+                        f"Rule {rule.name} has an action {action.action} "
+                        "which needs controller url and token to be defined"
+                    )
+
+
+def set_controller_params(startup_args: StartupArgs) -> None:
+    if startup_args.controller_url:
+        job_template_runner.host = startup_args.controller_url
+        job_template_runner.token = startup_args.controller_token
+        if startup_args.controller_ssl_verify:
+            job_template_runner.verify_ssl = startup_args.controller_ssl_verify
