@@ -120,7 +120,7 @@ class JobTemplateRunner:
                     counter = event["counter"]
                     if counter not in counters:
                         counters.append(counter)
-                        print(event["stdout"])
+                        logger.debug(event["stdout"])
                     if event_handler:
                         await event_handler(event)
 
