@@ -137,7 +137,7 @@
   hosts: all
   sources:
     - generic:
-        startup_delay: 30  # never start, only triggered by Ruleset 1
+        startup_delay: "{{ DEFAULT_STARTUP_DELAY }}"  # never start, only triggered by Ruleset 1
         payload:
           - empty: true
   rules:
