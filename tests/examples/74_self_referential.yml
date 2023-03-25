@@ -1,0 +1,14 @@
+---
+- name: 74 Self referential
+  hosts: all
+  sources:
+    - generic:
+        payload:
+          - x: Fred
+            y: Fred
+
+  rules:
+     - name: rule1
+       condition: event.x == event.y
+       action:
+         print_event:
