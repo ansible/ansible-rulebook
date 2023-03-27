@@ -107,7 +107,7 @@ def has_source(collection, source):
     return has_object(
         collection,
         source,
-        [f"{EDA_PATH_PREFIX}/plugins/event_source", "plugins/event_source"],
+        [f"{EDA_PATH_PREFIX}/plugins/event_sources", "plugins/event_source"],
         ".py",
     )
 
@@ -116,7 +116,7 @@ def find_source(collection, source):
     return find_object(
         collection,
         source,
-        [f"{EDA_PATH_PREFIX}/plugins/event_source", "plugins/event_source"],
+        [f"{EDA_PATH_PREFIX}/plugins/event_sources", "plugins/event_source"],
         ".py",
     )
 
@@ -125,7 +125,7 @@ def has_source_filter(collection, source_filter):
     return has_object(
         collection,
         source_filter,
-        [f"{EDA_PATH_PREFIX}/plugins/event_filter", "plugins/event_filter"],
+        [f"{EDA_PATH_PREFIX}/plugins/event_filters", "plugins/event_filter"],
         ".py",
     )
 
@@ -134,7 +134,7 @@ def find_source_filter(collection, source_filter):
     return find_object(
         collection,
         source_filter,
-        [f"{EDA_PATH_PREFIX}/plugins/event_filter", "plugins/event_filter"],
+        [f"{EDA_PATH_PREFIX}/plugins/event_filters", "plugins/event_filter"],
         ".py",
     )
 
