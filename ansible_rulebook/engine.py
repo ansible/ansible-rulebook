@@ -57,9 +57,11 @@ logger = logging.getLogger(__name__)
 all_source_queues = []
 
 
-def broadcast(shutdown: Shutdown):
+async def broadcast(shutdown: Shutdown):
+    logger.info(f"Broadcast to queues: {all_source_queues}")
+    logger.info(f"Broadcasting shutdown: {shutdown}")
     for queue in all_source_queues:
-        queue.put_nowait(shutdown)
+        await queue.put(shutdown)
 
 
 class FilteredQueue:
@@ -195,11 +197,14 @@ async def start_source(
         logger.error(shutdown_msg)
         raise
     finally:
-        broadcast(
-            Shutdown(
-                message=shutdown_msg,
-                source_plugin=source.source_name,
-                delay=shutdown_delay,
+        logger.info("Broadcast shutdown to all source plugins")
+        asyncio.create_task(
+            broadcast(
+                Shutdown(
+                    message=shutdown_msg,
+                    source_plugin=source.source_name,
+                    delay=shutdown_delay,
+                ),
             )
         )
 

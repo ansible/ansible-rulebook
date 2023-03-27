@@ -49,6 +49,9 @@ class NullQueue:
     async def put(self, _data):
         pass
 
+    def qsize(self):
+        return 0
+
 
 logger = logging.getLogger(__name__)
 INVENTORY_ACTIONS = ("run_playbook", "run_module")
@@ -192,7 +195,7 @@ def spawn_sources(
     tasks = []
     ruleset_queues = []
     for ruleset in rulesets:
-        source_queue = asyncio.Queue()
+        source_queue = asyncio.Queue(1)
         for source in ruleset.sources:
             task = asyncio.create_task(
                 start_source(
