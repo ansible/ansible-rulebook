@@ -1,6 +1,7 @@
 
 # Changelog
-
+### Added
+- Support all file formats for static inventories as ansible does.
 
 ##  [0.11.0] - 2023-03-08
 
