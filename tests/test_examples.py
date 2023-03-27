@@ -1948,3 +1948,29 @@ async def test_73_mix_and_match_list():
             ],
         }
         validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_74_self_referential():
+    ruleset_queues, event_log = load_rulebook(
+        "examples/74_self_referential.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "74 Self referential::rule1::print_event",
+            ],
+        }
+        validate_events(event_log, **checks)
