@@ -22,7 +22,7 @@ import subprocess
 import sys
 import tempfile
 import typing
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import ansible_runner
 import jinja2
@@ -30,7 +30,11 @@ from jinja2.nativetypes import NativeTemplate
 from packaging import version
 from packaging.version import InvalidVersion
 
+from ansible_rulebook.exception import InvalidFilterNameException
+
 logger = logging.getLogger(__name__)
+
+EDA_BUILTIN_FILTER_PREFIX = "eda.builtin."
 
 
 def get_horizontal_rule(character):
@@ -208,3 +212,27 @@ def check_jvm():
             file=sys.stderr,
         )
         sys.exit(1)
+
+
+def has_builtin_filter(name: str) -> bool:
+    return _builtin_filter_path(name)[0]
+
+
+def find_builtin_filter(name: str) -> Optional[str]:
+    found, path = _builtin_filter_path(name)
+    if found:
+        return path
+    return None
+
+
+def _builtin_filter_path(name: str) -> Tuple[bool, str]:
+    if not name.startswith(EDA_BUILTIN_FILTER_PREFIX):
+        return False, ""
+    filter_name = name.split(".")[-1]
+
+    if not filter_name:
+        raise InvalidFilterNameException(name)
+
+    dirname = os.path.dirname(os.path.realpath(__file__))
+    path = os.path.join(dirname, "event_filters", filter_name + ".py")
+    return os.path.exists(path), path

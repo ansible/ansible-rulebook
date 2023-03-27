@@ -32,8 +32,17 @@ from ansible_rulebook.collection import (
 )
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.rule_set_runner import RuleSetRunner
-from ansible_rulebook.rule_types import EventSource, RuleSetQueue
-from ansible_rulebook.util import collect_ansible_facts, substitute_variables
+from ansible_rulebook.rule_types import (
+    EventSource,
+    EventSourceFilter,
+    RuleSetQueue,
+)
+from ansible_rulebook.util import (
+    collect_ansible_facts,
+    find_builtin_filter,
+    has_builtin_filter,
+    substitute_variables,
+)
 
 from .exception import (
     SourceFilterNotFoundException,
@@ -104,6 +113,9 @@ async def start_source(
         source_filters = []
 
         logger.info("load source filters")
+
+        source.source_filters.append(meta_info_filter(source))
+
         for source_filter in source.source_filters:
             logger.info("loading %s", source_filter.filter_name)
             if os.path.exists(
@@ -123,6 +135,10 @@ async def start_source(
                     find_source_filter(
                         *split_collection_name(source_filter.filter_name)
                     )
+                )
+            elif has_builtin_filter(source_filter.filter_name):
+                source_filter_module = runpy.run_path(
+                    find_builtin_filter(source_filter.filter_name)
                 )
             else:
                 raise SourceFilterNotFoundException(
@@ -247,3 +263,11 @@ async def run_rulesets(
     logger.info("Waiting on gather")
     asyncio.gather(*ruleset_tasks)
     logger.info("Returning from run_rulesets")
+
+
+def meta_info_filter(source: EventSource) -> EventSourceFilter:
+    source_filter_name = "eda.builtin.insert_meta_info"
+    source_filter_args = dict(
+        source_name=source.name, source_type=source.source_name
+    )
+    return EventSourceFilter(source_filter_name, source_filter_args)

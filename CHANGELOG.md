@@ -22,6 +22,7 @@
 - Support for controller url via env var EDA_CONTROLLER_URL
 - Support for controller token via env var EDA_CONTROLLER_TOKEN
 - Support for controller token ssl verify via env var EDA_CONTROLLER_SSL_VERIFY
+- Support for bulitin filter eda.builtin.insert_meta_info added to every source
 
 ### Fixed
 
