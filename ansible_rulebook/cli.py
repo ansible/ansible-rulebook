@@ -38,7 +38,6 @@ from ansible_rulebook.job_template_runner import (  # noqa: E402
     job_template_runner,
 )
 
-DEFAULT_GC_AFTER = 1000
 DEFAULT_VERBOSITY = 0
 
 logger = logging.getLogger(__name__)
@@ -145,7 +144,7 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--gc-after",
-        default=os.environ.get("EDA_GC_AFTER", DEFAULT_GC_AFTER),
+        default=os.environ.get("EDA_GC_AFTER", settings.gc_after),
         type=int,
         help="Run the garbage collector after this number of events",
     )
