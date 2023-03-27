@@ -146,7 +146,8 @@ def get_parser() -> argparse.ArgumentParser:
         "--gc-after",
         default=os.environ.get("EDA_GC_AFTER", settings.gc_after),
         type=int,
-        help="Run the garbage collector after this number of events",
+        help="Run the garbage collector after this number of events. "
+        "It can be configured with the environment variable EDA_GC_AFTER",
     )
     return parser
 
