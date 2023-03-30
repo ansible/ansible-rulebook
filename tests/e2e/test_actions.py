@@ -168,7 +168,7 @@ def test_actions_sanity(update_environment):
         ), "multiple_action action failed"
 
     assert (
-        len(result.stdout.splitlines()) == 56
+        len(result.stdout.splitlines()) == 58
     ), "unexpected output from the rulebook"
 
 
