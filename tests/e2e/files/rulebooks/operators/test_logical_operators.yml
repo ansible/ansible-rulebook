@@ -73,6 +73,7 @@
           - id: "Testcase #6"
             nested: # match
               env: prod
+              template.openshift.io/template-instance-owner: 01a70fda-b7de-4041-9a4b-a004938c88b0
             state: "down"
             type: warning
             cpus: 5
