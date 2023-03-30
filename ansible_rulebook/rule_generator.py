@@ -34,7 +34,9 @@ logger = logging.getLogger(__name__)
 
 def add_to_plan(
     ruleset: str,
+    ruleset_uuid: str,
     rule: str,
+    rule_uuid: str,
     actions: List[Action],
     variables: Dict,
     inventory: str,
@@ -45,7 +47,9 @@ def add_to_plan(
     plan.queue.put_nowait(
         ActionContext(
             ruleset,
+            ruleset_uuid,
             rule,
+            rule_uuid,
             actions,
             variables,
             inventory,
@@ -57,6 +61,7 @@ def add_to_plan(
 
 def make_fn(
     ruleset,
+    ruleset_uuid,
     ansible_rule,
     variables: Dict,
     inventory: str,
@@ -67,7 +72,9 @@ def make_fn(
         logger.info("calling %s", ansible_rule.name)
         add_to_plan(
             ruleset,
+            ruleset_uuid,
             ansible_rule.name,
+            ansible_rule.uuid,
             ansible_rule.actions,
             variables,
             inventory,
@@ -98,6 +105,7 @@ def generate_rulesets(
             if ansible_rule.enabled:
                 fn = make_fn(
                     ansible_ruleset.name,
+                    ansible_ruleset.uuid,
                     ansible_rule,
                     variables,
                     inventory,

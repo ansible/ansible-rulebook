@@ -265,7 +265,9 @@ class RuleSetRunner:
         task = asyncio.create_task(
             self._call_action(
                 action_item.ruleset,
+                action_item.ruleset_uuid,
                 action_item.rule,
+                action_item.rule_uuid,
                 action.action,
                 action.action_args,
                 action_item.variables,
@@ -282,7 +284,9 @@ class RuleSetRunner:
     async def _call_action(
         self,
         ruleset: str,
+        ruleset_uuid: str,
         rule: str,
+        rule_uuid: str,
         action: str,
         action_args: Dict,
         variables: Dict,
@@ -368,7 +372,9 @@ class RuleSetRunner:
                     variables=variables_copy,
                     project_data_file=self.project_data_file,
                     source_ruleset_name=ruleset,
+                    source_ruleset_uuid=ruleset_uuid,
                     source_rule_name=rule,
+                    source_rule_uuid=rule_uuid,
                     **action_args,
                 )
             except KeyError as e:
