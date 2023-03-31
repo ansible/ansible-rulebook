@@ -3,9 +3,9 @@ Module with tests for operators
 """
 import logging
 import pprint
+import re
 import subprocess
 
-import jinja2
 import pytest
 from pytest_check import check
 
@@ -69,25 +69,6 @@ def test_actions_sanity(update_environment):
 
     assert result.returncode == 0
     assert not result.stderr
-    event_debug_expected_output_tpl = """kwargs:
-{'hosts': ['all'],
- 'inventory': {{INVENTORY_DATA}},
- 'project_data_file': None,
- 'ruleset': 'Test actions sanity',
- 'source_rule_name': 'debug',
- 'source_ruleset_name': 'Test actions sanity',
- 'variables': {'DEFAULT_EVENT_DELAY': '{{DEFAULT_EVENT_DELAY}}',
-               'DEFAULT_SHUTDOWN_AFTER': '{{DEFAULT_SHUTDOWN_AFTER}}',
-               'DEFAULT_STARTUP_DELAY': '{{DEFAULT_STARTUP_DELAY}}',"""  # noqa: E501
-
-    event_debug_expected_output = jinja2.Template(
-        event_debug_expected_output_tpl
-    ).render(
-        DEFAULT_SHUTDOWN_AFTER=DEFAULT_SHUTDOWN_AFTER,
-        DEFAULT_EVENT_DELAY=DEFAULT_EVENT_DELAY,
-        DEFAULT_STARTUP_DELAY=DEFAULT_STARTUP_DELAY,
-        INVENTORY_DATA=inventory_data,
-    )
 
     # assert each expected output per action tested
     with check:
@@ -116,12 +97,40 @@ def test_actions_sanity(update_environment):
         ), "print_event action with multiple events 2 failed"
 
     with check:
-        assert (
-            event_debug_expected_output in result.stdout
-        ), "debug action failed"
+        expected_debug_lines = [
+            "'hosts': ['all']",
+            f"'inventory': {inventory_data}",
+            "'project_data_file': None,",
+            "'ruleset': 'Test actions sanity'",
+            "'source_rule_name': 'debug',",
+            f"'variables': {{'DEFAULT_EVENT_DELAY': '{DEFAULT_EVENT_DELAY}'",
+            f"'DEFAULT_SHUTDOWN_AFTER': '{DEFAULT_SHUTDOWN_AFTER}',",
+            f"'DEFAULT_STARTUP_DELAY': '{DEFAULT_STARTUP_DELAY}'",
+            "'event': {'action': 'debug',",
+            "'source': {'name': 'generic',",
+            "'type': 'generic'},",
+            "'meta': {'received_at': ",
+        ]
+
+        for line in expected_debug_lines:
+            assert (
+                line in result.stdout
+            ), f"debug action failed, expected: {line}"
 
     with check:
-        assert "'action': 'debug'" in result.stdout, "debug action failed"
+        uuid_regex = (
+            r"[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}"
+        )
+        expected_debug_regexs = [
+            r"'source_rule_uuid':" + f" '{uuid_regex}'",
+            r"'source_ruleset_uuid':" + f" '{uuid_regex}'",
+            r"'uuid': " + f"'{uuid_regex}'" + r"}}}}",
+        ]
+
+        for regex in expected_debug_regexs:
+            assert re.search(
+                regex, result.stdout
+            ), f"debug action failed, expected: {regex}"
 
     with check:
         assert (
@@ -168,7 +177,7 @@ def test_actions_sanity(update_environment):
         ), "multiple_action action failed"
 
     assert (
-        len(result.stdout.splitlines()) == 56
+        len(result.stdout.splitlines()) == 58
     ), "unexpected output from the rulebook"
 
 
