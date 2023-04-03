@@ -1,0 +1,9 @@
+---
+awx_name: awx
+awx_image: quay.io/ansible/awx
+awx_image_tag: latest
+awx_operator_image: quay.io/ansible/awx-operator
+awx_operator_image_tag: "1.2.0"
+awx_namespace: awx
+awx_hostname: "localhost"
+awx_admin_password: password
