@@ -67,7 +67,12 @@ async def test_websocket_messages():
         if data["type"] == "Action":
             action_counter += 1
             assert data["action"] == "run_playbook"
-            assert data["matching_events"] == {"m": {"i": 700}}
+            assert data["action_uuid"] is not None
+            assert data["ruleset_uuid"] is not None
+            assert data["rule_uuid"] is not None
+            matching_events = data["matching_events"]
+            del matching_events["m"]["meta"]
+            assert matching_events == {"m": {"i": 700}}
             assert data["status"] == "successful"
 
         if data["type"] == "Job":

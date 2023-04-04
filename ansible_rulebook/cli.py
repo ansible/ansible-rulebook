@@ -142,6 +142,13 @@ def get_parser() -> argparse.ArgumentParser:
         "graceful shutdown, default: 60. The process will shutdown if "
         "all actions complete before this time period",
     )
+    parser.add_argument(
+        "--gc-after",
+        default=os.environ.get("EDA_GC_AFTER", settings.gc_after),
+        type=int,
+        help="Run the garbage collector after this number of events. "
+        "It can be configured with the environment variable EDA_GC_AFTER",
+    )
     return parser
 
 
@@ -206,6 +213,9 @@ def main(args: List[str] = None) -> int:
 
     if args.id:
         settings.identifier = args.id
+
+    if args.gc_after is not None:
+        settings.gc_after = args.gc_after
 
     setup_logging(args)
 

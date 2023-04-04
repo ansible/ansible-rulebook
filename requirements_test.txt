@@ -15,3 +15,6 @@ pytest-cov
 pytest-vcr
 pytest-check
 dynaconf==3.1.11
+freezegun
+oauthlib>=3.2.0
+kubernetes

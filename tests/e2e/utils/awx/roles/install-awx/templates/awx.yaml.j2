@@ -1,0 +1,12 @@
+---
+apiVersion: awx.ansible.com/v1beta1
+kind: AWX
+metadata:
+  name: {{ awx_name }}
+  namespace: {{ awx_namespace }}
+spec:
+  hostname: {{ awx_hostname }}
+  image: {{ awx_image }}
+  image_version: {{ awx_image_tag }}
+  service_type: nodeport
+  ingress_type: ingress

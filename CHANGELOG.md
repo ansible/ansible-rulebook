@@ -23,6 +23,7 @@
 - Support for controller url via env var EDA_CONTROLLER_URL
 - Support for controller token via env var EDA_CONTROLLER_TOKEN
 - Support for controller token ssl verify via env var EDA_CONTROLLER_SSL_VERIFY
+- Support for bulitin filter eda.builtin.insert_meta_info added to every source
 
 ### Fixed
 
@@ -35,6 +36,7 @@
 - a race condition between threads in drools rule engine
 - actions in different rules to run in parallel
 - actions within a single rule to execute sequentially
+- comparing 2 different attributes in the same event
 
 ### Removed
 

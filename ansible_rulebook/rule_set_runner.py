@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import asyncio
+import gc
 import logging
 from datetime import datetime
 from pprint import PrettyPrinter, pformat
@@ -62,6 +63,7 @@ class RuleSetRunner:
         self.shutdown = None
         self.active_actions = set()
         self.broadcast_method = broadcast_method
+        self.event_counter = 0
 
     async def run_ruleset(self):
         tasks = []
@@ -188,8 +190,20 @@ class RuleSetRunner:
                     logger.debug("MessageObservedException: %s", data)
                 except MessageNotHandledException:
                     logger.debug("MessageNotHandledException: %s", data)
+                except BaseException as e:
+                    logger.error(e)
                 finally:
                     logger.debug(lang.get_pending_events(self.name))
+                    if (
+                        settings.gc_after
+                        and self.event_counter > settings.gc_after
+                    ):
+                        self.event_counter = 0
+                        gc.collect()
+                    else:
+                        self.event_counter += 1
+                    while self.ruleset_queue_plan.plan.queue.qsize() > 10:
+                        await asyncio.sleep(0)
         except asyncio.CancelledError:
             logger.debug("Source Task Cancelled for ruleset %s", self.name)
             raise
@@ -229,6 +243,9 @@ class RuleSetRunner:
                 "Action Plan Task Cancelled for ruleset %s", self.name
             )
             raise
+        except BaseException as e:
+            logger.error(e)
+            raise
         finally:
             await self._cleanup()
 
@@ -248,7 +265,9 @@ class RuleSetRunner:
         task = asyncio.create_task(
             self._call_action(
                 action_item.ruleset,
+                action_item.ruleset_uuid,
                 action_item.rule,
+                action_item.rule_uuid,
                 action.action,
                 action.action_args,
                 action_item.variables,
@@ -265,7 +284,9 @@ class RuleSetRunner:
     async def _call_action(
         self,
         ruleset: str,
+        ruleset_uuid: str,
         rule: str,
+        rule_uuid: str,
         action: str,
         action_args: Dict,
         variables: Dict,
@@ -351,7 +372,9 @@ class RuleSetRunner:
                     variables=variables_copy,
                     project_data_file=self.project_data_file,
                     source_ruleset_name=ruleset,
+                    source_ruleset_uuid=ruleset_uuid,
                     source_rule_name=rule,
+                    source_rule_uuid=rule_uuid,
                     **action_args,
                 )
             except KeyError as e:
@@ -371,13 +394,16 @@ class RuleSetRunner:
                         "A shutdown is already in progress, ignoring this one"
                     )
                 else:
-                    self.broadcast_method(e.shutdown)
+                    await self.broadcast_method(e.shutdown)
             except asyncio.CancelledError:
                 logger.debug("Action task caught Cancelled error")
                 raise
             except Exception as e:
                 logger.exception("Error calling %s", action)
                 result = dict(error=e)
+            except BaseException as e:
+                logger.error(e)
+                raise
         else:
             logger.error("Action %s not supported", action)
             result = dict(error=f"Action {action} not supported")

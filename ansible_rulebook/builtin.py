@@ -36,6 +36,7 @@ from drools import ruleset as lang
 
 from .collection import find_playbook, has_playbook, split_collection_name
 from .conf import settings
+from .event_filters.insert_meta_info import main as insert_meta
 from .exception import (
     ControllerApiException,
     PlaybookNotFoundException,
@@ -60,15 +61,20 @@ async def none(
     variables: Dict,
     project_data_file: str,
     source_ruleset_name: str,
+    source_ruleset_uuid: str,
     source_rule_name: str,
+    source_rule_uuid: str,
     ruleset: str,
 ):
     await event_log.put(
         dict(
             type="Action",
             action="noop",
+            action_uuid=str(uuid.uuid4()),
             ruleset=source_ruleset_name,
+            ruleset_uuid=source_ruleset_uuid,
             rule=source_rule_name,
+            rule_uuid=source_rule_uuid,
             activation_id=settings.identifier,
             run_at=_run_at(),
             matching_events=_get_events(variables),
@@ -103,9 +109,12 @@ async def debug(event_log, **kwargs):
         dict(
             type="Action",
             action="debug",
+            action_uuid=str(uuid.uuid4()),
             playbook_name=kwargs.get("name"),
             ruleset=kwargs.get("source_ruleset_name"),
+            ruleset_uuid=kwargs.get("source_ruleset_uuid"),
             rule=kwargs.get("source_rule_name"),
+            rule_uuid=kwargs.get("source_rule_uuid"),
             activation_id=settings.identifier,
             run_at=_run_at(),
             matching_events=_get_events(kwargs.get("variables")),
@@ -120,7 +129,9 @@ async def print_event(
     variables: Dict,
     project_data_file: str,
     source_ruleset_name: str,
+    source_ruleset_uuid: str,
     source_rule_name: str,
+    source_rule_uuid: str,
     ruleset: str,
     name: Optional[str] = None,
     pretty: Optional[str] = None,
@@ -137,9 +148,12 @@ async def print_event(
         dict(
             type="Action",
             action="print_event",
+            action_uuid=str(uuid.uuid4()),
             activation_id=settings.identifier,
             ruleset=source_ruleset_name,
+            ruleset_uuid=source_ruleset_uuid,
             rule=source_rule_name,
+            rule_uuid=source_rule_uuid,
             playbook_name=name,
             run_at=_run_at(),
             matching_events=_get_events(variables),
@@ -154,20 +168,25 @@ async def set_fact(
     variables: Dict,
     project_data_file: str,
     source_ruleset_name: str,
+    source_ruleset_uuid: str,
     source_rule_name: str,
+    source_rule_uuid: str,
     ruleset: str,
     fact: Dict,
     name: Optional[str] = None,
 ):
     logger.debug("set_fact %s %s", ruleset, fact)
-    lang.assert_fact(ruleset, fact)
+    lang.assert_fact(ruleset, _embellish_internal_event(fact, "set_fact"))
     await event_log.put(
         dict(
             type="Action",
             action="set_fact",
+            action_uuid=str(uuid.uuid4()),
             activation_id=settings.identifier,
             ruleset=source_ruleset_name,
+            ruleset_uuid=source_ruleset_uuid,
             rule=source_rule_name,
+            rule_uuid=source_rule_uuid,
             playbook_name=name,
             run_at=_run_at(),
             matching_events=_get_events(variables),
@@ -182,18 +201,23 @@ async def retract_fact(
     variables: Dict,
     project_data_file: str,
     source_ruleset_name: str,
+    source_ruleset_uuid: str,
     source_rule_name: str,
+    source_rule_uuid: str,
     ruleset: str,
     fact: Dict,
     name: Optional[str] = None,
 ):
-    lang.retract_fact(ruleset, fact)
+    lang.retract_fact(ruleset, _embellish_internal_event(fact, "retract_fact"))
     await event_log.put(
         dict(
             type="Action",
             action="retract_fact",
+            action_uuid=str(uuid.uuid4()),
             ruleset=source_ruleset_name,
+            ruleset_uuid=source_ruleset_uuid,
             rule=source_rule_name,
+            rule_uuid=source_rule_uuid,
             activation_id=settings.identifier,
             playbook_name=name,
             run_at=_run_at(),
@@ -209,18 +233,23 @@ async def post_event(
     variables: Dict,
     project_data_file: str,
     source_ruleset_name: str,
+    source_ruleset_uuid: str,
     source_rule_name: str,
+    source_rule_uuid: str,
     ruleset: str,
     event: Dict,
 ):
-    lang.post(ruleset, event)
+    lang.post(ruleset, _embellish_internal_event(event, "post_event"))
 
     await event_log.put(
         dict(
             type="Action",
             action="post_event",
+            action_uuid=str(uuid.uuid4()),
             ruleset=source_ruleset_name,
+            ruleset_uuid=source_ruleset_uuid,
             rule=source_rule_name,
+            rule_uuid=source_rule_uuid,
             activation_id=settings.identifier,
             run_at=_run_at(),
             matching_events=_get_events(variables),
@@ -235,7 +264,9 @@ async def run_playbook(
     variables: Dict,
     project_data_file: str,
     source_ruleset_name: str,
+    source_ruleset_uuid: str,
     source_rule_name: str,
+    source_rule_uuid: str,
     ruleset: str,
     name: str,
     set_facts: Optional[bool] = None,
@@ -276,7 +307,9 @@ async def run_playbook(
             ansible_rulebook_id=settings.identifier,
             name=playbook_name,
             ruleset=source_ruleset_name,
+            ruleset_uuid=source_ruleset_uuid,
             rule=source_rule_name,
+            rule_uuid=source_rule_uuid,
             hosts=",".join(hosts),
             action="run_playbook",
         )
@@ -312,7 +345,9 @@ async def run_playbook(
         variables,
         temp_dir,
         ruleset,
+        source_ruleset_uuid,
         source_rule_name,
+        source_rule_uuid,
         settings.identifier,
         name,
         "run_playbook",
@@ -332,7 +367,9 @@ async def run_module(
     variables: Dict,
     project_data_file: str,
     source_ruleset_name: str,
+    source_ruleset_uuid: str,
     source_rule_name: str,
+    source_rule_uuid: str,
     ruleset: str,
     name: str,
     set_facts: Optional[bool] = None,
@@ -370,7 +407,9 @@ async def run_module(
             ansible_rulebook_id=settings.identifier,
             name=module_name,
             ruleset=source_ruleset_name,
+            ruleset_uuid=source_ruleset_uuid,
             rule=source_rule_name,
+            rule_uuid=source_rule_uuid,
             hosts=",".join(hosts),
             action="run_module",
         )
@@ -415,7 +454,9 @@ async def run_module(
         variables,
         temp_dir,
         ruleset,
+        source_ruleset_uuid,
         source_rule_name,
+        source_rule_uuid,
         settings.identifier,
         name,
         "run_module",
@@ -592,7 +633,9 @@ async def post_process_runner(
     variables: Dict,
     private_data_dir: str,
     ruleset: str,
+    ruleset_uuid: str,
     rule: str,
+    rule_uuid: str,
     activation_id: str,
     name: str,
     action: str,
@@ -614,11 +657,14 @@ async def post_process_runner(
     result = dict(
         type="Action",
         action=action,
+        action_uuid=str(uuid.uuid4()),
         activation_id=activation_id,
         playbook_name=name,
         job_id=job_id,
         ruleset=ruleset,
+        ruleset_uuid=ruleset_uuid,
         rule=rule,
+        rule_uuid=rule_uuid,
         rc=rc,
         status=status,
         run_at=run_at,
@@ -634,6 +680,7 @@ async def post_process_runner(
         for host_facts in glob.glob(os.path.join(fact_folder, "*")):
             with open(host_facts) as f:
                 fact = json.loads(f.read())
+            fact = _embellish_internal_event(fact, action)
             logger.debug("fact %s", fact)
             if set_facts:
                 lang.assert_fact(ruleset, fact)
@@ -648,7 +695,9 @@ async def run_job_template(
     variables: Dict,
     project_data_file: str,
     source_ruleset_name: str,
+    source_ruleset_uuid: str,
     source_rule_name: str,
+    source_rule_uuid: str,
     ruleset: str,
     name: str,
     organization: str,
@@ -690,7 +739,9 @@ async def run_job_template(
             ansible_rulebook_id=settings.identifier,
             name=name,
             ruleset=source_ruleset_name,
+            ruleset_uuid=source_ruleset_uuid,
             rule=source_rule_name,
+            rule_uuid=source_rule_uuid,
             hosts=hosts_limit,
             action="run_job_template",
         )
@@ -748,12 +799,15 @@ async def run_job_template(
         dict(
             type="Action",
             action="run_job_template",
+            action_uuid=str(uuid.uuid4()),
             activation_id=settings.identifier,
             job_template_name=name,
             organization=organization,
             job_id=job_id,
             ruleset=ruleset,
+            ruleset_uuid=source_ruleset_uuid,
             rule=source_rule_name,
+            rule_uuid=source_rule_uuid,
             status=controller_job["status"],
             run_at=controller_job["created"],
             matching_events=_get_events(variables),
@@ -764,6 +818,7 @@ async def run_job_template(
         logger.debug("set_facts")
         facts = controller_job["artifacts"]
         if facts:
+            facts = _embellish_internal_event(facts, "run_job_template")
             logger.debug("facts %s", facts)
             if set_facts:
                 lang.assert_fact(ruleset, facts)
@@ -780,7 +835,9 @@ async def shutdown(
     variables: Dict,
     project_data_file: str,
     source_ruleset_name: str,
+    source_ruleset_uuid: str,
     source_rule_name: str,
+    source_rule_uuid: str,
     ruleset: str,
     delay: float = 60.0,
     message: str = "Default shutdown message",
@@ -790,9 +847,12 @@ async def shutdown(
         dict(
             type="Action",
             action="shutdown",
+            action_uuid=str(uuid.uuid4()),
             activation_id=settings.identifier,
             ruleset=source_ruleset_name,
+            ruleset_uuid=source_ruleset_uuid,
             rule=source_rule_name,
+            rule_uuid=source_rule_uuid,
             run_at=_run_at(),
             matching_events=_get_events(variables),
             delay=delay,
@@ -858,3 +918,9 @@ def _collect_extra_vars(
 
 def _run_at() -> str:
     return f"{datetime.now(timezone.utc).isoformat()}".replace("+00:00", "Z")
+
+
+def _embellish_internal_event(event: Dict, method_name: str) -> Dict:
+    return insert_meta(
+        event, **dict(source_name=method_name, source_type="internal")
+    )

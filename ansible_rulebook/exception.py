@@ -126,3 +126,8 @@ class SourcePluginNotAsyncioCompatibleException(Exception):
 class ControllerNeededException(Exception):
 
     pass
+
+
+class InvalidFilterNameException(Exception):
+
+    pass

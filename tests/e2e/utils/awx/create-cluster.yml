@@ -1,0 +1,21 @@
+- name: Create kind cluster
+  hosts: localhost
+  connection: local
+  tasks:
+  - name: Create kind cluster
+    ansible.builtin.command:
+      cmd: kind create cluster --config kind-config.yml
+
+  - name: Deploy ingress controller
+    kubernetes.core.k8s:
+      apply: true
+      src: https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+
+  - name: Wait for controller
+    kubernetes.core.k8s_info:
+      namespace: ingress-nginx
+      kind: pod
+      label_selectors:
+        - app.kubernetes.io/component=controller
+      wait: yes
+      wait_sleep: 1
