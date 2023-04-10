@@ -39,6 +39,7 @@ class EventSource(NamedTuple):
 class Action(NamedTuple):
     action: str
     action_args: dict
+    uuid: Optional[str] = None
 
 
 class Condition(NamedTuple):
@@ -59,6 +60,7 @@ class Rule(NamedTuple):
     actions: List[Action]
     enabled: bool
     throttle: Optional[Throttle] = None
+    uuid: Optional[str] = None
 
 
 class RuleSet(NamedTuple):
@@ -67,11 +69,14 @@ class RuleSet(NamedTuple):
     sources: List[EventSource]
     rules: List[Rule]
     gather_facts: bool
+    uuid: Optional[str] = None
 
 
 class ActionContext(NamedTuple):
     ruleset: str
+    ruleset_uuid: str
     rule: str
+    rule_uuid: str
     actions: List[Action]
     variables: Dict
     inventory: str

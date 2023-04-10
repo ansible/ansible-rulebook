@@ -1,0 +1,27 @@
+---
+- name: Install AWX to Kubernetes Cluster
+  hosts: localhost
+  connection: local
+  roles:
+    - install-awx
+  tasks:
+    - name: Wait for controller
+      kubernetes.core.k8s_info:
+        namespace: ingress-nginx
+        kind: pod
+        label_selectors:
+          - app.kubernetes.io/component=controller
+        wait: yes
+        wait_sleep: 3
+
+    - name: Wait for http response
+      uri:
+        url: https://localhost:9443/api/v2/ping/
+        return_content: no
+        validate_certs: no
+        status_code:
+          - 200
+      until: uri_output.status == 200
+      retries: 60
+      delay: 1
+      register: uri_output

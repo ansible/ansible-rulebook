@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import uuid
 from typing import Any, Dict, List, Optional
 
 import ansible_rulebook.rule_types as rt
@@ -70,6 +71,7 @@ def parse_rule_sets(
                 sources=parse_event_sources(rule_set["sources"]),
                 rules=parse_rules(rule_set.get("rules", {}), variables),
                 gather_facts=rule_set.get("gather_facts", False),
+                uuid=str(uuid.uuid4()),
             )
         )
     return rule_set_list
@@ -142,6 +144,7 @@ def parse_rules(rules: Dict, variables: Dict) -> List[rt.Rule]:
             actions=parse_actions(rule),
             enabled=rule.get("enabled", True),
             throttle=throttle,
+            uuid=str(uuid.uuid4()),
         )
         if rule.enabled:
             rule_list.append(rule)

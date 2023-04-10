@@ -1,0 +1,46 @@
+---
+- name: Create Artifacts Directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - artifacts
+    - artifacts/{{ awx_hostname }}
+    - artifacts/{{ awx_hostname }}/kustomization
+
+- name: Create manifests from templates
+  ansible.builtin.template:
+    src: templates/{{ item }}.j2
+    dest: artifacts/{{ awx_hostname }}/{{ item }}
+  loop:
+    - awx.yaml
+    - kustomization/kustomization.yaml
+
+- name: Create Operator Deployment from kustomization
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('kubernetes.core.kustomize', dir='artifacts/'+awx_hostname+'/kustomization') }}"
+    wait: yes
+
+- name: Deploy admin password secret
+  kubernetes.core.k8s:
+    definition: "{{ lookup('template', 'admin-password-secret.yml.j2') }}"
+    state: present
+
+- name: Create AWX - {{ awx_hostname }}
+  kubernetes.core.k8s:
+    state: present
+    src: artifacts/{{ awx_hostname }}/awx.yaml
+    wait: yes
+    wait_condition:
+      type: Running
+      status: "True"
+
+- name: Wait for app
+  kubernetes.core.k8s_info:
+    namespace: "{{ awx_namespace }}"
+    kind: pod
+    label_selectors:
+      - app.kubernetes.io/component=awx
+    wait: yes
+    wait_sleep: 3

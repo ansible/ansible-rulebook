@@ -55,16 +55,20 @@ async def test_01_noop():
     queue.put_nowait(dict(i=1))
     queue.put_nowait(Shutdown())
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        dict(),
-    )
+    with patch("uuid.uuid4", return_value=DUMMY_UUID):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
 
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "noop", "2"
+    assert event["action_uuid"] == DUMMY_UUID
+    assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
+    assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {"m": {"i": 1}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "7"
@@ -79,16 +83,20 @@ async def test_02_debug():
     queue.put_nowait(dict(i=1))
     queue.put_nowait(Shutdown())
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        dict(),
-    )
+    with patch("uuid.uuid4", return_value=DUMMY_UUID):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
 
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
+    assert event["action_uuid"] == DUMMY_UUID
+    assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
+    assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {"m": {"i": 1}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "7"
@@ -103,16 +111,20 @@ async def test_03_print_event():
     queue.put_nowait(dict(i=1))
     queue.put_nowait(Shutdown())
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        dict(),
-    )
+    with patch("uuid.uuid4", return_value=DUMMY_UUID):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
 
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "print_event", "2"
+    assert event["action_uuid"] == DUMMY_UUID
+    assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
+    assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {"m": {"i": 1}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "7"
@@ -127,16 +139,20 @@ async def test_04_set_fact():
     queue.put_nowait(dict(i=1))
     queue.put_nowait(Shutdown())
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        dict(),
-    )
+    with patch("uuid.uuid4", return_value=DUMMY_UUID):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
 
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "set_fact", "2"
+    assert event["action_uuid"] == DUMMY_UUID
+    assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
+    assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {"m": {"i": 1}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "Action", "3"
@@ -154,16 +170,20 @@ async def test_05_post_event():
     queue.put_nowait(dict(i=1))
     queue.put_nowait(Shutdown())
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        dict(),
-    )
+    with patch("uuid.uuid4", return_value=DUMMY_UUID):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
 
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "post_event", "2"
+    assert event["action_uuid"] == DUMMY_UUID
+    assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
+    assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {"m": {"i": 1}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "Action", "3"
@@ -182,16 +202,20 @@ async def test_06_retract_fact():
     queue.put_nowait(dict(i=1))
     queue.put_nowait(Shutdown())
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        dict(),
-    )
+    with patch("uuid.uuid4", return_value=DUMMY_UUID):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
 
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "set_fact", "2"
+    assert event["action_uuid"] == DUMMY_UUID
+    assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
+    assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {"m": {"i": 1}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "Action", "3"
@@ -597,12 +621,13 @@ async def test_21_run_playbook(rule, ansible_events):
     queue.put_nowait(dict(i=1))
     queue.put_nowait(Shutdown())
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        load_inventory("playbooks/inventory.yml"),
-    )
+    with patch("uuid.uuid4", return_value=DUMMY_UUID):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
 
     event = event_log.get_nowait()
     assert event["type"] == "Job", "0"
@@ -617,6 +642,9 @@ async def test_21_run_playbook(rule, ansible_events):
     assert ansible_event_count == ansible_events
     assert event["type"] == "Action", "1"
     assert event["action"] == "run_playbook", "2"
+    assert event["action_uuid"] == DUMMY_UUID
+    assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
+    assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {"m": {"i": 1}}
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "8"
@@ -708,16 +736,20 @@ async def test_26_print_events():
     queue.put_nowait(dict(i=2))
     queue.put_nowait(Shutdown())
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-        dict(),
-    )
+    with patch("uuid.uuid4", return_value=DUMMY_UUID):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
 
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "print_event", "2"
+    assert event["action_uuid"] == DUMMY_UUID
+    assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
+    assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {"m_0": {"i": 1}, "m_1": {"i": 2}}, "3"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "7"
@@ -785,11 +817,12 @@ async def test_29_run_module():
     queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
     queue.put_nowait(Shutdown())
 
-    await run_rulesets(
-        event_log,
-        ruleset_queues,
-        dict(),
-    )
+    with patch("uuid.uuid4", return_value=DUMMY_UUID):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+        )
 
     event = event_log.get_nowait()
     assert event["type"] == "Job", "0"
@@ -799,6 +832,9 @@ async def test_29_run_module():
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "run_module", "2"
+    assert event["action_uuid"] == DUMMY_UUID
+    assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
+    assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {
         "m": {"i": 1, "meta": {"hosts": "localhost"}}
     }
@@ -999,16 +1035,20 @@ async def test_38_shutdown_action():
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
     with SourceTask(rs.sources[0], "sources", {}, queue):
-        await run_rulesets(
-            event_log,
-            ruleset_queues,
-            dict(),
-            load_inventory("playbooks/inventory.yml"),
-        )
+        with patch("uuid.uuid4", return_value=DUMMY_UUID):
+            await run_rulesets(
+                event_log,
+                ruleset_queues,
+                dict(),
+                load_inventory("playbooks/inventory.yml"),
+            )
 
         event = event_log.get_nowait()
         assert event["type"] == "Action", "1"
         assert event["action"] == "shutdown", "1"
+        assert event["action_uuid"] == DUMMY_UUID
+        assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
+        assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
         assert event["message"] == "My rule has triggered a shutdown"
         assert event["delay"] == 1.1845
         assert event["ruleset"] == "Test shutdown action"
