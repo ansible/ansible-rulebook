@@ -52,6 +52,7 @@ logger = logging.getLogger(__name__)
 tar = shutil.which("tar")
 
 KEY_EDA_VARS = "ansible_eda"
+INTERNAL_ACTION_STATUS = "successful"
 
 
 async def none(
@@ -77,6 +78,7 @@ async def none(
             rule_uuid=source_rule_uuid,
             activation_id=settings.identifier,
             run_at=_run_at(),
+            status=INTERNAL_ACTION_STATUS,
             matching_events=_get_events(variables),
         )
     )
@@ -117,6 +119,7 @@ async def debug(event_log, **kwargs):
             rule_uuid=kwargs.get("source_rule_uuid"),
             activation_id=settings.identifier,
             run_at=_run_at(),
+            status=INTERNAL_ACTION_STATUS,
             matching_events=_get_events(kwargs.get("variables")),
         )
     )
@@ -156,6 +159,7 @@ async def print_event(
             rule_uuid=source_rule_uuid,
             playbook_name=name,
             run_at=_run_at(),
+            status=INTERNAL_ACTION_STATUS,
             matching_events=_get_events(variables),
         )
     )
@@ -189,6 +193,7 @@ async def set_fact(
             rule_uuid=source_rule_uuid,
             playbook_name=name,
             run_at=_run_at(),
+            status=INTERNAL_ACTION_STATUS,
             matching_events=_get_events(variables),
         )
     )
@@ -221,6 +226,7 @@ async def retract_fact(
             activation_id=settings.identifier,
             playbook_name=name,
             run_at=_run_at(),
+            status=INTERNAL_ACTION_STATUS,
             matching_events=_get_events(variables),
         )
     )
@@ -252,6 +258,7 @@ async def post_event(
             rule_uuid=source_rule_uuid,
             activation_id=settings.identifier,
             run_at=_run_at(),
+            status=INTERNAL_ACTION_STATUS,
             matching_events=_get_events(variables),
         )
     )
@@ -854,6 +861,7 @@ async def shutdown(
             rule=source_rule_name,
             rule_uuid=source_rule_uuid,
             run_at=_run_at(),
+            status=INTERNAL_ACTION_STATUS,
             matching_events=_get_events(variables),
             delay=delay,
             message=message,
