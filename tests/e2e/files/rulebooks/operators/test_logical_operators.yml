@@ -133,6 +133,11 @@
             link_state: "down"
           - id: "Testcase #10"
             ids_state: null
+          - id: "Testcase #11"
+            left_hand: 5
+            right_hand: 5
+
+
 
   rules:
     - name: "Testcase #1"
@@ -211,3 +216,10 @@
           msg: >
             Testcase #10 passes, output:
             IDS state: {{ events.status.ids_state }}
+
+    - name: "Testcase #11"
+      condition: event.left_hand == event.right_hand
+      action:
+        debug:
+          msg: "Testcase #11 passes"
+
