@@ -1,7 +1,28 @@
 
 # Changelog
+
+## [Unreleased]
+
+### Added
+
+### Fixed
+
+### Removed
+
+##  [0.12.0] - 2023-04-12
+
 ### Added
 - Support all file formats for static inventories as ansible does.
+- Support for controller url via env var EDA_CONTROLLER_URL
+- Support for controller token via env var EDA_CONTROLLER_TOKEN
+- Support for controller token ssl verify via env var EDA_CONTROLLER_SSL_VERIFY
+- Support for bulitin filter eda.builtin.insert_meta_info added to every source
+
+### Fixed
+- actions in different rules to run in parallel
+- actions within a single rule to execute sequentially
+- comparing 2 different attributes in the same event
+- select with search option on delayed evaluation
 
 ##  [0.11.0] - 2023-03-08
 
@@ -20,10 +41,6 @@
 - Support Jinja2 substitution in rule names
 - Support booleans in lists, which can contain mixed data types
 - Support for identifiers in select and selectattr
-- Support for controller url via env var EDA_CONTROLLER_URL
-- Support for controller token via env var EDA_CONTROLLER_TOKEN
-- Support for controller token ssl verify via env var EDA_CONTROLLER_SSL_VERIFY
-- Support for bulitin filter eda.builtin.insert_meta_info added to every source
 
 ### Fixed
 
@@ -34,10 +51,6 @@
 - Inventory argument to the CLI is optional
 - select works with null
 - a race condition between threads in drools rule engine
-- actions in different rules to run in parallel
-- actions within a single rule to execute sequentially
-- comparing 2 different attributes in the same event
-- select with search option on delayed evaluation
 
 ### Removed
 
