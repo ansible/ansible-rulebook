@@ -1,0 +1,29 @@
+---
+- name: 76 all conditions
+  hosts: all
+  sources:
+     - generic:
+          payload:
+             - request:
+                 type: Delete
+                 friend_name: fred
+             - request:
+                 type: Delete
+                 friend_name: wilma
+             - friend_list:
+                 names:
+                    - fred
+                    - barney
+             - friend_list:
+                 names:
+                    - wilma
+                    - betty
+  rules:
+     - name: r1
+       condition:
+         all:
+           - event.request.type == "Delete"
+           - event.friend_list.names is select("search",  events.m_0.request.friend_name)
+       action:
+         print_event:
+           pretty: true

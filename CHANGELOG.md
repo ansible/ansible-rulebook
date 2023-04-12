@@ -37,6 +37,7 @@
 - actions in different rules to run in parallel
 - actions within a single rule to execute sequentially
 - comparing 2 different attributes in the same event
+- select with search option on delayed evaluation
 
 ### Removed
 
