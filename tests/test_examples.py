@@ -2021,3 +2021,52 @@ async def test_74_self_referential():
             ],
         }
         validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_75_all_conditions():
+    ruleset_queues, event_log = load_rulebook("examples/75_all_conditions.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "75 all conditions::r1::print_event",
+            ],
+        }
+        validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_76_all_conditions():
+    ruleset_queues, event_log = load_rulebook("examples/76_all_conditions.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 3,
+            "shutdown_events": 1,
+            "actions": [
+                "76 all conditions::r1::print_event",
+                "76 all conditions::r1::print_event",
+            ],
+        }
+        validate_events(event_log, **checks)
