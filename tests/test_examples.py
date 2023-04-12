@@ -68,6 +68,7 @@ async def test_01_noop():
     assert event["action"] == "noop", "2"
     assert event["action_uuid"] == DUMMY_UUID
     assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
+    assert event["status"] == "successful"
     assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {"m": {"i": 1}}, "3"
     event = event_log.get_nowait()
@@ -95,6 +96,7 @@ async def test_02_debug():
     assert event["type"] == "Action", "1"
     assert event["action"] == "debug", "2"
     assert event["action_uuid"] == DUMMY_UUID
+    assert event["status"] == "successful"
     assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
     assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {"m": {"i": 1}}, "3"
@@ -123,6 +125,7 @@ async def test_03_print_event():
     assert event["type"] == "Action", "1"
     assert event["action"] == "print_event", "2"
     assert event["action_uuid"] == DUMMY_UUID
+    assert event["status"] == "successful"
     assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
     assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {"m": {"i": 1}}, "3"
@@ -151,6 +154,7 @@ async def test_04_set_fact():
     assert event["type"] == "Action", "1"
     assert event["action"] == "set_fact", "2"
     assert event["action_uuid"] == DUMMY_UUID
+    assert event["status"] == "successful"
     assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
     assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {"m": {"i": 1}}, "3"
@@ -182,6 +186,7 @@ async def test_05_post_event():
     assert event["type"] == "Action", "1"
     assert event["action"] == "post_event", "2"
     assert event["action_uuid"] == DUMMY_UUID
+    assert event["status"] == "successful"
     assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
     assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {"m": {"i": 1}}, "3"
@@ -214,6 +219,7 @@ async def test_06_retract_fact():
     assert event["type"] == "Action", "1"
     assert event["action"] == "set_fact", "2"
     assert event["action_uuid"] == DUMMY_UUID
+    assert event["status"] == "successful"
     assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
     assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
     assert event["matching_events"] == {"m": {"i": 1}}, "3"
@@ -1047,6 +1053,7 @@ async def test_38_shutdown_action():
         assert event["type"] == "Action", "1"
         assert event["action"] == "shutdown", "1"
         assert event["action_uuid"] == DUMMY_UUID
+        assert event["status"] == "successful"
         assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
         assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
         assert event["message"] == "My rule has triggered a shutdown"
