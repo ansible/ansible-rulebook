@@ -4,7 +4,7 @@
   sources:
     - generic:
         loop_count: 3
-        loop_delay: 15
+        loop_delay: 18
         shutdown_after: 60
         timestamp: true
         create_index: event_index
