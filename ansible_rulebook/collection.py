@@ -16,6 +16,7 @@ import os
 import shutil
 import subprocess
 from functools import lru_cache
+import logging
 
 import yaml
 
@@ -33,6 +34,7 @@ EDA_SOURCE_PATHS = [
     f"{EDA_PATH_PREFIX}/plugins/event_sources",
     "plugins/event_source",
 ]
+logger = logging.getLogger(__name__)
 
 
 def split_collection_name(collection_resource):
@@ -49,7 +51,8 @@ def find_collection(name):
             [ANSIBLE_GALAXY, "collection", "list", name],
             stderr=subprocess.STDOUT,
         )
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as e:
+        logger.error("Error listing collections: %s", e.output)
         return None
     output = output.decode()
     parts = name.split(".")
