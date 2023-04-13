@@ -817,6 +817,7 @@ async def run_job_template(
             rule_uuid=source_rule_uuid,
             status=controller_job["status"],
             run_at=controller_job["created"],
+            url=_controller_job_url(controller_job),
             matching_events=_get_events(variables),
         )
     )
@@ -932,3 +933,9 @@ def _embellish_internal_event(event: Dict, method_name: str) -> Dict:
     return insert_meta(
         event, **dict(source_name=method_name, source_type="internal")
     )
+
+
+def _controller_job_url(data: dict) -> str:
+    if "id" in data:
+        return f"{job_template_runner.host}/#/jobs/{data['id']}/details"
+    return ""
