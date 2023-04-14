@@ -22,6 +22,7 @@ import subprocess
 import sys
 import tempfile
 import typing
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import ansible_runner
@@ -223,6 +224,10 @@ def find_builtin_filter(name: str) -> Optional[str]:
     if found:
         return path
     return None
+
+
+def run_at() -> str:
+    return f"{datetime.now(timezone.utc).isoformat()}".replace("+00:00", "Z")
 
 
 def _builtin_filter_path(name: str) -> Tuple[bool, str]:

@@ -23,7 +23,6 @@ import sys
 import tempfile
 import uuid
 from asyncio.exceptions import CancelledError
-from datetime import datetime, timezone
 from functools import partial
 from pprint import pprint
 from typing import Callable, Dict, List, Optional, Union
@@ -45,7 +44,7 @@ from .exception import (
 )
 from .job_template_runner import job_template_runner
 from .messages import Shutdown
-from .util import get_horizontal_rule
+from .util import get_horizontal_rule, run_at
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +64,7 @@ async def none(
     source_ruleset_uuid: str,
     source_rule_name: str,
     source_rule_uuid: str,
+    rule_run_at: str,
     ruleset: str,
 ):
     await event_log.put(
@@ -77,9 +77,10 @@ async def none(
             rule=source_rule_name,
             rule_uuid=source_rule_uuid,
             activation_id=settings.identifier,
-            run_at=_run_at(),
+            run_at=run_at(),
             status=INTERNAL_ACTION_STATUS,
             matching_events=_get_events(variables),
+            rule_run_at=rule_run_at,
         )
     )
 
@@ -117,8 +118,9 @@ async def debug(event_log, **kwargs):
             ruleset_uuid=kwargs.get("source_ruleset_uuid"),
             rule=kwargs.get("source_rule_name"),
             rule_uuid=kwargs.get("source_rule_uuid"),
+            rule_run_at=kwargs.get("rule_run_at"),
             activation_id=settings.identifier,
-            run_at=_run_at(),
+            run_at=run_at(),
             status=INTERNAL_ACTION_STATUS,
             matching_events=_get_events(kwargs.get("variables")),
         )
@@ -135,6 +137,7 @@ async def print_event(
     source_ruleset_uuid: str,
     source_rule_name: str,
     source_rule_uuid: str,
+    rule_run_at: str,
     ruleset: str,
     name: Optional[str] = None,
     pretty: Optional[str] = None,
@@ -158,9 +161,10 @@ async def print_event(
             rule=source_rule_name,
             rule_uuid=source_rule_uuid,
             playbook_name=name,
-            run_at=_run_at(),
+            run_at=run_at(),
             status=INTERNAL_ACTION_STATUS,
             matching_events=_get_events(variables),
+            rule_run_at=rule_run_at,
         )
     )
 
@@ -175,6 +179,7 @@ async def set_fact(
     source_ruleset_uuid: str,
     source_rule_name: str,
     source_rule_uuid: str,
+    rule_run_at: str,
     ruleset: str,
     fact: Dict,
     name: Optional[str] = None,
@@ -192,9 +197,10 @@ async def set_fact(
             rule=source_rule_name,
             rule_uuid=source_rule_uuid,
             playbook_name=name,
-            run_at=_run_at(),
+            run_at=run_at(),
             status=INTERNAL_ACTION_STATUS,
             matching_events=_get_events(variables),
+            rule_run_at=rule_run_at,
         )
     )
 
@@ -209,6 +215,7 @@ async def retract_fact(
     source_ruleset_uuid: str,
     source_rule_name: str,
     source_rule_uuid: str,
+    rule_run_at: str,
     ruleset: str,
     fact: Dict,
     name: Optional[str] = None,
@@ -225,9 +232,10 @@ async def retract_fact(
             rule_uuid=source_rule_uuid,
             activation_id=settings.identifier,
             playbook_name=name,
-            run_at=_run_at(),
+            run_at=run_at(),
             status=INTERNAL_ACTION_STATUS,
             matching_events=_get_events(variables),
+            rule_run_at=rule_run_at,
         )
     )
 
@@ -242,6 +250,7 @@ async def post_event(
     source_ruleset_uuid: str,
     source_rule_name: str,
     source_rule_uuid: str,
+    rule_run_at: str,
     ruleset: str,
     event: Dict,
 ):
@@ -257,9 +266,10 @@ async def post_event(
             rule=source_rule_name,
             rule_uuid=source_rule_uuid,
             activation_id=settings.identifier,
-            run_at=_run_at(),
+            run_at=run_at(),
             status=INTERNAL_ACTION_STATUS,
             matching_events=_get_events(variables),
+            rule_run_at=rule_run_at,
         )
     )
 
@@ -274,6 +284,7 @@ async def run_playbook(
     source_ruleset_uuid: str,
     source_rule_name: str,
     source_rule_uuid: str,
+    rule_run_at: str,
     ruleset: str,
     name: str,
     set_facts: Optional[bool] = None,
@@ -334,7 +345,7 @@ async def run_playbook(
                 "Previous run_playbook failed. Retry %d of %d", i, retries
             )
 
-        run_at = _run_at()
+        action_run_at = run_at()
         await call_runner(
             event_log,
             job_id,
@@ -355,11 +366,12 @@ async def run_playbook(
         source_ruleset_uuid,
         source_rule_name,
         source_rule_uuid,
+        rule_run_at,
         settings.identifier,
         name,
         "run_playbook",
         job_id,
-        run_at,
+        action_run_at,
         set_facts,
         post_events,
     )
@@ -377,6 +389,7 @@ async def run_module(
     source_ruleset_uuid: str,
     source_rule_name: str,
     source_rule_uuid: str,
+    rule_run_at: str,
     ruleset: str,
     name: str,
     set_facts: Optional[bool] = None,
@@ -439,7 +452,7 @@ async def run_module(
             logger.info(
                 "Previous run_module failed. Retry %d of %d", i, retries
             )
-        run_at = _run_at()
+        action_run_at = run_at()
         await call_runner(
             event_log,
             job_id,
@@ -464,11 +477,12 @@ async def run_module(
         source_ruleset_uuid,
         source_rule_name,
         source_rule_uuid,
+        rule_run_at,
         settings.identifier,
         name,
         "run_module",
         job_id,
-        run_at,
+        action_run_at,
         set_facts,
         post_events,
     )
@@ -643,6 +657,7 @@ async def post_process_runner(
     ruleset_uuid: str,
     rule: str,
     rule_uuid: str,
+    rule_run_at: str,
     activation_id: str,
     name: str,
     action: str,
@@ -676,6 +691,7 @@ async def post_process_runner(
         status=status,
         run_at=run_at,
         matching_events=_get_events(variables),
+        rule_run_at=rule_run_at,
     )
     await event_log.put(result)
 
@@ -705,6 +721,7 @@ async def run_job_template(
     source_ruleset_uuid: str,
     source_rule_name: str,
     source_rule_uuid: str,
+    rule_run_at: str,
     ruleset: str,
     name: str,
     organization: str,
@@ -800,7 +817,7 @@ async def run_job_template(
         logger.error(ex)
         controller_job = {}
         controller_job["status"] = "failed"
-        controller_job["created"] = _run_at()
+        controller_job["created"] = run_at()
 
     await event_log.put(
         dict(
@@ -819,6 +836,7 @@ async def run_job_template(
             run_at=controller_job["created"],
             url=_controller_job_url(controller_job),
             matching_events=_get_events(variables),
+            rule_run_at=rule_run_at,
         )
     )
 
@@ -846,6 +864,7 @@ async def shutdown(
     source_ruleset_uuid: str,
     source_rule_name: str,
     source_rule_uuid: str,
+    rule_run_at: str,
     ruleset: str,
     delay: float = 60.0,
     message: str = "Default shutdown message",
@@ -861,12 +880,13 @@ async def shutdown(
             ruleset_uuid=source_ruleset_uuid,
             rule=source_rule_name,
             rule_uuid=source_rule_uuid,
-            run_at=_run_at(),
+            run_at=run_at(),
             status=INTERNAL_ACTION_STATUS,
             matching_events=_get_events(variables),
             delay=delay,
             message=message,
             kind=kind,
+            rule_run_at=rule_run_at,
         )
     )
 
@@ -923,10 +943,6 @@ def _collect_extra_vars(
         eda_vars["event"] = variables["event"]
     extra_vars[KEY_EDA_VARS] = eda_vars
     return extra_vars
-
-
-def _run_at() -> str:
-    return f"{datetime.now(timezone.utc).isoformat()}".replace("+00:00", "Z")
 
 
 def _embellish_internal_event(event: Dict, method_name: str) -> Dict:
