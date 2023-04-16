@@ -15,6 +15,7 @@ A ruleset has the following properties:
 * name
 * hosts similar to Ansible playbook
 * gather_facts: boolean
+* default_events_ttl: time to keep the partially matched events around (default is 2 hours)
 * sources: A list of sources
 * rules: a list of rules
 
@@ -22,6 +23,12 @@ A ruleset has the following properties:
 | as a separate session in the Rules engine. The events and facts are kept separate
 | for each ruleset. At runtime, using **action** a ruleset can post events or facts
 | to itself or other rulesets in the rulebook.
+
+| The default_events_ttl takes time in the following format
+| default_events_ttl : nnn seconds|minutes|hours|days
+| e.g. default_events_ttl : 3 hours
+| If the rule set doesn't define this attribute the default events ttl that is 
+| enforced by the rule engine is 2 hours
 
 | When we start a rulebook we can optionally collect artifacts from the different hosts
 | if **gather_facts** is set to **true**. This host data is then uploaded to the Rules

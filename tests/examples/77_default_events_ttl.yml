@@ -1,0 +1,25 @@
+---
+- name: 77 default events ttl
+  hosts: all
+  default_events_ttl: 2 seconds
+  sources:
+     - generic:
+          event_delay: 4
+          payload:
+            - i: 1
+            - j: 2
+            - k: 3
+  rules:
+     - name: r1
+       condition:
+         all:
+           - event.i == 1
+           - event.j == 2
+       action:
+         print_event:
+           pretty: true
+     - name: r2
+       condition: event.k == 3
+       action:
+         print_event:
+           pretty: true

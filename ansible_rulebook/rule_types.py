@@ -70,6 +70,7 @@ class RuleSet(NamedTuple):
     rules: List[Rule]
     gather_facts: bool
     uuid: Optional[str] = None
+    default_events_ttl: Optional[str] = None
 
 
 class ActionContext(NamedTuple):

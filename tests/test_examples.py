@@ -2102,3 +2102,29 @@ async def test_46_job_template():
 
             assert action["url"] == job_url
             assert action["action"] == "run_job_template"
+
+
+@pytest.mark.asyncio
+async def test_77_default_events_ttl():
+    ruleset_queues, event_log = load_rulebook(
+        "examples/77_default_events_ttl.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "77 default events ttl::r2::print_event",
+            ],
+        }
+        validate_events(event_log, **checks)

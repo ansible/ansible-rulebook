@@ -531,7 +531,8 @@ Adding time constraints for rules with multiple conditions
 | conditions to be satisfied.
 | The timeout units are **milliseconds**, **seconds**, **minutes**, **hours**, **days**.
 | If the conditions are not met within 10 seconds in the above example the rule will be skipped.
-| The timer for the rule starts when any one of the conditions match.
+| The timer for the rule starts when any one of the conditions match. This timeout field overrides
+| any default_events_ttl that you have set at the ruleset level.
 
 
 Adding time constraints for rules when "not all" conditions matched
