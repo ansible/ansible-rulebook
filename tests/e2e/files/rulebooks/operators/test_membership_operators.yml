@@ -84,7 +84,7 @@
           - id: "Testcase #10"
             value: 4
           - id: "Testcase #10"
-            value: 2.7182
+            value: 2.7182e+0
           - id: "Testcase #10"
             value: -6000
           - id: "Testcase #10"
@@ -181,7 +181,7 @@
           msg: "Output for Testcase #07"
 
     - name: "Testcase #8"
-      condition: event.some_numbers not contains -6000
+      condition: event.some_numbers not contains -6e3
       action:
         debug:
           msg: "Output for Testcase #08"
@@ -199,7 +199,7 @@
           msg: "Output for Testcase #10"
 
     - name: "Testcase #11-1"
-      condition: events.mylist contains "jon" or events.mylist contains 45
+      condition: events.mylist contains "jon" or events.mylist contains 4.5e+1
       action:
         debug:
           msg: "Output for Testcase #11"
