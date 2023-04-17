@@ -131,3 +131,8 @@ class ControllerNeededException(Exception):
 class InvalidFilterNameException(Exception):
 
     pass
+
+
+class JobTemplateNotFoundException(Exception):
+
+    pass

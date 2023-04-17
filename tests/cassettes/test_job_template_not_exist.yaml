@@ -1,0 +1,67 @@
+interactions:
+- request:
+    body: null
+    headers:
+      authorization:
+      - Bearer DUMMY
+    method: GET
+    uri: https://examples.com/api/v2/job_templates/?name=Hello+World
+  response:
+    body:
+      string: "{\"count\":2,\"next\":null,\"previous\":null,\"results\":[{\"id\":9,\"type\":\"job_template\",\"url\":\"/api/v2/job_templates/9/\",\"related\":{\"created_by\":\"/api/v2/users/1/\",\"modified_by\":\"/api/v2/users/1/\",\"labels\":\"/api/v2/job_templates/9/labels/\",\"inventory\":\"/api/v2/inventories/1/\",\"project\":\"/api/v2/projects/8/\",\"organization\":\"/api/v2/organizations/1/\",\"credentials\":\"/api/v2/job_templates/9/credentials/\",\"last_job\":\"/api/v2/jobs/1091/\",\"jobs\":\"/api/v2/job_templates/9/jobs/\",\"schedules\":\"/api/v2/job_templates/9/schedules/\",\"activity_stream\":\"/api/v2/job_templates/9/activity_stream/\",\"launch\":\"/api/v2/job_templates/9/launch/\",\"webhook_key\":\"/api/v2/job_templates/9/webhook_key/\",\"webhook_receiver\":\"\",\"notification_templates_started\":\"/api/v2/job_templates/9/notification_templates_started/\",\"notification_templates_success\":\"/api/v2/job_templates/9/notification_templates_success/\",\"notification_templates_error\":\"/api/v2/job_templates/9/notification_templates_error/\",\"access_list\":\"/api/v2/job_templates/9/access_list/\",\"survey_spec\":\"/api/v2/job_templates/9/survey_spec/\",\"object_roles\":\"/api/v2/job_templates/9/object_roles/\",\"instance_groups\":\"/api/v2/job_templates/9/instance_groups/\",\"slice_workflow_jobs\":\"/api/v2/job_templates/9/slice_workflow_jobs/\",\"copy\":\"/api/v2/job_templates/9/copy/\"},\"summary_fields\":{\"organization\":{\"id\":1,\"name\":\"Default\",\"description\":\"\"},\"inventory\":{\"id\":1,\"name\":\"Demo
+        Inventory\",\"description\":\"\",\"has_active_failures\":false,\"total_hosts\":1,\"hosts_with_active_failures\":0,\"total_groups\":0,\"has_inventory_sources\":false,\"total_inventory_sources\":0,\"inventory_sources_with_failures\":0,\"organization_id\":1,\"kind\":\"\"},\"project\":{\"id\":8,\"name\":\"mkanoor\",\"description\":\"mkanoor\",\"status\":\"successful\",\"scm_type\":\"git\",\"allow_override\":false},\"last_job\":{\"id\":1091,\"name\":\"Hello
+        World\",\"description\":\"Hello World 490\",\"finished\":\"2023-04-17T18:05:40.839202Z\",\"status\":\"successful\",\"failed\":false},\"last_update\":{\"id\":1091,\"name\":\"Hello
+        World\",\"description\":\"Hello World 490\",\"status\":\"successful\",\"failed\":false},\"created_by\":{\"id\":1,\"username\":\"admin\",\"first_name\":\"\",\"last_name\":\"\"},\"modified_by\":{\"id\":1,\"username\":\"admin\",\"first_name\":\"\",\"last_name\":\"\"},\"object_roles\":{\"admin_role\":{\"description\":\"Can
+        manage all aspects of the job template\",\"name\":\"Admin\",\"id\":41},\"execute_role\":{\"description\":\"May
+        run the job template\",\"name\":\"Execute\",\"id\":42},\"read_role\":{\"description\":\"May
+        view settings for the job template\",\"name\":\"Read\",\"id\":43}},\"user_capabilities\":{\"edit\":true,\"delete\":true,\"start\":true,\"schedule\":true,\"copy\":true},\"labels\":{\"count\":0,\"results\":[]},\"survey\":{\"title\":\"exam\",\"description\":\"ResidentStartCareReasonKickIncreaseMakeSkillTowelSoup\uFFFD\"},\"recent_jobs\":[{\"id\":1091,\"status\":\"successful\",\"finished\":\"2023-04-17T18:05:40.839202Z\",\"canceled_on\":null,\"type\":\"job\"},{\"id\":1090,\"status\":\"successful\",\"finished\":\"2023-04-17T17:46:17.378778Z\",\"canceled_on\":null,\"type\":\"job\"},{\"id\":1089,\"status\":\"successful\",\"finished\":\"2023-04-17T17:45:18.565439Z\",\"canceled_on\":null,\"type\":\"job\"},{\"id\":1088,\"status\":\"successful\",\"finished\":\"2023-04-17T17:43:54.247403Z\",\"canceled_on\":null,\"type\":\"job\"},{\"id\":1087,\"status\":\"successful\",\"finished\":\"2023-04-17T17:43:43.955850Z\",\"canceled_on\":null,\"type\":\"job\"},{\"id\":1086,\"status\":\"successful\",\"finished\":\"2023-04-17T17:43:33.421700Z\",\"canceled_on\":null,\"type\":\"job\"},{\"id\":1082,\"status\":\"successful\",\"finished\":\"2023-04-17T17:07:52.557917Z\",\"canceled_on\":null,\"type\":\"job\"},{\"id\":1080,\"status\":\"successful\",\"finished\":\"2023-04-17T16:24:18.413605Z\",\"canceled_on\":null,\"type\":\"job\"},{\"id\":1079,\"status\":\"successful\",\"finished\":\"2023-04-17T16:24:08.648747Z\",\"canceled_on\":null,\"type\":\"job\"},{\"id\":1078,\"status\":\"successful\",\"finished\":\"2023-04-17T16:23:56.613290Z\",\"canceled_on\":null,\"type\":\"job\"}],\"credentials\":[]},\"created\":\"2021-12-13T16:23:41.200803Z\",\"modified\":\"2022-01-05T19:56:32.850511Z\",\"name\":\"Hello
+        World\",\"description\":\"Hello World 490\",\"job_type\":\"run\",\"inventory\":1,\"project\":8,\"playbook\":\"hello_world.yml\",\"scm_branch\":\"\",\"forks\":0,\"limit\":\"\",\"verbosity\":0,\"extra_vars\":\"---\",\"job_tags\":\"\",\"force_handlers\":false,\"skip_tags\":\"\",\"start_at_task\":\"\",\"timeout\":0,\"use_fact_cache\":false,\"organization\":1,\"last_job_run\":\"2023-04-17T18:05:40.839202Z\",\"last_job_failed\":false,\"next_job_run\":null,\"status\":\"successful\",\"execution_environment\":null,\"host_config_key\":\"\",\"ask_scm_branch_on_launch\":false,\"ask_diff_mode_on_launch\":false,\"ask_variables_on_launch\":false,\"ask_limit_on_launch\":false,\"ask_tags_on_launch\":false,\"ask_skip_tags_on_launch\":false,\"ask_job_type_on_launch\":false,\"ask_verbosity_on_launch\":false,\"ask_inventory_on_launch\":false,\"ask_credential_on_launch\":false,\"survey_enabled\":true,\"become_enabled\":false,\"diff_mode\":false,\"allow_simultaneous\":false,\"custom_virtualenv\":null,\"job_slice_count\":1,\"webhook_service\":\"\",\"webhook_credential\":null},{\"id\":12,\"type\":\"job_template\",\"url\":\"/api/v2/job_templates/12/\",\"related\":{\"created_by\":\"/api/v2/users/1/\",\"modified_by\":\"/api/v2/users/1/\",\"labels\":\"/api/v2/job_templates/12/labels/\",\"inventory\":\"/api/v2/inventories/1/\",\"project\":\"/api/v2/projects/8/\",\"organization\":\"/api/v2/organizations/1/\",\"credentials\":\"/api/v2/job_templates/12/credentials/\",\"jobs\":\"/api/v2/job_templates/12/jobs/\",\"schedules\":\"/api/v2/job_templates/12/schedules/\",\"activity_stream\":\"/api/v2/job_templates/12/activity_stream/\",\"launch\":\"/api/v2/job_templates/12/launch/\",\"webhook_key\":\"/api/v2/job_templates/12/webhook_key/\",\"webhook_receiver\":\"\",\"notification_templates_started\":\"/api/v2/job_templates/12/notification_templates_started/\",\"notification_templates_success\":\"/api/v2/job_templates/12/notification_templates_success/\",\"notification_templates_error\":\"/api/v2/job_templates/12/notification_templates_error/\",\"access_list\":\"/api/v2/job_templates/12/access_list/\",\"survey_spec\":\"/api/v2/job_templates/12/survey_spec/\",\"object_roles\":\"/api/v2/job_templates/12/object_roles/\",\"instance_groups\":\"/api/v2/job_templates/12/instance_groups/\",\"slice_workflow_jobs\":\"/api/v2/job_templates/12/slice_workflow_jobs/\",\"copy\":\"/api/v2/job_templates/12/copy/\"},\"summary_fields\":{\"organization\":{\"id\":1,\"name\":\"Default\",\"description\":\"\"},\"inventory\":{\"id\":1,\"name\":\"Demo
+        Inventory\",\"description\":\"\",\"has_active_failures\":false,\"total_hosts\":1,\"hosts_with_active_failures\":0,\"total_groups\":0,\"has_inventory_sources\":false,\"total_inventory_sources\":0,\"inventory_sources_with_failures\":0,\"organization_id\":1,\"kind\":\"\"},\"project\":{\"id\":8,\"name\":\"mkanoor\",\"description\":\"mkanoor\",\"status\":\"successful\",\"scm_type\":\"git\",\"allow_override\":false},\"created_by\":{\"id\":1,\"username\":\"admin\",\"first_name\":\"\",\"last_name\":\"\"},\"modified_by\":{\"id\":1,\"username\":\"admin\",\"first_name\":\"\",\"last_name\":\"\"},\"object_roles\":{\"admin_role\":{\"description\":\"Can
+        manage all aspects of the job template\",\"name\":\"Admin\",\"id\":50},\"execute_role\":{\"description\":\"May
+        run the job template\",\"name\":\"Execute\",\"id\":51},\"read_role\":{\"description\":\"May
+        view settings for the job template\",\"name\":\"Read\",\"id\":52}},\"user_capabilities\":{\"edit\":true,\"delete\":true,\"start\":true,\"schedule\":true,\"copy\":true},\"labels\":{\"count\":0,\"results\":[]},\"recent_jobs\":[],\"credentials\":[]},\"created\":\"2021-12-13T16:32:30.751129Z\",\"modified\":\"2021-12-13T16:32:30.751153Z\",\"name\":\"Hello
+        World No Survey\",\"description\":\"\",\"job_type\":\"run\",\"inventory\":1,\"project\":8,\"playbook\":\"hello_world.yml\",\"scm_branch\":\"\",\"forks\":0,\"limit\":\"\",\"verbosity\":0,\"extra_vars\":\"---\",\"job_tags\":\"\",\"force_handlers\":false,\"skip_tags\":\"\",\"start_at_task\":\"\",\"timeout\":0,\"use_fact_cache\":false,\"organization\":1,\"last_job_run\":\"2022-06-22T19:09:57.786737Z\",\"last_job_failed\":false,\"next_job_run\":null,\"status\":\"successful\",\"execution_environment\":null,\"host_config_key\":\"\",\"ask_scm_branch_on_launch\":false,\"ask_diff_mode_on_launch\":false,\"ask_variables_on_launch\":false,\"ask_limit_on_launch\":false,\"ask_tags_on_launch\":false,\"ask_skip_tags_on_launch\":false,\"ask_job_type_on_launch\":false,\"ask_verbosity_on_launch\":false,\"ask_inventory_on_launch\":false,\"ask_credential_on_launch\":false,\"survey_enabled\":false,\"become_enabled\":false,\"diff_mode\":false,\"allow_simultaneous\":false,\"custom_virtualenv\":null,\"job_slice_count\":1,\"webhook_service\":\"\",\"webhook_credential\":null}]}"
+    headers:
+      Access-Control-Expose-Headers:
+      - X-API-Request-Id
+      Allow:
+      - GET, POST, HEAD, OPTIONS
+      Cache-Control:
+      - no-cache, no-store, must-revalidate
+      Connection:
+      - keep-alive
+      Content-Language:
+      - en
+      Content-Length:
+      - '8205'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 17 Apr 2023 18:14:44 GMT
+      Expires:
+      - '0'
+      Pragma:
+      - no-cache
+      Server:
+      - nginx
+      Vary:
+      - Accept, Accept-Language, Origin, Cookie
+      X-API-Node:
+      - localhost
+      X-API-Product-Name:
+      - Red Hat Ansible Automation Platform
+      X-API-Product-Version:
+      - 4.1.0
+      X-API-Request-Id:
+      - c54d9aeafc754f439efcd06dea25e7b5
+      X-API-Time:
+      - 0.069s
+      X-API-Total-Time:
+      - 0.109s
+      X-Frame-Options:
+      - DENY
+    status:
+      code: 200
+      message: OK
+    url: https://examples.com/api/v2/job_templates/?name=Hello+World
+version: 1

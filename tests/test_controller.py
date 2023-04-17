@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pytest
 
+from ansible_rulebook.exception import JobTemplateNotFoundException
 from ansible_rulebook.job_template_runner import job_template_runner
 
 
@@ -40,3 +41,12 @@ async def test_job_template():
     )
     assert job["name"] == "Hello World"
     assert job["status"] == "successful"
+
+
+@pytest.mark.vcr()
+@pytest.mark.asyncio
+async def test_job_template_not_exist():
+    job_template_runner.host = "https://examples.com"
+    job_template_runner.token = "DUMMY"
+    with pytest.raises(JobTemplateNotFoundException):
+        await job_template_runner.run_job_template("Hello World", "no-org", {})
