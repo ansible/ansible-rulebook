@@ -156,7 +156,7 @@ Once all the conditions have been met, it will return you all the events that ma
 which can be used in action.
 
     .. note::
-        Note that this case the engine will consider **all the different events** until meet the conditions,
+        Note that in this case the engine will consider **all the different events** until the conditions are met,
         regardless of whether those events come from one or multiple sources.
         Multiple conditions with ``all`` are not equivalent to a single condition with the ``and`` operator.
 
@@ -169,6 +169,96 @@ which can be used in action.
         condition: event.target_os == "linux" and event.tracking_id == 345
         action:
           debug:
+
+
+Multiple conditions where **all** of them have to match with internal references
+--------------------------------------------------------------------------------
+
+| If a rule has multiple conditions with **all** all of the conditions have to match.
+| You can safely make references to matching event payloads from the other conditions
+| in the same rule. If the other events have not arrived, the rule engine will cache the
+| events and re-evaluate them as a whole set when the new event arrives.
+
+
+   .. code-block:: yaml
+
+      ---
+      - name: Delayed comparison
+        hosts: all
+        sources:
+        - generic:
+            payload:
+              - friend_list:
+                  names:
+                     - fred
+                     - barney
+              - request:
+                  type: Delete
+                  friend_name: fred
+      rules:
+        - name: r1
+          condition:
+            all:
+              - event.request.type == "Delete"
+              - event.friend_list.names is select("search",  events.m_0.request.friend_name)
+          action:
+            print_event:
+              pretty: true
+
+
+
+| The above example uses the generic source plugin which allows for the event
+| payloads to be defined in the rule book for easy testing.
+| In this example the event.request.type Delete is the second event that is injected
+| into the system. The first event that comes in is the event.friends_list and when it is
+| evaluated the events.m_0.request.friend_name which comes from the second event is not
+| defined. The rule engine will hold this event in cache and when the second event comes
+| in, the event.request.type == "Delete" matches and then the first event which is cached
+| is re-evaluated.
+
+
+| Another key point is that if multiple events match, the partial matches are stored
+| till the whole set matches and the actions will be executed with the proper set
+| of matching events.
+
+   .. code-block:: yaml
+
+      ---
+      - name: multiple conditions caching
+        hosts: all
+        sources:
+          - generic:
+              payload:
+                - request:
+                    type: Delete
+                    friend_name: fred
+                - request:
+                    type: Delete
+                    friend_name: wilma
+                - friend_list:
+                    names:
+                       - fred
+                       - barney
+                - friend_list:
+                    names:
+                       - betty
+                       - wilma
+        rules:
+          - name: r1
+            condition:
+              all:
+                - event.request.type == "Delete"
+                - event.friend_list.names contains events.m_0.request.friend_name
+            action:
+              print_event:
+
+| The above example uses the generic source plugin which allows for the event
+| payloads to be defined in the rule book for easy testing.
+| In this example the the first condition matches for the first 2 events
+| this leads to 2 partial matching rules, then the 3 and 4 the event arrive
+| with the friend_list payload and they match the 2nd condition. This will lead
+| to the rule being satisfied twice and the print_event will run twice with the
+| correct events.
 
 
 Multiple conditions where **any** one of them has to match
@@ -185,7 +275,7 @@ Multiple conditions where **any** one of them has to match
           debug:
 
     .. note::
-        Note that this case the engine will consider **all the different events** until meet the conditions,
+        Note that in this case the engine will consider **all the different events** until one of them meets one of the conditions,
         regardless of whether those events come from one or multiple sources.
         Multiple conditions with ``any`` are not equivalent to a single condition with the ``or`` operator.
 
