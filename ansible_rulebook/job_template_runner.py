@@ -19,28 +19,17 @@ import os
 import ssl
 from functools import cached_property
 from typing import Any, Callable, Union
-from urllib.parse import parse_qsl, quote, urljoin, urlparse
+from urllib.parse import parse_qsl, urljoin, urlparse
 
 import aiohttp
 import dpath
 
-from ansible_rulebook.exception import ControllerApiException
+from ansible_rulebook.exception import (
+    ControllerApiException,
+    JobTemplateNotFoundException,
+)
 
 logger = logging.getLogger(__name__)
-
-
-# https://docs.ansible.com/ansible-tower/latest/html/towerapi/access_resources.html#access-resources
-URL_PATH_RESERVED_CHARSET = {}
-for c in ";/?:@=&[]":
-    URL_PATH_RESERVED_CHARSET[c] = quote(c, safe="")
-URL_PATH_RESERVED_CHARSET["+"] = "[+]"
-
-
-def _encode_uri(text: str) -> str:
-    for c in URL_PATH_RESERVED_CHARSET:
-        if c in text:
-            text = text.replace(c, URL_PATH_RESERVED_CHARSET[c])
-    return text
 
 
 class JobTemplateRunner:
@@ -91,6 +80,35 @@ class JobTemplateRunner:
                 return ssl.create_default_context(cafile=self.verify_ssl)
         return False
 
+    async def _get_job_template_id(self, name: str, organization: str) -> int:
+        slug = f"{self.JOB_TEMPLATE_SLUG}/"
+        params = {"name": name}
+
+        async with aiohttp.ClientSession(
+            headers=self._auth_headers()
+        ) as session:
+            while True:
+                response = await self._get_page(session, slug, params)
+                json_body = json.loads(response["body"])
+                for jt in json_body["results"]:
+                    if (
+                        jt["name"] == name
+                        and dpath.get(
+                            jt, "summary_fields.organization.name", "."
+                        )
+                        == organization
+                    ):
+                        return jt["id"]
+
+                if json_body.get("next", None):
+                    params["page"] = params.get("page", 1) + 1
+                else:
+                    break
+
+        raise JobTemplateNotFoundException(
+            f"{name} in organization {organization}"
+        )
+
     async def run_job_template(
         self,
         name: str,
@@ -138,12 +156,8 @@ class JobTemplateRunner:
     async def launch(
         self, name: str, organization: str, job_params: dict
     ) -> dict:
-        name_uri = _encode_uri(name)
-        org_uri = _encode_uri(organization)
-        resource_uri = f"{name_uri}++{org_uri}"
-        url = urljoin(
-            self.host, f"{self.JOB_TEMPLATE_SLUG}/{resource_uri}/launch/"
-        )
+        jt_id = await self._get_job_template_id(name, organization)
+        url = urljoin(self.host, f"{self.JOB_TEMPLATE_SLUG}/{jt_id}/launch/")
 
         async with aiohttp.ClientSession(
             headers=self._auth_headers()
