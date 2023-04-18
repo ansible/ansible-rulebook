@@ -75,7 +75,7 @@
       condition: >
         event.type is select("match", "comet") and
         event.radius is select("<=", 3) and
-        event.orbital_period is select(">=", 2020)
+        event.orbital_period is select(">=", 2.02e+3)
       action:
         debug:
           msg: "Output for testcase #03"

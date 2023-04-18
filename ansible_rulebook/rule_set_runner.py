@@ -36,7 +36,7 @@ from ansible_rulebook.rule_types import (
     EngineRuleSetQueuePlan,
 )
 from ansible_rulebook.rules_parser import parse_hosts
-from ansible_rulebook.util import substitute_variables
+from ansible_rulebook.util import run_at, substitute_variables
 
 logger = logging.getLogger(__name__)
 
@@ -229,15 +229,18 @@ class RuleSetRunner:
         try:
             while True:
                 queue_item = await self.ruleset_queue_plan.plan.queue.get()
+                rule_run_at = run_at()
                 action_item = cast(ActionContext, queue_item)
                 if len(action_item.actions) > 1:
                     task = asyncio.create_task(
-                        self._run_multiple_actions(action_item)
+                        self._run_multiple_actions(action_item, rule_run_at)
                     )
                     self.active_actions.add(task)
                     task.add_done_callback(self._handle_action_completion)
                 else:
-                    self._run_action(action_item.actions[0], action_item)
+                    self._run_action(
+                        action_item.actions[0], action_item, rule_run_at
+                    )
         except asyncio.CancelledError:
             logger.debug(
                 "Action Plan Task Cancelled for ruleset %s", self.name
@@ -249,12 +252,14 @@ class RuleSetRunner:
         finally:
             await self._cleanup()
 
-    async def _run_multiple_actions(self, action_item: ActionContext) -> None:
+    async def _run_multiple_actions(
+        self, action_item: ActionContext, rule_run_at: str
+    ) -> None:
         for action in action_item.actions:
-            await self._run_action(action, action_item)
+            await self._run_action(action, action_item, rule_run_at)
 
     def _run_action(
-        self, action: Action, action_item: ActionContext
+        self, action: Action, action_item: ActionContext, rule_run_at: str
     ) -> asyncio.Task:
         task_name = (
             f"action::{action.action}::"
@@ -268,6 +273,7 @@ class RuleSetRunner:
                 action_item.ruleset_uuid,
                 action_item.rule,
                 action_item.rule_uuid,
+                rule_run_at,
                 action.action,
                 action.action_args,
                 action_item.variables,
@@ -287,6 +293,7 @@ class RuleSetRunner:
         ruleset_uuid: str,
         rule: str,
         rule_uuid: str,
+        rule_run_at: str,
         action: str,
         action_args: Dict,
         variables: Dict,
@@ -375,6 +382,7 @@ class RuleSetRunner:
                     source_ruleset_uuid=ruleset_uuid,
                     source_rule_name=rule,
                     source_rule_uuid=rule_uuid,
+                    rule_run_at=rule_run_at,
                     **action_args,
                 )
             except KeyError as e:

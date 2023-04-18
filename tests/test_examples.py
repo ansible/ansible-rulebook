@@ -20,6 +20,7 @@ from freezegun import freeze_time
 
 from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.exception import VarsKeyMissingException
+from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.util import load_inventory
 
@@ -2070,3 +2071,34 @@ async def test_76_all_conditions():
             ],
         }
         validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_46_job_template():
+    ruleset_queues, event_log = load_rulebook("examples/46_job_template.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    response_obj = dict(status="successful", id=945, created="dummy")
+    job_template_runner.host = "https://examples.com"
+    job_url = "https://examples.com/#/jobs/945/details"
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+
+        with patch(
+            "ansible_rulebook.builtin.job_template_runner.run_job_template",
+            return_value=response_obj,
+        ):
+            await run_rulesets(
+                event_log,
+                ruleset_queues,
+                dict(),
+                load_inventory("playbooks/inventory.yml"),
+            )
+
+            while not event_log.empty():
+                event = event_log.get_nowait()
+                if event["type"] == "Action":
+                    action = event
+
+            assert action["url"] == job_url
+            assert action["action"] == "run_job_template"

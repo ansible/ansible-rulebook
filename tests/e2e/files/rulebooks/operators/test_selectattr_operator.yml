@@ -28,7 +28,7 @@
               - planet:
                   name: "jupiter"
                   radius: 142984
-                  orbital_period: 4311.86
+                  orbital_period: 4.31186e+3
           - id: "testcase 03"
             planets:
               - planet:
@@ -104,6 +104,15 @@
                         gases:
                           hydrogen: 73.46
                           helium: 24.85
+          - id: "testcase 11"
+            spacecraft:
+              - craft:
+                  name: "voyager 1"
+                  detections:
+                    - 15
+                    - 8121.99
+                    - 1111
+
 
   rules:
     - name: Single condition selectattr, case insensitive
@@ -151,7 +160,7 @@
     - name: Multi condition selectattr with negation and vars
       condition: >
         event.planets is not selectattr("planet.is_planet", "==", true) and
-        event.planets is selectattr("planet.radius", ">=", vars.pluto_radius) and
+        event.planets is selectattr("planet.radius", ">=", 1.18830e+3) and
         (event.planets is selectattr("planet.total_moons", "!=", null) or
         event.planets is not selectattr("planet.total_moons", ">", vars.pluto_moons))
       action:
@@ -198,3 +207,9 @@
       action:
         debug:
           msg: "Output for testcase #10"
+
+    - name: Single condition selectattr nested list contains number
+      condition: event.spacecraft is selectattr("craft.detections", "contains", 8.12199e+3)
+      action:
+        debug:
+          msg: "Output for testcase #11"

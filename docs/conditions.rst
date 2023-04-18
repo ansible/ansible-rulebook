@@ -81,6 +81,14 @@ Conditions support the following operators:
      - The conjunctive add, for making compound expressions
    * - or
      - The disjunctive or
+   * - in
+     - To check if a value in the left hand side exists in the list on the right hand side
+   * - not in
+     - To check if a value in the left hand side does not exist in the list on the right hand side
+   * - contains
+     - To check if the list on the left hand side contains the value on the right hand side
+   * - not contains
+     - To check if the list on the left hand side does not contain the value on the right hand side
    * - is defined
      - To check if a variable is defined
    * - is not defined
@@ -308,10 +316,10 @@ Condition with fact and event
         action:
           debug:
 
-| In the above example the custom.expected_index was set using the set_fact action in 
+| In the above example the custom.expected_index was set using the set_fact action in
 | the running of the rulebook. You cannot compare a fact and event directly in the same
 | condition. First the fact has to be assigned to a local variable, **facts.first** in the
-| above example and then that local variable can be compared with event.i. When you use a 
+| above example and then that local variable can be compared with event.i. When you use a
 | fact and event it would always have to be in the context of multiple conditions using **all**.
 | `Differences between facts and events <events_and_facts.html>`_
 
@@ -329,9 +337,9 @@ Condition with vars and event
         action:
           debug:
 
-| In the above example the person.year and person.age was passed in a variables file via 
-| ``--vars`` from the command line to ansible-rulebook. The usage of vars allows us to 
-| preserve the data type.  Environment variable values are always treated as strings and 
+| In the above example the person.year and person.age was passed in a variables file via
+| ``--vars`` from the command line to ansible-rulebook. The usage of vars allows us to
+| preserve the data type.  Environment variable values are always treated as strings and
 | you would have to do the type conversion in the playbook or job template.
 
     .. code-block:: yaml
@@ -672,7 +680,7 @@ String match
         action:
           print_event:
 
-| In the above example we check if the event.url does not have "http://www.example.com" in the beginning 
+| In the above example we check if the event.url does not have "http://www.example.com" in the beginning
 | And the option controls that this is a case insensitive search.
 
 String regular expression
@@ -698,6 +706,52 @@ String regular expression
 
 | In the above example we check if the event.url does not have "example.com" in its value
 | And the option controls that this is a case insensitive search.
+
+
+Check if an item exists in a list
+---------------------------------
+
+| The following examples show how to use `in` `not in` `contains` and `not contains` operators to check if an item exists in a list
+
+    .. code-block:: yaml
+        # variables file
+        expected_levels:
+          - "WARNING"
+          - "ERROR"
+
+    .. code-block:: yaml
+
+        name: check if an item exist in a list
+        condition: event.level in vars.expected_levels
+        action:
+          debug:
+            msg: matched!
+
+    .. code-block:: yaml
+
+        name: check if an item does no exist in a list
+        condition: event.level not in ["INFO", "DEBUG"]
+        action:
+          debug:
+            msg: matched!
+
+    .. code-block:: yaml
+
+        name: check if a list contains an item
+        condition: event.affected_hosts contains "host1"
+        action:
+          debug:
+            msg: matched!
+
+    .. code-block:: yaml
+
+        name: check if a list does not contain an item
+        condition: vars.expected_levels not contains "INFO"
+        action:
+          debug:
+            msg: This will match always for every event because INFO is not in the list!
+
+
 
 Check if an item exists in a list based on a test
 -------------------------------------------------
@@ -732,7 +786,7 @@ Check if an item does not exist in a list based on a test
 | the test would yield False because of the presence of 20 in the list.
 
 | The result of the *select* condition is either True or False. It doesn't return the item or items.
-| The select takes 2 arguments which are comma delimited, **operator** and **value**. 
+| The select takes 2 arguments which are comma delimited, **operator** and **value**.
 | The different operators we support are >,>=,<,<=,==,!=,match,search,regex
 | The value is based on the operator used, if the operator is regex then the value is a pattern.
 | If the operator is one of >,>=,<,<= then the value is either an integer or a float
