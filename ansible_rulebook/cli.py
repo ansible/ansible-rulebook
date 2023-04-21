@@ -94,7 +94,15 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-W",
         "--websocket-address",
+        "--websocket-url",
         help="Connect the event log to a websocket",
+    )
+    parser.add_argument(
+        "--websocket-ssl-verify",
+        help="How to verify SSL when connecting to the "
+        "websocket, yes|no|<path to a CA bundle>, "
+        "default to yes for wss connection.",
+        default="yes",
     )
     parser.add_argument("--id", help="Identifier")
     parser.add_argument(

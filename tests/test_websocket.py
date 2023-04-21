@@ -89,7 +89,7 @@ async def test_request_workload():
         mo.return_value.__aenter__.return_value.recv.side_effect = test_data
         mo.return_value.__aenter__.return_value.send.return_value = None
 
-        response = await request_workload("dummy", "dummy")
+        response = await request_workload("dummy", "dummy", "yes")
         sha2 = file_sha256(response.project_data_file)
         assert sha1 == sha2
         assert response.controller_url == controller_url
@@ -118,5 +118,5 @@ async def test_send_event_log_to_websocket():
         mo.return_value.__anext__.return_value = mock_object
         mo.return_value.__aiter__.side_effect = [mock_object]
         mo.return_value.send.side_effect = my_func
-        await send_event_log_to_websocket(queue, "dummy")
+        await send_event_log_to_websocket(queue, "dummy", "yes")
         assert data_sent == ['{"a": 1}', '{"b": 1}', '{"type": "Shutdown"}']

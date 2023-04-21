@@ -6,7 +6,7 @@ The `ansible-rulebook` CLI supports the following options:
 
 .. code-block:: console
 
-    usage: ansible-rulebook [-h] [-r RULEBOOK] [-e VARS] [-E ENV_VARS] [-v] [--version] [-S SOURCE_DIR] [-i INVENTORY] [-W WEBSOCKET_ADDRESS] [--id ID] [-w] [-T PROJECT_TARBALL] [--controller-url CONTROLLER_URL]
+    usage: ansible-rulebook [-h] [-r RULEBOOK] [-e VARS] [-E ENV_VARS] [-v] [--version] [-S SOURCE_DIR] [-i INVENTORY] [-W WEBSOCKET_URL] [--id ID] [-w] [-T PROJECT_TARBALL] [--controller-url CONTROLLER_URL]
                             [--controller-token CONTROLLER_TOKEN] [--controller-ssl-verify CONTROLLER_SSL_VERIFY] [--print-events]
 
     optional arguments:
@@ -22,7 +22,10 @@ The `ansible-rulebook` CLI supports the following options:
                             Source dir
     -i INVENTORY, --inventory INVENTORY
                             Inventory
-    -W WEBSOCKET_ADDRESS, --websocket-address WEBSOCKET_ADDRESS
+    -W WEBSOCKET_URL, --websocket-url WEBSOCKET_ADDRESS
+                            Connect the event log to a websocket
+    --websocket-ssl-verify How to verify the wss connection
+                            How to verify SSL when connecting to the websocket api. yes|no|<path to a CA bundle>, default to yes for wss connection.
                             Connect the event log to a websocket
     --id ID               Identifier
     -w, --worker          Enable worker mode

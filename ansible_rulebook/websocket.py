@@ -16,6 +16,7 @@ import base64
 import json
 import logging
 import os
+import ssl
 import tempfile
 from asyncio.exceptions import CancelledError
 
@@ -29,10 +30,13 @@ logger = logging.getLogger(__name__)
 
 
 async def request_workload(
-    activation_id: str, websocket_address: str
+    activation_id: str, websocket_address: str, websocket_ssl_verify: str
 ) -> StartupArgs:
     logger.info("websocket %s connecting", websocket_address)
-    async with websockets.connect(websocket_address) as websocket:
+    async with websockets.connect(
+        websocket_address,
+        ssl=_sslcontext(websocket_address, websocket_ssl_verify),
+    ) as websocket:
         try:
             logger.info("websocket %s connected", websocket_address)
             await websocket.send(
@@ -81,10 +85,14 @@ async def request_workload(
             return
 
 
-async def send_event_log_to_websocket(event_log, websocket_address):
+async def send_event_log_to_websocket(
+    event_log, websocket_address, websocket_ssl_verify
+):
     logger.info("websocket %s connecting", websocket_address)
     async for websocket in websockets.connect(
-        websocket_address, logger=logger
+        websocket_address,
+        logger=logger,
+        ssl=_sslcontext(websocket_address, websocket_ssl_verify),
     ):
         logger.info("websocket %s connected", websocket_address)
         event = None
@@ -101,3 +109,13 @@ async def send_event_log_to_websocket(event_log, websocket_address):
             return
         except BaseException:
             logger.exception("websocket error on %s", event)
+
+
+def _sslcontext(url, ssl_verify) -> ssl.SSLContext:
+    if url.startswith("wss"):
+        if ssl_verify.lower() == "yes":
+            return ssl.create_default_context()
+        elif ssl_verify.lower() == "no":
+            return ssl._create_unverified_context()
+        return ssl.create_default_context(cafile=ssl_verify)
+    return None

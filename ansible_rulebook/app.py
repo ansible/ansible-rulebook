@@ -63,7 +63,9 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
     if parsed_args.worker and parsed_args.websocket_address and parsed_args.id:
         logger.info("Starting worker mode")
         startup_args = await request_workload(
-            parsed_args.id, parsed_args.websocket_address
+            parsed_args.id,
+            parsed_args.websocket_address,
+            parsed_args.websocket_ssl_verify,
         )
     else:
         startup_args = StartupArgs()
@@ -100,7 +102,9 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
         tasks.append(
             asyncio.create_task(
                 send_event_log_to_websocket(
-                    event_log, parsed_args.websocket_address
+                    event_log,
+                    parsed_args.websocket_address,
+                    parsed_args.websocket_ssl_verify,
                 )
             )
         )
