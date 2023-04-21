@@ -35,7 +35,7 @@ from drools import ruleset as lang
 
 from .collection import find_playbook, has_playbook, split_collection_name
 from .conf import settings
-from .event_filters.insert_meta_info import main as insert_meta
+from .event_filter.insert_meta_info import main as insert_meta
 from .exception import (
     ControllerApiException,
     PlaybookNotFoundException,

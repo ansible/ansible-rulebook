@@ -239,5 +239,5 @@ def _builtin_filter_path(name: str) -> Tuple[bool, str]:
         raise InvalidFilterNameException(name)
 
     dirname = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.join(dirname, "event_filters", filter_name + ".py")
+    path = os.path.join(dirname, "event_filter", filter_name + ".py")
     return os.path.exists(path), path

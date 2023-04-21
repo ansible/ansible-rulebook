@@ -3,9 +3,7 @@ from unittest.mock import patch
 import pytest
 from freezegun import freeze_time
 
-from ansible_rulebook.event_filters.insert_meta_info import (
-    main as sources_main,
-)
+from ansible_rulebook.event_filter.insert_meta_info import main as sources_main
 
 DUMMY_UUID = "eb7de03f-6f8f-4943-b69e-3c90db346edf"
 DEFAULT_RECEIVED_AT = "2023-03-23T11:11:11Z"
