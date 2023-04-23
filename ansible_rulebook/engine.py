@@ -121,13 +121,11 @@ async def start_source(
         for source_filter in source.source_filters:
             logger.info("loading %s", source_filter.filter_name)
             if os.path.exists(
-                os.path.join(
-                    "event_filters", source_filter.filter_name + ".py"
-                )
+                os.path.join("event_filter", source_filter.filter_name + ".py")
             ):
                 source_filter_module = runpy.run_path(
                     os.path.join(
-                        "event_filters", source_filter.filter_name + ".py"
+                        "event_filter", source_filter.filter_name + ".py"
                     )
                 )
             elif has_source_filter(

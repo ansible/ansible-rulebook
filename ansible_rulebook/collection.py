@@ -22,6 +22,18 @@ import yaml
 ANSIBLE_GALAXY = shutil.which("ansible-galaxy")
 EDA_PATH_PREFIX = "extensions/eda"
 
+EDA_FILTER_PATHS = [
+    f"{EDA_PATH_PREFIX}/plugins/event_filter",
+    f"{EDA_PATH_PREFIX}/plugins/event_filters",
+    "plugins/event_filter",
+]
+
+EDA_SOURCE_PATHS = [
+    f"{EDA_PATH_PREFIX}/plugins/event_source",
+    f"{EDA_PATH_PREFIX}/plugins/event_sources",
+    "plugins/event_source",
+]
+
 
 def split_collection_name(collection_resource):
     collection, _, resource = collection_resource.rpartition(".")
@@ -107,7 +119,7 @@ def has_source(collection, source):
     return has_object(
         collection,
         source,
-        [f"{EDA_PATH_PREFIX}/plugins/event_sources", "plugins/event_source"],
+        EDA_SOURCE_PATHS,
         ".py",
     )
 
@@ -116,7 +128,7 @@ def find_source(collection, source):
     return find_object(
         collection,
         source,
-        [f"{EDA_PATH_PREFIX}/plugins/event_sources", "plugins/event_source"],
+        EDA_SOURCE_PATHS,
         ".py",
     )
 
@@ -125,7 +137,7 @@ def has_source_filter(collection, source_filter):
     return has_object(
         collection,
         source_filter,
-        [f"{EDA_PATH_PREFIX}/plugins/event_filters", "plugins/event_filter"],
+        EDA_FILTER_PATHS,
         ".py",
     )
 
@@ -134,7 +146,7 @@ def find_source_filter(collection, source_filter):
     return find_object(
         collection,
         source_filter,
-        [f"{EDA_PATH_PREFIX}/plugins/event_filters", "plugins/event_filter"],
+        EDA_FILTER_PATHS,
         ".py",
     )
 
