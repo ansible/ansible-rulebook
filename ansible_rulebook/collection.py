@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import logging
 import os
 import shutil
 import subprocess
@@ -33,6 +34,7 @@ EDA_SOURCE_PATHS = [
     f"{EDA_PATH_PREFIX}/plugins/event_sources",
     "plugins/event_source",
 ]
+logger = logging.getLogger(__name__)
 
 
 def split_collection_name(collection_resource):
@@ -45,11 +47,15 @@ def find_collection(name):
     if ANSIBLE_GALAXY is None:
         raise Exception("ansible-galaxy is not installed")
     try:
+        env = os.environ.copy()
+        env["ANSIBLE_LOCAL_TEMP"] = "/tmp"
         output = subprocess.check_output(
             [ANSIBLE_GALAXY, "collection", "list", name],
             stderr=subprocess.STDOUT,
+            env=env,
         )
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as e:
+        logger.error("Error listing collections: %s", e.output)
         return None
     output = output.decode()
     parts = name.split(".")
