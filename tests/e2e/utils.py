@@ -35,6 +35,7 @@ class Command:
     project_tarball: Optional[Path] = None
     worker_mode: bool = False
     verbosity: int = 0
+    heartbeat: int = 0
 
     def __post_init__(self):
         # verbosity overrides verbose and debug
@@ -77,6 +78,8 @@ class Command:
             result.append("-vv")
         if self.verbosity > 0:
             result.append(f"-{'v'*self.verbosity}")
+        if self.heartbeat > 0:
+            result.extend(["--heartbeat", str(self.heartbeat)])
 
         return result
 

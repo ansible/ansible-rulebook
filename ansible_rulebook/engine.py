@@ -21,6 +21,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from drools.dispatch import establish_async_channel, handle_async_messages
+from drools.ruleset import session_stats
 
 import ansible_rulebook.rule_generator as rule_generator
 from ansible_rulebook.collection import (
@@ -41,6 +42,7 @@ from ansible_rulebook.util import (
     collect_ansible_facts,
     find_builtin_filter,
     has_builtin_filter,
+    send_session_stats,
     substitute_variables,
 )
 
@@ -55,6 +57,15 @@ logger = logging.getLogger(__name__)
 
 
 all_source_queues = []
+
+
+async def heartbeat_task(
+    event_log: asyncio.Queue, rule_set_names: List[str], interval: int
+):
+    while True:
+        for name in rule_set_names:
+            await send_session_stats(event_log, session_stats(name))
+        await asyncio.sleep(interval)
 
 
 async def broadcast(shutdown: Shutdown):
@@ -89,7 +100,6 @@ async def start_source(
     queue: asyncio.Queue,
     shutdown_delay: float = 60.0,
 ) -> None:
-
     all_source_queues.append(queue)
     try:
         logger.info("load source")
@@ -215,7 +225,6 @@ async def run_rulesets(
     parsed_args: argparse.ArgumentParser = None,
     project_data_file: Optional[str] = None,
 ):
-
     logger.info("run_ruleset")
     rulesets_queue_plans = rule_generator.generate_rulesets(
         ruleset_queues, variables, inventory
@@ -228,15 +237,24 @@ async def run_rulesets(
         logger.info("ruleset define: %s", ruleset_queue_plan.ruleset.define())
 
     hosts_facts = []
+    ruleset_names = []
     for ruleset, _ in ruleset_queues:
         if ruleset.gather_facts and not hosts_facts:
             hosts_facts = collect_ansible_facts(inventory)
+        ruleset_names.append(ruleset.name)
 
     ruleset_tasks = []
     reader, writer = await establish_async_channel()
     async_task = asyncio.create_task(
         handle_async_messages(reader, writer), name="drools_async_task"
     )
+
+    send_heartbeat_task = None
+    if parsed_args and parsed_args.heartbeat > 0 and event_log:
+        send_heartbeat_task = asyncio.create_task(
+            heartbeat_task(event_log, ruleset_names, parsed_args.heartbeat),
+            name="heartbeat_task",
+        )
 
     for ruleset_queue_plan in rulesets_queue_plans:
         ruleset_runner = RuleSetRunner(
@@ -266,6 +284,8 @@ async def run_rulesets(
     logger.info("Waiting on gather")
     asyncio.gather(*ruleset_tasks)
     logger.info("Returning from run_rulesets")
+    if send_heartbeat_task:
+        send_heartbeat_task.cancel()
 
 
 def meta_info_filter(source: EventSource) -> EventSourceFilter:

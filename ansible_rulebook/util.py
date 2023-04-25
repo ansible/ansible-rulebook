@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import asyncio
 import glob
 import json
 import logging
@@ -31,6 +32,7 @@ from jinja2.nativetypes import NativeTemplate
 from packaging import version
 from packaging.version import InvalidVersion
 
+from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import InvalidFilterNameException
 
 logger = logging.getLogger(__name__)
@@ -228,6 +230,17 @@ def find_builtin_filter(name: str) -> Optional[str]:
 
 def run_at() -> str:
     return f"{datetime.now(timezone.utc).isoformat()}".replace("+00:00", "Z")
+
+
+async def send_session_stats(event_log: asyncio.Queue, stats: Dict):
+    await event_log.put(
+        dict(
+            type="SessionStats",
+            activation_id=settings.identifier,
+            stats=stats,
+            reported_at=run_at(),
+        )
+    )
 
 
 def _builtin_filter_path(name: str) -> Tuple[bool, str]:

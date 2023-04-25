@@ -34,6 +34,7 @@ async def test_websocket_messages():
         rulebook=rulebook,
         websocket=websocket_address,
         proc_id=proc_id,
+        heartbeat=2,
     )
 
     # run server and ansible-rulebook
@@ -58,6 +59,7 @@ async def test_websocket_messages():
     ansible_event_counter = 0
     job_counter = 0
     action_counter = 0
+    session_stats_counter = 0
 
     while not queue.empty():
         data = await queue.get()
@@ -92,6 +94,20 @@ async def test_websocket_messages():
             assert event["ansible_rulebook_id"] == proc_id
             assert data["run_at"]
 
+        if data["type"] == "SessionStats":
+            session_stats_counter += 1
+            stats = data["stats"]
+            assert stats["ruleSetName"] == "Test websocket range events"
+            assert stats["numberOfRules"] == 1
+            assert stats["numberOfDisabledRules"] == 0
+            assert data["activation_id"] == proc_id
+            if session_stats_counter == 2:
+                assert stats["rulesTriggered"] == 1
+                assert stats["eventsProcessed"] == 2000
+                assert stats["eventsMatched"] == 1
+                assert stats["eventsSuppressed"] == 1999
+
     assert ansible_event_counter == 9
+    assert session_stats_counter == 2
     assert job_counter == 1
     assert action_counter == 1
