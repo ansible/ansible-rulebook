@@ -4,11 +4,20 @@
 ## [Unreleased]
 
 ### Added
-- Support for default_events_ttl at ruleset level and globally
 
 ### Fixed
 
 ### Removed
+
+##  [0.13.0] - 2023-04-25
+
+### Added
+- Support for default_events_ttl at ruleset level and globally
+- Added --websocket-ssl-verify
+
+### Fixed
+- Support singular event_source and event_filter in collections
+- Find job template by name
 
 ##  [0.12.0] - 2023-04-12
 
