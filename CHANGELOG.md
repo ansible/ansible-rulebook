@@ -4,6 +4,7 @@
 ## [Unreleased]
 
 ### Added
+- Support for default_events_ttl at ruleset level and globally
 
 ### Fixed
 

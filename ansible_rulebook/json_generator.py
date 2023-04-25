@@ -297,16 +297,19 @@ def generate_condition(ansible_condition: RuleCondition, variables: Dict):
 
 def visit_ruleset(ruleset: RuleSet, variables: Dict):
     """Generate JSON compatible rules."""
-    return {
-        "RuleSet": {
-            "name": ruleset.name,
-            "hosts": ruleset.hosts,
-            "sources": [
-                visit_source(source, variables) for source in ruleset.sources
-            ],
-            "rules": [visit_rule(rule, variables) for rule in ruleset.rules],
-        }
+    data = {
+        "name": ruleset.name,
+        "hosts": ruleset.hosts,
+        "sources": [
+            visit_source(source, variables) for source in ruleset.sources
+        ],
+        "rules": [visit_rule(rule, variables) for rule in ruleset.rules],
     }
+
+    if ruleset.default_events_ttl:
+        data["default_events_ttl"] = ruleset.default_events_ttl
+
+    return {"RuleSet": data}
 
 
 def generate_dict_rulesets(ruleset: List[RuleSet], variables: Dict):
