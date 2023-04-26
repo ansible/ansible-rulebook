@@ -4,6 +4,7 @@
 ## [Unreleased]
 
 ### Added
+- Sending heartbeat to the server with the session stats
 
 ### Fixed
 
