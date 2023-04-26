@@ -157,6 +157,13 @@ def get_parser() -> argparse.ArgumentParser:
         help="Run the garbage collector after this number of events. "
         "It can be configured with the environment variable EDA_GC_AFTER",
     )
+    parser.add_argument(
+        "--heartbeat",
+        default=0,
+        type=int,
+        help="Send heartbeat to the server after every n seconds"
+        "Default is 0, no heartbeat is sent",
+    )
     return parser
 
 
