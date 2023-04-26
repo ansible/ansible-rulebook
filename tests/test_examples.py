@@ -977,7 +977,7 @@ async def test_35_multiple_rulesets_1_fired():
             "35 multiple rulesets 1::r2::noop",
         ],
     }
-    validate_events(event_log, **checks)
+    await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1009,7 +1009,7 @@ async def test_36_multiple_rulesets_both_fired():
                     "36 multiple rulesets 2::r1::debug",
                 ],
             }
-            validate_events(event_log, **checks)
+            await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1084,7 +1084,7 @@ async def test_40_in():
                 "40 in::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1106,7 +1106,7 @@ async def test_41_not_in():
                 "41 not in::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1128,7 +1128,7 @@ async def test_42_contains():
                 "42 contains::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1151,7 +1151,7 @@ async def test_43_not_contains():
                 "43 not contains::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1173,7 +1173,7 @@ async def test_44_in_and():
                 "44 in and::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1199,7 +1199,7 @@ async def test_45_in_or():
                 "45 in or::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1222,7 +1222,7 @@ async def test_47_generic_plugin():
                 "47 Generic Plugin::r2::print_event",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1245,7 +1245,7 @@ async def test_48_echo():
                 "48 echo::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @freeze_time("2023-03-23 11:11:11")
@@ -1390,7 +1390,7 @@ async def test_51_vars_namespace():
                 "51 vars namespace::float_test::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1448,7 +1448,7 @@ async def test_52_once_within():
                 "52 once within::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1475,7 +1475,7 @@ async def test_53_once_within_multiple_hosts():
                 "53 once within multiple hosts::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1538,7 +1538,7 @@ async def test_55_not_all():
                 "55 not all::maint failed::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1559,11 +1559,12 @@ async def test_56_once_after():
         checks = {
             "max_events": 2,
             "shutdown_events": 1,
+            "timeout": 15,
             "actions": [
                 "56 once after::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1587,7 +1588,7 @@ async def test_57_once_after_multiple():
             "max_events": 7,
             "shutdown_events": 1,
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1615,7 +1616,7 @@ async def test_58_string_search():
                 "58 String search::not regex::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1644,7 +1645,7 @@ async def test_59_multiple_actions():
                 "59 Multiple Actions::r2::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1668,7 +1669,7 @@ async def test_60_json_filter():
                 "60 json filter::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1692,7 +1693,7 @@ async def test_61_select_1():
                 "61 select 1::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1718,7 +1719,7 @@ async def test_62_select_2():
                 "62 select 2::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1743,7 +1744,7 @@ async def test_63_selectattr_1():
                 "63 selectattr 1::r2::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1767,7 +1768,7 @@ async def test_64_selectattr_2():
                 "64 selectattr 2::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1791,7 +1792,7 @@ async def test_65_selectattr_3():
                 "65 selectattr 3::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1825,7 +1826,7 @@ async def test_66_sleepy_playbook():
                     "terminate gracefully::r12::shutdown",
                 ],
             }
-            validate_events(event_log, **checks)
+            await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1857,7 +1858,7 @@ async def test_67_shutdown_now():
                     "terminate now::r12::shutdown",
                 ],
             }
-            validate_events(event_log, **checks)
+            await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1881,7 +1882,7 @@ async def test_68_disabled_rule():
                 "68 disabled rule::r1::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1908,7 +1909,7 @@ async def test_69_enhanced_debug():
                 "69 enhanced debug::r5::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1934,7 +1935,7 @@ async def test_70_null():
                 "70 null::r3::print_event",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1965,7 +1966,7 @@ async def test_72_set_fact_with_type():
                 "72 set fact with type::Match the string int::debug",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -1995,7 +1996,7 @@ async def test_73_mix_and_match_list():
                 "73 mix and match list::Match float in list::print_event",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -2021,7 +2022,7 @@ async def test_74_self_referential():
                 "74 Self referential::rule1::print_event",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -2045,7 +2046,7 @@ async def test_75_all_conditions():
                 "75 all conditions::r1::print_event",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -2070,7 +2071,7 @@ async def test_76_all_conditions():
                 "76 all conditions::r1::print_event",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -2127,4 +2128,4 @@ async def test_77_default_events_ttl():
                 "77 default events ttl::r2::print_event",
             ],
         }
-        validate_events(event_log, **checks)
+        await validate_events(event_log, **checks)
