@@ -36,6 +36,11 @@ from ansible_rulebook.rules_parser import parse_rule_sets
 from ansible_rulebook.util import load_inventory
 from ansible_rulebook.validators import Validate
 
+
+class TimedOutException(Exception):
+    pass
+
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -70,7 +75,7 @@ async def get_queue_item(queue, timeout=0.5, times=1):
     return None
 
 
-def validate_events(event_log, **kwargs):
+async def validate_events(event_log, **kwargs):
     shutdown_events = 0
     job_events = 0
     ansible_events = 0
@@ -83,7 +88,15 @@ def validate_events(event_log, **kwargs):
             break
         if "max_events" in kwargs and kwargs["max_events"] == max_events:
             break
-        event = event_log.get_nowait()
+        if "timeout" in kwargs:
+            event = await get_queue_item(event_log, kwargs["timeout"])
+            if not event:
+                raise TimedOutException(
+                    "Validate events, failed no event received"
+                )
+        else:
+            event = event_log.get_nowait()
+
         max_events += 1
         print(event)
         if event["type"] == "Action":
