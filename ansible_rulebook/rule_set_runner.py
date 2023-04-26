@@ -36,7 +36,11 @@ from ansible_rulebook.rule_types import (
     EngineRuleSetQueuePlan,
 )
 from ansible_rulebook.rules_parser import parse_hosts
-from ansible_rulebook.util import run_at, substitute_variables
+from ansible_rulebook.util import (
+    run_at,
+    send_session_stats,
+    substitute_variables,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +131,8 @@ class RuleSetRunner:
                 )
             )
         stats = lang.end_session(self.name)
+        if self.parsed_args and self.parsed_args.heartbeat > 0:
+            await send_session_stats(self.event_log, stats)
         logger.info(pformat(stats))
 
     async def _handle_shutdown(self):
