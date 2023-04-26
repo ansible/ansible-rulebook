@@ -15,7 +15,7 @@ def test_get_version():
   Executable location = (.+)
   Drools_jpy version = \d+\.\d+\.\d+
   Java home = (.+)
-  Java version = \d+\.\d+\.\d+(\.\d+)?
+  Java version = \d+(\.\d+)?(\.\d+)?(\.\d+)?
   Python version = \d+\.\d+\.\d+ (.+)$"""
     )
     assert pattern.match(output)
