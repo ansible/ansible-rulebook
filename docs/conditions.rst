@@ -195,15 +195,15 @@ Multiple conditions where **all** of them have to match with internal references
               - request:
                   type: Delete
                   friend_name: fred
-      rules:
-        - name: r1
-          condition:
-            all:
-              - event.request.type == "Delete"
-              - event.friend_list.names is select("search",  events.m_0.request.friend_name)
-          action:
-            print_event:
-              pretty: true
+        rules:
+          - name: r1
+            condition:
+              all:
+                - event.request.type == "Delete"
+                - event.friend_list.names is select("search",  events.m_0.request.friend_name)
+            action:
+              print_event:
+                pretty: true
 
 
 
