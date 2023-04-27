@@ -42,6 +42,7 @@ from .exception import (
     ControllerNeededException,
     InventoryNeededException,
     RulebookNotFoundException,
+    WebSocketExchangeException,
 )
 
 
@@ -67,6 +68,11 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
             parsed_args.websocket_address,
             parsed_args.websocket_ssl_verify,
         )
+        if not startup_args:
+            logger.error("Error communicating with web socket server")
+            raise WebSocketExchangeException(
+                "Error communicating with web socket server"
+            )
     else:
         startup_args = StartupArgs()
         startup_args.variables = load_vars(parsed_args)
