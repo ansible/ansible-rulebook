@@ -238,8 +238,8 @@ def main(args: List[str] = None) -> int:
         asyncio.run(app.run(args))
     except KeyboardInterrupt:
         return 0
-    except Exception:
-        logger.exception("Unexpected exception")
+    except Exception as err:
+        logger.error("Terminating %s", str(err))
         return 1
     return 0
 

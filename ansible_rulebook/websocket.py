@@ -107,8 +107,8 @@ async def send_event_log_to_websocket(
         except CancelledError:
             logger.info("closing websocket due to task cancelled")
             return
-        except BaseException:
-            logger.exception("websocket error on %s", event)
+        except BaseException as err:
+            logger.error("websocket error on %s err: %s", event, str(err))
 
 
 def _sslcontext(url, ssl_verify) -> ssl.SSLContext:
