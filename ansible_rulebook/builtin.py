@@ -771,28 +771,6 @@ async def run_job_template(
         )
     )
 
-    async def event_callback(event: dict) -> None:
-        await event_log.put(
-            {
-                "type": "AnsibleEvent",
-                "event": {
-                    "uuid": event["uuid"],
-                    "counter": event["counter"],
-                    "stdout": event["stdout"],
-                    "start_line": event["start_line"],
-                    "end_line": event["end_line"],
-                    "event": event["event"],
-                    "created": event["created"],
-                    "parent_uuid": event["parent_uuid"],
-                    "event_data": event["event_data"],
-                    "job_id": job_id,
-                    "controller_job_id": event["job"],
-                    "ansible_rulebook_id": settings.identifier,
-                },
-                "run_at": event["created"],
-            }
-        )
-
     if retry:
         retries = max(retries, 1)
 
