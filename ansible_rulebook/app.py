@@ -68,6 +68,8 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
             parsed_args.websocket_address,
             parsed_args.websocket_ssl_verify,
         )
+        if parsed_args.inventory:
+            startup_args.inventory = load_inventory(parsed_args.inventory)
         if not startup_args:
             logger.error("Error communicating with web socket server")
             raise WebSocketExchangeException(
