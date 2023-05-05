@@ -19,6 +19,7 @@ import os
 import ssl
 import tempfile
 from asyncio.exceptions import CancelledError
+from urllib.parse import unquote, urljoin, urlparse
 
 import websockets
 import yaml
@@ -32,83 +33,51 @@ logger = logging.getLogger(__name__)
 async def request_workload(
     activation_id: str, websocket_address: str, websocket_ssl_verify: str
 ) -> StartupArgs:
+
     logger.info("websocket %s connecting", websocket_address)
-    async with websockets.connect(
-        websocket_address,
-        ssl=_sslcontext(websocket_address, websocket_ssl_verify),
-    ) as websocket:
-        try:
-            logger.info("websocket %s connected", websocket_address)
-            await websocket.send(
-                json.dumps(dict(type="Worker", activation_id=activation_id))
+    url = urlparse(websocket_address)
+    if url.scheme.lower() == "ws+unix":
+        uds = unquote(url.netloc)
+        logger.info("Using unix socket: %s", uds)
+        async with websockets.unix_connect(
+            uds, uri=urljoin("ws://localhost", url.path)
+        ) as websocket:
+            return await _get_payload(
+                websocket, websocket_address, activation_id
             )
-
-            project_data_fh = None
-            response = StartupArgs()
-            while True:
-                msg = await websocket.recv()
-                data = json.loads(msg)
-                if data.get("type") == "EndOfResponse":
-                    break
-                if data.get("type") == "ProjectData":
-                    if not project_data_fh:
-                        (
-                            project_data_fh,
-                            response.project_data_file,
-                        ) = tempfile.mkstemp()
-
-                    if data.get("data") and data.get("more"):
-                        os.write(
-                            project_data_fh, base64.b64decode(data.get("data"))
-                        )
-                    if not data.get("data") and not data.get("more"):
-                        os.close(project_data_fh)
-                        logger.debug("wrote %s", response.project_data_file)
-                if data.get("type") == "Rulebook":
-                    response.rulesets = rules_parser.parse_rule_sets(
-                        yaml.safe_load(base64.b64decode(data.get("data")))
-                    )
-                if data.get("type") == "ExtraVars":
-                    response.variables = yaml.safe_load(
-                        base64.b64decode(data.get("data"))
-                    )
-                if data.get("type") == "ControllerInfo":
-                    response.controller_url = data.get("url")
-                    response.controller_token = data.get("token")
-                    response.controller_verify_ssl = data.get("ssl_verify")
-            return response
-        except CancelledError:
-            logger.info("closing websocket due to task cancelled")
-            return
-        except websockets.exceptions.ConnectionClosed:
-            logger.info("websocket %s closed", websocket_address)
-            return
+    else:
+        async with websockets.connect(
+            websocket_address,
+            ssl=_sslcontext(websocket_address, websocket_ssl_verify),
+        ) as websocket:
+            return await _get_payload(
+                websocket, websocket_address, activation_id
+            )
 
 
 async def send_event_log_to_websocket(
     event_log, websocket_address, websocket_ssl_verify
 ):
     logger.info("websocket %s connecting", websocket_address)
-    async for websocket in websockets.connect(
-        websocket_address,
-        logger=logger,
-        ssl=_sslcontext(websocket_address, websocket_ssl_verify),
-    ):
-        logger.info("websocket %s connected", websocket_address)
-        event = None
-        try:
-            while True:
-                event = await event_log.get()
-                await websocket.send(json.dumps(event))
-                if event == dict(type="Shutdown"):
-                    return
-        except websockets.ConnectionClosed:
-            logger.warning("websocket %s connection closed", websocket_address)
-        except CancelledError:
-            logger.info("closing websocket due to task cancelled")
-            return
-        except BaseException as err:
-            logger.error("websocket error on %s err: %s", event, str(err))
+    url = urlparse(websocket_address)
+    if url.scheme.lower() == "ws+unix":
+        uds = unquote(url.netloc)
+        logger.info("Using unix socket: %s", uds)
+        async for websocket in websockets.unix_connect(
+            uds, uri=urljoin("ws://localhost", url.path)
+        ):
+            return await _send_events_from_queue(
+                event_log, websocket, websocket_address
+            )
+    else:
+        async for websocket in websockets.connect(
+            websocket_address,
+            logger=logger,
+            ssl=_sslcontext(websocket_address, websocket_ssl_verify),
+        ):
+            return await _send_events_from_queue(
+                event_log, websocket, websocket_address
+            )
 
 
 def _sslcontext(url, ssl_verify) -> ssl.SSLContext:
@@ -119,3 +88,78 @@ def _sslcontext(url, ssl_verify) -> ssl.SSLContext:
             return ssl._create_unverified_context()
         return ssl.create_default_context(cafile=ssl_verify)
     return None
+
+
+async def _get_payload(
+    websocket,
+    websocket_address: str,
+    activation_id: str,
+) -> StartupArgs:
+    try:
+        logger.info("websocket %s connected", websocket_address)
+        await websocket.send(
+            json.dumps(dict(type="Worker", activation_id=activation_id))
+        )
+
+        project_data_fh = None
+        response = StartupArgs()
+        while True:
+            msg = await websocket.recv()
+            data = json.loads(msg)
+            if data.get("type") == "EndOfResponse":
+                break
+            if data.get("type") == "ProjectData":
+                if not project_data_fh:
+                    (
+                        project_data_fh,
+                        response.project_data_file,
+                    ) = tempfile.mkstemp()
+
+                if data.get("data") and data.get("more"):
+                    os.write(
+                        project_data_fh, base64.b64decode(data.get("data"))
+                    )
+                if not data.get("data") and not data.get("more"):
+                    os.close(project_data_fh)
+                    logger.debug("wrote %s", response.project_data_file)
+            if data.get("type") == "Rulebook":
+                response.rulesets = rules_parser.parse_rule_sets(
+                    yaml.safe_load(base64.b64decode(data.get("data")))
+                )
+            if data.get("type") == "ExtraVars":
+                response.variables = yaml.safe_load(
+                    base64.b64decode(data.get("data"))
+                )
+            if data.get("type") == "ControllerInfo":
+                response.controller_url = data.get("url")
+                response.controller_token = data.get("token")
+                response.controller_verify_ssl = data.get("ssl_verify")
+        return response
+    except CancelledError:
+        logger.info("closing websocket due to task cancelled")
+        return
+    except websockets.exceptions.ConnectionClosed:
+        logger.info("websocket %s closed", websocket_address)
+        return
+
+
+async def _send_events_from_queue(
+    event_log,
+    websocket,
+    websocket_address: str,
+) -> None:
+    logger.info("websocket %s connected", websocket_address)
+    event = None
+    try:
+        while True:
+            event = await event_log.get()
+            await websocket.send(json.dumps(event))
+            if event == dict(type="Shutdown"):
+                return
+    except websockets.ConnectionClosed:
+        logger.warning("websocket %s connection closed", websocket_address)
+    except CancelledError:
+        logger.info("closing websocket due to task cancelled")
+        return
+    except BaseException as err:
+        logger.error("websocket error on %s err: %s", event, str(err))

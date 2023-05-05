@@ -100,6 +100,47 @@ async def test_request_workload():
 
 
 @pytest.mark.asyncio
+async def test_request_workload_unix():
+    os.chdir(HERE)
+    controller_url = "https://www.example.com"
+    controller_token = "abc"
+    controller_ssl_verify = "no"
+    test_data = []
+    tar_file = "./data/test.tar"
+    sha1 = "9691bc9ed954cb3302240fb83ccb60dc2dd999ee24ab2bf5af7427433f9ce2ca"
+    test_data.append(
+        dict2json(
+            dict(
+                type="ControllerInfo",
+                url=controller_url,
+                token=controller_token,
+                ssl_verify=controller_ssl_verify,
+            )
+        )
+    )
+    load_file(tar_file, "ProjectData", test_data, False)
+    load_file("./rules/rules.yml", "Rulebook", test_data, True)
+    load_file("./playbooks/inventory.yml", "Inventory", test_data, True)
+    load_file("./data/test_vars.yml", "ExtraVars", test_data, True)
+    test_data.append(dict2json({"type": "EndOfResponse"}))
+
+    with patch("ansible_rulebook.websocket.websockets.unix_connect") as mo:
+        mo.return_value.__aenter__.return_value.recv.side_effect = test_data
+        mo.return_value.__aenter__.return_value.send.return_value = None
+
+        response = await request_workload(
+            "dummy", "ws+unix://%2fvar%2frun%2fpodman.sock", "yes"
+        )
+        sha2 = file_sha256(response.project_data_file)
+        assert sha1 == sha2
+        assert response.controller_url == controller_url
+        assert response.controller_token == controller_token
+        assert response.controller_verify_ssl == controller_ssl_verify
+        assert response.rulesets[0].name == "Demo rules"
+        assert len(response.rulesets[0].rules) == 6
+
+
+@pytest.mark.asyncio
 async def test_send_event_log_to_websocket():
     queue = asyncio.Queue()
     queue.put_nowait({"a": 1})
