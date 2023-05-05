@@ -19,7 +19,11 @@ import pytest
 from freezegun import freeze_time
 
 from ansible_rulebook.engine import run_rulesets, start_source
-from ansible_rulebook.exception import VarsKeyMissingException
+from ansible_rulebook.exception import (
+    ControllerApiException,
+    JobTemplateNotFoundException,
+    VarsKeyMissingException,
+)
 from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.util import load_inventory
@@ -2103,6 +2107,40 @@ async def test_46_job_template():
 
             assert action["url"] == job_url
             assert action["action"] == "run_job_template"
+
+
+JOB_TEMPLATE_ERRORS = [
+    ("api error", ControllerApiException("api error")),
+    ("jt does not exist", JobTemplateNotFoundException("jt does not exist")),
+]
+
+
+@pytest.mark.parametrize("err_msg,err", JOB_TEMPLATE_ERRORS)
+@pytest.mark.asyncio
+async def test_46_job_template_exception(err_msg, err):
+    ruleset_queues, event_log = load_rulebook("examples/46_job_template.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        with patch(
+            "ansible_rulebook.builtin.job_template_runner.run_job_template",
+            side_effect=err,
+        ):
+            await run_rulesets(
+                event_log,
+                ruleset_queues,
+                dict(),
+                load_inventory("playbooks/inventory.yml"),
+            )
+
+            while not event_log.empty():
+                event = event_log.get_nowait()
+                if event["type"] == "Action":
+                    action = event
+
+            assert action["action"] == "run_job_template"
+            assert action["reason"] == {"error": err_msg}
 
 
 @pytest.mark.asyncio
