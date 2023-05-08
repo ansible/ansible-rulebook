@@ -392,12 +392,16 @@ class RuleSetRunner:
                     **action_args,
                 )
             except KeyError as e:
-                logger.exception(
-                    "KeyError with variables %s", pformat(variables_copy)
+                logger.error(
+                    "KeyError %s with variables %s",
+                    str(e),
+                    pformat(variables_copy),
                 )
                 result = dict(error=e)
             except MessageNotHandledException as e:
-                logger.exception("Message cannot be handled: %s", action_args)
+                logger.error(
+                    "Message cannot be handled: %s err %s", action_args, str(e)
+                )
                 result = dict(error=e)
             except MessageObservedException as e:
                 logger.info("MessageObservedException: %s", action_args)
@@ -413,7 +417,7 @@ class RuleSetRunner:
                 logger.debug("Action task caught Cancelled error")
                 raise
             except Exception as e:
-                logger.exception("Error calling %s", action)
+                logger.error("Error calling action %s, err %s", action, str(e))
                 result = dict(error=e)
             except BaseException as e:
                 logger.error(e)
