@@ -90,6 +90,11 @@ def get_parser() -> argparse.ArgumentParser:
         help="Source dir",
     )
     parser.add_argument(
+        "-A",
+        "--action-dir",
+        help="Action dir",
+    )
+    parser.add_argument(
         "-i",
         "--inventory",
         help="Inventory",

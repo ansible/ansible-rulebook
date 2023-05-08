@@ -92,6 +92,8 @@ async def run(parsed_args: argparse.Namespace) -> None:
         startup_args.controller_url = parsed_args.controller_url
         startup_args.controller_token = parsed_args.controller_token
         startup_args.controller_ssl_verify = parsed_args.controller_ssl_verify
+        startup_args.source_dir = parsed_args.source_dir
+        startup_args.action_dir = parsed_args.action_dir
 
     validate_actions(startup_args)
 
@@ -107,7 +109,7 @@ async def run(parsed_args: argparse.Namespace) -> None:
     tasks, ruleset_queues = spawn_sources(
         startup_args.rulesets,
         startup_args.variables,
-        [parsed_args.source_dir],
+        [startup_args.source_dir],
         parsed_args.shutdown_delay,
     )
 
@@ -128,6 +130,7 @@ async def run(parsed_args: argparse.Namespace) -> None:
         parsed_args,
         startup_args.project_data_file,
         file_monitor,
+        [startup_args.action_dir],
     )
 
     await event_log.put(dict(type="Exit"))

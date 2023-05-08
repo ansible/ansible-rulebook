@@ -261,6 +261,7 @@ async def run_rulesets(
     parsed_args: argparse.Namespace = None,
     project_data_file: Optional[str] = None,
     file_monitor: str = None,
+    action_directories: Optional[List[str]] = None,
 ) -> bool:
     logger.debug("run_ruleset")
     rulesets_queue_plans = rule_generator.generate_rulesets(
@@ -305,6 +306,7 @@ async def run_rulesets(
             project_data_file=project_data_file,
             parsed_args=parsed_args,
             broadcast_method=broadcast,
+            action_directories=action_directories,
         )
         task_name = f"main_ruleset :: {ruleset_queue_plan.ruleset.name}"
         ruleset_task = asyncio.create_task(

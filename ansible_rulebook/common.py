@@ -28,3 +28,5 @@ class StartupArgs:
     project_data_file: str = field(default="")
     inventory: str = field(default="")
     check_controller_connection: bool = field(default=False)
+    source_dir: str = field(default="")
+    action_dir: str = field(default="")
