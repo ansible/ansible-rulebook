@@ -429,9 +429,10 @@ You can optionally alias these attribute(s) using the **<<** operator. For examp
             - events.third << event.i == events.first.i + 2
         action:
           debug:
-            first: "{{ events.first }}"
-            second: "{{ events.second }}"
-            third: "{{ events.third }}"
+            msg:
+              - "first: {{ events.first }}"
+              - "second: {{ events.second }}"
+              - "third: {{ events.third }}"
 
 | When using the assignment operator the attribute names should have the
 | **events.** or **facts.** prefix. In the above example we are saving the
@@ -452,9 +453,10 @@ You can optionally alias these attribute(s) using the **<<** operator. For examp
             - event.i == events.m_0.i + 2
         action:
           debug:
-            first: "{{ events.m_0 }}"
-            second: "{{ events.m_1 }}"
-            third: "{{ events.m_2 }}"
+            msg:
+              - "first: {{ events.m_0 }}"
+              - "second: {{ events.m_1 }}"
+              - "third: {{ events.m_2 }}"
 
 Multiple condition with default assignments
 -------------------------------------------
@@ -469,9 +471,10 @@ Multiple condition with default assignments
             - event.i == events.m.i + 3
         action:
           debug:
-            first: "{{events.m}}"
-            second: "{{events.m_1}}"
-            third: "{{events.m_2}}"
+            msg:
+              - "first: {{ events.m_0 }}"
+              - "second: {{ events.m_1 }}"
+              - "third: {{ events.m_2 }}"
 
 The first match is stored as **m**, and the subsequent ones are stored as **m_1**, **m_2** ...
 
@@ -484,7 +487,8 @@ Single condition assignment (Not supported)
         condition: event.first << event.i == 0
         action:
           debug:
-            event: "{{event}}"
+            msg:
+              - "event: {{event}}"
 
 | Assignment **cannot** be used for rules that have a single condition, the
 | matching event will always be called **event**. In the above example **event.first**
