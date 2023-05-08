@@ -141,3 +141,8 @@ class JobTemplateNotFoundException(Exception):
 class WebSocketExchangeException(Exception):
 
     pass
+
+
+class UnsupportedActionException(Exception):
+
+    pass

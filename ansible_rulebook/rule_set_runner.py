@@ -28,7 +28,10 @@ from drools.exceptions import (
 
 from ansible_rulebook.builtin import actions as builtin_actions
 from ansible_rulebook.conf import settings
-from ansible_rulebook.exception import ShutdownException
+from ansible_rulebook.exception import (
+    ShutdownException,
+    UnsupportedActionException,
+)
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.rule_types import (
     Action,
@@ -310,7 +313,7 @@ class RuleSetRunner:
 
         logger.info("call_action %s", action)
 
-        result = None
+        error = None
         if action in builtin_actions:
             try:
                 if action == "run_job_template":
@@ -397,15 +400,15 @@ class RuleSetRunner:
                     str(e),
                     pformat(variables_copy),
                 )
-                result = dict(error=e)
+                error = e
             except MessageNotHandledException as e:
                 logger.error(
                     "Message cannot be handled: %s err %s", action_args, str(e)
                 )
-                result = dict(error=e)
+                error = e
             except MessageObservedException as e:
                 logger.info("MessageObservedException: %s", action_args)
-                result = dict(error=e)
+                error = e
             except ShutdownException as e:
                 if self.shutdown:
                     logger.info(
@@ -418,15 +421,17 @@ class RuleSetRunner:
                 raise
             except Exception as e:
                 logger.error("Error calling action %s, err %s", action, str(e))
-                result = dict(error=e)
+                error = e
             except BaseException as e:
                 logger.error(e)
                 raise
         else:
             logger.error("Action %s not supported", action)
-            result = dict(error=f"Action {action} not supported")
+            error = UnsupportedActionException(
+                f"Action {action} not supported"
+            )
 
-        if result:
+        if error:
             await self.event_log.put(
                 dict(
                     type="Action",
@@ -435,7 +440,7 @@ class RuleSetRunner:
                     playbook_name=action_args.get("name"),
                     status="failed",
                     run_at=str(datetime.utcnow()),
-                    reason=result,
+                    reason=dict(error=str(error)),
                 )
             )
 
