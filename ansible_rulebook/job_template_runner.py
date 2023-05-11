@@ -106,7 +106,7 @@ class JobTemplateRunner:
                     break
 
         raise JobTemplateNotFoundException(
-            f"{name} in organization {organization}"
+            f"Job template {name} in organization {organization} does not exist"  # noqa: E501
         )
 
     async def run_job_template(
