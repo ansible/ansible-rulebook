@@ -7,7 +7,7 @@ The `ansible-rulebook` CLI supports the following options:
 .. code-block:: console
 
     usage: ansible-rulebook [-h] [-r RULEBOOK] [-e VARS] [-E ENV_VARS] [-v] [--version] [-S SOURCE_DIR] [-i INVENTORY] [-W WEBSOCKET_URL] [--id ID] [-w] [-T PROJECT_TARBALL] [--controller-url CONTROLLER_URL]
-                            [--controller-token CONTROLLER_TOKEN] [--controller-ssl-verify CONTROLLER_SSL_VERIFY] [--print-events]
+                            [--controller-token CONTROLLER_TOKEN] [--controller-ssl-verify CONTROLLER_SSL_VERIFY] [--print-events] [--heartbeat n] [--execution-strategy sequential|parallel]
 
     optional arguments:
     -h, --help            show this help message and exit
@@ -41,6 +41,8 @@ The `ansible-rulebook` CLI supports the following options:
     --shutdown-delay      Maximum number of seconds to wait after a graceful shutdown is issued, default is 60. Can also be set via an env var called EDA_SHUTDOWN_DELAY. The process will shutdown if all actions complete before this time period
 
     --heartbeat <n> Send heartbeat to the server after every n seconds. Default is 0, no heartbeat is sent
+
+    --execution-strategy sequential|parallel. The default execution strategy is sequential.
 
 To get help from `ansible-rulebook` run the following:
 
