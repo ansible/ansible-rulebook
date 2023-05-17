@@ -155,7 +155,7 @@ have matched and wait for the next event to come in which might match other cond
 Once all the conditions have been met, it will return you all the events that matched,
 which can be used in action.
 
-    .. note::
+    .. warning::
         Note that in this case the engine will consider **all the different events** until the conditions are met,
         regardless of whether those events come from one or multiple sources.
         Multiple conditions with ``all`` are not equivalent to a single condition with the ``and`` operator.
@@ -163,12 +163,12 @@ which can be used in action.
         If you want to match only one event using multiple attributes
         the rule must use a single condition with the ``and`` operator:
 
-    .. code-block:: yaml
+        .. code-block:: yaml
 
-        name: One condition combining attributes
-        condition: event.target_os == "linux" and event.tracking_id == 345
-        action:
-          debug:
+            name: One condition combining attributes
+            condition: event.target_os == "linux" and event.tracking_id == 345
+            action:
+              debug:
 
 
 Multiple conditions where **all** of them have to match with internal references
