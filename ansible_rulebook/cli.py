@@ -164,6 +164,14 @@ def get_parser() -> argparse.ArgumentParser:
         help="Send heartbeat to the server after every n seconds"
         "Default is 0, no heartbeat is sent",
     )
+    parser.add_argument(
+        "--execution-strategy",
+        default="sequential",
+        choices=["sequential", "parallel"],
+        help="Actions can be executed in sequential order or in parallel."
+        "Default is sequential, actions will be run only after the "
+        "previous one ends",
+    )
     return parser
 
 
