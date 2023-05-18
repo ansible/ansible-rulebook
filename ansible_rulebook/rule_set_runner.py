@@ -17,6 +17,7 @@ import gc
 import logging
 from datetime import datetime
 from pprint import PrettyPrinter, pformat
+from types import MappingProxyType
 from typing import Dict, List, Optional, Union, cast
 
 import dpath
@@ -289,7 +290,7 @@ class RuleSetRunner:
                 action_item.rule_uuid,
                 rule_run_at,
                 action.action,
-                action.action_args,
+                MappingProxyType(action.action_args),
                 action_item.variables,
                 action_item.inventory,
                 action_item.hosts,
@@ -309,14 +310,14 @@ class RuleSetRunner:
         rule_uuid: str,
         rule_run_at: str,
         action: str,
-        action_args: Dict,
+        immutable_action_args: MappingProxyType,
         variables: Dict,
         inventory: str,
         hosts: List,
         rules_engine_result,
     ) -> None:
-
         logger.info("call_action %s", action)
+        action_args = immutable_action_args.copy()
 
         error = None
         if action in builtin_actions:

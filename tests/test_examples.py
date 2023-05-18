@@ -779,15 +779,20 @@ async def test_27_var_root():
             dict(),
             load_inventory("playbooks/inventory.yml"),
         )
+
+        for _ in range(2):
+            event = event_log.get_nowait()
+            assert event["type"] == "Action", "1"
+            assert event["action"] == "print_event", "2"
+            assert event["matching_events"] == {
+                "webhook": {
+                    "url": "http://www.example.com",
+                    "action": "merge",
+                },
+                "kafka": {"topic": "testing", "channel": "red"},
+            }, "3"
         event = event_log.get_nowait()
-        assert event["type"] == "Action", "1"
-        assert event["action"] == "print_event", "2"
-        assert event["matching_events"] == {
-            "webhook": {"url": "http://www.example.com", "action": "merge"},
-            "kafka": {"topic": "testing", "channel": "red"},
-        }
-        event = event_log.get_nowait()
-        assert event["type"] == "Shutdown", "7"
+        assert event["type"] == "Shutdown", "4"
         assert event_log.empty()
 
 
@@ -2088,7 +2093,6 @@ async def test_46_job_template():
     job_template_runner.host = "https://examples.com"
     job_url = "https://examples.com/#/jobs/945/details"
     with SourceTask(rs.sources[0], "sources", {}, queue):
-
         with patch(
             "ansible_rulebook.builtin.job_template_runner.run_job_template",
             return_value=response_obj,
