@@ -11,3 +11,5 @@
         run_playbook:
           name: playbooks/fail_and_succeed.yml
           retries: 1
+          extra_vars:
+            rulebook_file_path: /tmp/34_demo.txt

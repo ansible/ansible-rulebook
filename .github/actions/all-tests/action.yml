@@ -9,7 +9,7 @@ runs:
 
     - name: Long-running tests
       shell: bash
-      run: pytest -m "long_run" -vv -n auto --cov=./ --cov-report=xml
+      run: pytest -m "long_run" -vv -n auto --cov=./ --cov-report=xml --cov-append
 
     - name: e2e tests
       uses: ./.github/actions/e2e-tests

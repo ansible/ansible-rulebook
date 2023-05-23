@@ -260,7 +260,7 @@ async def test_run_rulesets():
         "ansible_events": 9,
         "action_events": 6,
     }
-    validate_events(event_log, **checks)
+    await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -368,7 +368,7 @@ async def test_run_multiple_hosts():
         "ansible_events": 13,
         "action_events": 6,
     }
-    validate_events(event_log, **checks)
+    await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
@@ -482,7 +482,7 @@ async def test_run_rulesets_on_hosts():
         "ansible_events": 9,
         "action_events": 6,
     }
-    validate_events(event_log, **checks)
+    await validate_events(event_log, **checks)
 
 
 @pytest.mark.asyncio
