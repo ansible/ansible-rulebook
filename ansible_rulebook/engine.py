@@ -198,7 +198,7 @@ async def start_source(
         )
         logger.info("Task cancelled " + shutdown_msg)
     except BaseException as e:
-        logger.exception("Source error")
+        logger.error("Source error %s", str(e))
         shutdown_msg = (
             f"Shutting down source: {source.source_name} error : {e}"
         )

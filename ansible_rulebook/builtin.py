@@ -38,6 +38,7 @@ from .conf import settings
 from .event_filter.insert_meta_info import main as insert_meta
 from .exception import (
     ControllerApiException,
+    JobTemplateNotFoundException,
     PlaybookNotFoundException,
     PlaybookStatusNotFoundException,
     ShutdownException,
@@ -771,28 +772,6 @@ async def run_job_template(
         )
     )
 
-    async def event_callback(event: dict) -> None:
-        await event_log.put(
-            {
-                "type": "AnsibleEvent",
-                "event": {
-                    "uuid": event["uuid"],
-                    "counter": event["counter"],
-                    "stdout": event["stdout"],
-                    "start_line": event["start_line"],
-                    "end_line": event["end_line"],
-                    "event": event["event"],
-                    "created": event["created"],
-                    "parent_uuid": event["parent_uuid"],
-                    "event_data": event["event_data"],
-                    "job_id": job_id,
-                    "controller_job_id": event["job"],
-                    "ansible_rulebook_id": settings.identifier,
-                },
-                "run_at": event["created"],
-            }
-        )
-
     if retry:
         retries = max(retries, 1)
 
@@ -813,32 +792,34 @@ async def run_job_template(
             )
             if controller_job["status"] != "failed":
                 break
-    except ControllerApiException as ex:
+    except (ControllerApiException, JobTemplateNotFoundException) as ex:
         logger.error(ex)
         controller_job = {}
         controller_job["status"] = "failed"
         controller_job["created"] = run_at()
+        controller_job["error"] = str(ex)
 
-    await event_log.put(
-        dict(
-            type="Action",
-            action="run_job_template",
-            action_uuid=str(uuid.uuid4()),
-            activation_id=settings.identifier,
-            job_template_name=name,
-            organization=organization,
-            job_id=job_id,
-            ruleset=ruleset,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            status=controller_job["status"],
-            run_at=controller_job["created"],
-            url=_controller_job_url(controller_job),
-            matching_events=_get_events(variables),
-            rule_run_at=rule_run_at,
-        )
+    a_log = dict(
+        type="Action",
+        action="run_job_template",
+        action_uuid=str(uuid.uuid4()),
+        activation_id=settings.identifier,
+        job_template_name=name,
+        organization=organization,
+        job_id=job_id,
+        ruleset=ruleset,
+        ruleset_uuid=source_ruleset_uuid,
+        rule=source_rule_name,
+        rule_uuid=source_rule_uuid,
+        status=controller_job["status"],
+        run_at=controller_job["created"],
+        url=_controller_job_url(controller_job),
+        matching_events=_get_events(variables),
+        rule_run_at=rule_run_at,
     )
+    if "error" in controller_job:
+        a_log["reason"] = dict(error=controller_job["error"])
+    await event_log.put(a_log)
 
     if set_facts or post_events:
         logger.debug("set_facts")

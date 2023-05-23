@@ -17,6 +17,7 @@ import gc
 import logging
 from datetime import datetime
 from pprint import PrettyPrinter, pformat
+from types import MappingProxyType
 from typing import Dict, List, Optional, Union, cast
 
 import dpath
@@ -28,7 +29,10 @@ from drools.exceptions import (
 
 from ansible_rulebook.builtin import actions as builtin_actions
 from ansible_rulebook.conf import settings
-from ansible_rulebook.exception import ShutdownException
+from ansible_rulebook.exception import (
+    ShutdownException,
+    UnsupportedActionException,
+)
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.rule_types import (
     Action,
@@ -244,9 +248,14 @@ class RuleSetRunner:
                     self.active_actions.add(task)
                     task.add_done_callback(self._handle_action_completion)
                 else:
-                    self._run_action(
+                    task = self._run_action(
                         action_item.actions[0], action_item, rule_run_at
                     )
+                    if (
+                        self.parsed_args
+                        and self.parsed_args.execution_strategy == "sequential"
+                    ):
+                        await task
         except asyncio.CancelledError:
             logger.debug(
                 "Action Plan Task Cancelled for ruleset %s", self.name
@@ -281,7 +290,7 @@ class RuleSetRunner:
                 action_item.rule_uuid,
                 rule_run_at,
                 action.action,
-                action.action_args,
+                MappingProxyType(action.action_args),
                 action_item.variables,
                 action_item.inventory,
                 action_item.hosts,
@@ -301,16 +310,16 @@ class RuleSetRunner:
         rule_uuid: str,
         rule_run_at: str,
         action: str,
-        action_args: Dict,
+        immutable_action_args: MappingProxyType,
         variables: Dict,
         inventory: str,
         hosts: List,
         rules_engine_result,
     ) -> None:
-
         logger.info("call_action %s", action)
+        action_args = immutable_action_args.copy()
 
-        result = None
+        error = None
         if action in builtin_actions:
             try:
                 if action == "run_job_template":
@@ -392,16 +401,20 @@ class RuleSetRunner:
                     **action_args,
                 )
             except KeyError as e:
-                logger.exception(
-                    "KeyError with variables %s", pformat(variables_copy)
+                logger.error(
+                    "KeyError %s with variables %s",
+                    str(e),
+                    pformat(variables_copy),
                 )
-                result = dict(error=e)
+                error = e
             except MessageNotHandledException as e:
-                logger.exception("Message cannot be handled: %s", action_args)
-                result = dict(error=e)
+                logger.error(
+                    "Message cannot be handled: %s err %s", action_args, str(e)
+                )
+                error = e
             except MessageObservedException as e:
                 logger.info("MessageObservedException: %s", action_args)
-                result = dict(error=e)
+                error = e
             except ShutdownException as e:
                 if self.shutdown:
                     logger.info(
@@ -413,16 +426,18 @@ class RuleSetRunner:
                 logger.debug("Action task caught Cancelled error")
                 raise
             except Exception as e:
-                logger.exception("Error calling %s", action)
-                result = dict(error=e)
+                logger.error("Error calling action %s, err %s", action, str(e))
+                error = e
             except BaseException as e:
                 logger.error(e)
                 raise
         else:
             logger.error("Action %s not supported", action)
-            result = dict(error=f"Action {action} not supported")
+            error = UnsupportedActionException(
+                f"Action {action} not supported"
+            )
 
-        if result:
+        if error:
             await self.event_log.put(
                 dict(
                     type="Action",
@@ -431,7 +446,7 @@ class RuleSetRunner:
                     playbook_name=action_args.get("name"),
                     status="failed",
                     run_at=str(datetime.utcnow()),
-                    reason=result,
+                    reason=dict(error=str(error)),
                 )
             )
 

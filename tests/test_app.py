@@ -17,6 +17,7 @@ from ansible_rulebook.exception import (
     ControllerNeededException,
     InventoryNeededException,
     RulebookNotFoundException,
+    WebSocketExchangeException,
 )
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -162,3 +163,20 @@ async def test_run_with_websocket(create_ruleset):
                 assert mock_start_source.call_count == 1
                 assert mock_run_rulesets.call_count == 1
                 assert mock_request_workload.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_failed_run_with_websocket(create_ruleset):
+    os.chdir(HERE)
+    parser = get_parser()
+    cmdline_args = parser.parse_args(
+        ["-r", "./data/rulebook.yml", "-W", "fake", "--id", "1", "-w"]
+    )
+
+    with mock.patch(
+        "ansible_rulebook.app.request_workload"
+    ) as mock_request_workload:
+        mock_request_workload.return_value = None
+        with pytest.raises(WebSocketExchangeException):
+            await run(cmdline_args)
+        assert mock_request_workload.call_count == 1

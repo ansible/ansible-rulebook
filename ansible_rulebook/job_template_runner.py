@@ -18,8 +18,8 @@ import logging
 import os
 import ssl
 from functools import cached_property
-from typing import Any, Callable, Union
-from urllib.parse import parse_qsl, urljoin, urlparse
+from typing import Union
+from urllib.parse import urljoin
 
 import aiohttp
 import dpath
@@ -106,7 +106,10 @@ class JobTemplateRunner:
                     break
 
         raise JobTemplateNotFoundException(
-            f"{name} in organization {organization}"
+            (
+                f"Job template {name} in organization "
+                f"{organization} does not exist"
+            )
         )
 
     async def run_job_template(
@@ -114,42 +117,22 @@ class JobTemplateRunner:
         name: str,
         organization: str,
         job_params: dict,
-        event_handler: Union[Callable[[dict], Any], None] = None,
     ) -> dict:
         job = await self.launch(name, organization, job_params)
 
-        url_info = urlparse(job["url"])
-        url = f"{url_info.path}job_events/"
-        counters = []
-        params = dict(parse_qsl(url_info.query))
+        url = job["url"]
+        params = {}
 
         async with aiohttp.ClientSession(
             headers=self._auth_headers()
         ) as session:
             while True:
-                # fetch and process job events
+                # fetch and process job status
                 response = await self._get_page(session, url, params)
                 json_body = json.loads(response["body"])
-                job_status = None
-                for event in json_body["results"]:
-                    job_status = dpath.get(
-                        event, "summary_fields.job.status", "."
-                    )
-                    counter = event["counter"]
-                    if counter not in counters:
-                        counters.append(counter)
-                        logger.debug(event["stdout"])
-                    if event_handler:
-                        await event_handler(event)
-
-                if json_body.get("next", None):
-                    params["page"] = params.get("page", 1) + 1
-                    continue
-
+                job_status = json_body["status"]
                 if job_status in self.JOB_COMPLETION_STATUSES:
-                    # fetch and return job object containing artifacts
-                    response = await self._get_page(session, url_info.path, {})
-                    return json.loads(response["body"])
+                    return json_body
 
                 await asyncio.sleep(self.refresh_delay)
 

@@ -13,6 +13,14 @@
               message:
                 topic: testing
                 channel: red
+          - webhook:
+              payload:
+                url: http://www.example.com
+                action: merge
+          - kafka:
+              message:
+                topic: testing
+                channel: red
   rules:
     - name: r1
       condition:
@@ -24,4 +32,3 @@
           var_root:
             webhook.payload: webhook
             kafka.message: kafka
-

@@ -155,7 +155,7 @@ have matched and wait for the next event to come in which might match other cond
 Once all the conditions have been met, it will return you all the events that matched,
 which can be used in action.
 
-    .. note::
+    .. warning::
         Note that in this case the engine will consider **all the different events** until the conditions are met,
         regardless of whether those events come from one or multiple sources.
         Multiple conditions with ``all`` are not equivalent to a single condition with the ``and`` operator.
@@ -163,12 +163,12 @@ which can be used in action.
         If you want to match only one event using multiple attributes
         the rule must use a single condition with the ``and`` operator:
 
-    .. code-block:: yaml
+        .. code-block:: yaml
 
-        name: One condition combining attributes
-        condition: event.target_os == "linux" and event.tracking_id == 345
-        action:
-          debug:
+            name: One condition combining attributes
+            condition: event.target_os == "linux" and event.tracking_id == 345
+            action:
+              debug:
 
 
 Multiple conditions where **all** of them have to match with internal references
@@ -195,15 +195,15 @@ Multiple conditions where **all** of them have to match with internal references
               - request:
                   type: Delete
                   friend_name: fred
-      rules:
-        - name: r1
-          condition:
-            all:
-              - event.request.type == "Delete"
-              - event.friend_list.names is select("search",  events.m_0.request.friend_name)
-          action:
-            print_event:
-              pretty: true
+        rules:
+          - name: r1
+            condition:
+              all:
+                - event.request.type == "Delete"
+                - event.friend_list.names is select("search",  events.m_0.request.friend_name)
+            action:
+              print_event:
+                pretty: true
 
 
 
@@ -429,9 +429,10 @@ You can optionally alias these attribute(s) using the **<<** operator. For examp
             - events.third << event.i == events.first.i + 2
         action:
           debug:
-            first: "{{ events.first }}"
-            second: "{{ events.second }}"
-            third: "{{ events.third }}"
+            msg:
+              - "first: {{ events.first }}"
+              - "second: {{ events.second }}"
+              - "third: {{ events.third }}"
 
 | When using the assignment operator the attribute names should have the
 | **events.** or **facts.** prefix. In the above example we are saving the
@@ -452,9 +453,10 @@ You can optionally alias these attribute(s) using the **<<** operator. For examp
             - event.i == events.m_0.i + 2
         action:
           debug:
-            first: "{{ events.m_0 }}"
-            second: "{{ events.m_1 }}"
-            third: "{{ events.m_2 }}"
+            msg:
+              - "first: {{ events.m_0 }}"
+              - "second: {{ events.m_1 }}"
+              - "third: {{ events.m_2 }}"
 
 Multiple condition with default assignments
 -------------------------------------------
@@ -469,9 +471,10 @@ Multiple condition with default assignments
             - event.i == events.m.i + 3
         action:
           debug:
-            first: "{{events.m}}"
-            second: "{{events.m_1}}"
-            third: "{{events.m_2}}"
+            msg:
+              - "first: {{ events.m_0 }}"
+              - "second: {{ events.m_1 }}"
+              - "third: {{ events.m_2 }}"
 
 The first match is stored as **m**, and the subsequent ones are stored as **m_1**, **m_2** ...
 
@@ -484,7 +487,8 @@ Single condition assignment (Not supported)
         condition: event.first << event.i == 0
         action:
           debug:
-            event: "{{event}}"
+            msg:
+              - "event: {{event}}"
 
 | Assignment **cannot** be used for rules that have a single condition, the
 | matching event will always be called **event**. In the above example **event.first**

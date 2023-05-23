@@ -136,3 +136,13 @@ class InvalidFilterNameException(Exception):
 class JobTemplateNotFoundException(Exception):
 
     pass
+
+
+class WebSocketExchangeException(Exception):
+
+    pass
+
+
+class UnsupportedActionException(Exception):
+
+    pass
