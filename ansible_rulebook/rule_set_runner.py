@@ -251,11 +251,12 @@ class RuleSetRunner:
                     task = self._run_action(
                         action_item.actions[0], action_item, rule_run_at
                     )
-                    if (
-                        self.parsed_args
-                        and self.parsed_args.execution_strategy == "sequential"
-                    ):
-                        await task
+
+                if (
+                    self.parsed_args
+                    and self.parsed_args.execution_strategy == "sequential"
+                ):
+                    await task
         except asyncio.CancelledError:
             logger.debug(
                 "Action Plan Task Cancelled for ruleset %s", self.name

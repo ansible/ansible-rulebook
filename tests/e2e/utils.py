@@ -36,6 +36,7 @@ class Command:
     worker_mode: bool = False
     verbosity: int = 0
     heartbeat: int = 0
+    execution_strategy: Optional[str] = None
 
     def __post_init__(self):
         # verbosity overrides verbose and debug
@@ -80,6 +81,8 @@ class Command:
             result.append(f"-{'v'*self.verbosity}")
         if self.heartbeat > 0:
             result.extend(["--heartbeat", str(self.heartbeat)])
+        if self.execution_strategy:
+            result.extend(["--execution-strategy", self.execution_strategy])
 
         return result
 

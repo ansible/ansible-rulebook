@@ -142,7 +142,7 @@ def test_terminate_process_source_end(update_environment, shutdown_delay):
         env = update_environment({"EDA_SHUTDOWN_DELAY": str(shutdown_delay)})
 
     rulebook = utils.BASE_DATA_PATH / "rulebooks/test_process_source_end.yml"
-    cmd = utils.Command(rulebook=rulebook)
+    cmd = utils.Command(rulebook=rulebook, execution_strategy="parallel")
 
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(

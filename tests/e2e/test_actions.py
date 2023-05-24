@@ -49,6 +49,7 @@ def test_actions_sanity(update_environment):
     cmd = utils.Command(
         rulebook=rulebook,
         inventory=inventory,
+        execution_strategy="parallel",
         envvars="DEFAULT_SHUTDOWN_AFTER,"
         "DEFAULT_EVENT_DELAY,"
         "DEFAULT_STARTUP_DELAY",
