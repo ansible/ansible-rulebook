@@ -34,6 +34,11 @@ EDA_SOURCE_PATHS = [
     f"{EDA_PATH_PREFIX}/plugins/event_sources",
     "plugins/event_source",
 ]
+
+EDA_PLAYBOOKS_PATHS = [".", "playbooks"]
+
+EDA_YAML_EXTENSIONS = [".yml", ".yaml"]
+
 logger = logging.getLogger(__name__)
 
 
@@ -68,30 +73,38 @@ def find_collection(name):
     return None
 
 
-def has_object(collection, name, object_types, extension):
+def has_object(collection, name, object_types, extensions):
     if find_collection(collection) is None:
         return False
 
+    if not isinstance(extensions, list):
+        extensions = [extensions]
+
     for object_type in object_types:
-        if os.path.exists(
-            os.path.join(find_collection(collection), object_type, name)
-            + extension
-        ):
-            return True
+        for extension in extensions:
+            if os.path.exists(
+                os.path.join(find_collection(collection), object_type, name)
+                + extension
+            ):
+                return True
     return False
 
 
-def find_object(collection, name, object_types, extension):
+def find_object(collection, name, object_types, extensions):
     if find_collection(collection) is None:
         return False
 
+    if not isinstance(extensions, list):
+        extensions = [extensions]
+
     for object_type in object_types:
-        location = (
-            os.path.join(find_collection(collection), object_type, name)
-            + extension
-        )
-        if os.path.exists(location):
-            return location
+        for extension in extensions:
+            location = (
+                os.path.join(find_collection(collection), object_type, name)
+                + extension
+            )
+            if os.path.exists(location):
+                return location
 
     raise FileNotFoundError(
         f"Cannot find {object_type} {name} in {collection} at {location}"
@@ -157,9 +170,13 @@ def find_source_filter(collection, source_filter):
     )
 
 
-def has_playbook(collection, source_filter):
-    return has_object(collection, source_filter, "", ".yml")
+def has_playbook(collection, playbook):
+    return has_object(
+        collection, playbook, EDA_PLAYBOOKS_PATHS, EDA_YAML_EXTENSIONS
+    )
 
 
-def find_playbook(collection, source_filter):
-    return find_object(collection, source_filter, "", ".yml")
+def find_playbook(collection, playbook):
+    return find_object(
+        collection, playbook, EDA_PLAYBOOKS_PATHS, EDA_YAML_EXTENSIONS
+    )
