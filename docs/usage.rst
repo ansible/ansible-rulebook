@@ -83,3 +83,16 @@ To run `ansible-rulebook` with worker mode enabled the `--worker` option can be 
     The `--project-tarball` option can also be useful during development.
 
 The `-v` or `-vv` options can be added to any of the above commands to increase the logging output.
+
+Iterative development tips
+**************************
+
+When developing iteratively rulebooks, you might want to consider using just the generic source plugin and automatic reload from the command line on rulebook file changes, for instance using the `watchmedo <https://pypi.org/project/watchdog>`_ utility.
+
+For example:
+
+.. code-block:: console
+
+    watchmedo shell-command -p "playground.rulebook.yml" -c "ansible-rulebook -i inventory.yml --rulebook playground.rulebook.yml -v" -W .
+
+Using just generic source plugin will automatically terminate the rulebook after all rules have been evaluated for the specified payloads, so the above command will retrigger it automatically after each saved changes in the rulebook file.
