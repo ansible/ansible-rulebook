@@ -172,6 +172,12 @@ def get_parser() -> argparse.ArgumentParser:
         "Default is sequential, actions will be run only after the "
         "previous one ends",
     )
+    parser.add_argument(
+        "--dev",
+        help="Should perform dev reload on rulebook file changes",
+        default="false",
+        action='store_true'
+    )
     return parser
 
 

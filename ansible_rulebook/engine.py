@@ -23,6 +23,9 @@ from typing import Any, Dict, List, Optional
 from drools.dispatch import establish_async_channel, handle_async_messages
 from drools.ruleset import session_stats
 
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
 import ansible_rulebook.rule_generator as rule_generator
 from ansible_rulebook.collection import (
     find_source,
@@ -216,6 +219,33 @@ async def start_source(
             )
         )
 
+class DevReloadException(Exception):
+
+    pass
+
+class RulebookFileChangeHandler(FileSystemEventHandler):
+    modified = False
+
+    def on_modified(self, event):
+        logger.debug(f"Rulebook file {event.src_path} has been modified")
+        self.modified = True
+
+    def is_modified(self):
+        return self.modified
+
+async def monitor_rulebook(rulebook_file):
+    event_handler = RulebookFileChangeHandler()
+    to_observe = os.path.abspath(rulebook_file)
+    observer = Observer()
+    observer.schedule(event_handler, to_observe, recursive=True)
+    observer.start()
+    try:
+        while not event_handler.is_modified():
+            await asyncio.sleep(1)
+    finally:
+        observer.stop()
+        observer.join()
+        raise DevReloadException("Rulebook file changed, raising exception so to asyncio.FIRST_EXCEPTION in order to reload")
 
 async def run_rulesets(
     event_log: asyncio.Queue,
@@ -224,7 +254,8 @@ async def run_rulesets(
     inventory: str = "",
     parsed_args: argparse.ArgumentParser = None,
     project_data_file: Optional[str] = None,
-):
+    file_monitor: str = None
+) -> bool:
     logger.info("run_ruleset")
     rulesets_queue_plans = rule_generator.generate_rulesets(
         ruleset_queues, variables, inventory
@@ -272,6 +303,11 @@ async def run_rulesets(
         )
         ruleset_tasks.append(ruleset_task)
 
+    monitor_task = None
+    if file_monitor:
+        monitor_task = asyncio.create_task(monitor_rulebook(file_monitor))
+        ruleset_tasks.append(monitor_task)
+
     logger.info("Waiting for all ruleset tasks to end")
     await asyncio.wait(ruleset_tasks, return_when=asyncio.FIRST_EXCEPTION)
     async_task.cancel()
@@ -281,12 +317,18 @@ async def run_rulesets(
             logger.info("Cancelling " + task.get_name())
             task.cancel()
 
+    should_reload = False
+    if monitor_task and monitor_task.exception().__class__ == DevReloadException:
+        logger.debug("Dev reload, setting should_reload")
+        should_reload = True
+
     logger.info("Waiting on gather")
     asyncio.gather(*ruleset_tasks)
     logger.info("Returning from run_rulesets")
     if send_heartbeat_task:
         send_heartbeat_task.cancel()
 
+    return should_reload
 
 def meta_info_filter(source: EventSource) -> EventSourceFilter:
     source_filter_name = "eda.builtin.insert_meta_info"
