@@ -6,4 +6,4 @@ runs:
   steps:
     - name: Run e2e tests
       shell: bash
-      run: pytest -m "e2e" -n auto
+      run: pytest -m "e2e" -n auto --cov=./ --cov-report=xml --cov-append
