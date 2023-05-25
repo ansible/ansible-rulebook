@@ -8,6 +8,8 @@
 - Added command line option --execution-strategy
 
 ### Fixed
+- In a collection look for playbook in playbooks directory
+- Support .yaml and .yml extension for playbooks
 
 ### Removed
 
