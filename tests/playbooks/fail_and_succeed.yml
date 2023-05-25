@@ -5,7 +5,7 @@
   tasks:
     - name: Define a temp file
       ansible.builtin.set_fact:
-        my_path: "/tmp/ansible_event-fail_and_succeed"
+        my_path: "{{ rulebook_file_path }}"
 
     - name: Check that the temp file exists
       ansible.builtin.stat:
