@@ -80,8 +80,11 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
         startup_args.rulesets = load_rulebook(
             parsed_args, startup_args.variables
         )
-        if parsed_args.dev == True and os.path.exists(parsed_args.rulebook):
-            logger.info("Dev reload was requested, will monitor for rulebook file changes")
+        if parsed_args.dev is True and os.path.exists(parsed_args.rulebook):
+            logger.info(
+                "Dev reload was requested, "
+                + "will monitor for rulebook file changes"
+            )
             file_monitor = parsed_args.rulebook
         if parsed_args.inventory:
             startup_args.inventory = load_inventory(parsed_args.inventory)

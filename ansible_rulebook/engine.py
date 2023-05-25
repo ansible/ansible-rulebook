@@ -54,6 +54,7 @@ from .exception import (
     SourcePluginMainMissingException,
     SourcePluginNotAsyncioCompatibleException,
     SourcePluginNotFoundException,
+    DevReloadException
 )
 
 logger = logging.getLogger(__name__)
@@ -219,9 +220,6 @@ async def start_source(
             )
         )
 
-class DevReloadException(Exception):
-
-    pass
 
 class RulebookFileChangeHandler(FileSystemEventHandler):
     modified = False
@@ -232,6 +230,7 @@ class RulebookFileChangeHandler(FileSystemEventHandler):
 
     def is_modified(self):
         return self.modified
+
 
 async def monitor_rulebook(rulebook_file):
     event_handler = RulebookFileChangeHandler()
@@ -245,7 +244,12 @@ async def monitor_rulebook(rulebook_file):
     finally:
         observer.stop()
         observer.join()
-        raise DevReloadException("Rulebook file changed, raising exception so to asyncio.FIRST_EXCEPTION in order to reload")
+        raise DevReloadException(
+            "Rulebook file changed, "
+            + "raising exception so to asyncio.FIRST_EXCEPTION "
+            + "in order to reload"
+        )
+
 
 async def run_rulesets(
     event_log: asyncio.Queue,
@@ -318,7 +322,10 @@ async def run_rulesets(
             task.cancel()
 
     should_reload = False
-    if monitor_task and monitor_task.exception().__class__ == DevReloadException:
+    if (
+        monitor_task
+        and monitor_task.exception().__class__ == DevReloadException
+    ):
         logger.debug("Dev reload, setting should_reload")
         should_reload = True
 
@@ -329,6 +336,7 @@ async def run_rulesets(
         send_heartbeat_task.cancel()
 
     return should_reload
+
 
 def meta_info_filter(source: EventSource) -> EventSourceFilter:
     source_filter_name = "eda.builtin.insert_meta_info"
