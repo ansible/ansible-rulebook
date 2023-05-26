@@ -324,7 +324,7 @@ async def run_rulesets(
     should_reload = False
     if (
         monitor_task
-        and monitor_task.exception().__class__ == DevReloadException
+        and isinstance(monitor_task.exception(), DevReloadException)
     ):
         logger.debug("Dev reload, setting should_reload")
         should_reload = True
