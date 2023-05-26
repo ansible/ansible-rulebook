@@ -31,6 +31,8 @@ from ansible_rulebook.exception import (
 
 logger = logging.getLogger(__name__)
 
+request_create_lock = asyncio.Lock()
+
 
 class JobTemplateRunner:
     JOB_TEMPLATE_SLUG = "/api/v2/job_templates"
@@ -118,7 +120,8 @@ class JobTemplateRunner:
         organization: str,
         job_params: dict,
     ) -> dict:
-        job = await self.launch(name, organization, job_params)
+        async with request_create_lock:
+            job = await self.launch(name, organization, job_params)
 
         url = job["url"]
         params = {}
