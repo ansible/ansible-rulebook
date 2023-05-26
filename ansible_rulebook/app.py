@@ -152,7 +152,7 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
     await event_log.put(dict(type="Exit"))
     if error_found:
         raise Exception("One of the source plugins failed")
-    elif should_reload:
+    elif should_reload is True:
         logger.info("Hot-reload, now restarting")
         await run(parsed_args)
 
