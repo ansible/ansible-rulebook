@@ -148,6 +148,6 @@ class UnsupportedActionException(Exception):
     pass
 
 
-class DevReloadException(Exception):
+class HotReloadException(Exception):
 
     pass

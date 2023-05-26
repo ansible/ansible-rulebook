@@ -54,7 +54,7 @@ from .exception import (
     SourcePluginMainMissingException,
     SourcePluginNotAsyncioCompatibleException,
     SourcePluginNotFoundException,
-    DevReloadException
+    HotReloadException
 )
 
 logger = logging.getLogger(__name__)
@@ -244,7 +244,7 @@ async def monitor_rulebook(rulebook_file):
     finally:
         observer.stop()
         observer.join()
-        raise DevReloadException(
+        raise HotReloadException(
             "Rulebook file changed, "
             + "raising exception so to asyncio.FIRST_EXCEPTION "
             + "in order to reload"
@@ -324,13 +324,13 @@ async def run_rulesets(
     should_reload = False
     if (
         monitor_task
-        and isinstance(monitor_task.exception(), DevReloadException)
+        and isinstance(monitor_task.exception(), HotReloadException)
     ):
-        logger.debug("Dev reload, setting should_reload")
+        logger.debug("Hot-reload, setting should_reload")
         should_reload = True
 
     logger.info("Waiting on gather")
-    asyncio.gather(*ruleset_tasks)
+    asyncio.gather(*ruleset_tasks, return_exceptions=True)
     logger.info("Returning from run_rulesets")
     if send_heartbeat_task:
         send_heartbeat_task.cancel()

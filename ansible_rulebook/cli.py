@@ -173,8 +173,8 @@ def get_parser() -> argparse.ArgumentParser:
         "previous one ends",
     )
     parser.add_argument(
-        "--dev",
-        help="Should perform dev reload on rulebook file changes",
+        "--hot-reload",
+        help="Should perform hot-reload on rulebook file changes",
         default="false",
         action='store_true'
     )
