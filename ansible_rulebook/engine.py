@@ -22,7 +22,6 @@ from typing import Any, Dict, List, Optional
 
 from drools.dispatch import establish_async_channel, handle_async_messages
 from drools.ruleset import session_stats
-
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
