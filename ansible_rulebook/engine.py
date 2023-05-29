@@ -23,8 +23,8 @@ from typing import Any, Dict, List, Optional
 from drools.dispatch import establish_async_channel, handle_async_messages
 from drools.ruleset import session_stats
 
-from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 import ansible_rulebook.rule_generator as rule_generator
 from ansible_rulebook.collection import (
@@ -50,11 +50,11 @@ from ansible_rulebook.util import (
 )
 
 from .exception import (
+    HotReloadException,
     SourceFilterNotFoundException,
     SourcePluginMainMissingException,
     SourcePluginNotAsyncioCompatibleException,
     SourcePluginNotFoundException,
-    HotReloadException
 )
 
 logger = logging.getLogger(__name__)
@@ -258,7 +258,7 @@ async def run_rulesets(
     inventory: str = "",
     parsed_args: argparse.ArgumentParser = None,
     project_data_file: Optional[str] = None,
-    file_monitor: str = None
+    file_monitor: str = None,
 ) -> bool:
     logger.info("run_ruleset")
     rulesets_queue_plans = rule_generator.generate_rulesets(
@@ -322,9 +322,8 @@ async def run_rulesets(
             task.cancel()
 
     should_reload = False
-    if (
-        monitor_task
-        and isinstance(monitor_task.exception(), HotReloadException)
+    if monitor_task and isinstance(
+        monitor_task.exception(), HotReloadException
     ):
         logger.debug("Hot-reload, setting should_reload")
         should_reload = True

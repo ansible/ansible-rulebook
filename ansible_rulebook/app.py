@@ -80,9 +80,8 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
         startup_args.rulesets = load_rulebook(
             parsed_args, startup_args.variables
         )
-        if (
-            parsed_args.hot_reload is True
-            and os.path.exists(parsed_args.rulebook)
+        if parsed_args.hot_reload is True and os.path.exists(
+            parsed_args.rulebook
         ):
             logger.info(
                 "Hot-reload was requested, "
@@ -132,7 +131,7 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
         startup_args.inventory,
         parsed_args,
         startup_args.project_data_file,
-        file_monitor
+        file_monitor,
     )
 
     logger.info("Cancelling event source tasks")

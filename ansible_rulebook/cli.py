@@ -176,7 +176,7 @@ def get_parser() -> argparse.ArgumentParser:
         "--hot-reload",
         help="Should perform hot-reload on rulebook file changes",
         default="false",
-        action='store_true'
+        action="store_true",
     )
     return parser
 
