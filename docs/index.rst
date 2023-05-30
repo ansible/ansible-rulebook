@@ -24,6 +24,7 @@ Welcome to Ansible Rulebook documentation
    runner
    collections
    environments
+   decision_environment
 
 Indices and tables
 ==================

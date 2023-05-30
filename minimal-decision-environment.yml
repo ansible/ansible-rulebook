@@ -1,0 +1,25 @@
+version: 3
+
+images:
+  base_image:
+    name: 'registry.access.redhat.com/ubi9/python-311:latest'
+
+dependencies:
+  galaxy:
+    collections:
+      - ansible.eda
+  python:
+    - azure-servicebus
+    - aiobotocore
+    - aiohttp
+    - aiokafka
+    - watchdog
+    - systemd-python
+    - dpath
+    - ansible-rulebook
+  ansible_core:
+    package_pip: ansible-core==2.14.4
+  ansible_runner:
+    package_pip: ansible-runner
+  system:
+    - java-17-openjdk-devel [platform:rpm]
