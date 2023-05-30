@@ -11,6 +11,7 @@
 ### Fixed
 - In a collection look for playbook in playbooks directory
 - Support .yaml and .yml extension for playbooks
+- Retract fact for partial and complete matches
 
 ### Removed
 
