@@ -219,9 +219,16 @@ async def retract_fact(
     rule_run_at: str,
     ruleset: str,
     fact: Dict,
+    partial: bool = True,
     name: Optional[str] = None,
 ):
-    lang.retract_fact(ruleset, _embellish_internal_event(fact, "retract_fact"))
+
+    if not partial:
+        exclude_keys = ["meta"]
+    else:
+        exclude_keys = []
+
+    lang.retract_matching_facts(ruleset, fact, partial, exclude_keys)
     await event_log.put(
         dict(
             type="Action",
