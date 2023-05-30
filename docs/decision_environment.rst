@@ -14,6 +14,18 @@ A basic and minimal decision_environment is included at the root of the reposito
 
 This will build a container image named ``minimal-decision-environment:latest`` that can be used as the basis for your own decision environment.
 
+Lets run a rulebook using this decision environment, lets make sure we have a local inventory that has localhost in it we're going to use:
+
+.. code-block:: shell
+
+    echo "localhost ansible_connection=local" > inventory
+
+Now lets run a rulebook using this decision environment:
+
+.. code-block:: shell
+
+    docker run -it --rm -v ./inventory:/tmp/inventory ansible-execution-env:latest ansible-rulebook -r ansible.eda.hello_events -i /tmp/inventory
+
 
 Using your own rulebooks and projects with the decision environment
 -------------------------------------------------------------------
