@@ -19,6 +19,7 @@ import ansible_rulebook.rule_types as rt
 from ansible_rulebook.condition_parser import (
     parse_condition as parse_condition_value,
 )
+from ansible_rulebook.conf import settings
 from ansible_rulebook.util import substitute_variables
 
 from .exception import (
@@ -64,12 +65,21 @@ def parse_rule_sets(
         if variables is None:
             variables = {}
 
+        strategy = rule_set.get(
+            "execution_strategy", settings.default_execution_strategy
+        )
+        if strategy == "sequential":
+            execution_strategy = rt.ExecutionStrategy.SEQUENTIAL
+        elif strategy == "parallel":
+            execution_strategy = rt.ExecutionStrategy.PARALLEL
+
         rule_set_list.append(
             rt.RuleSet(
                 name=name,
                 hosts=parse_hosts(rule_set["hosts"]),
                 sources=parse_event_sources(rule_set["sources"]),
                 rules=parse_rules(rule_set.get("rules", {}), variables),
+                execution_strategy=execution_strategy,
                 gather_facts=rule_set.get("gather_facts", False),
                 uuid=str(uuid.uuid4()),
                 default_events_ttl=rule_set.get("default_events_ttl", None),
