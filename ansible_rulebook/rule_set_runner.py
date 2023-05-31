@@ -38,6 +38,7 @@ from ansible_rulebook.rule_types import (
     Action,
     ActionContext,
     EngineRuleSetQueuePlan,
+    ExecutionStrategy,
 )
 from ansible_rulebook.rules_parser import parse_hosts
 from ansible_rulebook.util import (
@@ -56,6 +57,7 @@ class RuleSetRunner:
         ruleset_queue_plan: EngineRuleSetQueuePlan,
         hosts_facts,
         variables,
+        rule_set,
         project_data_file: Optional[str] = None,
         parsed_args=None,
         broadcast_method=None,
@@ -64,6 +66,7 @@ class RuleSetRunner:
         self.event_log = event_log
         self.ruleset_queue_plan = ruleset_queue_plan
         self.name = ruleset_queue_plan.ruleset.name
+        self.rule_set = rule_set
         self.hosts_facts = hosts_facts
         self.variables = variables
         self.project_data_file = project_data_file
@@ -253,8 +256,8 @@ class RuleSetRunner:
                     )
 
                 if (
-                    self.parsed_args
-                    and self.parsed_args.execution_strategy == "sequential"
+                    self.rule_set.execution_strategy
+                    == ExecutionStrategy.SEQUENTIAL
                 ):
                     await task
         except asyncio.CancelledError:

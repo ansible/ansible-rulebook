@@ -6,6 +6,7 @@ from ansible_rulebook.rule_types import (
     Condition,
     EventSource,
     EventSourceFilter,
+    ExecutionStrategy,
     Rule,
     RuleSet,
 )
@@ -84,6 +85,13 @@ def create_ruleset(create_event_source, create_rule, **kwargs):
         event_sources = kwargs.pop("event_sources", [create_event_source()])
         rules = kwargs.pop("rules", [create_rule()])
         gather_facts = kwargs.pop("gather_facts", False)
-        return RuleSet(name, hosts, event_sources, rules, gather_facts)
+        return RuleSet(
+            name,
+            hosts,
+            event_sources,
+            rules,
+            ExecutionStrategy.SEQUENTIAL,
+            gather_facts,
+        )
 
     return _ruleset

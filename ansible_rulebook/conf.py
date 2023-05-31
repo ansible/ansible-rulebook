@@ -19,6 +19,7 @@ class _Settings:
     def __init__(self):
         self.identifier = str(uuid.uuid4())
         self.gc_after = 1000
+        self.default_execution_strategy = "sequential"
 
 
 settings = _Settings()

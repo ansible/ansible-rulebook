@@ -16,11 +16,17 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, Dict, List, NamedTuple, Optional, Union
 
 from drools.ruleset import Ruleset as EngineRuleSet
 
 import ansible_rulebook.condition_types as ct
+
+
+class ExecutionStrategy(Enum):
+    SEQUENTIAL = 1
+    PARALLEL = 2
 
 
 class EventSourceFilter(NamedTuple):
@@ -68,6 +74,7 @@ class RuleSet(NamedTuple):
     hosts: Union[str, List[str]]
     sources: List[EventSource]
     rules: List[Rule]
+    execution_strategy: ExecutionStrategy
     gather_facts: bool
     uuid: Optional[str] = None
     default_events_ttl: Optional[str] = None

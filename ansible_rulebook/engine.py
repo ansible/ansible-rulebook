@@ -238,10 +238,12 @@ async def run_rulesets(
 
     hosts_facts = []
     ruleset_names = []
+    rulesets = {}
     for ruleset, _ in ruleset_queues:
         if ruleset.gather_facts and not hosts_facts:
             hosts_facts = collect_ansible_facts(inventory)
         ruleset_names.append(ruleset.name)
+        rulesets[ruleset.name] = ruleset
 
     ruleset_tasks = []
     reader, writer = await establish_async_channel()
@@ -262,6 +264,7 @@ async def run_rulesets(
             ruleset_queue_plan=ruleset_queue_plan,
             hosts_facts=hosts_facts,
             variables=variables,
+            rule_set=rulesets[ruleset_queue_plan.ruleset.name],
             project_data_file=project_data_file,
             parsed_args=parsed_args,
             broadcast_method=broadcast,

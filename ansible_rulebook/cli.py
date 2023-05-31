@@ -166,7 +166,7 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--execution-strategy",
-        default="sequential",
+        default=settings.default_execution_strategy,
         choices=["sequential", "parallel"],
         help="Actions can be executed in sequential order or in parallel."
         "Default is sequential, actions will be run only after the "
@@ -239,6 +239,9 @@ def main(args: List[str] = None) -> int:
 
     if args.gc_after is not None:
         settings.gc_after = args.gc_after
+
+    if args.execution_strategy:
+        settings.default_execution_strategy = args.execution_strategy
 
     setup_logging(args)
 
