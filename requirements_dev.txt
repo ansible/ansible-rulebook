@@ -12,3 +12,5 @@ build
 tox
 coverage
 
+# For building DEs
+ansible-builder

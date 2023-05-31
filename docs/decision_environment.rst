@@ -57,12 +57,12 @@ The minimal decision environment is a good starting point, but you will likely w
                 version: 2.10.1
     options:
         container_init:
-            entrypoint: '["/opt/builder/bin/entrypoint","ansible-rulebook", "-r", "my_namespace.my_awesome_collection.my_rulebook", "-i", "/tmp/inventory"]'
+            cmd: '["/opt/builder/bin/entrypoint","ansible-rulebook", "-r", "my_namespace.my_awesome_collection.my_rulebook", "-i", "/tmp/inventory"]'
 
 This shows an example where you may have your own Collection that contains rulebooks and playbooks but need to bring them together with some other collections
 and some python and system dependencies.
 
-You could also use Builder to add your own rulebooks and playbooks to the decision environment via `addtional-build-steps<https://ansible-builder.readthedocs.io/en/latest/definition/#additional-build-steps>`_
+You could also use Builder to add your own rulebooks and playbooks to the decision environment via `additional-build-steps<https://ansible-builder.readthedocs.io/en/latest/definition/#additional-build-steps>`_
 and then making use of Containerfile commands to ADD or COPY to get the files into the environment.
 
 .. code-block:: yaml
@@ -89,4 +89,9 @@ and then making use of Containerfile commands to ADD or COPY to get the files in
             - 'COPY my_rulebook.yml /opt/ansible/my_rulebooks'
     options:
         container_init:
-            entrypoint: '["/opt/builder/bin/entrypoint","ansible-rulebook", "-r", "/opt/ansible/my_rulebooks/my_rulebook.yml", "-i", "/tmp/inventory"]'
+            cmd: '["/opt/builder/bin/entrypoint","ansible-rulebook", "-r", "/opt/ansible/my_rulebooks/my_rulebook.yml", "-i", "/tmp/inventory"]'
+
+.. note::
+
+    container_init.cmd is an optional override that can be used to override the default command that is run when the container is launched. This is useful if you want to
+    run a playbook or rulebook without needing to supply the full command line arguments. It can still be overridden at runtime by passing a command to the container.
