@@ -2,7 +2,7 @@
 Decision Environment
 ====================
 
-Decision Environments are `Execution Environments <https://ansible-builder.readthedocs.io/en/stable/>`_ tailored towards running Ansible
+Decision Environments are `Execution Environments <https://ansible-builder.readthedocs.io/en/latest/>`_ tailored towards running Ansible
 Rulebook tasks. These represent container images that launch and run the rulebook process and contain all of the dependencies, collections,
 and configuration needed to run a rulebook.
 
@@ -32,5 +32,61 @@ Using your own rulebooks and projects with the decision environment
 
 The minimal decision environment is a good starting point, but you will likely want to add your own rulebooks and projects to it.
 
-..note::
-    This section needs to be written
+.. note::
+
+    Have a look at the `Ansible Builder Execution Environment Definition <https://ansible-builder.readthedocs.io/en/latest/definition/>`_ for details on how to add collections and dependencies to your decision environment.
+
+.. code-block:: yaml
+
+    ---
+    version: 3
+
+    images:
+    base_image:
+        name: 'minimal-decision-environment:latest'
+    dependencies:
+        python:
+            - pywinrm
+        system:
+            - iputils [platform:rpm]
+        galaxy:
+            collections:
+                - name: my_namespace.my_awesome_collection
+                - name: community.windows
+                - name: ansible.utils
+                version: 2.10.1
+    options:
+        container_init:
+            entrypoint: '["/opt/builder/bin/entrypoint","ansible-rulebook", "-r", "my_namespace.my_awesome_collection.my_rulebook", "-i", "/tmp/inventory"]'
+
+This shows an example where you may have your own Collection that contains rulebooks and playbooks but need to bring them together with some other collections
+and some python and system dependencies.
+
+You could also use Builder to add your own rulebooks and playbooks to the decision environment via `addtional-build-steps<https://ansible-builder.readthedocs.io/en/latest/definition/#additional-build-steps>`_
+and then making use of Containerfile commands to ADD or COPY to get the files into the environment.
+
+.. code-block:: yaml
+
+    ---
+    version: 3
+
+    images:
+    base_image:
+        name: 'minimal-decision-environment:latest'
+    dependencies:
+        python:
+            - pywinrm
+        system:
+            - iputils [platform:rpm]
+        galaxy:
+            collections:
+                - name: community.windows
+                - name: ansible.utils
+                version: 2.10.1
+    additional_build_steps:
+        prepend_builder:
+            - 'RUN mkdir -p /opt/ansible/my_rulebooks'
+            - 'COPY my_rulebook.yml /opt/ansible/my_rulebooks'
+    options:
+        container_init:
+            entrypoint: '["/opt/builder/bin/entrypoint","ansible-rulebook", "-r", "/opt/ansible/my_rulebooks/my_rulebook.yml", "-i", "/tmp/inventory"]'
