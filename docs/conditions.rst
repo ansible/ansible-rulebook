@@ -92,7 +92,7 @@ Conditions support the following operators:
    * - is defined
      - To check if a variable is defined
    * - is not defined
-     - To check if a variable is not defined
+     - To check if a variable is not defined, please see caveats listed below
    * - is match(pattern,ignorecase=true)
      - To check if the pattern exists in the beginning of the string. Regex supported
    * - is not match(pattern,ignorecase=true)
@@ -841,8 +841,10 @@ FAQ
 | **Q:** In a multiple condition scenario when 1 event matches and the rest of the events don't match
 | how long does the Rule engine keep the previous event around?
 
-| **Ans:** Currently there is no time limit on how long the rule engine keeps the matched event.
-| Once they match they are retracted.
+| **Ans:** The partially matched events are kept in memory based on the timeout defined at the rule level.
+| If the rule doesn't have a timeout, we look at the ruleset attribute **default_events_ttl**, if that is
+| missing we keep the events for 2 hours. The events are evicted once all conditions match or the timeout
+| is reached.
 
 | **Q:** When does the Ansible rulebook stop processing?
 
@@ -896,3 +898,17 @@ Example:
         set_fact:
           fact:
             msg: Hello World
+
+| **Q:** What are the caveats of using **is not defined**?
+| **Ans:** The is not defined should be used sparingly to
+|          a. initialize a variable
+|          b. immediately following a retract fact
+| If a rule only has one condition with is not defined, then
+| placement of this rule is important. If the rule is defined
+| first in the rulebook it will get executed all the time till
+| the variable gets defined this might lead to misleading results and
+| skipping of other rules. You should typically combine the 
+| is not defined with another comparison. It's not important to check
+| if an attribute exists before you use it in a condition. The rule engine
+| will check for the existence and only then compare it. If its missing, the
+| comparison fails.
