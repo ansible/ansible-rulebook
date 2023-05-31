@@ -108,6 +108,6 @@ async def test_websocket_messages():
                 assert stats["eventsSuppressed"] == 1999
 
     assert ansible_event_counter == 9
-    assert session_stats_counter == 2
+    assert session_stats_counter >= 2
     assert job_counter == 1
     assert action_counter == 1

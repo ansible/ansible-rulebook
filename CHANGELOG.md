@@ -6,8 +6,12 @@
 ### Added
 - Sending heartbeat to the server with the session stats
 - Added command line option --execution-strategy
+- Rulesets in rulebook can have execution_strategy attribute
 
 ### Fixed
+- In a collection look for playbook in playbooks directory
+- Support .yaml and .yml extension for playbooks
+- Retract fact for partial and complete matches
 
 ### Removed
 

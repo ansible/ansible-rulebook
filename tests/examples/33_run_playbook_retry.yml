@@ -12,3 +12,5 @@
           name: playbooks/fail_and_succeed.yml
           retry: True
           delay: 1
+          extra_vars:
+            rulebook_file_path: /tmp/33_demo.txt

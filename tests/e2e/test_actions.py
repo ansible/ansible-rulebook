@@ -49,6 +49,7 @@ def test_actions_sanity(update_environment):
     cmd = utils.Command(
         rulebook=rulebook,
         inventory=inventory,
+        execution_strategy="parallel",
         envvars="DEFAULT_SHUTDOWN_AFTER,"
         "DEFAULT_EVENT_DELAY,"
         "DEFAULT_STARTUP_DELAY",
@@ -152,12 +153,11 @@ def test_actions_sanity(update_environment):
             "Fact matched in different ruleset: sent" in result.stdout
         ), "set_fact action across rulesets failed"
 
-    # TODO: Retract fact doesn't work in Drools with the presence of meta data
-    # with check:
-    #    assert (
-    #        "Retracted fact in same ruleset, this should not be printed"
-    #        not in result.stdout
-    #    ), "retract_fact action failed"
+    with check:
+        assert (
+            "Retracted fact in same ruleset, this should not be printed"
+            not in result.stdout
+        ), "retract_fact action failed"
 
     multiple_actions_expected_output = (
         "Ruleset: Test actions sanity rule: Test multiple actions in "
@@ -177,7 +177,7 @@ def test_actions_sanity(update_environment):
         ), "multiple_action action failed"
 
     assert (
-        len(result.stdout.splitlines()) == 59
+        len(result.stdout.splitlines()) == 56
     ), "unexpected output from the rulebook"
 
 
