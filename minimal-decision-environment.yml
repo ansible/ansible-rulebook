@@ -23,6 +23,3 @@ dependencies:
     package_pip: ansible-runner
   system:
     - java-17-openjdk-devel [platform:rpm]
-options:
-    container_init:
-        entrypoint: '["/opt/builder/bin/entrypoint","ansible-rulebook", "-r"]'
