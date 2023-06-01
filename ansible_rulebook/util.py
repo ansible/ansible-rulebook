@@ -81,11 +81,12 @@ def substitute_variables(
         return value
 
 
-def load_inventory(inventory_file: str) -> Any:
-
-    with open(inventory_file) as f:
-        inventory_data = f.read()
-    return inventory_data
+def load_inventory(inventory_spec: str) -> Any:
+    if os.path.exists(inventory_spec):
+        with open(inventory_spec) as f:
+            inventory_data = f.read()
+        return inventory_data
+    return inventory_spec
 
 
 def collect_ansible_facts(inventory: str) -> List[Dict]:
