@@ -13,6 +13,7 @@
 - Support .yaml and .yml extension for playbooks
 - Retract fact for partial and complete matches
 - Checking of controller url and token at startup
+- rule_uuid and ruleset_uuid provided even when an action fails
 
 ### Removed
 

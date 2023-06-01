@@ -2145,6 +2145,21 @@ async def test_46_job_template_exception(err_msg, err):
 
             assert action["action"] == "run_job_template"
             assert action["reason"] == {"error": err_msg}
+            required_keys = {
+                "action",
+                "action_uuid",
+                "activation_id",
+                "reason",
+                "rule_run_at",
+                "run_at",
+                "rule",
+                "ruleset",
+                "rule_uuid",
+                "ruleset_uuid",
+                "status",
+                "type",
+            }
+            assert set(action.keys()).issuperset(required_keys)
 
 
 @pytest.mark.asyncio
