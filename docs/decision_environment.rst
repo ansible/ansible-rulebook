@@ -10,7 +10,7 @@ A basic and minimal decision_environment is included at the root of the reposito
 
 .. code-block:: shell
 
-    ansible-builder build -f minimal-decision-environment.yaml -t minimal-decision-environment:latest
+    ansible-builder build -f minimal-decision-environment.yml -t minimal-decision-environment:latest
 
 This will build a container image named ``minimal-decision-environment:latest`` that can be used as the basis for your own decision environment.
 
