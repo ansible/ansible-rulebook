@@ -1,3 +1,5 @@
+.. _event-source-plugins:
+
 ====================
 Event Source Plugins
 ====================
