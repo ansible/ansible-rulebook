@@ -66,8 +66,8 @@ master_doc = "index"
 
 # General information about the project.
 project = "ansible-rulebook"
-copyright = "2022, Ben Thomasson"
-author = "Ben Thomasson"
+copyright = f"2022-{datetime.datetime.today().year}, Red Hat, Inc"
+author = "Red Hat, Inc"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -154,7 +154,7 @@ latex_documents = [
         master_doc,
         "ansible_rulebook.tex",
         "ansible-rulebook Documentation",
-        "Ben Thomasson",
+        "Red Hat Ansible",
         "manual",
     ),
 ]
