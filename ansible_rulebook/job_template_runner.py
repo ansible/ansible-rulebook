@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 class JobTemplateRunner:
     JOB_TEMPLATE_SLUG = "/api/v2/job_templates"
+    CONFIG_SLUG = "/api/v2/config"
     VALID_POST_CODES = [200, 201, 202]
     JOB_COMPLETION_STATUSES = ["successful", "failed", "error", "canceled"]
 
@@ -67,6 +68,19 @@ class JobTemplateRunner:
                 )
             )
         return response_text
+
+    async def get_config(self) -> dict:
+        try:
+            logger.info("Attempting to connect to Controller %s", self.host)
+            async with aiohttp.ClientSession(
+                raise_for_status=True, headers=self._auth_headers()
+            ) as session:
+                url = urljoin(self.host, self.CONFIG_SLUG)
+                async with session.get(url, ssl=self._sslcontext) as response:
+                    return json.loads(await response.text())
+        except aiohttp.ClientError as e:
+            logger.error("Error connecting to controller %s", str(e))
+            raise ControllerApiException(str(e))
 
     def _auth_headers(self) -> dict:
         return dict(Authorization=f"Bearer {self.token}")
