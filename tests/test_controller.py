@@ -12,11 +12,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import json
 from pathlib import Path
 
 import pytest
+from aiohttp import ClientError
+from aioresponses import aioresponses
 
-from ansible_rulebook.exception import JobTemplateNotFoundException
+from ansible_rulebook.exception import (
+    ControllerApiException,
+    JobTemplateNotFoundException,
+)
 from ansible_rulebook.job_template_runner import job_template_runner
 
 
@@ -50,3 +56,34 @@ async def test_job_template_not_exist():
     job_template_runner.token = "DUMMY"
     with pytest.raises(JobTemplateNotFoundException):
         await job_template_runner.run_job_template("Hello World", "no-org", {})
+
+
+@pytest.mark.asyncio
+async def test_job_template_get_config():
+    text = json.dumps(dict(version="4.4.1"))
+    with aioresponses() as mocked:
+        job_template_runner.host = "https://example.com"
+        job_template_runner.token = "DUMMY"
+        mocked.get("https://example.com/api/v2/config", status=200, body=text)
+        data = await job_template_runner.get_config()
+        assert data["version"] == "4.4.1"
+
+
+@pytest.mark.asyncio
+async def test_job_template_get_config_error():
+    with aioresponses() as mocked:
+        job_template_runner.host = "https://example.com"
+        job_template_runner.token = "DUMMY"
+        mocked.get("https://example.com/api/v2/config", exception=ClientError)
+        with pytest.raises(ControllerApiException):
+            await job_template_runner.get_config()
+
+
+@pytest.mark.asyncio
+async def test_job_template_get_config_auth_error():
+    with aioresponses() as mocked:
+        job_template_runner.host = "https://example.com"
+        job_template_runner.token = "DUMMY"
+        mocked.get("https://example.com/api/v2/config", status=401)
+        with pytest.raises(ControllerApiException):
+            await job_template_runner.get_config()
