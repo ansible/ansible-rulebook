@@ -1,4 +1,4 @@
-.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint lint/flake8 lint/black
+.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint lint/flake8 lint/black minimal-ee
 .DEFAULT_GOAL := help
 
 define BROWSER_PYSCRIPT
@@ -86,3 +86,6 @@ dist: clean ## builds source and wheel package
 
 install: clean ## install the package to the active Python's site-packages
 	pip install .
+
+minimal-ee:
+	ansible-builder build -f ./minimal-decision-environment.yml -t minimal-de:latest
