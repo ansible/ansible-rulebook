@@ -2116,6 +2116,7 @@ async def test_46_job_template():
 JOB_TEMPLATE_ERRORS = [
     ("api error", ControllerApiException("api error")),
     ("jt does not exist", JobTemplateNotFoundException("jt does not exist")),
+    ("Kaboom", RuntimeError("Kaboom")),
 ]
 
 
@@ -2144,12 +2145,12 @@ async def test_46_job_template_exception(err_msg, err):
                     action = event
 
             assert action["action"] == "run_job_template"
-            assert action["reason"] == {"error": err_msg}
+            assert action["message"] == err_msg
             required_keys = {
                 "action",
                 "action_uuid",
                 "activation_id",
-                "reason",
+                "message",
                 "rule_run_at",
                 "run_at",
                 "rule",
