@@ -2103,7 +2103,8 @@ async def test_46_job_template():
     job_url = "https://examples.com/#/jobs/945/details"
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.builtin.job_template_runner.run_job_template",
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.run_job_template",
             return_value=response_obj,
         ):
             await run_rulesets(
@@ -2138,7 +2139,8 @@ async def test_46_job_template_exception(err_msg, err):
     rs = ruleset_queues[0][0]
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.builtin.job_template_runner.run_job_template",
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.run_job_template",
             side_effect=err,
         ):
             await run_rulesets(
@@ -2256,8 +2258,8 @@ async def test_79_workflow_job_template_exception(err_msg, err):
     rs = ruleset_queues[0][0]
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.builtin.job_template_runner."
-            "run_workflow_job_template",
+            "ansible_rulebook.action.run_workflow_template."
+            "job_template_runner.run_workflow_job_template",
             side_effect=err,
         ):
             await run_rulesets(
@@ -2306,8 +2308,8 @@ async def test_79_workflow_job_template():
     job_url = "https://examples.com/#/jobs/workflow/945/details"
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.builtin.job_template_runner."
-            "run_workflow_job_template",
+            "ansible_rulebook.action.run_workflow_template."
+            "job_template_runner.run_workflow_job_template",
             return_value=response_obj,
         ):
             await run_rulesets(
