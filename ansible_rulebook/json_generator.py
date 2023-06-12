@@ -309,6 +309,9 @@ def visit_ruleset(ruleset: RuleSet, variables: Dict):
     if ruleset.default_events_ttl:
         data["default_events_ttl"] = ruleset.default_events_ttl
 
+    if ruleset.delay_warning_threshold:
+        data["delay_warning_threshold"] = ruleset.delay_warning_threshold
+
     return {"RuleSet": data}
 
 

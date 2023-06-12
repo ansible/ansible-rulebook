@@ -2224,3 +2224,31 @@ async def test_78_complete_retract_fact():
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "7"
     assert event_log.empty()
+
+
+@pytest.mark.asyncio
+async def test_79_delay_warning_threshold():
+    ruleset_queues, event_log = load_rulebook(
+        "examples/79_delay_warning_threshold.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            load_inventory("playbooks/inventory.yml"),
+        )
+
+        checks = {
+            "max_events": 4,
+            "shutdown_events": 1,
+            "actions": [
+                "79 delay warning threshold::r1::print_event",
+                "79 delay warning threshold::r1::print_event",
+                "79 delay warning threshold::r1::print_event",
+            ],
+        }
+        await validate_events(event_log, **checks)

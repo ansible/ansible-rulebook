@@ -83,6 +83,7 @@ def parse_rule_sets(
                 gather_facts=rule_set.get("gather_facts", False),
                 uuid=str(uuid.uuid4()),
                 default_events_ttl=rule_set.get("default_events_ttl", None),
+                delay_warning_threshold=rule_set.get("delay_warning_threshold", None),
             )
         )
     return rule_set_list

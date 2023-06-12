@@ -1,0 +1,22 @@
+---
+- name: 79 delay warning threshold
+  hosts: all
+  delay_warning_threshold: 1 milliseconds
+  sources:
+     - generic:
+          event_delay: 1
+          payload:
+            - i: 1
+            - j: 2
+            - k: 3
+  rules:
+     - name: r1
+       condition:
+         any:
+           - event.i == 1
+           - event.j == 2
+           - event.k == 3
+       action:
+         print_event:
+           pretty: true
+

@@ -18,6 +18,10 @@
                     "type": "string",
                     "pattern": "^\\d+\\s(seconds?|minutes?|hours?|days?)$"
                 },
+                "delay_warning_threshold": {
+                    "type": "string",
+                    "pattern": "^\\d+\\s(milliseconds?|seconds?|minutes?|hours?|days?)$"
+                },
                 "hosts": {
                     "type": "string"
                 },

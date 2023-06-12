@@ -78,6 +78,7 @@ class RuleSet(NamedTuple):
     gather_facts: bool
     uuid: Optional[str] = None
     default_events_ttl: Optional[str] = None
+    delay_warning_threshold: Optional[str] = None
 
 
 class ActionContext(NamedTuple):

@@ -16,6 +16,7 @@ A ruleset has the following properties:
 * hosts similar to Ansible playbook
 * gather_facts: boolean
 * default_events_ttl: time to keep the partially matched events around (default is 2 hours)
+* delay_warning_threshold: Threshold to log a warn message when a rule is matched and the pseudo clock is how much diverged from the real clock (default is 5 seconds)
 * execution_strategy: How actions should be executed, sequential|parallel (default: sequential). For sequential strategy we wait for each action to finish before we kick off the next action.
 * sources: A list of sources
 * rules: a list of rules
@@ -28,8 +29,14 @@ A ruleset has the following properties:
 | The default_events_ttl takes time in the following format
 | default_events_ttl : nnn seconds|minutes|hours|days
 | e.g. default_events_ttl : 3 hours
-| If the rule set doesn't define this attribute the default events ttl that is 
+| If the rule set doesn't define this attribute the default events ttl that is
 | enforced by the rule engine is 2 hours
+
+| The delay_warning_threshold takes time in the following format
+| delay_warning_threshold : nnn milliseconds|seconds|minutes|hours|days
+| e.g. delay_warning_threshold : 2 seconds
+| If the rule set doesn't define this attribute the delay warning threshold that is
+| enforced by the rule engine is 5 seconds
 
 | When we start a rulebook we can optionally collect artifacts from the different hosts
 | if **gather_facts** is set to **true**. This host data is then uploaded to the Rules
