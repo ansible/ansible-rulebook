@@ -139,6 +139,7 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
 
     logger.info("Main complete")
     await event_log.put(dict(type="Exit"))
+    await job_template_runner.close_session()
     if error_found:
         raise Exception("One of the source plugins failed")
 

@@ -16,6 +16,7 @@
 - rule_uuid and ruleset_uuid provided even when an action fails
 - Drools intermittently misses firing of rules
 - Resend events lost during websocket disconnect
+- limits the number of simultaneously open connection to controller to 30
 
 ### Removed
 
