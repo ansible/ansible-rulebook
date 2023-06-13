@@ -157,6 +157,7 @@ async def test_run_with_websocket(create_ruleset):
                     controller_url="abc",
                     controller_token="token",
                     controller_ssl_verify="no",
+                    check_controller_connection=True,
                 )
                 with patch(
                     "ansible_rulebook.app.job_template_runner.get_config",

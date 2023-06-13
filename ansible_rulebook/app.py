@@ -87,7 +87,9 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
         startup_args.controller_ssl_verify = parsed_args.controller_ssl_verify
 
     validate_actions(startup_args)
-    await validate_controller_params(startup_args)
+
+    if startup_args.check_controller_connection:
+        await validate_controller_params(startup_args)
 
     if parsed_args.websocket_address:
         event_log = asyncio.Queue()
@@ -225,6 +227,8 @@ def validate_actions(startup_args: StartupArgs) -> None:
     for ruleset in startup_args.rulesets:
         for rule in ruleset.rules:
             for action in rule.actions:
+                if action.action == "run_job_template":
+                    startup_args.check_controller_connection = True
                 if (
                     action.action in INVENTORY_ACTIONS
                     and not startup_args.inventory
