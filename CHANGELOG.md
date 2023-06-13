@@ -1,7 +1,7 @@
 
 # Changelog
 
-## [Unreleased]
+## [1.0.0] - 2023-06-13
 
 ### Added
 - Sending heartbeat to the server with the session stats
