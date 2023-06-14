@@ -85,8 +85,7 @@ def test_parse_condition():
             "rhs": {"Float": 3.1415},
         }
     } == visit_condition(
-        parse_condition('fact.range["pi"].value == 3.1415'),
-        {}
+        parse_condition('fact.range["pi"].value == 3.1415'), {}
     )
 
     assert {
