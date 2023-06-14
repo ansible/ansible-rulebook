@@ -32,6 +32,7 @@ from pyparsing import (
     infix_notation,
     one_of,
     pyparsing_common,
+    originalTextFor,
 )
 
 from ansible_rulebook.exception import (
@@ -101,7 +102,18 @@ valid_prefix = (
     | Keyword("fact")
 )
 varname = (
-    Combine(valid_prefix + ZeroOrMore("." + ident))
+    Combine(valid_prefix + ZeroOrMore(
+        ("." + ident)
+        |
+        (
+            ("[")
+            + (
+                originalTextFor(QuotedString('"'))
+                | originalTextFor(QuotedString("'"))
+            )
+            + ("]")
+        )
+    ))
     .copy()
     .add_parse_action(lambda toks: Identifier(toks[0]))
 )
