@@ -31,8 +31,8 @@ from pyparsing import (
     delimitedList,
     infix_notation,
     one_of,
-    pyparsing_common,
     originalTextFor,
+    pyparsing_common,
 )
 
 from ansible_rulebook.exception import (
