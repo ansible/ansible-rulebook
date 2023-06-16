@@ -111,6 +111,7 @@ varname = (
                 + (
                     originalTextFor(QuotedString('"'))
                     | originalTextFor(QuotedString("'"))
+                    | pyparsing_common.signed_integer
                 )
                 + ("]")
             )

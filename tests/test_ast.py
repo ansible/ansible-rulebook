@@ -87,6 +87,36 @@ def test_parse_condition():
     } == visit_condition(
         parse_condition('fact.range["pi"].value == 3.1415'), {}
     )
+    assert {
+        "EqualsExpression": {
+            "lhs": {"Fact": 'range[0]'},
+            "rhs": {"Float": 3.1415},
+        }
+    } == visit_condition(
+        parse_condition('fact.range[0] == 3.1415'), {}
+    )
+    assert {
+        "EqualsExpression": {
+            "lhs": {"Fact": 'range[-1]'},
+            "rhs": {"Float": 3.1415},
+        }
+    } == visit_condition(
+        parse_condition('fact.range[-1] == 3.1415'), {}
+    )
+    # invalid index must be signed int, not a floating point
+    with pytest.raises(ConditionParsingException):
+        visit_condition(
+            parse_condition('fact.range[-1.23] == 3.1415'),
+            {},
+        )
+    assert {
+        "EqualsExpression": {
+            "lhs": {"Fact": 'range["x"][1][2].a["b"]'},
+            "rhs": {"Float": 3.1415},
+        }
+    } == visit_condition(
+        parse_condition('fact.range["x"][1][2].a["b"] == 3.1415'), {}
+    )
 
     assert {
         "NegateExpression": {
