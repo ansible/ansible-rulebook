@@ -117,6 +117,9 @@ Run a job template.
    * - organization
      - The name of the organization
      - Yes
+   * - workflow
+     - Launch a workflow job template instead of a normal job template.
+     - No
    * - set_facts
      - The artifacts from the playbook execution are inserted back into the rule set as facts
      - No

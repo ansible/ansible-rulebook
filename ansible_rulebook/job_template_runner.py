@@ -33,16 +33,17 @@ logger = logging.getLogger(__name__)
 
 
 class JobTemplateRunner:
-    JOB_TEMPLATE_SLUG = "/api/v2/job_templates"
     CONFIG_SLUG = "/api/v2/config"
     JOB_COMPLETION_STATUSES = ["successful", "failed", "error", "canceled"]
 
     def __init__(
-        self, host: str = "", token: str = "", verify_ssl: str = "yes"
+        self, host: str = "", token: str = "", verify_ssl: str = "yes",
+        workflow: bool = False
     ):
         self.token = token
         self.host = host
         self.verify_ssl = verify_ssl
+        self.workflow = workflow
         self.refresh_delay = int(
             os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10)
         )
@@ -89,9 +90,11 @@ class JobTemplateRunner:
                 return ssl.create_default_context(cafile=self.verify_ssl)
         return False
 
-    async def _get_job_template_id(self, name: str, organization: str) -> int:
-        slug = f"{self.JOB_TEMPLATE_SLUG}/"
+    async def _get_job_template_id(self, name: str, workflow: bool,
+                                   organization: str) -> int:
         params = {"name": name}
+        slug = ("/api/v2/workflow_job_templates" if workflow else
+                "/api/v2/job_templates")
 
         while True:
             json_body = await self._get_page(slug, params)
@@ -118,10 +121,11 @@ class JobTemplateRunner:
     async def run_job_template(
         self,
         name: str,
+        workflow: bool,
         organization: str,
         job_params: dict,
     ) -> dict:
-        job = await self.launch(name, organization, job_params)
+        job = await self.launch(name, workflow, organization, job_params)
 
         url = job["url"]
         params = {}
@@ -136,10 +140,12 @@ class JobTemplateRunner:
             await asyncio.sleep(self.refresh_delay)
 
     async def launch(
-        self, name: str, organization: str, job_params: dict
+        self, name: str, organization: str, workflow: bool, job_params: dict
     ) -> dict:
-        jt_id = await self._get_job_template_id(name, organization)
-        url = urljoin(self.host, f"{self.JOB_TEMPLATE_SLUG}/{jt_id}/launch/")
+        jt_id = await self._get_job_template_id(name, workflow, organization)
+        slug = ("/api/v2/workflow_job_templates" if workflow else
+                "/api/v2/job_templates")
+        url = urljoin(self.host, f"{slug}/{jt_id}/launch/")
 
         try:
             async with self._session.post(

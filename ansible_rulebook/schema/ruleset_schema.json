@@ -405,6 +405,9 @@
                         "organization": {
                             "type": "string"
                         },
+                        "workflow": {
+                            "type": "boolean"
+                        },
                         "job_args": {
                             "type": "object"
                         },

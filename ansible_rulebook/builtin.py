@@ -733,6 +733,7 @@ async def run_job_template(
     ruleset: str,
     name: str,
     organization: str,
+    workflow: Optional[bool] = False,
     job_args: Optional[dict] = None,
     set_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
@@ -795,6 +796,7 @@ async def run_job_template(
             controller_job = await job_template_runner.run_job_template(
                 name,
                 organization,
+                workflow,
                 job_args,
             )
             if controller_job["status"] != "failed":
