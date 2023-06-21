@@ -23,6 +23,7 @@ from ansible_rulebook.exception import (
     ControllerApiException,
     JobTemplateNotFoundException,
     VarsKeyMissingException,
+    WorkflowJobTemplateNotFoundException,
 )
 from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.messages import Shutdown
@@ -2089,7 +2090,9 @@ async def test_46_job_template():
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    response_obj = dict(status="successful", id=945, created="dummy")
+    response_obj = dict(
+        status="successful", id=945, created="dummy", artifacts=dict(a=1)
+    )
     job_template_runner.host = "https://examples.com"
     job_url = "https://examples.com/#/jobs/945/details"
     with SourceTask(rs.sources[0], "sources", {}, queue):
@@ -2224,3 +2227,94 @@ async def test_78_complete_retract_fact():
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "7"
     assert event_log.empty()
+
+
+WORKFLOW_TEMPLATE_ERRORS = [
+    ("api error", ControllerApiException("api error")),
+    (
+        "jt does not exist",
+        WorkflowJobTemplateNotFoundException("jt does not exist"),
+    ),
+    ("Kaboom", RuntimeError("Kaboom")),
+]
+
+
+@pytest.mark.parametrize("err_msg,err", WORKFLOW_TEMPLATE_ERRORS)
+@pytest.mark.asyncio
+async def test_79_workflow_job_template_exception(err_msg, err):
+    ruleset_queues, event_log = load_rulebook(
+        "examples/79_workflow_template.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        with patch(
+            "ansible_rulebook.builtin.job_template_runner."
+            "run_workflow_job_template",
+            side_effect=err,
+        ):
+            await run_rulesets(
+                event_log,
+                ruleset_queues,
+                dict(),
+                dict(),
+            )
+
+            while not event_log.empty():
+                event = event_log.get_nowait()
+                if event["type"] == "Action":
+                    action = event
+
+            assert action["action"] == "run_workflow_template"
+            assert action["message"] == err_msg
+            required_keys = {
+                "action",
+                "action_uuid",
+                "activation_id",
+                "message",
+                "rule_run_at",
+                "run_at",
+                "rule",
+                "ruleset",
+                "rule_uuid",
+                "ruleset_uuid",
+                "status",
+                "type",
+            }
+            assert set(action.keys()).issuperset(required_keys)
+
+
+@pytest.mark.asyncio
+async def test_80_workflow_job_template():
+    ruleset_queues, event_log = load_rulebook(
+        "examples/79_workflow_template.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    response_obj = dict(
+        status="successful", id=945, created="dummy", artifacts=dict(a=1)
+    )
+    job_template_runner.host = "https://examples.com"
+    job_url = "https://examples.com/#/jobs/945/details"
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        with patch(
+            "ansible_rulebook.builtin.job_template_runner."
+            "run_workflow_job_template",
+            return_value=response_obj,
+        ):
+            await run_rulesets(
+                event_log,
+                ruleset_queues,
+                dict(),
+                dict(),
+            )
+
+            while not event_log.empty():
+                event = event_log.get_nowait()
+                if event["type"] == "Action":
+                    action = event
+
+            assert action["url"] == job_url
+            assert action["action"] == "run_workflow_template"

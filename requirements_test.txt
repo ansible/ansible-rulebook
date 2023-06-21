@@ -12,7 +12,6 @@ pytest-asyncio
 pytest-timeout
 pytest-xdist
 pytest-cov
-pytest-vcr
 pytest-check
 dynaconf==3.1.11
 freezegun

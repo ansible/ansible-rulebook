@@ -5,6 +5,8 @@
 
 ### Added
 - rulebook and Drools bracket notation syntax
+- new action called run_workflow_template
+
 
 ### Fixed
 
