@@ -32,3 +32,4 @@ repos:
     hooks:
       - id: pretty-format-json
         language_version: python3
+        args: [--autofix]
