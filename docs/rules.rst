@@ -47,7 +47,7 @@ Example: A single action
                 name: remediate_outage.yml
 
           - name: Print event with linux
-            condition: event.target_os == "linux" or
+            condition: event.target_os == "linux"
             action:
               debug:
 
