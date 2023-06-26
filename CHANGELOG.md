@@ -4,6 +4,14 @@
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Removed
+
+## [1.0.0] - 2023-06-13
+
+### Added
 - Sending heartbeat to the server with the session stats
 - Added command line option --execution-strategy
 - Rulesets in rulebook can have execution_strategy attribute
@@ -16,6 +24,7 @@
 - rule_uuid and ruleset_uuid provided even when an action fails
 - Drools intermittently misses firing of rules
 - Resend events lost during websocket disconnect
+- limits the number of simultaneously open connection to controller to 30
 
 ### Removed
 
