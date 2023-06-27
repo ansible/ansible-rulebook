@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - support-extra-archs
     tags:
       - "v*"
 
