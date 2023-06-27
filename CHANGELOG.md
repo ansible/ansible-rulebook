@@ -8,6 +8,7 @@
 ### Fixed
 
 ### Removed
+- Remove official support for Python 3.8
 
 ## [1.0.0] - 2023-06-13
 
