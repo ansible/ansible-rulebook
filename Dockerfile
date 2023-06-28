@@ -5,7 +5,9 @@ ARG DEVEL_COLLECTION_LIBRARY=0
 WORKDIR $HOME
 
 USER 0
-RUN dnf install -y java-17-openjdk-devel
+RUN dnf install -y java-17-openjdk-devel rustc \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 RUN pip install -U pip \
     && pip install ansible \
