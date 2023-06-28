@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/python-39
+FROM registry.access.redhat.com/ubi9/python-39
 
 ARG USER_ID=${USER_ID:-1001}
 ARG DEVEL_COLLECTION_LIBRARY=0
@@ -6,6 +6,7 @@ WORKDIR $HOME
 
 USER 0
 RUN pip install -U pip
+
 RUN dnf install -y java-17-openjdk-devel rustc cargo \
     && dnf clean all \
     && rm -rf /var/cache/dnf
