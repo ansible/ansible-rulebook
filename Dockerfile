@@ -5,6 +5,7 @@ ARG DEVEL_COLLECTION_LIBRARY=0
 WORKDIR $HOME
 
 USER 0
+RUN pip install -U pip
 RUN dnf install -y java-17-openjdk-devel rustc cargo \
     && dnf clean all \
     && rm -rf /var/cache/dnf
