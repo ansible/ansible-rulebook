@@ -1,6 +1,7 @@
 import os
 from contextlib import nullcontext as does_not_raise
 from unittest import mock
+from unittest.mock import patch
 
 import pytest
 
@@ -156,13 +157,16 @@ async def test_run_with_websocket(create_ruleset):
                     controller_url="abc",
                     controller_token="token",
                     controller_ssl_verify="no",
+                    check_controller_connection=True,
                 )
-
-                await run(cmdline_args)
-
-                assert mock_start_source.call_count == 1
-                assert mock_run_rulesets.call_count == 1
-                assert mock_request_workload.call_count == 1
+                with patch(
+                    "ansible_rulebook.app.job_template_runner.get_config",
+                    return_value=dict(version="4.4.1"),
+                ):
+                    await run(cmdline_args)
+                    assert mock_start_source.call_count == 1
+                    assert mock_run_rulesets.call_count == 1
+                    assert mock_request_workload.call_count == 1
 
 
 @pytest.mark.asyncio

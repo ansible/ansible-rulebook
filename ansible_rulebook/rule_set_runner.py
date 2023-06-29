@@ -15,7 +15,7 @@
 import asyncio
 import gc
 import logging
-from datetime import datetime
+import uuid
 from pprint import PrettyPrinter, pformat
 from types import MappingProxyType
 from typing import Dict, List, Optional, Union, cast
@@ -446,11 +446,17 @@ class RuleSetRunner:
                 dict(
                     type="Action",
                     action=action,
+                    action_uuid=str(uuid.uuid4()),
                     activation_id=settings.identifier,
                     playbook_name=action_args.get("name"),
                     status="failed",
-                    run_at=str(datetime.utcnow()),
-                    reason=dict(error=str(error)),
+                    run_at=run_at(),
+                    rule_run_at=rule_run_at,
+                    message=str(error),
+                    rule=rule,
+                    ruleset=ruleset,
+                    rule_uuid=rule_uuid,
+                    ruleset_uuid=ruleset_uuid,
                 )
             )
 

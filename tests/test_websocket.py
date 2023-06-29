@@ -4,9 +4,11 @@ import hashlib
 import json
 import os
 from typing import Dict, List
+from unittest import mock
 from unittest.mock import AsyncMock, patch
 
 import pytest
+import websockets
 
 from ansible_rulebook.websocket import (
     request_workload,
@@ -120,3 +122,32 @@ async def test_send_event_log_to_websocket():
         mo.return_value.send.side_effect = my_func
         await send_event_log_to_websocket(queue, "dummy", "yes")
         assert data_sent == ['{"a": 1}', '{"b": 1}', '{"type": "Shutdown"}']
+
+
+@pytest.mark.asyncio
+@mock.patch("ansible_rulebook.websocket.websockets.connect")
+async def test_send_event_log_to_websocket_with_exception(
+    socket_mock: AsyncMock,
+):
+    queue = asyncio.Queue()
+    queue.put_nowait({"a": 1})
+    queue.put_nowait({"b": 2})
+    queue.put_nowait(dict(type="Shutdown"))
+
+    data_sent = []
+
+    mock_object = AsyncMock()
+    socket_mock.return_value = mock_object
+    socket_mock.return_value.__aenter__.return_value = mock_object
+    socket_mock.return_value.__anext__.return_value = mock_object
+    socket_mock.return_value.__aiter__.side_effect = [mock_object]
+
+    socket_mock.return_value.send.side_effect = [
+        websockets.exceptions.ConnectionClosed(rcvd=None, sent=None),
+        data_sent.append({"a": 1}),
+        data_sent.append({"b": 2}),
+        data_sent.append({"type": "Shutdown"}),
+    ]
+
+    await send_event_log_to_websocket(queue, "dummy", "yes")
+    assert data_sent == [{"a": 1}, {"b": 2}, {"type": "Shutdown"}]

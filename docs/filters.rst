@@ -1,3 +1,5 @@
+.. _event-filter:
+
 =============
 Event Filters
 =============

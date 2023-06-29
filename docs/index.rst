@@ -23,7 +23,6 @@ Welcome to Ansible Rulebook documentation
    filters
    runner
    collections
-   environments
    decision_environment
 
 Indices and tables

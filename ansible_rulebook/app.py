@@ -87,7 +87,9 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
         startup_args.controller_ssl_verify = parsed_args.controller_ssl_verify
 
     validate_actions(startup_args)
-    set_controller_params(startup_args)
+
+    if startup_args.check_controller_connection:
+        await validate_controller_params(startup_args)
 
     if parsed_args.websocket_address:
         event_log = asyncio.Queue()
@@ -139,6 +141,7 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
 
     logger.info("Main complete")
     await event_log.put(dict(type="Exit"))
+    await job_template_runner.close_session()
     if error_found:
         raise Exception("One of the source plugins failed")
 
@@ -225,6 +228,8 @@ def validate_actions(startup_args: StartupArgs) -> None:
     for ruleset in startup_args.rulesets:
         for rule in ruleset.rules:
             for action in rule.actions:
+                if action.action == "run_job_template":
+                    startup_args.check_controller_connection = True
                 if (
                     action.action in INVENTORY_ACTIONS
                     and not startup_args.inventory
@@ -245,9 +250,12 @@ def validate_actions(startup_args: StartupArgs) -> None:
                     )
 
 
-def set_controller_params(startup_args: StartupArgs) -> None:
+async def validate_controller_params(startup_args: StartupArgs) -> None:
     if startup_args.controller_url:
         job_template_runner.host = startup_args.controller_url
         job_template_runner.token = startup_args.controller_token
         if startup_args.controller_ssl_verify:
             job_template_runner.verify_ssl = startup_args.controller_ssl_verify
+
+        data = await job_template_runner.get_config()
+        logger.info("AAP Version %s", data["version"])

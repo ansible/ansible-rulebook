@@ -1,3 +1,5 @@
+.. _event-source-plugins:
+
 ====================
 Event Source Plugins
 ====================
@@ -44,13 +46,55 @@ These include:
     Mainly used for development and testing
 
 
+
 How to Develop a Custom Plugin
 ------------------------------
 You can build your own event source plugin in python. A plugin is a single
-python file. You can start with this example:
+python file but before we get to that lets take a look at some best practices and patterns:
+
+Best Practices and Patterns
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There are 3 basic patterns that you'll be developing against when considering a new source plugin:
+
+#. Event Bus Plugins
+    These are plugins that listen to a stream of events from a source where the connection
+    is established by the plugin itself. Examples of this are the ``kafka`` and ``mqtt`` plugins.
+
+    This is the most ideal and reliable pattern to follow. Durability and Reliability of the data
+    is the responsibility of the event source and availability of the data can follow the patterns
+    of the event source and its own internal configuration.
+
+#. Scraper Plugins
+    These plugins connect to a source and scrape the data from the source usually after a given amount of time
+    has passed. Examples of this are the ``url_check`` and ``watchdog`` plugins.
+
+    These plugins can be reliable but may require extract logic for handling duplication. It's also possible
+    to miss data if the scraper is not running at the time the data is available.
+
+#. Callback Plugins
+    These plugins provide a callback endpoint that the event source can call when data is available.
+    Examples of this are the ``webhook`` and ``alertmanager`` plugins.
+
+    These plugins are the least reliable as they are dependent on the event source to call the callback
+    endpoint and are highly sensitive to data loss. If the event source is not available or the callback
+    endpoint is not available then there may not be another opportunity to receive the data.
+
+    These can also require other ingress policies and firewall rules to be available and configured properly
+    to operate.
+
+It's strongly recommended to adopt one of the first two patterns and only consider callback plugins in the absence
+of any other solution.
+
+When deciding whether to build a dedicated plugin you may consider configuring the data source to send data to a
+system where a more general plugin exists already. For example, if you have a system that can send data to a kafka
+topic then you can use the ``kafka`` plugin to receive the data. There are many connectors for tying systems to other
+message buses and this is a great way to leverage existing plugins.
 
 Plugin template
 ^^^^^^^^^^^^^^^
+
+Lets take a look at a very basic example that you could use in the form of a template for producing other plugins:
 
 .. code-block:: python
 

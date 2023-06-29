@@ -825,7 +825,7 @@ async def run_job_template(
         rule_run_at=rule_run_at,
     )
     if "error" in controller_job:
-        a_log["reason"] = dict(error=controller_job["error"])
+        a_log["message"] = controller_job["error"]
     await event_log.put(a_log)
 
     if set_facts or post_events:

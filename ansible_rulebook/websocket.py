@@ -89,21 +89,32 @@ async def send_event_log_to_websocket(
     event_log, websocket_address, websocket_ssl_verify
 ):
     logger.info("websocket %s connecting", websocket_address)
+    event = None
     async for websocket in websockets.connect(
         websocket_address,
         logger=logger,
         ssl=_sslcontext(websocket_address, websocket_ssl_verify),
     ):
         logger.info("websocket %s connected", websocket_address)
-        event = None
         try:
+            if event:
+                logger.info("Resending last event...")
+                await websocket.send(json.dumps(event))
+                event = None
+
             while True:
                 event = await event_log.get()
                 await websocket.send(json.dumps(event))
+
                 if event == dict(type="Shutdown"):
                     return
-        except websockets.ConnectionClosed:
-            logger.warning("websocket %s connection closed", websocket_address)
+
+                event = None
+        except websockets.exceptions.ConnectionClosed:
+            logger.warning(
+                "websocket %s connection closed, will retry...",
+                websocket_address,
+            )
         except CancelledError:
             logger.info("closing websocket due to task cancelled")
             return

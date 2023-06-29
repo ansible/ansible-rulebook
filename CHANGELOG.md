@@ -4,6 +4,15 @@
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Removed
+- Remove official support for Python 3.8
+
+## [1.0.0] - 2023-06-13
+
+### Added
 - Sending heartbeat to the server with the session stats
 - Added command line option --execution-strategy
 - Rulesets in rulebook can have execution_strategy attribute
@@ -12,6 +21,11 @@
 - In a collection look for playbook in playbooks directory
 - Support .yaml and .yml extension for playbooks
 - Retract fact for partial and complete matches
+- Checking of controller url and token at startup
+- rule_uuid and ruleset_uuid provided even when an action fails
+- Drools intermittently misses firing of rules
+- Resend events lost during websocket disconnect
+- limits the number of simultaneously open connection to controller to 30
 
 ### Removed
 
