@@ -4,7 +4,7 @@
 ## [Unreleased]
 
 ### Added
-- rulebook and Drools squared accessor syntax (AAP-10738, DROOLS-7475)
+- rulebook and Drools bracket notation syntax
 
 ### Fixed
 
