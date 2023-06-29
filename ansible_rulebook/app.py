@@ -31,7 +31,6 @@ from ansible_rulebook.common import StartupArgs
 from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.rule_types import RuleSet, RuleSetQueue
-from ansible_rulebook.util import load_inventory
 from ansible_rulebook.validators import Validate
 from ansible_rulebook.websocket import (
     request_workload,
@@ -41,6 +40,7 @@ from ansible_rulebook.websocket import (
 from .exception import (
     ControllerNeededException,
     InventoryNeededException,
+    InventoryNotFound,
     RulebookNotFoundException,
     WebSocketExchangeException,
 )
@@ -80,7 +80,7 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
             parsed_args, startup_args.variables
         )
         if parsed_args.inventory:
-            startup_args.inventory = load_inventory(parsed_args.inventory)
+            startup_args.inventory = parsed_args.inventory
         startup_args.project_data_file = parsed_args.project_tarball
         startup_args.controller_url = parsed_args.controller_url
         startup_args.controller_token = parsed_args.controller_token
@@ -239,6 +239,12 @@ def validate_actions(startup_args: StartupArgs) -> None:
                         "which needs inventory to be defined"
                     )
 
+                if action.action in INVENTORY_ACTIONS and not os.path.exists(
+                    startup_args.inventory
+                ):
+                    raise InventoryNotFound(
+                        f"Inventory {startup_args.inventory} not found"
+                    )
                 if (
                     action.action == "run_job_template"
                     and not startup_args.controller_url

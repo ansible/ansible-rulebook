@@ -26,7 +26,6 @@ from ansible_rulebook.exception import (
 )
 from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.messages import Shutdown
-from ansible_rulebook.util import load_inventory
 
 from .test_engine import get_queue_item, load_rulebook, validate_events
 
@@ -637,7 +636,7 @@ async def test_21_run_playbook(rule, ansible_events):
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
     event = event_log.get_nowait()
@@ -777,7 +776,7 @@ async def test_27_var_root():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         for _ in range(2):
@@ -838,6 +837,7 @@ async def test_29_run_module():
             event_log,
             ruleset_queues,
             dict(),
+            "playbooks/inventory.yml",
         )
 
     event = event_log.get_nowait()
@@ -875,6 +875,7 @@ async def test_30_run_module_missing():
         event_log,
         ruleset_queues,
         dict(),
+        "playbooks/inventory.yml",
     )
 
     event = event_log.get_nowait()
@@ -907,6 +908,7 @@ async def test_31_run_module_missing_args():
         event_log,
         ruleset_queues,
         dict(),
+        "playbooks/inventory.yml",
     )
 
     event = event_log.get_nowait()
@@ -939,6 +941,7 @@ async def test_32_run_module_fail():
         event_log,
         ruleset_queues,
         dict(),
+        "playbooks/inventory.yml",
     )
 
     event = event_log.get_nowait()
@@ -1008,7 +1011,7 @@ async def test_36_multiple_rulesets_both_fired():
                 event_log,
                 ruleset_queues,
                 dict(),
-                load_inventory("playbooks/inventory.yml"),
+                "playbooks/inventory.yml",
             )
             checks = {
                 "max_events": 4,
@@ -1033,7 +1036,7 @@ async def test_37_hosts_facts():
         event_log,
         ruleset_queues,
         dict(),
-        load_inventory("playbooks/inventory.yml"),
+        "playbooks/inventory.yml",
     )
 
     event = event_log.get_nowait()
@@ -1056,7 +1059,7 @@ async def test_38_shutdown_action():
                 event_log,
                 ruleset_queues,
                 dict(),
-                load_inventory("playbooks/inventory.yml"),
+                "playbooks/inventory.yml",
             )
 
         event = event_log.get_nowait()
@@ -1084,7 +1087,7 @@ async def test_40_in():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
         checks = {
             "max_events": 2,
@@ -1106,7 +1109,7 @@ async def test_41_not_in():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
         checks = {
             "max_events": 2,
@@ -1128,7 +1131,7 @@ async def test_42_contains():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
         checks = {
             "max_events": 2,
@@ -1151,7 +1154,7 @@ async def test_43_not_contains():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
         checks = {
             "max_events": 2,
@@ -1173,7 +1176,7 @@ async def test_44_in_and():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
         checks = {
             "max_events": 2,
@@ -1196,7 +1199,7 @@ async def test_45_in_or():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
         checks = {
             "max_events": 5,
@@ -1221,7 +1224,7 @@ async def test_47_generic_plugin():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
         checks = {
             "max_events": 3,
@@ -1245,7 +1248,7 @@ async def test_48_echo():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
         checks = {
             "max_events": 2,
@@ -1277,7 +1280,7 @@ async def test_49_float():
                 event_log,
                 ruleset_queues,
                 dict(),
-                load_inventory("playbooks/inventory.yml"),
+                "playbooks/inventory.yml",
             )
             event = event_log.get_nowait()
             assert event["type"] == "Action", "1"
@@ -1322,7 +1325,7 @@ async def test_50_negation():
                 event_log,
                 ruleset_queues,
                 dict(),
-                load_inventory("playbooks/inventory.yml"),
+                "playbooks/inventory.yml",
             )
             event = event_log.get_nowait()
             assert event["type"] == "Action", "1"
@@ -1386,7 +1389,7 @@ async def test_51_vars_namespace():
             event_log,
             ruleset_queues,
             person,
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
         checks = {
             "max_events": 6,
@@ -1430,7 +1433,7 @@ async def test_51_vars_namespace_missing_key():
                 event_log,
                 ruleset_queues,
                 person,
-                load_inventory("playbooks/inventory.yml"),
+                "playbooks/inventory.yml",
             )
         assert str(exc_info.value) == "vars does not contain key: person.age"
 
@@ -1446,7 +1449,7 @@ async def test_52_once_within():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -1473,7 +1476,7 @@ async def test_53_once_within_multiple_hosts():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -1500,7 +1503,7 @@ async def test_54_time_window():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         event = await get_queue_item(event_log, 10, 2)
@@ -1536,7 +1539,7 @@ async def test_55_not_all():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -1563,7 +1566,7 @@ async def test_56_once_after():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
         checks = {
             "max_events": 2,
@@ -1591,7 +1594,7 @@ async def test_57_once_after_multiple():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
         checks = {
             "max_events": 7,
@@ -1611,7 +1614,7 @@ async def test_58_string_search():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
         checks = {
             "max_events": 7,
@@ -1641,7 +1644,7 @@ async def test_59_multiple_actions():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
         checks = {
             "max_events": 6,
@@ -1668,7 +1671,7 @@ async def test_60_json_filter():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -1692,7 +1695,7 @@ async def test_61_select_1():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -1716,7 +1719,7 @@ async def test_62_select_2():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -1742,7 +1745,7 @@ async def test_63_selectattr_1():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -1767,7 +1770,7 @@ async def test_64_selectattr_2():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -1791,7 +1794,7 @@ async def test_65_selectattr_3():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -1823,7 +1826,7 @@ async def test_66_sleepy_playbook():
                 event_log,
                 ruleset_queues,
                 dict(),
-                load_inventory("playbooks/inventory.yml"),
+                "playbooks/inventory.yml",
             )
 
             checks = {
@@ -1855,7 +1858,7 @@ async def test_67_shutdown_now():
                 event_log,
                 ruleset_queues,
                 dict(),
-                load_inventory("playbooks/inventory.yml"),
+                "playbooks/inventory.yml",
             )
 
             checks = {
@@ -1881,7 +1884,7 @@ async def test_68_disabled_rule():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -1905,7 +1908,7 @@ async def test_69_enhanced_debug():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -1932,7 +1935,7 @@ async def test_70_null():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -1960,7 +1963,7 @@ async def test_72_set_fact_with_type():
             event_log,
             ruleset_queues,
             dict(my_bool=True, my_int=2, my_float=3.123),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -1991,7 +1994,7 @@ async def test_73_mix_and_match_list():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -2021,7 +2024,7 @@ async def test_74_self_referential():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -2045,7 +2048,7 @@ async def test_75_all_conditions():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -2069,7 +2072,7 @@ async def test_76_all_conditions():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {
@@ -2101,7 +2104,7 @@ async def test_46_job_template():
                 event_log,
                 ruleset_queues,
                 dict(),
-                load_inventory("playbooks/inventory.yml"),
+                "playbooks/inventory.yml",
             )
 
             while not event_log.empty():
@@ -2136,7 +2139,7 @@ async def test_46_job_template_exception(err_msg, err):
                 event_log,
                 ruleset_queues,
                 dict(),
-                load_inventory("playbooks/inventory.yml"),
+                "playbooks/inventory.yml",
             )
 
             while not event_log.empty():
@@ -2176,7 +2179,7 @@ async def test_77_default_events_ttl():
             event_log,
             ruleset_queues,
             dict(),
-            load_inventory("playbooks/inventory.yml"),
+            "playbooks/inventory.yml",
         )
 
         checks = {

@@ -90,6 +90,7 @@ def get_parser() -> argparse.ArgumentParser:
         "-i",
         "--inventory",
         help="Inventory",
+        default=os.environ.get("ANSIBLE_INVENTORY", ""),
     )
     parser.add_argument(
         "-W",

@@ -45,7 +45,7 @@ from .exception import (
 )
 from .job_template_runner import job_template_runner
 from .messages import Shutdown
-from .util import get_horizontal_rule, run_at
+from .util import create_inventory, get_horizontal_rule, run_at
 
 logger = logging.getLogger(__name__)
 
@@ -360,6 +360,7 @@ async def run_playbook(
             temp_dir,
             dict(playbook=playbook_name),
             hosts,
+            inventory,
             verbosity,
             json_mode,
         )
@@ -471,6 +472,7 @@ async def run_module(
                 module_args=module_args_str,
             ),
             hosts,
+            inventory,
             verbosity,
             json_mode,
         )
@@ -503,6 +505,7 @@ async def call_runner(
     private_data_dir: str,
     runner_args: Dict,
     hosts: List,
+    inventory: str,
     verbosity: int = 0,
     json_mode: Optional[bool] = False,
 ):
@@ -555,6 +558,11 @@ async def call_runner(
                     verbosity=verbosity,
                     event_handler=event_callback,
                     cancel_callback=cancel_callback,
+                    inventory=os.path.join(
+                        private_data_dir,
+                        "inventory",
+                        os.path.basename(inventory),
+                    ),
                     json_mode=json_mode,
                     **runner_args,
                 ),
@@ -623,8 +631,8 @@ async def pre_process_runner(
     with open(os.path.join(env_dir, "extravars"), "w") as f:
         f.write(yaml.dump(playbook_extra_vars))
     os.mkdir(inventory_dir)
-    with open(os.path.join(inventory_dir, "hosts"), "w") as f:
-        f.write(inventory)
+    if inventory:
+        create_inventory(inventory_dir, inventory)
     os.mkdir(project_dir)
 
     logger.debug("project_data_file: %s", project_data_file)
