@@ -62,9 +62,6 @@ The minimal decision environment is a good starting point, but you will likely w
                 - name: community.windows
                 - name: ansible.utils
                 version: 2.10.1
-    options:
-        container_init:
-            cmd: '["/opt/builder/bin/entrypoint","ansible-rulebook", "-r", "my_namespace.my_awesome_collection.my_rulebook", "-i", "/tmp/inventory"]'
 
 This shows an example where you may have your own Collection that contains rulebooks and playbooks but need to bring them together with some other collections
 and some python and system dependencies.
@@ -94,9 +91,6 @@ and then making use of Containerfile commands to ADD or COPY to get the files in
         prepend_builder:
             - 'RUN mkdir -p /opt/ansible/my_rulebooks'
             - 'COPY my_rulebook.yml /opt/ansible/my_rulebooks'
-    options:
-        container_init:
-            cmd: '["/opt/builder/bin/entrypoint","ansible-rulebook", "-r", "/opt/ansible/my_rulebooks/my_rulebook.yml", "-i", "/tmp/inventory"]'
 
 .. note::
 
