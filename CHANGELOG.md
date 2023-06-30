@@ -4,6 +4,15 @@
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Removed
+- Remove official support for Python 3.8
+
+## [1.0.0] - 2023-06-13
+
+### Added
 - Sending heartbeat to the server with the session stats
 - Added command line option --execution-strategy
 - Rulesets in rulebook can have execution_strategy attribute
