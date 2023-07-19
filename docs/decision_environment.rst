@@ -49,8 +49,8 @@ The minimal decision environment is a good starting point, but you will likely w
     version: 3
 
     images:
-    base_image:
-        name: 'minimal-decision-environment:latest'
+        base_image:
+            name: 'minimal-decision-environment:latest'
     dependencies:
         python:
             - pywinrm
@@ -61,10 +61,7 @@ The minimal decision environment is a good starting point, but you will likely w
                 - name: my_namespace.my_awesome_collection
                 - name: community.windows
                 - name: ansible.utils
-                version: 2.10.1
-    options:
-        container_init:
-            cmd: '["/opt/builder/bin/entrypoint","ansible-rulebook", "-r", "my_namespace.my_awesome_collection.my_rulebook", "-i", "/tmp/inventory"]'
+                  version: 2.10.1
 
 This shows an example where you may have your own Collection that contains rulebooks and playbooks but need to bring them together with some other collections
 and some python and system dependencies.
@@ -78,8 +75,8 @@ and then making use of Containerfile commands to ADD or COPY to get the files in
     version: 3
 
     images:
-    base_image:
-        name: 'minimal-decision-environment:latest'
+        base_image:
+            name: 'minimal-decision-environment:latest'
     dependencies:
         python:
             - pywinrm
@@ -89,14 +86,11 @@ and then making use of Containerfile commands to ADD or COPY to get the files in
             collections:
                 - name: community.windows
                 - name: ansible.utils
-                version: 2.10.1
+                  version: 2.10.1
     additional_build_steps:
         prepend_builder:
             - 'RUN mkdir -p /opt/ansible/my_rulebooks'
             - 'COPY my_rulebook.yml /opt/ansible/my_rulebooks'
-    options:
-        container_init:
-            cmd: '["/opt/builder/bin/entrypoint","ansible-rulebook", "-r", "/opt/ansible/my_rulebooks/my_rulebook.yml", "-i", "/tmp/inventory"]'
 
 .. note::
 
