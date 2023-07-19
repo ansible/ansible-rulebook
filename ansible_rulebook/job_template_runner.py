@@ -33,8 +33,8 @@ logger = logging.getLogger(__name__)
 
 
 class JobTemplateRunner:
-    JOB_TEMPLATE_SLUG = "/api/v2/job_templates"
-    CONFIG_SLUG = "/api/v2/config"
+    JOB_TEMPLATE_SLUG = "/api/v2/job_templates/"
+    CONFIG_SLUG = "/api/v2/config/"
     JOB_COMPLETION_STATUSES = ["successful", "failed", "error", "canceled"]
 
     def __init__(

@@ -6,6 +6,7 @@
 ### Added
 
 ### Fixed
+- Fixes a wrong 401 response from AWX when 443 is present in an https CONTROLLER_URL (<https://github.com/ansible/ansible-rulebook/issues/554>)
 
 ### Removed
 - Remove official support for Python 3.8
