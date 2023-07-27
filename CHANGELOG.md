@@ -9,7 +9,18 @@
 ### Fixed
 
 ### Removed
+
+## [1.0.1] - 2023-07-24
+
+### Added
+
+### Fixed
+- Minor documentation fixes
+
+
+### Removed
 - Remove official support for Python 3.8
+
 
 ## [1.0.0] - 2023-06-13
 

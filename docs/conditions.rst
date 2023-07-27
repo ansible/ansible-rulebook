@@ -304,8 +304,8 @@ Multiple conditions where **all** of them have to match with internal references
 
 | The above example uses the generic source plugin which allows for the event
 | payloads to be defined in the rule book for easy testing.
-| In this example the the first condition matches for the first 2 events
-| this leads to 2 partial matching rules, then the 3 and 4 the event arrive
+| In this example the first condition matches for the first 2 events
+| this leads to 2 partial matching rules, then the 3rd and 4th events arrive
 | with the friend_list payload and they match the 2nd condition. This will lead
 | to the rule being satisfied twice and the print_event will run twice with the
 | correct events.
