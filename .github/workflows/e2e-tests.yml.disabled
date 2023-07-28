@@ -1,3 +1,4 @@
+# at this stage, ci.yml run all-tests, which performs: common-tests, long_run tests, e2e-tests
 name: e2e tests
 
 on:
