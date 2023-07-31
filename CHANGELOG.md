@@ -12,9 +12,13 @@
 ## [1.0.1] - 2023-07-24
 
 ### Added
+- Add source plugins best practices to the documentation
 
 ### Fixed
 - Minor documentation fixes
+- Fix an issue where rule_run_at field is not send to the websocket
+- Don't try to connect with AWX when no run_job_template action is used
+- Limits the number of simultaneously open connections to controller to 30
 
 
 ### Removed
@@ -36,7 +40,6 @@
 - rule_uuid and ruleset_uuid provided even when an action fails
 - Drools intermittently misses firing of rules
 - Resend events lost during websocket disconnect
-- limits the number of simultaneously open connection to controller to 30
 
 ### Removed
 
