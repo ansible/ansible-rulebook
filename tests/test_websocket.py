@@ -106,7 +106,7 @@ async def test_send_event_log_to_websocket():
     queue = asyncio.Queue()
     queue.put_nowait({"a": 1})
     queue.put_nowait({"b": 1})
-    queue.put_nowait(dict(type="Shutdown"))
+    queue.put_nowait(dict(type="Exit"))
 
     data_sent = []
 
@@ -121,7 +121,7 @@ async def test_send_event_log_to_websocket():
         mo.return_value.__aiter__.side_effect = [mock_object]
         mo.return_value.send.side_effect = my_func
         await send_event_log_to_websocket(queue, "dummy", "yes")
-        assert data_sent == ['{"a": 1}', '{"b": 1}', '{"type": "Shutdown"}']
+        assert data_sent == ['{"a": 1}', '{"b": 1}']
 
 
 @pytest.mark.asyncio
@@ -132,7 +132,7 @@ async def test_send_event_log_to_websocket_with_exception(
     queue = asyncio.Queue()
     queue.put_nowait({"a": 1})
     queue.put_nowait({"b": 2})
-    queue.put_nowait(dict(type="Shutdown"))
+    queue.put_nowait(dict(type="Exit"))
 
     data_sent = []
 
@@ -146,8 +146,7 @@ async def test_send_event_log_to_websocket_with_exception(
         websockets.exceptions.ConnectionClosed(rcvd=None, sent=None),
         data_sent.append({"a": 1}),
         data_sent.append({"b": 2}),
-        data_sent.append({"type": "Shutdown"}),
     ]
 
     await send_event_log_to_websocket(queue, "dummy", "yes")
-    assert data_sent == [{"a": 1}, {"b": 2}, {"type": "Shutdown"}]
+    assert data_sent == [{"a": 1}, {"b": 2}]
