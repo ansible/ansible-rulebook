@@ -112,6 +112,15 @@
                     - 15
                     - 8121.99
                     - 1111
+          - id: "Testcase #12"
+            asd:
+              x:
+              - 0
+              -
+                - 0
+                - 0
+                - a:
+                    b: 3.1415
 
 
   rules:
@@ -213,3 +222,9 @@
       action:
         debug:
           msg: "Output for testcase #11"
+
+    - name: selectattr and squared accessor interaction
+      condition: event.asd["x"][1][2] is selectattr("a.b", "==", 3.1415)
+      action:
+        debug:
+          msg: "Output for testcase #12"

@@ -4,6 +4,7 @@
 ## [Unreleased]
 
 ### Added
+- rulebook and Drools bracket notation syntax
 
 ### Fixed
 
