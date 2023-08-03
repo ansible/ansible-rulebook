@@ -26,6 +26,7 @@ from drools.exceptions import (
     MessageNotHandledException,
     MessageObservedException,
 )
+from drools.ruleset import session_stats
 
 from ansible_rulebook.builtin import actions as builtin_actions
 from ansible_rulebook.conf import settings
@@ -244,6 +245,11 @@ class RuleSetRunner:
                 queue_item = await self.ruleset_queue_plan.plan.queue.get()
                 rule_run_at = run_at()
                 action_item = cast(ActionContext, queue_item)
+                if self.parsed_args and self.parsed_args.heartbeat > 0:
+                    await send_session_stats(
+                        self.event_log,
+                        session_stats(self.ruleset_queue_plan.ruleset.name),
+                    )
                 if len(action_item.actions) > 1:
                     task = asyncio.create_task(
                         self._run_multiple_actions(action_item, rule_run_at)
