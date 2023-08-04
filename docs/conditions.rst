@@ -48,6 +48,56 @@ The data type is of great importance for the rules engine. The following types a
 * floats (dot notation and scientific notation)
 * null
 
+Navigate structured data
+************************
+
+You can navigate strutured event, fact, var data objects using either dot notation or bracket notation:
+
+    .. code-block:: yaml
+
+      rules:
+        - name: Using dot notation
+          condition: event.something.nested == true
+          action:
+            debug:
+        - name: Analogous, but using bracket notation
+          condition: event.something["nested"] == true
+          action:
+            debug:
+
+Both of the above examples checks for the same value (attribute "nested" inside of "something") to be equal to `true`.
+
+Bracket notation might be preferable to dot notation when the structured data contains a key using symbols
+or other special characters:
+
+    .. code-block:: yaml
+
+      name: Looking for specific metadata
+      condition: event.resource.metadata.labels["app.kubernetes.io/name"] == "hello-pvdf"
+      action:
+        debug:
+
+You can find more information about dot notation and bracket notation also in the Ansible playbook `manual <https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#referencing-key-value-dictionary-variables>`_.
+
+You can access list in strutured event, fact, var data objects using bracket notation too.
+The first item in a list is item 0, the second item is item 1.
+Like Python, you can access the `n`-to-last item in the list by supplying a negative index.
+For example:
+
+    .. code-block:: yaml
+
+      rules:
+        - name: Looking for the first item in the list
+          condition: event.letters[0] == "a"
+          action:
+            debug:
+        - name: Looking for the last item in the list
+          condition: event.letters[-1] == "z"
+          action:
+            debug:
+
+You can find more information the bracket notation for list also in the Ansible playbook `manual <https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#referencing-list-variables>`_.
+
 Supported Operators
 *******************
 
@@ -796,6 +846,8 @@ Check if an item does not exist in a list based on a test
 | The value is based on the operator used, if the operator is regex then the value is a pattern.
 | If the operator is one of >,>=,<,<= then the value is either an integer or a float
 
+You can find more information for the *select* condition also in the Ansible playbook `manual <https://docs.ansible.com/ansible/latest/playbook_guide/complex_data_manipulation.html#loops-and-list-comprehensions>`_.
+
 Checking if an object exists in a list based on a test
 ------------------------------------------------------
 
@@ -833,6 +885,8 @@ Checking if an object does not exist in a list based on a test
 | The value is based on the operator used, if the operator is regex then the value is a pattern.
 | If the operator is one of >, >=, <, <= then the value is either an integer or a float.
 | If the operator is in or not in then the value is list of integer, float or string.
+
+You can find more information for the *selectattr* condition also in the Ansible playbook `manual <https://docs.ansible.com/ansible/latest/playbook_guide/complex_data_manipulation.html#loops-and-list-comprehensions>`_.
 
 
 FAQ

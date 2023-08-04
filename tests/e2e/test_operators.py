@@ -494,6 +494,9 @@ def test_logical_operators(update_environment):
     with check:
         assert "Testcase #11 passes" in result.stdout, "Testcase #11 failed"
 
+    with check:
+        assert "Testcase #12 passes" in result.stdout, "Testcase #12 failed"
+
 
 @pytest.mark.e2e
 def test_string_match():
@@ -785,3 +788,15 @@ def test_selectattr_operator():
             )
             == 1
         ), "testcase #11 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #12" in line
+                ]
+            )
+            == 1
+        ), "testcase #12 failed"
