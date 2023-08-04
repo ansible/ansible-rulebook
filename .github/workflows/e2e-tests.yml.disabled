@@ -1,3 +1,4 @@
+# at this stage, ci.yml run all-tests, which performs: common-tests, long_run tests, e2e-tests
 name: e2e tests
 
 on:
@@ -16,7 +17,6 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.8"
           - "3.9"
           - "3.10"
           - "3.11"

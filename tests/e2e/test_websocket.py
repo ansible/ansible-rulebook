@@ -60,7 +60,7 @@ async def test_websocket_messages():
     job_counter = 0
     action_counter = 0
     session_stats_counter = 0
-
+    stats = None
     while not queue.empty():
         data = await queue.get()
         assert data["path"] == endpoint
@@ -101,11 +101,11 @@ async def test_websocket_messages():
             assert stats["numberOfRules"] == 1
             assert stats["numberOfDisabledRules"] == 0
             assert data["activation_id"] == proc_id
-            if session_stats_counter == 2:
-                assert stats["rulesTriggered"] == 1
-                assert stats["eventsProcessed"] == 2000
-                assert stats["eventsMatched"] == 1
-                assert stats["eventsSuppressed"] == 1999
+
+    assert stats["rulesTriggered"] == 1
+    assert stats["eventsProcessed"] == 2000
+    assert stats["eventsMatched"] == 1
+    assert stats["eventsSuppressed"] == 1999
 
     assert ansible_event_counter == 9
     assert session_stats_counter >= 2

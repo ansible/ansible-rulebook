@@ -1,5 +1,0 @@
-============
-Environments
-============
-
-Work in progress

@@ -16,6 +16,7 @@ A ruleset has the following properties:
 * hosts similar to Ansible playbook
 * gather_facts: boolean
 * default_events_ttl: time to keep the partially matched events around (default is 2 hours)
+* execution_strategy: How actions should be executed, sequential|parallel (default: sequential). For sequential strategy we wait for each action to finish before we kick off the next action.
 * sources: A list of sources
 * rules: a list of rules
 

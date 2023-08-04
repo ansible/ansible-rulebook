@@ -4,12 +4,43 @@
 ## [Unreleased]
 
 ### Added
+- rulebook and Drools bracket notation syntax
+
+### Fixed
+
+### Removed
+
+## [1.0.1] - 2023-07-24
+
+### Added
+- Add source plugins best practices to the documentation
+
+### Fixed
+- Minor documentation fixes
+- Fix an issue where rule_run_at field is not send to the websocket
+- Don't try to connect with AWX when no run_job_template action is used
+- Limits the number of simultaneously open connections to controller to 30
+
+
+### Removed
+- Remove official support for Python 3.8
+
+
+## [1.0.0] - 2023-06-13
+
+### Added
 - Sending heartbeat to the server with the session stats
 - Added command line option --execution-strategy
+- Rulesets in rulebook can have execution_strategy attribute
 
 ### Fixed
 - In a collection look for playbook in playbooks directory
 - Support .yaml and .yml extension for playbooks
+- Retract fact for partial and complete matches
+- Checking of controller url and token at startup
+- rule_uuid and ruleset_uuid provided even when an action fails
+- Drools intermittently misses firing of rules
+- Resend events lost during websocket disconnect
 
 ### Removed
 

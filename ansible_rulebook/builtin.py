@@ -219,9 +219,16 @@ async def retract_fact(
     rule_run_at: str,
     ruleset: str,
     fact: Dict,
+    partial: bool = True,
     name: Optional[str] = None,
 ):
-    lang.retract_fact(ruleset, _embellish_internal_event(fact, "retract_fact"))
+
+    if not partial:
+        exclude_keys = ["meta"]
+    else:
+        exclude_keys = []
+
+    lang.retract_matching_facts(ruleset, fact, partial, exclude_keys)
     await event_log.put(
         dict(
             type="Action",
@@ -818,7 +825,7 @@ async def run_job_template(
         rule_run_at=rule_run_at,
     )
     if "error" in controller_job:
-        a_log["reason"] = dict(error=controller_job["error"])
+        a_log["message"] = controller_job["error"]
     await event_log.put(a_log)
 
     if set_facts or post_events:

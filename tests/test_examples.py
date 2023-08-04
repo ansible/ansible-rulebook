@@ -203,7 +203,6 @@ async def test_05_post_event():
     assert event_log.empty()
 
 
-@pytest.mark.skip(reason="with meta data the retract fact never matches")
 @pytest.mark.asyncio
 async def test_06_retract_fact():
     ruleset_queues, event_log = load_rulebook("examples/06_retract_fact.yml")
@@ -579,7 +578,6 @@ async def test_19_is_defined():
     assert event_log.empty()
 
 
-@pytest.mark.skip(reason="with meta data the retract fact never matches")
 @pytest.mark.asyncio
 async def test_20_is_not_defined():
     ruleset_queues, event_log = load_rulebook("examples/20_is_not_defined.yml")
@@ -604,13 +602,15 @@ async def test_20_is_not_defined():
     assert event["action"] == "retract_fact", "4"
     matching_events = event["matching_events"]
     meta = matching_events["m"].pop("meta")
-    assert meta["source"]["name"] == "internal"
+    assert meta["source"]["name"] == "set_fact"
     assert meta["source"]["type"] == "internal"
     assert matching_events == {"m": {"msg": "hello"}}
     event = event_log.get_nowait()
     assert event["type"] == "Action", "5"
     assert event["action"] == "debug", "6"
-    assert event["matching_events"] == {"m": {"msg": "hello"}}
+    matching_events = event["matching_events"]
+    meta = matching_events["m"].pop("meta")
+    assert matching_events == {"m": {"msg": "hello"}}
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "8"
     assert event_log.empty()
@@ -2116,6 +2116,7 @@ async def test_46_job_template():
 JOB_TEMPLATE_ERRORS = [
     ("api error", ControllerApiException("api error")),
     ("jt does not exist", JobTemplateNotFoundException("jt does not exist")),
+    ("Kaboom", RuntimeError("Kaboom")),
 ]
 
 
@@ -2144,7 +2145,22 @@ async def test_46_job_template_exception(err_msg, err):
                     action = event
 
             assert action["action"] == "run_job_template"
-            assert action["reason"] == {"error": err_msg}
+            assert action["message"] == err_msg
+            required_keys = {
+                "action",
+                "action_uuid",
+                "activation_id",
+                "message",
+                "rule_run_at",
+                "run_at",
+                "rule",
+                "ruleset",
+                "rule_uuid",
+                "ruleset_uuid",
+                "status",
+                "type",
+            }
+            assert set(action.keys()).issuperset(required_keys)
 
 
 @pytest.mark.asyncio
@@ -2171,3 +2187,40 @@ async def test_77_default_events_ttl():
             ],
         }
         await validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_78_complete_retract_fact():
+    ruleset_queues, event_log = load_rulebook(
+        "examples/78_complete_retract_fact.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    queue.put_nowait(dict(i=1))
+    queue.put_nowait(Shutdown())
+
+    with patch("uuid.uuid4", return_value=DUMMY_UUID):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "1"
+    assert event["action"] == "set_fact", "2"
+    assert event["action_uuid"] == DUMMY_UUID
+    assert event["status"] == "successful"
+    assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
+    assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
+    assert event["matching_events"] == {"m": {"i": 1}}, "3"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "3"
+    assert event["action"] == "retract_fact", "4"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action", "4"
+    assert event["action"] == "debug", "5"
+    event = event_log.get_nowait()
+    assert event["type"] == "Shutdown", "7"
+    assert event_log.empty()

@@ -88,27 +88,42 @@ async def request_workload(
 async def send_event_log_to_websocket(
     event_log, websocket_address, websocket_ssl_verify
 ):
-    logger.info("websocket %s connecting", websocket_address)
+    logger.info("feedback websocket %s connecting", websocket_address)
+    event = None
     async for websocket in websockets.connect(
         websocket_address,
         logger=logger,
         ssl=_sslcontext(websocket_address, websocket_ssl_verify),
     ):
-        logger.info("websocket %s connected", websocket_address)
-        event = None
+        logger.info("feedback websocket %s connected", websocket_address)
         try:
+            if event:
+                logger.info("Resending last event...")
+                await websocket.send(json.dumps(event))
+                event = None
+
             while True:
                 event = await event_log.get()
-                await websocket.send(json.dumps(event))
-                if event == dict(type="Shutdown"):
+                logger.debug(f"Event received, {event}")
+
+                if event == dict(type="Exit"):
+                    logger.info("Exiting feedback websocket task")
                     return
-        except websockets.ConnectionClosed:
-            logger.warning("websocket %s connection closed", websocket_address)
+
+                await websocket.send(json.dumps(event))
+                event = None
+        except websockets.exceptions.ConnectionClosed:
+            logger.warning(
+                "feedback websocket %s connection closed, will retry...",
+                websocket_address,
+            )
         except CancelledError:
-            logger.info("closing websocket due to task cancelled")
+            logger.info("closing feedback websocket due to task cancelled")
             return
         except BaseException as err:
-            logger.error("websocket error on %s err: %s", event, str(err))
+            logger.error(
+                "feedback websocket error on %s err: %s", event, str(err)
+            )
 
 
 def _sslcontext(url, ssl_verify) -> ssl.SSLContext:

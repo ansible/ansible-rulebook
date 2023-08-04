@@ -28,6 +28,7 @@ from ansible_rulebook.collection import (
     split_collection_name,
 )
 from ansible_rulebook.common import StartupArgs
+from ansible_rulebook.conf import settings
 from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.rule_types import RuleSet, RuleSetQueue
@@ -96,7 +97,9 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
         startup_args.controller_ssl_verify = parsed_args.controller_ssl_verify
 
     validate_actions(startup_args)
-    set_controller_params(startup_args)
+
+    if startup_args.check_controller_connection:
+        await validate_controller_params(startup_args)
 
     if parsed_args.websocket_address:
         event_log = asyncio.Queue()
@@ -113,16 +116,16 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
 
     logger.info("Starting rules")
 
+    feedback_task = None
     if parsed_args.websocket_address:
-        tasks.append(
-            asyncio.create_task(
-                send_event_log_to_websocket(
-                    event_log,
-                    parsed_args.websocket_address,
-                    parsed_args.websocket_ssl_verify,
-                )
+        feedback_task = asyncio.create_task(
+            send_event_log_to_websocket(
+                event_log,
+                parsed_args.websocket_address,
+                parsed_args.websocket_ssl_verify,
             )
         )
+        tasks.append(feedback_task)
 
     should_reload = await run_rulesets(
         event_log,
@@ -133,6 +136,12 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
         startup_args.project_data_file,
         file_monitor,
     )
+
+    await event_log.put(dict(type="Exit"))
+    if feedback_task:
+        await asyncio.wait(
+            [feedback_task], timeout=settings.max_feedback_timeout
+        )
 
     logger.info("Cancelling event source tasks")
     for task in tasks:
@@ -148,7 +157,7 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
             error_found = True
 
     logger.info("Main complete")
-    await event_log.put(dict(type="Exit"))
+    await job_template_runner.close_session()
     if error_found:
         raise Exception("One of the source plugins failed")
     elif should_reload is True:
@@ -238,6 +247,8 @@ def validate_actions(startup_args: StartupArgs) -> None:
     for ruleset in startup_args.rulesets:
         for rule in ruleset.rules:
             for action in rule.actions:
+                if action.action == "run_job_template":
+                    startup_args.check_controller_connection = True
                 if (
                     action.action in INVENTORY_ACTIONS
                     and not startup_args.inventory
@@ -258,9 +269,12 @@ def validate_actions(startup_args: StartupArgs) -> None:
                     )
 
 
-def set_controller_params(startup_args: StartupArgs) -> None:
+async def validate_controller_params(startup_args: StartupArgs) -> None:
     if startup_args.controller_url:
         job_template_runner.host = startup_args.controller_url
         job_template_runner.token = startup_args.controller_token
         if startup_args.controller_ssl_verify:
             job_template_runner.verify_ssl = startup_args.controller_ssl_verify
+
+        data = await job_template_runner.get_config()
+        logger.info("AAP Version %s", data["version"])

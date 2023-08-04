@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 class JobTemplateRunner:
     JOB_TEMPLATE_SLUG = "/api/v2/job_templates"
-    VALID_POST_CODES = [200, 201, 202]
+    CONFIG_SLUG = "/api/v2/config"
     JOB_COMPLETION_STATUSES = ["successful", "failed", "error", "canceled"]
 
     def __init__(
@@ -46,27 +46,36 @@ class JobTemplateRunner:
         self.refresh_delay = int(
             os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10)
         )
+        self._session = None
 
-    async def _get_page(
-        self, session: aiohttp.ClientSession, href_slug: str, params: dict
-    ) -> dict:
-        url = urljoin(self.host, href_slug)
-        async with session.get(
-            url, params=params, ssl=self._sslcontext
-        ) as response:
-            response_text = dict(
-                status=response.status, body=await response.text()
+    async def close_session(self):
+        if self._session and not self._session.closed:
+            await self._session.close()
+
+    def _create_session(self):
+        if self._session is None:
+            limit = int(os.getenv("EDA_CONTROLLER_CONNECTION_LIMIT", "30"))
+            self._session = aiohttp.ClientSession(
+                connector=aiohttp.TCPConnector(limit=limit),
+                headers=self._auth_headers(),
+                raise_for_status=True,
             )
-        if response_text["status"] != 200:
-            raise ControllerApiException(
-                "Failed to get from %s. Status: %s, Body: %s"
-                % (
-                    url,
-                    response_text["status"],
-                    response_text.get("body", "empty"),
-                )
-            )
-        return response_text
+
+    async def _get_page(self, href_slug: str, params: dict) -> dict:
+        try:
+            url = urljoin(self.host, href_slug)
+            self._create_session()
+            async with self._session.get(
+                url, params=params, ssl=self._sslcontext
+            ) as response:
+                return json.loads(await response.text())
+        except aiohttp.ClientError as e:
+            logger.error("Error connecting to controller %s", str(e))
+            raise ControllerApiException(str(e))
+
+    async def get_config(self) -> dict:
+        logger.info("Attempting to connect to Controller %s", self.host)
+        return await self._get_page(self.CONFIG_SLUG, {})
 
     def _auth_headers(self) -> dict:
         return dict(Authorization=f"Bearer {self.token}")
@@ -84,26 +93,20 @@ class JobTemplateRunner:
         slug = f"{self.JOB_TEMPLATE_SLUG}/"
         params = {"name": name}
 
-        async with aiohttp.ClientSession(
-            headers=self._auth_headers()
-        ) as session:
-            while True:
-                response = await self._get_page(session, slug, params)
-                json_body = json.loads(response["body"])
-                for jt in json_body["results"]:
-                    if (
-                        jt["name"] == name
-                        and dpath.get(
-                            jt, "summary_fields.organization.name", "."
-                        )
-                        == organization
-                    ):
-                        return jt["id"]
+        while True:
+            json_body = await self._get_page(slug, params)
+            for jt in json_body["results"]:
+                if (
+                    jt["name"] == name
+                    and dpath.get(jt, "summary_fields.organization.name", ".")
+                    == organization
+                ):
+                    return jt["id"]
 
-                if json_body.get("next", None):
-                    params["page"] = params.get("page", 1) + 1
-                else:
-                    break
+            if json_body.get("next", None):
+                params["page"] = params.get("page", 1) + 1
+            else:
+                break
 
         raise JobTemplateNotFoundException(
             (
@@ -123,18 +126,14 @@ class JobTemplateRunner:
         url = job["url"]
         params = {}
 
-        async with aiohttp.ClientSession(
-            headers=self._auth_headers()
-        ) as session:
-            while True:
-                # fetch and process job status
-                response = await self._get_page(session, url, params)
-                json_body = json.loads(response["body"])
-                job_status = json_body["status"]
-                if job_status in self.JOB_COMPLETION_STATUSES:
-                    return json_body
+        while True:
+            # fetch and process job status
+            json_body = await self._get_page(url, params)
+            job_status = json_body["status"]
+            if job_status in self.JOB_COMPLETION_STATUSES:
+                return json_body
 
-                await asyncio.sleep(self.refresh_delay)
+            await asyncio.sleep(self.refresh_delay)
 
     async def launch(
         self, name: str, organization: str, job_params: dict
@@ -142,28 +141,14 @@ class JobTemplateRunner:
         jt_id = await self._get_job_template_id(name, organization)
         url = urljoin(self.host, f"{self.JOB_TEMPLATE_SLUG}/{jt_id}/launch/")
 
-        async with aiohttp.ClientSession(
-            headers=self._auth_headers()
-        ) as session:
-            async with session.post(
+        try:
+            async with self._session.post(
                 url, json=job_params, ssl=self._sslcontext
             ) as post_response:
-                response = dict(
-                    status=post_response.status,
-                    body=await post_response.text(),
-                )
-
-                if response["status"] not in self.VALID_POST_CODES:
-                    raise ControllerApiException(
-                        "Failed to post to %s. Status: %s, Body: %s"
-                        % (
-                            url,
-                            response["status"],
-                            response.get("body", "empty"),
-                        )
-                    )
-                json_body = json.loads(response["body"])
-        return json_body
+                return json.loads(await post_response.text())
+        except aiohttp.ClientError as e:
+            logger.error("Error connecting to controller %s", str(e))
+            raise ControllerApiException(str(e))
 
 
 job_template_runner = JobTemplateRunner()

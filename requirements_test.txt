@@ -19,3 +19,4 @@ freezegun
 oauthlib>=3.2.0
 kubernetes
 urllib3<2
+aioresponses

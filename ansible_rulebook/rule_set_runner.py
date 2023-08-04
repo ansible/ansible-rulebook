@@ -15,7 +15,7 @@
 import asyncio
 import gc
 import logging
-from datetime import datetime
+import uuid
 from pprint import PrettyPrinter, pformat
 from types import MappingProxyType
 from typing import Dict, List, Optional, Union, cast
@@ -26,6 +26,7 @@ from drools.exceptions import (
     MessageNotHandledException,
     MessageObservedException,
 )
+from drools.ruleset import session_stats
 
 from ansible_rulebook.builtin import actions as builtin_actions
 from ansible_rulebook.conf import settings
@@ -38,6 +39,7 @@ from ansible_rulebook.rule_types import (
     Action,
     ActionContext,
     EngineRuleSetQueuePlan,
+    ExecutionStrategy,
 )
 from ansible_rulebook.rules_parser import parse_hosts
 from ansible_rulebook.util import (
@@ -56,6 +58,7 @@ class RuleSetRunner:
         ruleset_queue_plan: EngineRuleSetQueuePlan,
         hosts_facts,
         variables,
+        rule_set,
         project_data_file: Optional[str] = None,
         parsed_args=None,
         broadcast_method=None,
@@ -64,6 +67,7 @@ class RuleSetRunner:
         self.event_log = event_log
         self.ruleset_queue_plan = ruleset_queue_plan
         self.name = ruleset_queue_plan.ruleset.name
+        self.rule_set = rule_set
         self.hosts_facts = hosts_facts
         self.variables = variables
         self.project_data_file = project_data_file
@@ -241,6 +245,11 @@ class RuleSetRunner:
                 queue_item = await self.ruleset_queue_plan.plan.queue.get()
                 rule_run_at = run_at()
                 action_item = cast(ActionContext, queue_item)
+                if self.parsed_args and self.parsed_args.heartbeat > 0:
+                    await send_session_stats(
+                        self.event_log,
+                        session_stats(self.ruleset_queue_plan.ruleset.name),
+                    )
                 if len(action_item.actions) > 1:
                     task = asyncio.create_task(
                         self._run_multiple_actions(action_item, rule_run_at)
@@ -253,8 +262,8 @@ class RuleSetRunner:
                     )
 
                 if (
-                    self.parsed_args
-                    and self.parsed_args.execution_strategy == "sequential"
+                    self.rule_set.execution_strategy
+                    == ExecutionStrategy.SEQUENTIAL
                 ):
                     await task
         except asyncio.CancelledError:
@@ -443,11 +452,17 @@ class RuleSetRunner:
                 dict(
                     type="Action",
                     action=action,
+                    action_uuid=str(uuid.uuid4()),
                     activation_id=settings.identifier,
                     playbook_name=action_args.get("name"),
                     status="failed",
-                    run_at=str(datetime.utcnow()),
-                    reason=dict(error=str(error)),
+                    run_at=run_at(),
+                    rule_run_at=rule_run_at,
+                    message=str(error),
+                    rule=rule,
+                    ruleset=ruleset,
+                    rule_uuid=rule_uuid,
+                    ruleset_uuid=ruleset_uuid,
                 )
             )
 
