@@ -156,3 +156,8 @@ class UnsupportedActionException(Exception):
 class InventoryNotFound(Exception):
 
     pass
+
+
+class MissingArtifactKeyException(Exception):
+
+    pass
