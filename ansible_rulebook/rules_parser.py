@@ -83,6 +83,9 @@ def parse_rule_sets(
                 gather_facts=rule_set.get("gather_facts", False),
                 uuid=str(uuid.uuid4()),
                 default_events_ttl=rule_set.get("default_events_ttl", None),
+                match_multiple_rules=rule_set.get(
+                    "match_multiple_rules", False
+                ),
             )
         )
     return rule_set_list

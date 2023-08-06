@@ -309,6 +309,9 @@ def visit_ruleset(ruleset: RuleSet, variables: Dict):
     if ruleset.default_events_ttl:
         data["default_events_ttl"] = ruleset.default_events_ttl
 
+    if ruleset.match_multiple_rules:
+        data["match_multiple_rules"] = ruleset.match_multiple_rules
+
     return {"RuleSet": data}
 
 

@@ -2286,7 +2286,7 @@ async def test_79_workflow_job_template_exception(err_msg, err):
 
 
 @pytest.mark.asyncio
-async def test_80_workflow_job_template():
+async def test_79_workflow_job_template():
     ruleset_queues, event_log = load_rulebook(
         "examples/79_workflow_template.yml"
     )
@@ -2318,3 +2318,56 @@ async def test_80_workflow_job_template():
 
             assert action["url"] == job_url
             assert action["action"] == "run_workflow_template"
+
+
+@pytest.mark.asyncio
+async def test_80_match_multiple_rules():
+    ruleset_queues, event_log = load_rulebook(
+        "examples/80_match_multiple_rules.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+
+        checks = {
+            "max_events": 3,
+            "shutdown_events": 1,
+            "actions": [
+                "80 match multiple rules::r1::debug",
+                "80 match multiple rules::r11::print_event",
+            ],
+        }
+        await validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_81_match_single_rule():
+    ruleset_queues, event_log = load_rulebook(
+        "examples/81_match_single_rule.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "81 match single rule::r1::debug",
+            ],
+        }
+        await validate_events(event_log, **checks)

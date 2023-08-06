@@ -78,6 +78,7 @@ class RuleSet(NamedTuple):
     gather_facts: bool
     uuid: Optional[str] = None
     default_events_ttl: Optional[str] = None
+    match_multiple_rules: bool = False
 
 
 class ActionContext(NamedTuple):

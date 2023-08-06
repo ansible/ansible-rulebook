@@ -4,6 +4,7 @@
 ## [Unreleased]
 
 ### Added
+- support for firing multiple rules
 
 ### Fixed
 
