@@ -104,7 +104,8 @@ Run a job template.
 .. note::
     ``--controller-url`` and ``--controller-token`` cmd options must be provided to use this action
     
-    In order to access event information under the ``ansible_eda`` namespace, be sure to check the box for "Prompt on launch" for the Variables field within the job template. Similarly, if you plan to limit host execution based on event information, enable "Prompt on launch" for the Limit field within the job template.
+    In order to access event information under the ``ansible_eda`` namespace, be sure to check the box for "Prompt on launch" for the Variables field within the job template. Alternatively, a survey can be created that includes the variable ``ansible_eda``. Similarly, if you plan to limit host execution based on event information, enable "Prompt on launch" for the Limit field within the job template.
+
 
 .. list-table::
    :widths: 25 150 10
