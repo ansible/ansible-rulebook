@@ -22,6 +22,7 @@
 - Fix an issue where rule_run_at field is not send to the websocket
 - Don't try to connect with AWX when no run_job_template action is used
 - Limits the number of simultaneously open connections to controller to 30
+- Fixes a wrong 401 response from AWX when 443 port is present in CONTROLLER_URL (<https://github.com/ansible/ansible-rulebook/issues/554>)
 
 
 ### Removed

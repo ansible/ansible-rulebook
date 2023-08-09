@@ -39,7 +39,7 @@ from .data.awx_test_data import (
     UNIFIED_JOB_TEMPLATE_PAGE2_SLUG,
 )
 
-CONFIG_SLUG = "/api/v2/config"
+CONFIG_SLUG = "/api/v2/config/"
 
 
 @pytest.fixture
