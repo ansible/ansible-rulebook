@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 DEFAULT_SHUTDOWN_DELAY = 60.0
 
@@ -23,3 +23,31 @@ class Shutdown:
     delay: float = DEFAULT_SHUTDOWN_DELAY
     kind: str = "graceful"
     source_plugin: str = ""
+
+
+@dataclass(frozen=True)
+class Action:
+    action: str
+    action_uuid: str
+    ruleset: str
+    ruleset_uuid: str
+    rule: str
+    rule_uuid: str
+    activation_id: str
+    run_at: str
+    status: str
+    matching_events: list
+    rule_run_at: str
+    playbook_name: str = None
+    job_id: str = None
+    rc: int = None
+    delay: int = None
+    message: str = None
+    kind: str = None
+    job_template_name: str = None
+    organization: str = None
+    url: str = None
+    type: str = "Action"
+
+
+serialize = asdict
