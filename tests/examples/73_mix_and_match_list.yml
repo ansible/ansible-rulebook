@@ -2,7 +2,7 @@
 - name: 73 mix and match list 
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         payload:
           - my_bool: false
           - my_str: fred

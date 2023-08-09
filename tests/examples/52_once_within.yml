@@ -2,7 +2,7 @@
 - name: 52 once within
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         loop_count: 20
         payload:
           - alert:

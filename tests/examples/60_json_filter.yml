@@ -2,7 +2,7 @@
 - name: 60 json filter
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         payload:
           key1:
             key2:

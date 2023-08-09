@@ -2,7 +2,7 @@
 - name: 66 sleepy playbook
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         create_index: i
         loop_count: 5
         shutdown_after: 45
@@ -21,7 +21,7 @@
 - name: terminate gracefully
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         create_index: j
         loop_count: 5
         shutdown_after: 45

@@ -2,7 +2,7 @@
 - name: 54 time window
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         create_index: event_index
         shutdown_after: 15
         event_delay: 5
