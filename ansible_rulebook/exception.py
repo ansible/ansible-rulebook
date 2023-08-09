@@ -138,6 +138,11 @@ class JobTemplateNotFoundException(Exception):
     pass
 
 
+class WorkflowJobTemplateNotFoundException(Exception):
+
+    pass
+
+
 class WebSocketExchangeException(Exception):
 
     pass
