@@ -2,7 +2,7 @@
 - name: 36 multiple rulesets 1
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         loop_count: 5
         startup_delay: 1
         create_index: i
@@ -23,7 +23,7 @@
 - name: 36 multiple rulesets 2
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         loop_count: 5
         shutdown_after: 10
         payload:

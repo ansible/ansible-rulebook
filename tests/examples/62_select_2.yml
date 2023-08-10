@@ -2,7 +2,7 @@
 - name: 62 select 2
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         payload:
           - name: Fred
             age: 54

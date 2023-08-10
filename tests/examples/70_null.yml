@@ -2,7 +2,7 @@
 - name: 70 null
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         payload:
           - x: 1
             y: null

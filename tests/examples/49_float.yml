@@ -3,7 +3,7 @@
   hosts: all
   sources:
     - name: generic
-      generic:
+      ansible.eda.generic:
         payload:
           - pi: 3.14159
           - mass: 5.97219
