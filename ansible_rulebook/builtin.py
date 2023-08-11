@@ -45,7 +45,7 @@ from .exception import (
     WorkflowJobTemplateNotFoundException,
 )
 from .job_template_runner import job_template_runner
-from .messages import Action, Shutdown, serialize
+from .messages import Action, Job, Shutdown, serialize
 from .util import get_horizontal_rule, run_at
 
 logger = logging.getLogger(__name__)
@@ -340,17 +340,19 @@ async def run_playbook(
 
     logger.info(f"ruleset: {source_ruleset_name}, rule: {source_rule_name}")
     await event_log.put(
-        dict(
-            type="Job",
-            job_id=job_id,
-            ansible_rulebook_id=settings.identifier,
-            name=playbook_name,
-            ruleset=source_ruleset_name,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            hosts=",".join(hosts),
-            action="run_playbook",
+        serialize(
+            Job(
+                type="Job",
+                job_id=job_id,
+                ansible_rulebook_id=settings.identifier,
+                name=playbook_name,
+                ruleset=source_ruleset_name,
+                ruleset_uuid=source_ruleset_uuid,
+                rule=source_rule_name,
+                rule_uuid=source_rule_uuid,
+                hosts=",".join(hosts),
+                action="run_playbook",
+            )
         )
     )
 
@@ -442,17 +444,19 @@ async def run_module(
     job_id = str(uuid.uuid4())
 
     await event_log.put(
-        dict(
-            type="Job",
-            job_id=job_id,
-            ansible_rulebook_id=settings.identifier,
-            name=module_name,
-            ruleset=source_ruleset_name,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            hosts=",".join(hosts),
-            action="run_module",
+        serialize(
+            Job(
+                type="Job",
+                job_id=job_id,
+                ansible_rulebook_id=settings.identifier,
+                name=module_name,
+                ruleset=source_ruleset_name,
+                ruleset_uuid=source_ruleset_uuid,
+                rule=source_rule_name,
+                rule_uuid=source_rule_uuid,
+                hosts=",".join(hosts),
+                action="run_module",
+            )
         )
     )
 
@@ -779,17 +783,19 @@ async def run_job_template(
 
     job_id = str(uuid.uuid4())
     await event_log.put(
-        dict(
-            type="Job",
-            job_id=job_id,
-            ansible_rulebook_id=settings.identifier,
-            name=name,
-            ruleset=source_ruleset_name,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            hosts=hosts_limit,
-            action="run_job_template",
+        serialize(
+            Job(
+                type="Job",
+                job_id=job_id,
+                ansible_rulebook_id=settings.identifier,
+                name=name,
+                ruleset=source_ruleset_name,
+                ruleset_uuid=source_ruleset_uuid,
+                rule=source_rule_name,
+                rule_uuid=source_rule_uuid,
+                hosts=hosts_limit,
+                action="run_job_template",
+            )
         )
     )
 
@@ -895,17 +901,19 @@ async def run_workflow_template(
     job_id = str(uuid.uuid4())
 
     await event_log.put(
-        dict(
-            type="Job",
-            job_id=job_id,
-            ansible_rulebook_id=settings.identifier,
-            name=name,
-            ruleset=source_ruleset_name,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            hosts=hosts_limit,
-            action="run_workflow_template",
+        serialize(
+            Job(
+                type="Job",
+                job_id=job_id,
+                ansible_rulebook_id=settings.identifier,
+                name=name,
+                ruleset=source_ruleset_name,
+                ruleset_uuid=source_ruleset_uuid,
+                rule=source_rule_name,
+                rule_uuid=source_rule_uuid,
+                hosts=hosts_limit,
+                action="run_workflow_template",
+            )
         )
     )
 

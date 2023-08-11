@@ -50,4 +50,17 @@ class Action:
     type: str = "Action"
 
 
+@dataclass(frozen=True)
+class Job:
+    job_id: str
+    ansible_rulebook_id: str
+    name: str
+    ruleset: str
+    ruleset_uuid: str
+    rule: str
+    rule_uuid: str
+    hosts: str
+    action: str
+    type: str = "Job"
+
 serialize = asdict
