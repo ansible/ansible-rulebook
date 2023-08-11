@@ -45,7 +45,7 @@ from .exception import (
     WorkflowJobTemplateNotFoundException,
 )
 from .job_template_runner import job_template_runner
-from .messages import Action, Job, Shutdown, serialize
+from .messages import Action, AnsibleEvent, Job, Shutdown, serialize
 from .util import get_horizontal_rule, run_at
 
 logger = logging.getLogger(__name__)
@@ -72,7 +72,6 @@ async def none(
     await event_log.put(
         serialize(
             Action(
-                type="Action",
                 action="noop",
                 action_uuid=str(uuid.uuid4()),
                 ruleset=source_ruleset_name,
@@ -115,7 +114,6 @@ async def debug(event_log, **kwargs):
     await event_log.put(
         serialize(
             Action(
-                type="Action",
                 action="debug",
                 action_uuid=str(uuid.uuid4()),
                 playbook_name=kwargs.get("name"),
@@ -159,7 +157,6 @@ async def print_event(
     await event_log.put(
         serialize(
             Action(
-                type="Action",
                 action="print_event",
                 action_uuid=str(uuid.uuid4()),
                 activation_id=settings.identifier,
@@ -197,7 +194,6 @@ async def set_fact(
     await event_log.put(
         serialize(
             Action(
-                type="Action",
                 action="set_fact",
                 action_uuid=str(uuid.uuid4()),
                 activation_id=settings.identifier,
@@ -241,7 +237,6 @@ async def retract_fact(
     await event_log.put(
         serialize(
             Action(
-                type="Action",
                 action="retract_fact",
                 action_uuid=str(uuid.uuid4()),
                 ruleset=source_ruleset_name,
@@ -278,7 +273,6 @@ async def post_event(
     await event_log.put(
         serialize(
             Action(
-                type="Action",
                 action="post_event",
                 action_uuid=str(uuid.uuid4()),
                 ruleset=source_ruleset_name,
@@ -342,7 +336,6 @@ async def run_playbook(
     await event_log.put(
         serialize(
             Job(
-                type="Job",
                 job_id=job_id,
                 ansible_rulebook_id=settings.identifier,
                 name=playbook_name,
@@ -446,7 +439,6 @@ async def run_module(
     await event_log.put(
         serialize(
             Job(
-                type="Job",
                 job_id=job_id,
                 ansible_rulebook_id=settings.identifier,
                 name=module_name,
@@ -538,7 +530,7 @@ async def call_runner(
     def event_callback(event, *args, **kwargs):
         event["job_id"] = job_id
         event["ansible_rulebook_id"] = settings.identifier
-        queue.sync_q.put(dict(type="AnsibleEvent", event=event))
+        queue.sync_q.put(serialize(AnsibleEvent(event=event)))
 
     # Here we read the async side and push it into the event queue
     # which is also async.
@@ -703,7 +695,6 @@ async def post_process_runner(
 
     result = serialize(
         Action(
-            type="Action",
             action=action,
             action_uuid=str(uuid.uuid4()),
             activation_id=activation_id,
@@ -785,7 +776,6 @@ async def run_job_template(
     await event_log.put(
         serialize(
             Job(
-                type="Job",
                 job_id=job_id,
                 ansible_rulebook_id=settings.identifier,
                 name=name,
@@ -828,7 +818,6 @@ async def run_job_template(
 
     a_log = serialize(
         Action(
-            type="Action",
             action="run_job_template",
             action_uuid=str(uuid.uuid4()),
             activation_id=settings.identifier,
@@ -903,7 +892,6 @@ async def run_workflow_template(
     await event_log.put(
         serialize(
             Job(
-                type="Job",
                 job_id=job_id,
                 ansible_rulebook_id=settings.identifier,
                 name=name,
@@ -951,7 +939,6 @@ async def run_workflow_template(
 
     a_log = serialize(
         Action(
-            type="Action",
             action="run_workflow_template",
             action_uuid=str(uuid.uuid4()),
             activation_id=settings.identifier,
@@ -1016,7 +1003,6 @@ async def shutdown(
     await event_log.put(
         serialize(
             Action(
-                type="Action",
                 action="shutdown",
                 action_uuid=str(uuid.uuid4()),
                 activation_id=settings.identifier,

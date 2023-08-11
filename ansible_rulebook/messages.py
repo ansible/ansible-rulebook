@@ -63,4 +63,11 @@ class Job:
     action: str
     type: str = "Job"
 
+
+@dataclass(frozen=True)
+class AnsibleEvent:
+    event: dict
+    type: str = "AnsibleEvent"
+
+
 serialize = asdict
