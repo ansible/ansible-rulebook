@@ -4,14 +4,20 @@
 ## [Unreleased]
 
 ### Added
-- rulebook and Drools bracket notation syntax
-- new action called run_workflow_template
-
 
 ### Fixed
 
 ### Removed
 
+## [1.0.2] - 2023-08-14
+
+### Added
+- rulebook and Drools bracket notation syntax
+- new action called run_workflow_template
+
+### Fixed
+
+### Removed
 ## [1.0.1] - 2023-07-24
 
 ### Added
