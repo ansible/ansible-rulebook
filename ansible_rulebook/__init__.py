@@ -14,4 +14,4 @@
 
 """Top-level package for Ansible Events."""
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
