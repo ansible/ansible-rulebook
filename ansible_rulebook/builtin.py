@@ -42,6 +42,7 @@ from .exception import (
     PlaybookNotFoundException,
     PlaybookStatusNotFoundException,
     ShutdownException,
+    WorkflowJobTemplateNotFoundException,
 )
 from .job_template_runner import job_template_runner
 from .messages import Shutdown
@@ -763,7 +764,6 @@ async def run_job_template(
     )
 
     job_id = str(uuid.uuid4())
-
     await event_log.put(
         dict(
             type="Job",
@@ -828,11 +828,140 @@ async def run_job_template(
         a_log["message"] = controller_job["error"]
     await event_log.put(a_log)
 
-    if set_facts or post_events:
+    _post_process_awx(
+        controller_job, set_facts, post_events, "run_job_template", ruleset
+    )
+
+
+async def run_workflow_template(
+    event_log,
+    inventory: str,
+    hosts: List,
+    variables: Dict,
+    project_data_file: str,
+    source_ruleset_name: str,
+    source_ruleset_uuid: str,
+    source_rule_name: str,
+    source_rule_uuid: str,
+    rule_run_at: str,
+    ruleset: str,
+    name: str,
+    organization: str,
+    job_args: Optional[dict] = None,
+    set_facts: Optional[bool] = None,
+    post_events: Optional[bool] = None,
+    verbosity: int = 0,
+    copy_files: Optional[bool] = False,
+    json_mode: Optional[bool] = False,
+    retries: Optional[int] = 0,
+    retry: Optional[bool] = False,
+    delay: Optional[int] = 0,
+    **kwargs,
+):
+
+    logger.info(
+        "running workflow template: %s organization: %s", name, organization
+    )
+    logger.info("ruleset: %s, rule %s", source_ruleset_name, source_rule_name)
+
+    hosts_limit = ",".join(hosts)
+    if not job_args:
+        job_args = {}
+    job_args["limit"] = hosts_limit
+
+    job_args["extra_vars"] = _collect_extra_vars(
+        variables,
+        job_args.get("extra_vars", {}),
+        source_ruleset_name,
+        source_rule_name,
+    )
+
+    job_id = str(uuid.uuid4())
+
+    await event_log.put(
+        dict(
+            type="Job",
+            job_id=job_id,
+            ansible_rulebook_id=settings.identifier,
+            name=name,
+            ruleset=source_ruleset_name,
+            ruleset_uuid=source_ruleset_uuid,
+            rule=source_rule_name,
+            rule_uuid=source_rule_uuid,
+            hosts=hosts_limit,
+            action="run_workflow_template",
+        )
+    )
+
+    if retry:
+        retries = max(retries, 1)
+
+    try:
+        for i in range(retries + 1):
+            if i > 0:
+                if delay > 0:
+                    await asyncio.sleep(delay)
+                logger.info(
+                    "Previous run_workflow_template failed. Retry %d of %d",
+                    i,
+                    retries,
+                )
+            controller_job = (
+                await job_template_runner.run_workflow_job_template(
+                    name,
+                    organization,
+                    job_args,
+                )
+            )
+            if controller_job["status"] != "failed":
+                break
+    except (
+        ControllerApiException,
+        WorkflowJobTemplateNotFoundException,
+    ) as ex:
+        logger.error(ex)
+        controller_job = {}
+        controller_job["status"] = "failed"
+        controller_job["created"] = run_at()
+        controller_job["error"] = str(ex)
+
+    a_log = dict(
+        type="Action",
+        action="run_workflow_template",
+        action_uuid=str(uuid.uuid4()),
+        activation_id=settings.identifier,
+        job_template_name=name,
+        organization=organization,
+        job_id=job_id,
+        ruleset=ruleset,
+        ruleset_uuid=source_ruleset_uuid,
+        rule=source_rule_name,
+        rule_uuid=source_rule_uuid,
+        status=controller_job["status"],
+        run_at=controller_job["created"],
+        url=_controller_job_url(controller_job),
+        matching_events=_get_events(variables),
+        rule_run_at=rule_run_at,
+    )
+    if "error" in controller_job:
+        a_log["message"] = controller_job["error"]
+    await event_log.put(a_log)
+
+    _post_process_awx(
+        controller_job,
+        set_facts,
+        post_events,
+        "run_workflow_template",
+        ruleset,
+    )
+
+
+def _post_process_awx(controller_job, set_facts, post_events, action, ruleset):
+    if controller_job["status"] == "successful" and (set_facts or post_events):
         logger.debug("set_facts")
-        facts = controller_job["artifacts"]
+        facts = controller_job.get("artifacts", None)
         if facts:
-            facts = _embellish_internal_event(facts, "run_job_template")
+            facts = _embellish_internal_event(facts, action)
             logger.debug("facts %s", facts)
             if set_facts:
                 lang.assert_fact(ruleset, facts)
@@ -896,6 +1025,7 @@ actions: Dict[str, Callable] = dict(
     run_playbook=run_playbook,
     run_module=run_module,
     run_job_template=run_job_template,
+    run_workflow_template=run_workflow_template,
     shutdown=shutdown,
 )
 

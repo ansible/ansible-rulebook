@@ -27,14 +27,15 @@ import dpath
 from ansible_rulebook.exception import (
     ControllerApiException,
     JobTemplateNotFoundException,
+    WorkflowJobTemplateNotFoundException,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class JobTemplateRunner:
-    JOB_TEMPLATE_SLUG = "/api/v2/job_templates"
-    CONFIG_SLUG = "/api/v2/config"
+    UNIFIED_TEMPLATE_SLUG = "/api/v2/unified_job_templates/"
+    CONFIG_SLUG = "/api/v2/config/"
     JOB_COMPLETION_STATUSES = ["successful", "failed", "error", "canceled"]
 
     def __init__(
@@ -43,8 +44,8 @@ class JobTemplateRunner:
         self.token = token
         self.host = host
         self.verify_ssl = verify_ssl
-        self.refresh_delay = int(
-            os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10)
+        self.refresh_delay = float(
+            os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10.0)
         )
         self._session = None
 
@@ -89,31 +90,42 @@ class JobTemplateRunner:
                 return ssl.create_default_context(cafile=self.verify_ssl)
         return False
 
-    async def _get_job_template_id(self, name: str, organization: str) -> int:
-        slug = f"{self.JOB_TEMPLATE_SLUG}/"
+    async def _get_template_obj(
+        self, name: str, organization: str, unified_type: str
+    ) -> dict:
         params = {"name": name}
 
         while True:
-            json_body = await self._get_page(slug, params)
+            json_body = await self._get_page(
+                self.UNIFIED_TEMPLATE_SLUG, params
+            )
             for jt in json_body["results"]:
                 if (
-                    jt["name"] == name
-                    and dpath.get(jt, "summary_fields.organization.name", ".")
+                    jt["type"] == unified_type
+                    and jt["name"] == name
+                    and dpath.get(
+                        jt,
+                        "summary_fields.organization.name",
+                        ".",
+                        organization,
+                    )
                     == organization
                 ):
-                    return jt["id"]
+                    return {
+                        "launch": dpath.get(jt, "related.launch", ".", None),
+                        "ask_limit_on_launch": jt["ask_limit_on_launch"],
+                        "ask_inventory_on_launch": jt[
+                            "ask_inventory_on_launch"
+                        ],
+                        "ask_variables_on_launch": jt[
+                            "ask_variables_on_launch"
+                        ],
+                    }
 
             if json_body.get("next", None):
                 params["page"] = params.get("page", 1) + 1
             else:
                 break
-
-        raise JobTemplateNotFoundException(
-            (
-                f"Job template {name} in organization "
-                f"{organization} does not exist"
-            )
-        )
 
     async def run_job_template(
         self,
@@ -121,33 +133,75 @@ class JobTemplateRunner:
         organization: str,
         job_params: dict,
     ) -> dict:
-        job = await self.launch(name, organization, job_params)
+        obj = await self._get_template_obj(name, organization, "job_template")
+        if not obj:
+            raise JobTemplateNotFoundException(
+                (
+                    f"Job template {name} in organization "
+                    f"{organization} does not exist"
+                )
+            )
+        url = urljoin(self.host, obj["launch"])
+        job = await self._launch(job_params, url)
+        return await self._monitor_job(job["url"])
 
-        url = job["url"]
-        params = {}
+    async def run_workflow_job_template(
+        self,
+        name: str,
+        organization: str,
+        job_params: dict,
+    ) -> dict:
+        obj = await self._get_template_obj(
+            name, organization, "workflow_job_template"
+        )
+        if not obj:
+            raise WorkflowJobTemplateNotFoundException(
+                (
+                    f"Workflow template {name} in organization "
+                    f"{organization} does not exist"
+                )
+            )
+        url = urljoin(self.host, obj["launch"])
+        if not obj["ask_limit_on_launch"] and "limit" in job_params:
+            logger.warning(
+                "Workflow template %s does not accept limit, removing it", name
+            )
+            job_params.pop("limit")
+        if not obj["ask_variables_on_launch"] and "extra_vars" in job_params:
+            logger.warning(
+                "Workflow template %s does not accept extra vars, "
+                "removing it",
+                name,
+            )
+            job_params.pop("extra_vars")
+        job = await self._launch(job_params, url)
+        return await self._monitor_job(job["url"])
 
+    async def _monitor_job(self, url) -> dict:
         while True:
             # fetch and process job status
-            json_body = await self._get_page(url, params)
-            job_status = json_body["status"]
-            if job_status in self.JOB_COMPLETION_STATUSES:
+            json_body = await self._get_page(url, {})
+            if json_body["status"] in self.JOB_COMPLETION_STATUSES:
                 return json_body
 
             await asyncio.sleep(self.refresh_delay)
 
-    async def launch(
-        self, name: str, organization: str, job_params: dict
-    ) -> dict:
-        jt_id = await self._get_job_template_id(name, organization)
-        url = urljoin(self.host, f"{self.JOB_TEMPLATE_SLUG}/{jt_id}/launch/")
-
+    async def _launch(self, job_params: dict, url: str) -> dict:
+        body = None
         try:
             async with self._session.post(
-                url, json=job_params, ssl=self._sslcontext
+                url,
+                json=job_params,
+                ssl=self._sslcontext,
+                raise_for_status=False,
             ) as post_response:
-                return json.loads(await post_response.text())
+                body = json.loads(await post_response.text())
+                post_response.raise_for_status()
+                return body
         except aiohttp.ClientError as e:
             logger.error("Error connecting to controller %s", str(e))
+            if body:
+                logger.error("Error %s", body)
             raise ControllerApiException(str(e))
 
 

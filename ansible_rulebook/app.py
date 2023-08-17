@@ -57,6 +57,7 @@ class NullQueue:
 
 logger = logging.getLogger(__name__)
 INVENTORY_ACTIONS = ("run_playbook", "run_module")
+CONTROLLER_ACTIONS = ("run_job_template", "run_workflow_template")
 
 
 # FIXME(cutwater): Replace parsed_args with clear interface
@@ -234,7 +235,7 @@ def validate_actions(startup_args: StartupArgs) -> None:
     for ruleset in startup_args.rulesets:
         for rule in ruleset.rules:
             for action in rule.actions:
-                if action.action == "run_job_template":
+                if action.action in CONTROLLER_ACTIONS:
                     startup_args.check_controller_connection = True
                 if (
                     action.action in INVENTORY_ACTIONS
@@ -246,7 +247,7 @@ def validate_actions(startup_args: StartupArgs) -> None:
                     )
 
                 if (
-                    action.action == "run_job_template"
+                    action.action in CONTROLLER_ACTIONS
                     and not startup_args.controller_url
                     and not startup_args.controller_token
                 ):

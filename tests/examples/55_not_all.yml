@@ -2,7 +2,7 @@
 - name: 55 not all
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         create_index: event_index
         timestamp: true
         event_delay: 15
