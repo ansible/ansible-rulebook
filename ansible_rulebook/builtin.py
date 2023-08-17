@@ -45,7 +45,7 @@ from .exception import (
     WorkflowJobTemplateNotFoundException,
 )
 from .job_template_runner import job_template_runner
-from .messages import Shutdown
+from .messages import Action, AnsibleEvent, Job, Shutdown, serialize
 from .util import get_horizontal_rule, run_at
 
 logger = logging.getLogger(__name__)
@@ -70,19 +70,20 @@ async def none(
     ruleset: str,
 ):
     await event_log.put(
-        dict(
-            type="Action",
-            action="noop",
-            action_uuid=str(uuid.uuid4()),
-            ruleset=source_ruleset_name,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            activation_id=settings.identifier,
-            run_at=run_at(),
-            status=INTERNAL_ACTION_STATUS,
-            matching_events=_get_events(variables),
-            rule_run_at=rule_run_at,
+        serialize(
+            Action(
+                action="noop",
+                action_uuid=str(uuid.uuid4()),
+                ruleset=source_ruleset_name,
+                ruleset_uuid=source_ruleset_uuid,
+                rule=source_rule_name,
+                rule_uuid=source_rule_uuid,
+                activation_id=settings.identifier,
+                run_at=run_at(),
+                status=INTERNAL_ACTION_STATUS,
+                matching_events=_get_events(variables),
+                rule_run_at=rule_run_at,
+            )
         )
     )
 
@@ -111,20 +112,21 @@ async def debug(event_log, **kwargs):
         print(get_horizontal_rule("="))
     sys.stdout.flush()
     await event_log.put(
-        dict(
-            type="Action",
-            action="debug",
-            action_uuid=str(uuid.uuid4()),
-            playbook_name=kwargs.get("name"),
-            ruleset=kwargs.get("source_ruleset_name"),
-            ruleset_uuid=kwargs.get("source_ruleset_uuid"),
-            rule=kwargs.get("source_rule_name"),
-            rule_uuid=kwargs.get("source_rule_uuid"),
-            rule_run_at=kwargs.get("rule_run_at"),
-            activation_id=settings.identifier,
-            run_at=run_at(),
-            status=INTERNAL_ACTION_STATUS,
-            matching_events=_get_events(kwargs.get("variables")),
+        serialize(
+            Action(
+                action="debug",
+                action_uuid=str(uuid.uuid4()),
+                playbook_name=kwargs.get("name"),
+                ruleset=kwargs.get("source_ruleset_name"),
+                ruleset_uuid=kwargs.get("source_ruleset_uuid"),
+                rule=kwargs.get("source_rule_name"),
+                rule_uuid=kwargs.get("source_rule_uuid"),
+                rule_run_at=kwargs.get("rule_run_at"),
+                activation_id=settings.identifier,
+                run_at=run_at(),
+                status=INTERNAL_ACTION_STATUS,
+                matching_events=_get_events(kwargs.get("variables")),
+            )
         )
     )
 
@@ -153,20 +155,21 @@ async def print_event(
     print_fn(variables[var_name])
     sys.stdout.flush()
     await event_log.put(
-        dict(
-            type="Action",
-            action="print_event",
-            action_uuid=str(uuid.uuid4()),
-            activation_id=settings.identifier,
-            ruleset=source_ruleset_name,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            playbook_name=name,
-            run_at=run_at(),
-            status=INTERNAL_ACTION_STATUS,
-            matching_events=_get_events(variables),
-            rule_run_at=rule_run_at,
+        serialize(
+            Action(
+                action="print_event",
+                action_uuid=str(uuid.uuid4()),
+                activation_id=settings.identifier,
+                ruleset=source_ruleset_name,
+                ruleset_uuid=source_ruleset_uuid,
+                rule=source_rule_name,
+                rule_uuid=source_rule_uuid,
+                playbook_name=name,
+                run_at=run_at(),
+                status=INTERNAL_ACTION_STATUS,
+                matching_events=_get_events(variables),
+                rule_run_at=rule_run_at,
+            )
         )
     )
 
@@ -189,20 +192,21 @@ async def set_fact(
     logger.debug("set_fact %s %s", ruleset, fact)
     lang.assert_fact(ruleset, _embellish_internal_event(fact, "set_fact"))
     await event_log.put(
-        dict(
-            type="Action",
-            action="set_fact",
-            action_uuid=str(uuid.uuid4()),
-            activation_id=settings.identifier,
-            ruleset=source_ruleset_name,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            playbook_name=name,
-            run_at=run_at(),
-            status=INTERNAL_ACTION_STATUS,
-            matching_events=_get_events(variables),
-            rule_run_at=rule_run_at,
+        serialize(
+            Action(
+                action="set_fact",
+                action_uuid=str(uuid.uuid4()),
+                activation_id=settings.identifier,
+                ruleset=source_ruleset_name,
+                ruleset_uuid=source_ruleset_uuid,
+                rule=source_rule_name,
+                rule_uuid=source_rule_uuid,
+                playbook_name=name,
+                run_at=run_at(),
+                status=INTERNAL_ACTION_STATUS,
+                matching_events=_get_events(variables),
+                rule_run_at=rule_run_at,
+            )
         )
     )
 
@@ -231,20 +235,21 @@ async def retract_fact(
 
     lang.retract_matching_facts(ruleset, fact, partial, exclude_keys)
     await event_log.put(
-        dict(
-            type="Action",
-            action="retract_fact",
-            action_uuid=str(uuid.uuid4()),
-            ruleset=source_ruleset_name,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            activation_id=settings.identifier,
-            playbook_name=name,
-            run_at=run_at(),
-            status=INTERNAL_ACTION_STATUS,
-            matching_events=_get_events(variables),
-            rule_run_at=rule_run_at,
+        serialize(
+            Action(
+                action="retract_fact",
+                action_uuid=str(uuid.uuid4()),
+                ruleset=source_ruleset_name,
+                ruleset_uuid=source_ruleset_uuid,
+                rule=source_rule_name,
+                rule_uuid=source_rule_uuid,
+                activation_id=settings.identifier,
+                playbook_name=name,
+                run_at=run_at(),
+                status=INTERNAL_ACTION_STATUS,
+                matching_events=_get_events(variables),
+                rule_run_at=rule_run_at,
+            )
         )
     )
 
@@ -266,19 +271,20 @@ async def post_event(
     lang.post(ruleset, _embellish_internal_event(event, "post_event"))
 
     await event_log.put(
-        dict(
-            type="Action",
-            action="post_event",
-            action_uuid=str(uuid.uuid4()),
-            ruleset=source_ruleset_name,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            activation_id=settings.identifier,
-            run_at=run_at(),
-            status=INTERNAL_ACTION_STATUS,
-            matching_events=_get_events(variables),
-            rule_run_at=rule_run_at,
+        serialize(
+            Action(
+                action="post_event",
+                action_uuid=str(uuid.uuid4()),
+                ruleset=source_ruleset_name,
+                ruleset_uuid=source_ruleset_uuid,
+                rule=source_rule_name,
+                rule_uuid=source_rule_uuid,
+                activation_id=settings.identifier,
+                run_at=run_at(),
+                status=INTERNAL_ACTION_STATUS,
+                matching_events=_get_events(variables),
+                rule_run_at=rule_run_at,
+            )
         )
     )
 
@@ -328,17 +334,18 @@ async def run_playbook(
 
     logger.info(f"ruleset: {source_ruleset_name}, rule: {source_rule_name}")
     await event_log.put(
-        dict(
-            type="Job",
-            job_id=job_id,
-            ansible_rulebook_id=settings.identifier,
-            name=playbook_name,
-            ruleset=source_ruleset_name,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            hosts=",".join(hosts),
-            action="run_playbook",
+        serialize(
+            Job(
+                job_id=job_id,
+                ansible_rulebook_id=settings.identifier,
+                name=playbook_name,
+                ruleset=source_ruleset_name,
+                ruleset_uuid=source_ruleset_uuid,
+                rule=source_rule_name,
+                rule_uuid=source_rule_uuid,
+                hosts=",".join(hosts),
+                action="run_playbook",
+            )
         )
     )
 
@@ -430,17 +437,18 @@ async def run_module(
     job_id = str(uuid.uuid4())
 
     await event_log.put(
-        dict(
-            type="Job",
-            job_id=job_id,
-            ansible_rulebook_id=settings.identifier,
-            name=module_name,
-            ruleset=source_ruleset_name,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            hosts=",".join(hosts),
-            action="run_module",
+        serialize(
+            Job(
+                job_id=job_id,
+                ansible_rulebook_id=settings.identifier,
+                name=module_name,
+                ruleset=source_ruleset_name,
+                ruleset_uuid=source_ruleset_uuid,
+                rule=source_rule_name,
+                rule_uuid=source_rule_uuid,
+                hosts=",".join(hosts),
+                action="run_module",
+            )
         )
     )
 
@@ -522,7 +530,7 @@ async def call_runner(
     def event_callback(event, *args, **kwargs):
         event["job_id"] = job_id
         event["ansible_rulebook_id"] = settings.identifier
-        queue.sync_q.put(dict(type="AnsibleEvent", event=event))
+        queue.sync_q.put(serialize(AnsibleEvent(event=event)))
 
     # Here we read the async side and push it into the event queue
     # which is also async.
@@ -685,22 +693,23 @@ async def post_process_runner(
             error_message = _get_latest_artifact(private_data_dir, "stdout")
         logger.error(error_message)
 
-    result = dict(
-        type="Action",
-        action=action,
-        action_uuid=str(uuid.uuid4()),
-        activation_id=activation_id,
-        playbook_name=name,
-        job_id=job_id,
-        ruleset=ruleset,
-        ruleset_uuid=ruleset_uuid,
-        rule=rule,
-        rule_uuid=rule_uuid,
-        rc=rc,
-        status=status,
-        run_at=run_at,
-        matching_events=_get_events(variables),
-        rule_run_at=rule_run_at,
+    result = serialize(
+        Action(
+            action=action,
+            action_uuid=str(uuid.uuid4()),
+            activation_id=activation_id,
+            playbook_name=name,
+            job_id=job_id,
+            ruleset=ruleset,
+            ruleset_uuid=ruleset_uuid,
+            rule=rule,
+            rule_uuid=rule_uuid,
+            rc=rc,
+            status=status,
+            run_at=run_at,
+            matching_events=_get_events(variables),
+            rule_run_at=rule_run_at,
+        )
     )
     await event_log.put(result)
 
@@ -765,17 +774,18 @@ async def run_job_template(
 
     job_id = str(uuid.uuid4())
     await event_log.put(
-        dict(
-            type="Job",
-            job_id=job_id,
-            ansible_rulebook_id=settings.identifier,
-            name=name,
-            ruleset=source_ruleset_name,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            hosts=hosts_limit,
-            action="run_job_template",
+        serialize(
+            Job(
+                job_id=job_id,
+                ansible_rulebook_id=settings.identifier,
+                name=name,
+                ruleset=source_ruleset_name,
+                ruleset_uuid=source_ruleset_uuid,
+                rule=source_rule_name,
+                rule_uuid=source_rule_uuid,
+                hosts=hosts_limit,
+                action="run_job_template",
+            )
         )
     )
 
@@ -806,23 +816,24 @@ async def run_job_template(
         controller_job["created"] = run_at()
         controller_job["error"] = str(ex)
 
-    a_log = dict(
-        type="Action",
-        action="run_job_template",
-        action_uuid=str(uuid.uuid4()),
-        activation_id=settings.identifier,
-        job_template_name=name,
-        organization=organization,
-        job_id=job_id,
-        ruleset=ruleset,
-        ruleset_uuid=source_ruleset_uuid,
-        rule=source_rule_name,
-        rule_uuid=source_rule_uuid,
-        status=controller_job["status"],
-        run_at=controller_job["created"],
-        url=_controller_job_url(controller_job),
-        matching_events=_get_events(variables),
-        rule_run_at=rule_run_at,
+    a_log = serialize(
+        Action(
+            action="run_job_template",
+            action_uuid=str(uuid.uuid4()),
+            activation_id=settings.identifier,
+            job_template_name=name,
+            organization=organization,
+            job_id=job_id,
+            ruleset=ruleset,
+            ruleset_uuid=source_ruleset_uuid,
+            rule=source_rule_name,
+            rule_uuid=source_rule_uuid,
+            status=controller_job["status"],
+            run_at=controller_job["created"],
+            url=_controller_job_url(controller_job),
+            matching_events=_get_events(variables),
+            rule_run_at=rule_run_at,
+        )
     )
     if "error" in controller_job:
         a_log["message"] = controller_job["error"]
@@ -879,17 +890,18 @@ async def run_workflow_template(
     job_id = str(uuid.uuid4())
 
     await event_log.put(
-        dict(
-            type="Job",
-            job_id=job_id,
-            ansible_rulebook_id=settings.identifier,
-            name=name,
-            ruleset=source_ruleset_name,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            hosts=hosts_limit,
-            action="run_workflow_template",
+        serialize(
+            Job(
+                job_id=job_id,
+                ansible_rulebook_id=settings.identifier,
+                name=name,
+                ruleset=source_ruleset_name,
+                ruleset_uuid=source_ruleset_uuid,
+                rule=source_rule_name,
+                rule_uuid=source_rule_uuid,
+                hosts=hosts_limit,
+                action="run_workflow_template",
+            )
         )
     )
 
@@ -925,23 +937,24 @@ async def run_workflow_template(
         controller_job["created"] = run_at()
         controller_job["error"] = str(ex)
 
-    a_log = dict(
-        type="Action",
-        action="run_workflow_template",
-        action_uuid=str(uuid.uuid4()),
-        activation_id=settings.identifier,
-        job_template_name=name,
-        organization=organization,
-        job_id=job_id,
-        ruleset=ruleset,
-        ruleset_uuid=source_ruleset_uuid,
-        rule=source_rule_name,
-        rule_uuid=source_rule_uuid,
-        status=controller_job["status"],
-        run_at=controller_job["created"],
-        url=_controller_job_url(controller_job),
-        matching_events=_get_events(variables),
-        rule_run_at=rule_run_at,
+    a_log = serialize(
+        Action(
+            action="run_workflow_template",
+            action_uuid=str(uuid.uuid4()),
+            activation_id=settings.identifier,
+            job_template_name=name,
+            organization=organization,
+            job_id=job_id,
+            ruleset=ruleset,
+            ruleset_uuid=source_ruleset_uuid,
+            rule=source_rule_name,
+            rule_uuid=source_rule_uuid,
+            status=controller_job["status"],
+            run_at=controller_job["created"],
+            url=_controller_job_url(controller_job),
+            matching_events=_get_events(variables),
+            rule_run_at=rule_run_at,
+        )
     )
     if "error" in controller_job:
         a_log["message"] = controller_job["error"]
@@ -988,22 +1001,23 @@ async def shutdown(
     kind: str = "graceful",
 ):
     await event_log.put(
-        dict(
-            type="Action",
-            action="shutdown",
-            action_uuid=str(uuid.uuid4()),
-            activation_id=settings.identifier,
-            ruleset=source_ruleset_name,
-            ruleset_uuid=source_ruleset_uuid,
-            rule=source_rule_name,
-            rule_uuid=source_rule_uuid,
-            run_at=run_at(),
-            status=INTERNAL_ACTION_STATUS,
-            matching_events=_get_events(variables),
-            delay=delay,
-            message=message,
-            kind=kind,
-            rule_run_at=rule_run_at,
+        serialize(
+            Action(
+                action="shutdown",
+                action_uuid=str(uuid.uuid4()),
+                activation_id=settings.identifier,
+                ruleset=source_ruleset_name,
+                ruleset_uuid=source_ruleset_uuid,
+                rule=source_rule_name,
+                rule_uuid=source_rule_uuid,
+                run_at=run_at(),
+                status=INTERNAL_ACTION_STATUS,
+                matching_events=_get_events(variables),
+                delay=delay,
+                message=message,
+                kind=kind,
+                rule_run_at=rule_run_at,
+            )
         )
     )
 

@@ -437,6 +437,7 @@ class RuleSetRunner:
                 raise
             except Exception as e:
                 logger.error("Error calling action %s, err %s", action, str(e))
+                logger.exception("Error calling action %s, err %s", action, str(e))
                 error = e
             except BaseException as e:
                 logger.error(e)
