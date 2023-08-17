@@ -234,8 +234,10 @@ def validate_actions(startup_args: StartupArgs) -> None:
     for ruleset in startup_args.rulesets:
         for rule in ruleset.rules:
             for action in rule.actions:
-                if action.action in ["run_job_template",
-                                     "run_workflow_template"]:
+                if action.action in [
+                    "run_job_template",
+                    "run_workflow_template",
+                ]:
                     startup_args.check_controller_connection = True
                 if (
                     action.action in INVENTORY_ACTIONS
@@ -248,8 +250,8 @@ def validate_actions(startup_args: StartupArgs) -> None:
 
                 if (
                     # action.action == "run_job_template"
-                    action.action in ["run_job_template",
-                                      "run_workflow_template"]
+                    action.action
+                    in ["run_job_template", "run_workflow_template"]
                     and not startup_args.controller_url
                     and not startup_args.controller_token
                 ):
