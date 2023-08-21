@@ -355,9 +355,6 @@
                 "run_module": {
                     "type": "object",
                     "properties": {
-                        "copy_files": {
-                            "type": "boolean"
-                        },
                         "name": {
                             "type": "string"
                         },
@@ -389,7 +386,10 @@
                             "type": "number"
                         },
                         "module_args": {
-                            "type": "object"
+                            "type": [
+                                "object",
+                                "string"
+                            ]
                         },
                         "extra_vars": {
                             "type": "object"

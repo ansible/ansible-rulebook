@@ -843,7 +843,7 @@ async def test_29_run_module():
 
     event = event_log.get_nowait()
     assert event["type"] == "Job", "0"
-    for i in range(4):
+    for i in range(9):
         assert event_log.get_nowait()["type"] == "AnsibleEvent", f"0.{i}"
 
     event = event_log.get_nowait()
@@ -857,6 +857,9 @@ async def test_29_run_module():
     }
     assert event["rc"] == 0, "2.1"
     assert event["status"] == "successful", "2.2"
+    event = event_log.get_nowait()
+    assert event["type"] == "Action"
+    assert event["action"] == "print_event"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "8"
     assert event_log.empty()
@@ -881,14 +884,14 @@ async def test_30_run_module_missing():
 
     event = event_log.get_nowait()
     assert event["type"] == "Job", "0"
-    for i in range(4):
+    for i in range(10):
         assert event_log.get_nowait()["type"] == "AnsibleEvent", f"0.{i}"
 
     event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "run_module", "2"
 
-    assert event["rc"] == 2, "2.1"
+    assert event["rc"] == 4, "2.1"
     assert event["status"] == "failed", "2.2"
     event = event_log.get_nowait()
     assert event["type"] == "Shutdown", "8"
@@ -914,7 +917,7 @@ async def test_31_run_module_missing_args():
 
     event = event_log.get_nowait()
     assert event["type"] == "Job", "0"
-    for i in range(4):
+    for i in range(6):
         assert event_log.get_nowait()["type"] == "AnsibleEvent", f"0.{i}"
 
     event = event_log.get_nowait()
@@ -947,7 +950,7 @@ async def test_32_run_module_fail():
 
     event = event_log.get_nowait()
     assert event["type"] == "Job", "0"
-    for i in range(8):
+    for i in range(12):
         assert event_log.get_nowait()["type"] == "AnsibleEvent", f"0.{i}"
 
     event = event_log.get_nowait()
