@@ -2,7 +2,6 @@
 Module with tests for operators
 """
 import logging
-import pprint
 import re
 import subprocess
 
@@ -55,9 +54,6 @@ def test_actions_sanity(update_environment):
         "DEFAULT_STARTUP_DELAY",
     )
 
-    with open(inventory) as f:
-        inventory_data = pprint.pformat(f.read())
-
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
@@ -100,7 +96,7 @@ def test_actions_sanity(update_environment):
     with check:
         expected_debug_lines = [
             "'hosts': ['all']",
-            f"'inventory': {inventory_data}",
+            f"'inventory': '{inventory}'",
             "'project_data_file': None,",
             "'ruleset': 'Test actions sanity'",
             "'source_rule_name': 'debug',",

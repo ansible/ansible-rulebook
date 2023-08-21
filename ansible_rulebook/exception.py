@@ -151,3 +151,8 @@ class WebSocketExchangeException(Exception):
 class UnsupportedActionException(Exception):
 
     pass
+
+
+class InventoryNotFound(Exception):
+
+    pass

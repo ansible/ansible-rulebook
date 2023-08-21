@@ -21,7 +21,7 @@ The `ansible-rulebook` CLI supports the following options:
     -S SOURCE_DIR, --source-dir SOURCE_DIR
                             Source dir
     -i INVENTORY, --inventory INVENTORY
-                            Inventory
+                            Inventory can be a file or a directory
     -W WEBSOCKET_URL, --websocket-url WEBSOCKET_ADDRESS
                             Connect the event log to a websocket
     --websocket-ssl-verify How to verify the wss connection
