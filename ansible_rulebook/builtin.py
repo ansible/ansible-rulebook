@@ -39,6 +39,7 @@ from .event_filter.insert_meta_info import main as insert_meta
 from .exception import (
     ControllerApiException,
     JobTemplateNotFoundException,
+    MissingArtifactKeyException,
     PlaybookNotFoundException,
     PlaybookStatusNotFoundException,
     ShutdownException,
@@ -54,6 +55,7 @@ tar = shutil.which("tar")
 
 KEY_EDA_VARS = "ansible_eda"
 INTERNAL_ACTION_STATUS = "successful"
+MODULE_OUTPUT_KEY = "module_result"
 
 
 async def none(
@@ -446,13 +448,9 @@ async def run_module(
     )
 
     logger.info("Calling Ansible runner")
-    module_args_str = ""
-    if module_args:
-        for k, v in module_args.items():
-            if len(module_args_str) > 0:
-                module_args_str += " "
-            module_args_str += f"{k}={v!r}"
-
+    host_pattern = ",".join(hosts)
+    playbook = os.path.join(temp_dir, "wrapper.yml")
+    _wrap_module_in_playbook(module_name, module_args, host_pattern, playbook)
     if retry:
         retries = max(retries, 1)
     for i in range(retries + 1):
@@ -467,11 +465,7 @@ async def run_module(
             event_log,
             job_id,
             temp_dir,
-            dict(
-                module=module_name,
-                host_pattern=",".join(hosts),
-                module_args=module_args_str,
-            ),
+            dict(playbook=playbook),
             hosts,
             inventory,
             verbosity,
@@ -496,6 +490,7 @@ async def run_module(
         action_run_at,
         set_facts,
         post_events,
+        MODULE_OUTPUT_KEY,
     )
     shutil.rmtree(temp_dir)
 
@@ -682,6 +677,7 @@ async def post_process_runner(
     run_at: str,
     set_facts: Optional[bool] = None,
     post_events: Optional[bool] = None,
+    output_key: Optional[str] = None,
 ):
 
     rc = int(_get_latest_artifact(private_data_dir, "rc"))
@@ -720,6 +716,17 @@ async def post_process_runner(
         for host_facts in glob.glob(os.path.join(fact_folder, "*")):
             with open(host_facts) as f:
                 fact = json.loads(f.read())
+            if output_key:
+                if output_key not in fact:
+                    logger.error(
+                        "The artifacts from the ansible-runner "
+                        "does not have key %s",
+                        output_key,
+                    )
+                    raise MissingArtifactKeyException(
+                        f"Missing key: {output_key} in artifacts"
+                    )
+                fact = fact[output_key]
             fact = _embellish_internal_event(fact, action)
             logger.debug("fact %s", fact)
             if set_facts:
@@ -1081,3 +1088,25 @@ def _controller_job_url(data: dict) -> str:
     if "id" in data:
         return f"{job_template_runner.host}/#/jobs/{data['id']}/details"
     return ""
+
+
+def _wrap_module_in_playbook(module_name, module_args, hosts, playbook):
+    module_task = {
+        "name": "Module wrapper",
+        module_name: module_args,
+        "register": MODULE_OUTPUT_KEY,
+    }
+    result_str = "{{ " + MODULE_OUTPUT_KEY + " }}"
+    set_fact_task = {
+        "name": "save result",
+        "ansible.builtin.set_fact": {
+            MODULE_OUTPUT_KEY: result_str,
+            "cacheable": True,
+        },
+    }
+    tasks = [module_task, set_fact_task]
+    wrapper = [
+        dict(name="wrapper", hosts=hosts, gather_facts=False, tasks=tasks)
+    ]
+    with open(playbook, "w") as f:
+        yaml.dump(wrapper, f)

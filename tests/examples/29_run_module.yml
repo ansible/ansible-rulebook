@@ -9,14 +9,11 @@
       condition: event.i == 1
       action:
         run_module:
+          post_events: True
           name: ansible.eda.upcase
           module_args:
               name: Fred Flintstone
-
-
-
-
-
-
-
-
+    - name: r2
+      condition: event.message == "FRED FLINTSTONE"
+      action:
+        print_event:
