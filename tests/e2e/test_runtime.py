@@ -30,7 +30,7 @@ DISABLED_RULES_EVENT_DELAY = SETTINGS["disabled_rules_event_delay"]
             id="successful_rc",
         ),
         pytest.param(
-            "hello_events_with_var.yml",
+            "actions/test_run_playbook.yml",
             Path("nonexistent.yml"),
             "0.1",
             1,

@@ -33,7 +33,10 @@ from packaging import version
 from packaging.version import InvalidVersion
 
 from ansible_rulebook.conf import settings
-from ansible_rulebook.exception import InvalidFilterNameException
+from ansible_rulebook.exception import (
+    InvalidFilterNameException,
+    InventoryNotFound,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -81,23 +84,14 @@ def substitute_variables(
         return value
 
 
-def load_inventory(inventory_file: str) -> Any:
-
-    with open(inventory_file) as f:
-        inventory_data = f.read()
-    return inventory_data
-
-
 def collect_ansible_facts(inventory: str) -> List[Dict]:
     hosts_facts = []
     with tempfile.TemporaryDirectory(
         prefix="gather_facts"
     ) as private_data_dir:
-        os.mkdir(os.path.join(private_data_dir, "inventory"))
-        with open(
-            os.path.join(private_data_dir, "inventory", "hosts"), "w"
-        ) as f:
-            f.write(inventory)
+        inventory_dir = os.path.join(private_data_dir, "inventory")
+        os.mkdir(inventory_dir)
+        create_inventory(inventory_dir, inventory)
 
         r = ansible_runner.run(
             private_data_dir=private_data_dir,
@@ -241,6 +235,19 @@ async def send_session_stats(event_log: asyncio.Queue, stats: Dict):
             reported_at=run_at(),
         )
     )
+
+
+def create_inventory(runner_inventory_dir: str, inventory: str) -> None:
+    if os.path.isfile(inventory):
+        shutil.copy(os.path.abspath(inventory), runner_inventory_dir)
+    elif os.path.exists(inventory):
+        shutil.copytree(
+            os.path.abspath(inventory),
+            runner_inventory_dir,
+            dirs_exist_ok=True,
+        )
+    else:
+        raise InventoryNotFound(f"Inventory {inventory} not found")
 
 
 def _builtin_filter_path(name: str) -> Tuple[bool, str]:
