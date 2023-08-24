@@ -2,7 +2,7 @@
 - name: 67 shutdown now
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         create_index: i
         loop_count: 5
         shutdown_after: 45
@@ -21,7 +21,7 @@
 - name: terminate now
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         create_index: j
         loop_count: 5
         shutdown_after: 45

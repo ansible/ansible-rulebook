@@ -8,6 +8,7 @@ The following actions are supported:
 - `run_playbook`_
 - `run_module`_
 - `run_job_template`_
+- `run_workflow_template`_
 - `set_fact`_
 - `post_event`_
 - `retract_fact`_
@@ -103,6 +104,9 @@ Run a job template.
 
 .. note::
     ``--controller-url`` and ``--controller-token`` cmd options must be provided to use this action
+    
+    In order to access event information under the ``ansible_eda`` namespace, be sure to check the box for "Prompt on launch" for the Variables field within the job template. Alternatively, a survey can be created that includes the variable ``ansible_eda``. Similarly, if you plan to limit host execution based on event information, enable "Prompt on launch" for the Limit field within the job template.
+
 
 .. list-table::
    :widths: 25 150 10
@@ -118,19 +122,19 @@ Run a job template.
      - The name of the organization
      - Yes
    * - set_facts
-     - The artifacts from the playbook execution are inserted back into the rule set as facts
+     - The artifacts from the job template execution are inserted back into the rule set as facts
      - No
    * - post_events
-     - The artifacts from the playbook execution are inserted back into the rule set as events
+     - The artifacts from the job template execution are inserted back into the rule set as events
      - No
    * - ruleset
      - The name of the ruleset to post the event or assert the fact to, default is current rule set.
      - No
    * - retry
-     - If the playbook fails execution, retry it once, boolean value true|false
+     - If the job template fails execution, retry it once, boolean value true|false
      - No
    * - retries
-     - If the playbook fails execution, the number of times to retry it. An integer value
+     - If the job template fails execution, the number of times to retry it. An integer value
      - No
    * - delay
      - The retry interval, an integer value specified in seconds
@@ -140,6 +144,52 @@ Run a job template.
      - No
    * - job_args
      - Additional arguments sent to the job template launch API. Any answers to the survey and other extra vars should be set in nested key extra_vars. Event(s) and fact(s) will be automatically included in extra_vars too.
+     - No
+
+run_workflow_template
+*********************
+
+Run a workflow template.
+
+.. note::
+    ``--controller-url`` and ``--controller-token`` cmd options must be provided to use this action
+
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - name
+     - The name of the workflow template
+     - Yes
+   * - organization
+     - The name of the organization
+     - Yes
+   * - set_facts
+     - The artifacts from the workflow template execution are inserted back into the rule set as facts
+     - No
+   * - post_events
+     - The artifacts from the workflow template execution are inserted back into the rule set as events
+     - No
+   * - ruleset
+     - The name of the ruleset to post the event or assert the fact to, default is current rule set.
+     - No
+   * - retry
+     - If the workflow template fails execution, retry it once, boolean value true|false
+     - No
+   * - retries
+     - If the workflow template fails execution, the number of times to retry it. An integer value
+     - No
+   * - delay
+     - The retry interval, an integer value specified in seconds
+     - No
+   * - var_root
+     - If the event is a deeply nested dictionary, the var_root can specify the key name whose value should replace the matching event value. The var_root can take a dictionary to account for data when we have multiple matching events.
+     - No
+   * - job_args
+     - Additional arguments sent to the workflow template launch API. Any answers to the survey and other extra vars should be set in nested key extra_vars. Event(s) and fact(s) will be automatically included in extra_vars too.
      - No
 
 post_event

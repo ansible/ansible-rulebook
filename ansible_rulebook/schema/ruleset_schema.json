@@ -25,6 +25,10 @@
                     "type": "boolean",
                     "default": false
                 },
+                "match_multiple_rules": {
+                    "type": "boolean",
+                    "default": false
+                },
                 "name": {
                     "type": "string"
                 },
@@ -174,6 +178,9 @@
                                 "$ref": "#/$defs/run-job-template-action"
                             },
                             {
+                                "$ref": "#/$defs/run-workflow-template-action"
+                            },
+                            {
                                 "$ref": "#/$defs/post-event-action"
                             },
                             {
@@ -207,6 +214,9 @@
                         },
                         {
                             "$ref": "#/$defs/run-job-template-action"
+                        },
+                        {
+                            "$ref": "#/$defs/run-workflow-template-action"
                         },
                         {
                             "$ref": "#/$defs/post-event-action"
@@ -345,9 +355,6 @@
                 "run_module": {
                     "type": "object",
                     "properties": {
-                        "copy_files": {
-                            "type": "boolean"
-                        },
                         "name": {
                             "type": "string"
                         },
@@ -379,7 +386,10 @@
                             "type": "number"
                         },
                         "module_args": {
-                            "type": "object"
+                            "type": [
+                                "object",
+                                "string"
+                            ]
                         },
                         "extra_vars": {
                             "type": "object"
@@ -442,6 +452,55 @@
             },
             "required": [
                 "run_job_template"
+            ],
+            "additionalProperties": false
+        },
+        "run-workflow-template-action": {
+            "type": "object",
+            "properties": {
+                "run_workflow_template": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        },
+                        "organization": {
+                            "type": "string"
+                        },
+                        "job_args": {
+                            "type": "object"
+                        },
+                        "post_events": {
+                            "type": "boolean"
+                        },
+                        "set_facts": {
+                            "type": "boolean"
+                        },
+                        "ruleset": {
+                            "type": "string"
+                        },
+                        "var_root": {
+                            "type": "string"
+                        },
+                        "retry": {
+                            "type": "boolean"
+                        },
+                        "retries": {
+                            "type": "integer"
+                        },
+                        "delay": {
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "name",
+                        "organization"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "run_workflow_template"
             ],
             "additionalProperties": false
         },

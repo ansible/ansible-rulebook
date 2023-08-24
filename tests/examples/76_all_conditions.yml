@@ -2,7 +2,7 @@
 - name: 76 all conditions
   hosts: all
   sources:
-     - generic:
+     - ansible.eda.generic:
           payload:
              - request:
                  type: Delete

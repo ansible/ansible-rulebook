@@ -2,7 +2,7 @@
 - name: 51 vars namespace
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         payload:
           - name: Fred Flintstone
             address:

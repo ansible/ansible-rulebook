@@ -1,0 +1,17 @@
+---
+- name: Test match multiple rules
+  hosts: all
+  match_multiple_rules: true
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name: r1
+      condition: event.i == 1
+      action:
+        debug:
+    - name: r11
+      condition: event.i == 1
+      action:
+        print_event:

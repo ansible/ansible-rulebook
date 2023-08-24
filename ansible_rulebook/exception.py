@@ -138,6 +138,11 @@ class JobTemplateNotFoundException(Exception):
     pass
 
 
+class WorkflowJobTemplateNotFoundException(Exception):
+
+    pass
+
+
 class WebSocketExchangeException(Exception):
 
     pass
@@ -149,5 +154,15 @@ class UnsupportedActionException(Exception):
 
 
 class HotReloadException(Exception):
+
+    pass
+
+
+class InventoryNotFound(Exception):
+
+    pass
+
+
+class MissingArtifactKeyException(Exception):
 
     pass
