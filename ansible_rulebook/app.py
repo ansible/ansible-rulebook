@@ -85,8 +85,8 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
         if parsed_args.hot_reload is True and os.path.exists(
             parsed_args.rulebook
         ):
-            logger.info(
-                "Hot-reload was requested, "
+            logger.critical(
+                "HOT-RELOAD: Hot-reload was requested, "
                 + "will monitor for rulebook file changes"
             )
             file_monitor = parsed_args.rulebook
@@ -162,7 +162,7 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
     if error_found:
         raise Exception("One of the source plugins failed")
     elif should_reload is True:
-        logger.info("Hot-reload, now restarting")
+        logger.critical("HOT-RELOAD! rules file changed, now restarting")
         await run(parsed_args)
 
 
