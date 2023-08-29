@@ -175,7 +175,7 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--hot-reload",
-        help="Should perform hot-reload on rulebook file changes",
+        help="Will perform hot-reload on rulebook file changes (when running in non-worker mode). This option is ignored in worker mode.",
         default="false",
         action="store_true",
     )
