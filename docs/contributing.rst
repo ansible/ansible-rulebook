@@ -53,6 +53,7 @@ Before you submit a pull request, check that it meets these guidelines:
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
 3. The pull request should work for Python 3.9
+4. Commit messages must conform to `conventional commit <https://www.conventionalcommits.org/en/v1.0.0/>`__
 
 
 Submit Feedback

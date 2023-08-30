@@ -33,3 +33,8 @@ repos:
       - id: pretty-format-json
         language_version: python3
         args: ['--autofix', '--no-sort-keys', '--indent', '4']
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: v9.5.0
+    hooks:
+      - id: commitlint
+        stages: [commit-msg]
