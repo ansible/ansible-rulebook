@@ -224,3 +224,58 @@ def test_terminate_process_sigint():
             process.kill()
 
     assert process.returncode == 130
+
+
+@pytest.mark.e2e
+def test_hot_reload():
+    """
+    Execute a rulebook with hot-reload option,
+    check for first action being triggered,
+    then modify the content of the rulebook,
+    check for the other action being triggered.
+    """
+
+    rulebook = utils.BASE_DATA_PATH / "rulebooks/test_hot_reload.yml"
+    cmd = utils.Command(rulebook=rulebook, hot_reload=True)
+
+    LOGGER.info(f"Running command: {cmd}")
+
+    process = subprocess.Popen(
+        cmd,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+        stdout=subprocess.PIPE,
+    )
+
+    found_rule_1_in_out = False
+    found_rule_2_in_out = False
+
+    start = time.time()
+    while line := process.stdout.readline():
+        if "Rule 1: I matched for value_a" in line:
+            found_rule_1_in_out = True
+            break
+        time.sleep(0.1)
+        if time.time() - start > DEFAULT_CMD_TIMEOUT:
+            process.kill()
+
+    assert found_rule_1_in_out
+
+    fin = open(rulebook, "rt")
+    data = fin.read()
+    data = data.replace('- action: "value_a"', '- action: "value_b"')
+    fin.close()
+    fin = open(rulebook, "wt")
+    fin.write(data)
+    fin.close()
+
+    start = time.time()
+    while line := process.stdout.readline():
+        if "Rule 2: I have now matched for value_b" in line:
+            found_rule_2_in_out = True
+            break
+        time.sleep(0.1)
+        if time.time() - start > DEFAULT_CMD_TIMEOUT:
+            process.kill()
+
+    assert found_rule_2_in_out
