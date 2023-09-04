@@ -264,9 +264,8 @@ def test_hot_reload():
     assert found_rule_1_in_out
 
     data = original_data.replace('- action: "value_a"', '- action: "value_b"')
-    fout1 = open(rulebook, "wt")
-    fout1.write(data)
-    fout1.close()
+    with open(rulebook, "wt") as file:
+        file.write(data)
 
     start = time.time()
     while line := process.stdout.readline():
@@ -277,8 +276,7 @@ def test_hot_reload():
         if time.time() - start > DEFAULT_CMD_TIMEOUT:
             process.kill()
 
-    fout2 = open(rulebook, "wt")
-    fout2.write(original_data)
-    fout2.close()
+    with open(rulebook, "wt") as file:
+        file.write(original_data)
 
     assert found_rule_2_in_out
