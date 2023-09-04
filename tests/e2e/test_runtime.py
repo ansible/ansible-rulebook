@@ -247,6 +247,9 @@ def test_hot_reload():
         stdout=subprocess.PIPE,
     )
 
+    fin = open(rulebook, "rt")
+    original_data = fin.read()
+    fin.close()
     found_rule_1_in_out = False
     found_rule_2_in_out = False
 
@@ -261,13 +264,10 @@ def test_hot_reload():
 
     assert found_rule_1_in_out
 
-    fin = open(rulebook, "rt")
-    data = fin.read()
-    data = data.replace('- action: "value_a"', '- action: "value_b"')
-    fin.close()
-    fin = open(rulebook, "wt")
-    fin.write(data)
-    fin.close()
+    data = original_data.replace('- action: "value_a"', '- action: "value_b"')
+    fout1 = open(rulebook, "wt")
+    fout1.write(data)
+    fout1.close()
 
     start = time.time()
     while line := process.stdout.readline():
@@ -277,5 +277,9 @@ def test_hot_reload():
         time.sleep(0.1)
         if time.time() - start > DEFAULT_CMD_TIMEOUT:
             process.kill()
+    
+    fout2 = open(rulebook, "wt")
+    fout2.write(original_data)
+    fout2.close()
 
     assert found_rule_2_in_out
