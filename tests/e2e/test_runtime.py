@@ -277,7 +277,7 @@ def test_hot_reload():
         time.sleep(0.1)
         if time.time() - start > DEFAULT_CMD_TIMEOUT:
             process.kill()
-    
+
     fout2 = open(rulebook, "wt")
     fout2.write(original_data)
     fout2.close()
