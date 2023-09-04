@@ -247,9 +247,8 @@ def test_hot_reload():
         stdout=subprocess.PIPE,
     )
 
-    fin = open(rulebook, "rt")
-    original_data = fin.read()
-    fin.close()
+    with open(rulebook, "rt") as file:
+        original_data = file.read()
     found_rule_1_in_out = False
     found_rule_2_in_out = False
 
