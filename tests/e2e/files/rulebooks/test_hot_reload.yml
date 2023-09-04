@@ -4,7 +4,7 @@
   sources:
     - generic:
         payload:
-          - action: "value_b"
+          - action: "value_a"
   rules:
     - name: Matching for value_a
       condition: event.action == "value_a"
