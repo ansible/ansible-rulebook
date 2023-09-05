@@ -243,11 +243,16 @@ async def monitor_rulebook(rulebook_file):
     finally:
         observer.stop()
         observer.join()
-        raise HotReloadException(
-            "Rulebook file changed, "
-            + "raising exception so to asyncio.FIRST_EXCEPTION "
-            + "in order to reload"
-        )
+        # we need to check if the try-clause completed because
+        # while-loop terminated successfully, in such case we
+        # follow on the hot-reload use case, or if we got into
+        # this finally-clause because of other errors.
+        if event_handler.is_modified():
+            raise HotReloadException(
+                "Rulebook file changed, "
+                + "raising exception so to asyncio.FIRST_EXCEPTION "
+                + "in order to reload"
+            )
 
 
 async def run_rulesets(
