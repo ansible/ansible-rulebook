@@ -62,6 +62,7 @@ CONTROLLER_ACTIONS = ("run_job_template", "run_workflow_template")
 
 # FIXME(cutwater): Replace parsed_args with clear interface
 async def run(parsed_args: argparse.ArgumentParser) -> None:
+    file_monitor = None
 
     if parsed_args.worker and parsed_args.websocket_address and parsed_args.id:
         logger.info("Starting worker mode")
@@ -81,6 +82,14 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
         startup_args.rulesets = load_rulebook(
             parsed_args, startup_args.variables
         )
+        if parsed_args.hot_reload is True and os.path.exists(
+            parsed_args.rulebook
+        ):
+            logger.critical(
+                "HOT-RELOAD: Hot-reload was requested, "
+                + "will monitor for rulebook file changes"
+            )
+            file_monitor = parsed_args.rulebook
         if parsed_args.inventory:
             startup_args.inventory = parsed_args.inventory
         startup_args.project_data_file = parsed_args.project_tarball
@@ -119,13 +128,14 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
         )
         tasks.append(feedback_task)
 
-    await run_rulesets(
+    should_reload = await run_rulesets(
         event_log,
         ruleset_queues,
         startup_args.variables,
         startup_args.inventory,
         parsed_args,
         startup_args.project_data_file,
+        file_monitor,
     )
 
     await event_log.put(dict(type="Exit"))
@@ -151,6 +161,9 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
     await job_template_runner.close_session()
     if error_found:
         raise Exception("One of the source plugins failed")
+    elif should_reload is True:
+        logger.critical("HOT-RELOAD! rules file changed, now restarting")
+        await run(parsed_args)
 
 
 # TODO(cutwater): Maybe move to util.py

@@ -153,6 +153,11 @@ class UnsupportedActionException(Exception):
     pass
 
 
+class HotReloadException(Exception):
+
+    pass
+
+
 class InventoryNotFound(Exception):
 
     pass

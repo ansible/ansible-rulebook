@@ -37,6 +37,7 @@ class Command:
     verbosity: int = 0
     heartbeat: int = 0
     execution_strategy: Optional[str] = None
+    hot_reload: bool = False
 
     def __post_init__(self):
         # verbosity overrides verbose and debug
@@ -83,6 +84,8 @@ class Command:
             result.extend(["--heartbeat", str(self.heartbeat)])
         if self.execution_strategy:
             result.extend(["--execution-strategy", self.execution_strategy])
+        if self.hot_reload:
+            result.append("--hot-reload")
 
         return result
 
