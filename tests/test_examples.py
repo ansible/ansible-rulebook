@@ -2303,7 +2303,7 @@ async def test_79_workflow_job_template():
         status="successful", id=945, created="dummy", artifacts=dict(a=1)
     )
     job_template_runner.host = "https://examples.com"
-    job_url = "https://examples.com/#/jobs/945/details"
+    job_url = "https://examples.com/#/jobs/workflow/945/details"
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
             "ansible_rulebook.builtin.job_template_runner."
