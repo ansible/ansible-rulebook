@@ -26,6 +26,7 @@ from asyncio.exceptions import CancelledError
 from functools import partial
 from pprint import pprint
 from typing import Callable, Dict, List, Optional, Union
+from urllib.parse import urljoin
 
 import ansible_runner
 import dpath
@@ -835,7 +836,7 @@ async def run_job_template(
         rule_uuid=source_rule_uuid,
         status=controller_job["status"],
         run_at=controller_job["created"],
-        url=_controller_job_url(controller_job),
+        url=_controller_job_url(controller_job, "jobs"),
         matching_events=_get_events(variables),
         rule_run_at=rule_run_at,
     )
@@ -954,7 +955,7 @@ async def run_workflow_template(
         rule_uuid=source_rule_uuid,
         status=controller_job["status"],
         run_at=controller_job["created"],
-        url=_controller_job_url(controller_job),
+        url=_controller_job_url(controller_job, "jobs/workflow"),
         matching_events=_get_events(variables),
         rule_run_at=rule_run_at,
     )
@@ -1084,9 +1085,10 @@ def _embellish_internal_event(event: Dict, method_name: str) -> Dict:
     )
 
 
-def _controller_job_url(data: dict) -> str:
+def _controller_job_url(data: dict, prefix: str) -> str:
     if "id" in data:
-        return f"{job_template_runner.host}/#/jobs/{data['id']}/details"
+        href_slug = f"/#/{prefix}/{data['id']}/details"
+        return urljoin(job_template_runner.host, href_slug)
     return ""
 
 

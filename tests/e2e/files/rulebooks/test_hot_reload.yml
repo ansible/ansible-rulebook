@@ -1,0 +1,18 @@
+---
+- name: Ruleset 1
+  hosts: all
+  sources:
+    - generic:
+        payload:
+          - action: "value_a"
+  rules:
+    - name: Matching for value_a
+      condition: event.action == "value_a"
+      action:
+        debug:
+          msg: "Rule 1: I matched for value_a"
+    - name: Matching for value_b
+      condition: event.action == "value_b"
+      action:
+        debug:
+          msg: "Rule 2: I have now matched for value_b"

@@ -173,6 +173,14 @@ def get_parser() -> argparse.ArgumentParser:
         "Default is sequential, actions will be run only after the "
         "previous one ends",
     )
+    parser.add_argument(
+        "--hot-reload",
+        help="Will perform hot-reload on rulebook file changes "
+        "(when running in non-worker mode)."
+        "This option is ignored in worker mode.",
+        default="false",
+        action="store_true",
+    )
     return parser
 
 
