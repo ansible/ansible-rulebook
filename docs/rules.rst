@@ -2,12 +2,14 @@
 Rules
 =====
 
-| Rules is a list of rules. Event driven automation uses rules to determine if an action or 
-| actions should be taken when an event is received.
+| The rules node in a rulebook contains a list of rules. Event driven automation uses rules 
+| to determine if an action or actions should be executed when an event is received.
 | The rule decides to run an action or actions by evaluating the condition(s) 
-| that is defined by the rulebook author.
+| that is defined by the rulebook author. When writing the conditions for a rule you have
+| to be aware of the attributes in the event payload from different sources defined in the
+| ruleset.
 
-A rule comprises:
+A rule comprises of:
 
 
 .. list-table::

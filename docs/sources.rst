@@ -174,7 +174,7 @@ string or a list of host names.
 As the plugin have full access to an unbounded queue that is consumed by ansible-rulebbok
 we carefully recommend to use always the method ``asyncio.Queue.put`` to put events as it's a non-blocking call.
 To give free cpu cycles to the event loop to process the events, we recommend to use ``asyncio.sleep(0)``
-inmediately after the ``put`` method.
+immediately after the ``put`` method.
 
 .. note::
     ansible-rulebook is intended to be a long running process and react to events over the time.

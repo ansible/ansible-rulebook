@@ -12,14 +12,35 @@ Rulesets
 --------
 A ruleset has the following properties:
 
-* name
-* hosts similar to Ansible playbook
-* gather_facts: boolean
-* default_events_ttl: time to keep the partially matched events around (default is 2 hours)
-* match_multiple_rules: should multiple rules be triggered for an event(default is false)
-* execution_strategy: How actions should be executed, sequential|parallel (default: sequential). For sequential strategy we wait for each action to finish before we kick off the next action.
-* sources: A list of sources
-* rules: a list of rules
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - name
+     - The name to identify the ruleset. Each ruleset must have an unique name across the rulebook.
+     - Yes
+   * - sources
+     - The list of one or more sources that will generate events for ansible-rulebook. See :doc:`sources`
+     - Yes
+   * - rules
+     - The list of one or more rule. See :doc:`rules`
+     - Yes
+   * - hosts
+     - Similar to hosts in an Ansible playbook
+     - Yes
+   * - gather_facts
+     - Collect artifacts from hosts at startup to be used in rules (default: false)
+     - No
+   * - default_events_ttl
+     - time to keep the partially matched events around (default: 2 hours)
+     - No
+   * - execution_strategy
+     - Action execution, sequential or parallel (default: sequential). For sequential
+       strategy we wait for the each action to finish before firing of the next action.
+     - No
 
 | A ruleset **should** have a unique name within the rulebook, each ruleset runs
 | as a separate session in the Rules engine. The events and facts are kept separate
@@ -27,7 +48,7 @@ A ruleset has the following properties:
 | to itself or other rulesets in the rulebook.
 
 | The default_events_ttl takes time in the following format
-| default_events_ttl : nnn seconds|minutes|hours|days
+| default_events_ttl : **nnn seconds|minutes|hours|days**
 | e.g. default_events_ttl : 3 hours
 | If the rule set doesn't define this attribute the default events ttl that is 
 | enforced by the rule engine is 2 hours
@@ -61,12 +82,13 @@ A ruleset has the following properties:
           action:
             debug:
 
-| A ruleset **must** contain one or more sources, it allows you to pass configuration
-| parameters into the source plugin. The Source plugin can also be configured with
-| event filters which allow you to transform the data before passing it to the Rules
-| engine. The filters can also be used to limit the data that gets passed to the Rules
-| engine. The source plugin is started by the **ansible-rulebook** and runs in the
-| background putting events into the queue to be passed onto the Rules engine.
+| A ruleset **must** contain one or more source plugins, the configuration parameters
+| can be specified after the source plugin type. The source plugin
+| can also be configured with event filters which allow you to transform the 
+| data before passing it to the rules engine. The filters can also be used to
+| limit the data that gets passed to the rules engine. The source plugin is 
+| started by the **ansible-rulebook** and runs in the background putting events
+| into the queue to be passed onto the rules engine.
 | When the source plugin ends we automatically generate a shutdown event and the ruleset
 | terminates which terminates **ansible-rulebook**.
 
