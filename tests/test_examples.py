@@ -2377,3 +2377,29 @@ async def test_81_match_single_rule():
             ],
         }
         await validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_82_non_alpha_keys():
+    ruleset_queues, event_log = load_rulebook("examples/82_non_alpha_keys.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+
+        checks = {
+            "max_events": 4,
+            "shutdown_events": 1,
+            "actions": [
+                "82 non alpha keys::r1::debug",
+                "82 non alpha keys::r2::debug",
+                "82 non alpha keys::r3::print_event",
+            ],
+        }
+        await validate_events(event_log, **checks)
