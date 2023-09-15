@@ -49,6 +49,9 @@ def test_parse_condition():
         "EqualsExpression": {"lhs": {"Fact": "range.i"}, "rhs": {"Integer": 1}}
     } == visit_condition(parse_condition("fact.range.i == 1"), {})
     assert {
+        "EqualsExpression": {"lhs": {"Fact": "['i']"}, "rhs": {"Integer": 1}}
+    } == visit_condition(parse_condition("fact['i'] == 1"), {})
+    assert {
         "EqualsExpression": {
             "lhs": {"Fact": "range.pi"},
             "rhs": {"Float": 3.1415},
@@ -74,9 +77,10 @@ def test_parse_condition():
         }
     } == visit_condition(parse_condition('fact.range["pi"] == 3.1415'), {})
     # `Should start with event., events.,fact., facts. or vars.` semantic check
-    with pytest.raises(InvalidIdentifierException):
+    # `Should start with event[...], fact[...], ` semantic check
+    with pytest.raises(ConditionParsingException):
         visit_condition(
-            parse_condition('fact["range"].pi == 3.1415'),
+            parse_condition("xyz.range.pi == 3.1415"),
             {},
         )
     assert {
@@ -366,6 +370,32 @@ def test_parse_condition():
         parse_condition("fact.friends not contains 'fred'"), {}
     )
 
+    assert {
+        "SearchMatchesExpression": {
+            "lhs": {"Event": "['url']"},
+            "rhs": {
+                "SearchType": {
+                    "kind": {"String": "match"},
+                    "pattern": {
+                        "String": "https://example.com/users/.*/resources"
+                    },
+                    "options": [
+                        {
+                            "name": {"String": "ignorecase"},
+                            "value": {"Boolean": True},
+                        }
+                    ],
+                }
+            },
+        }
+    } == visit_condition(
+        parse_condition(
+            "event['url'] is "
+            + 'match("https://example.com/users/.*/resources", '
+            + "ignorecase=true)"
+        ),
+        {},
+    )
     assert {
         "SearchMatchesExpression": {
             "lhs": {"Event": "url"},
