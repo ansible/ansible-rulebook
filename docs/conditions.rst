@@ -966,3 +966,30 @@ Example:
 | if an attribute exists before you use it in a condition. The rule engine
 | will check for the existence and only then compare it. If its missing, the
 | comparison fails.
+
+
+| **Q:** If a condition string has an embedded colon followed by a space in it how do I escape it?
+
+| **Ans:** During the rulebook parsing you would see this error message:
+| ERROR - Terminating mapping values are not allowed here.
+| To resove this eror you would have to quote the whole condition string or use the > or | and
+| move the entire condition to a separate line.
+
+Example:
+    .. code-block:: yaml
+
+      name: rule1
+      condition: 'event.abc == "test: 1"'
+
+
+    .. code-block:: yaml
+
+      name: rule1
+      condition: >
+        event.abc == "test: 1"
+
+    .. code-block:: yaml
+
+      name: rule1
+      condition: |
+        event.abc == "test: 1"
