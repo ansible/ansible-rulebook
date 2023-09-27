@@ -11,6 +11,7 @@ import websockets.server as ws_server
 
 BASE_DATA_PATH = Path(f"{__file__}").parent / Path("files")
 DEFAULT_SOURCES = Path(f"{__file__}").parent / Path("../sources")
+EXAMPLES_PATH = Path(f"{__file__}").parent / Path("../examples")
 DEFAULT_INVENTORY = BASE_DATA_PATH / "inventories/default_inventory.yml"
 
 
