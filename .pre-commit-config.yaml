@@ -16,7 +16,6 @@ repos:
         additional_dependencies:
           - flake8-bugbear
   - repo: local
-    language: javascript
     hooks:
       - id: ajv
         name: ajv
