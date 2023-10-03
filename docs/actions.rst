@@ -62,6 +62,9 @@ Run an Ansible playbook.
    * - json_mode
      - Boolean, sends the playbook events data to the stdout as json strings as they are processed by ansible-runner
      - No
+   * - copy_files
+     - Boolean, copy the local playbook file to the ansible-runner project directory, this is not needed if you are running a playbook from an ansible collection.
+     - No
 
 
 run_module
@@ -95,6 +98,21 @@ Run an Ansible module
      - No
    * - extra_vars
      - Additional vars to be passed into the playbook as extra vars.
+     - No
+   * - json_mode
+     - Boolean, sends the playbook events data to the stdout as json strings as they are processed by ansible-runner
+     - No
+   * - set_facts
+     - Boolean, the artifacts from the module execution are inserted back into the rule set as facts
+     - No
+   * - post_events
+     - Boolean, the artifacts from the module execution are inserted back into the rule set as events
+     - No
+   * - ruleset
+     - The name of the ruleset to post the event or assert the fact to, default is current rule set.
+     - No
+   * - var_root
+     - If the event is a deeply nested dictionary, the var_root can specify the key name whose value should replace the matching event value. The var_root can take a dictionary to account for data when we have multiple matching events.
      - No
 
 run_job_template
@@ -311,6 +329,9 @@ retract_fact
      - Yes
    * - ruleset
      - The name of the rule set to retract the fact, default is the current rule set name
+     - No
+   * - partial
+     - The fact being requested to retracted is partial and doesn't have all the keys. Default is true 
      - No
 
 Example:
