@@ -28,7 +28,7 @@ async def test_non_alpha_numeric_keys():
     proc_id = "42"
     port = 31415
     rulebook = utils.EXAMPLES_PATH / "82_non_alpha_keys.yml"
-    websocket_address = f"ws://localhost:{port}{endpoint}"
+    websocket_address = f"ws://127.0.0.1:{port}{endpoint}"
     cmd = utils.Command(
         rulebook=rulebook,
         websocket=websocket_address,

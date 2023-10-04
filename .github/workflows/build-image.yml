@@ -31,6 +31,7 @@ jobs:
         pytest -m "e2e" -n auto'
 
   build-and-push-image:
+    needs: build-and-test-image
     if: github.repository == 'ansible/ansible-rulebook'
     runs-on: ubuntu-latest
     permissions:

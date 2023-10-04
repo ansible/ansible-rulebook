@@ -29,7 +29,7 @@ async def test_websocket_messages():
     rulebook = (
         utils.BASE_DATA_PATH / "rulebooks/websockets/test_websocket_range.yml"
     )
-    websocket_address = f"ws://localhost:{port}{endpoint}"
+    websocket_address = f"ws://127.0.0.1:{port}{endpoint}"
     cmd = utils.Command(
         rulebook=rulebook,
         websocket=websocket_address,
