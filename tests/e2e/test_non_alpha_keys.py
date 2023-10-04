@@ -23,7 +23,7 @@ async def test_non_alpha_numeric_keys():
     and send the event messages to a websocket server
     """
     # variables
-    host = "localhost"
+    host = "127.0.0.1"
     endpoint = "/api/ws2"
     proc_id = "42"
     port = 31415
