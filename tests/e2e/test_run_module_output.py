@@ -5,6 +5,7 @@ import asyncio
 import logging
 from functools import partial
 
+import dpath
 import pytest
 import websockets.server as ws_server
 
@@ -16,18 +17,17 @@ DEFAULT_TIMEOUT = 15
 
 @pytest.mark.e2e
 @pytest.mark.asyncio
-async def test_non_alpha_numeric_keys():
+async def test_run_module_output():
     """
-    Verify that ansible-rulebook can handle rulebook
-    which contains non alpha numeric keys
-    and send the event messages to a websocket server
+    Verify that ansible-rulebook can handle output of
+    run_module and then used in a condition
     """
     # variables
     host = "localhost"
     endpoint = "/api/ws2"
     proc_id = "42"
     port = 31415
-    rulebook = utils.EXAMPLES_PATH / "82_non_alpha_keys.yml"
+    rulebook = utils.EXAMPLES_PATH / "29_run_module.yml"
     websocket_address = f"ws://localhost:{port}{endpoint}"
     cmd = utils.Command(
         rulebook=rulebook,
@@ -59,18 +59,14 @@ async def test_non_alpha_numeric_keys():
     stats = None
     rule_matches = {
         "r1": {
-            "action": "debug",
-            "matching_events": {"m": {"http://www.example.com": "down"}},
+            "action": "run_module",
+            "event_key": "m/i",
+            "event_value": 1,
         },
         "r2": {
-            "action": "debug",
-            "matching_events": {
-                "m": {"urls": {"http://www.example.com": "up"}}
-            },
-        },
-        "r3": {
             "action": "print_event",
-            "matching_events": {"m": {"नाम": "മധു"}},
+            "event_key": "m/message",
+            "event_value": "FRED FLINTSTONE",
         },
     }
     while not queue.empty():
@@ -88,23 +84,25 @@ async def test_non_alpha_numeric_keys():
             assert rule_name in rule_matches.keys()
 
             matching_events = data["matching_events"]
-            del matching_events["m"]["meta"]
             assert (
-                matching_events == rule_matches[rule_name]["matching_events"]
+                dpath.get(
+                    matching_events, rule_matches[rule_name]["event_key"]
+                )
+                == rule_matches[rule_name]["event_value"]
             )
             assert data["action"] == rule_matches[rule_name]["action"]
 
         if data["type"] == "SessionStats":
             session_stats_counter += 1
             stats = data["stats"]
-            assert stats["ruleSetName"] == "82 non alpha keys"
-            assert stats["numberOfRules"] == 3
+            assert stats["ruleSetName"] == "29 run module"
+            assert stats["numberOfRules"] == 2
             assert stats["numberOfDisabledRules"] == 0
             assert data["activation_id"] == proc_id
 
-    assert stats["rulesTriggered"] == 3
-    assert stats["eventsProcessed"] == 3
-    assert stats["eventsMatched"] == 3
+    assert stats["rulesTriggered"] == 2
+    assert stats["eventsProcessed"] == 6
+    assert stats["eventsMatched"] == 2
 
     assert session_stats_counter >= 2
-    assert action_counter == 3
+    assert action_counter == 2
