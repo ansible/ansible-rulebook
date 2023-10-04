@@ -28,7 +28,7 @@ async def test_match_multiple_rules():
     proc_id = "42"
     port = 31415
     rulebook = utils.BASE_DATA_PATH / "rulebooks/test_match_multiple_rules.yml"
-    websocket_address = f"ws://localhost:{port}{endpoint}"
+    websocket_address = f"ws://127.0.0.1:{port}{endpoint}"
     cmd = utils.Command(
         rulebook=rulebook,
         websocket=websocket_address,
