@@ -23,12 +23,12 @@ async def test_run_module_output():
     run_module and then used in a condition
     """
     # variables
-    host = "localhost"
+    host = "127.0.0.1"
     endpoint = "/api/ws2"
     proc_id = "42"
     port = 31415
     rulebook = utils.EXAMPLES_PATH / "29_run_module.yml"
-    websocket_address = f"ws://localhost:{port}{endpoint}"
+    websocket_address = f"ws://127.0.0.1:{port}{endpoint}"
     cmd = utils.Command(
         rulebook=rulebook,
         websocket=websocket_address,

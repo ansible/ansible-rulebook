@@ -13,7 +13,26 @@ env:
   QUAY_USER: ansible+eda_gha
 
 jobs:
+  build-and-test-image:
+    if: github.repository == 'ansible/ansible-rulebook'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Build local image
+      run: docker build -t localhost/ansible-rulebook:test .
+
+    - name: Run tests
+      run: >
+        docker run --rm -u 0 localhost/ansible-rulebook:test bash -c '
+        pip install -r requirements_test.txt &&
+        pytest -m "e2e" -n auto'
+
   build-and-push-image:
+    needs: build-and-test-image
+    if: github.repository == 'ansible/ansible-rulebook'
     runs-on: ubuntu-latest
     permissions:
       contents: read
