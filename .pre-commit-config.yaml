@@ -36,4 +36,5 @@ repos:
     rev: v9.5.0
     hooks:
       - id: commitlint
+        additional_dependencies: ['@commitlint/config-conventional']
         stages: [commit-msg]
