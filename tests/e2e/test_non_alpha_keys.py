@@ -14,6 +14,7 @@ LOGGER = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 15
 
 
+@pytest.mark.jira("AAP-16038")
 @pytest.mark.e2e
 @pytest.mark.asyncio
 async def test_non_alpha_numeric_keys():
