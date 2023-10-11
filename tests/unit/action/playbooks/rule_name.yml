@@ -1,0 +1,14 @@
+- name: Print rule name that called this playbook
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Print rule name
+      when: ansible_eda.rule is defined
+      ansible.builtin.debug:
+        msg: "Rule name: {{ ansible_eda.rule }}"
+    - name: Set the RuleName as a fact
+      ansible.builtin.set_fact:
+        results:
+           my_rule_name: "{{ ansible_eda.rule }}"
+           my_rule_set_name: "{{ ansible_eda.ruleset }}"
+        cacheable: true

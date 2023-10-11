@@ -1,0 +1,8 @@
+- name: Fail the rule
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Fail if we have a rule name defined
+      when: ansible_eda.rule is defined
+      ansible.builtin.fail:
+        msg: "Failed because of Rule name: {{ ansible_eda.rule }}"

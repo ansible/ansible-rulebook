@@ -28,7 +28,19 @@ from drools.exceptions import (
 )
 from drools.ruleset import session_stats
 
-from ansible_rulebook.builtin import actions as builtin_actions
+from ansible_rulebook.action.control import Control
+from ansible_rulebook.action.debug import Debug
+from ansible_rulebook.action.metadata import Metadata
+from ansible_rulebook.action.noop import Noop
+from ansible_rulebook.action.post_event import PostEvent
+from ansible_rulebook.action.print_event import PrintEvent
+from ansible_rulebook.action.retract_fact import RetractFact
+from ansible_rulebook.action.run_job_template import RunJobTemplate
+from ansible_rulebook.action.run_module import RunModule
+from ansible_rulebook.action.run_playbook import RunPlaybook
+from ansible_rulebook.action.run_workflow_template import RunWorkflowTemplate
+from ansible_rulebook.action.set_fact import SetFact
+from ansible_rulebook.action.shutdown import Shutdown as ShutdownAction
 from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import (
     ShutdownException,
@@ -49,6 +61,20 @@ from ansible_rulebook.util import (
 )
 
 logger = logging.getLogger(__name__)
+
+ACTION_CLASSES = {
+    "debug": Debug,
+    "print_event": PrintEvent,
+    "none": Noop,
+    "set_fact": SetFact,
+    "post_event": PostEvent,
+    "retract_fact": RetractFact,
+    "shutdown": ShutdownAction,
+    "run_playbook": RunPlaybook,
+    "run_module": RunModule,
+    "run_job_template": RunJobTemplate,
+    "run_workflow_template": RunWorkflowTemplate,
+}
 
 
 class RuleSetRunner:
@@ -292,13 +318,17 @@ class RuleSetRunner:
             f"{action_item.rule}"
         )
         logger.debug("Creating action task %s", task_name)
+        metadata = Metadata(
+            rule_set=action_item.ruleset,
+            rule_set_uuid=action_item.ruleset_uuid,
+            rule=action_item.rule,
+            rule_uuid=action_item.rule_uuid,
+            rule_run_at=rule_run_at,
+        )
+
         task = asyncio.create_task(
             self._call_action(
-                action_item.ruleset,
-                action_item.ruleset_uuid,
-                action_item.rule,
-                action_item.rule_uuid,
-                rule_run_at,
+                metadata,
                 action.action,
                 MappingProxyType(action.action_args),
                 action_item.variables,
@@ -314,11 +344,7 @@ class RuleSetRunner:
 
     async def _call_action(
         self,
-        ruleset: str,
-        ruleset_uuid: str,
-        rule: str,
-        rule_uuid: str,
-        rule_run_at: str,
+        metadata: Metadata,
         action: str,
         immutable_action_args: MappingProxyType,
         variables: Dict,
@@ -330,9 +356,12 @@ class RuleSetRunner:
         action_args = immutable_action_args.copy()
 
         error = None
-        if action in builtin_actions:
+        if action in ACTION_CLASSES:
             try:
-                if action == "run_job_template":
+                if (
+                    action == "run_job_template"
+                    or action == "run_workflow_template"
+                ):
                     limit = dpath.get(
                         action_args,
                         "job_args.limit",
@@ -395,21 +424,20 @@ class RuleSetRunner:
                 logger.info("action args: %s", action_args)
 
                 if "ruleset" not in action_args:
-                    action_args["ruleset"] = ruleset
+                    action_args["ruleset"] = metadata.rule_set
 
-                await builtin_actions[action](
-                    event_log=self.event_log,
+                control = Control(
+                    queue=self.event_log,
                     inventory=inventory,
                     hosts=hosts,
                     variables=variables_copy,
                     project_data_file=self.project_data_file,
-                    source_ruleset_name=ruleset,
-                    source_ruleset_uuid=ruleset_uuid,
-                    source_rule_name=rule,
-                    source_rule_uuid=rule_uuid,
-                    rule_run_at=rule_run_at,
-                    **action_args,
                 )
+
+                await ACTION_CLASSES[action](
+                    metadata, control, **action_args
+                )()
+
             except KeyError as e:
                 logger.error(
                     "KeyError %s with variables %s",
@@ -457,12 +485,12 @@ class RuleSetRunner:
                     playbook_name=action_args.get("name"),
                     status="failed",
                     run_at=run_at(),
-                    rule_run_at=rule_run_at,
+                    rule_run_at=metadata.rule_run_at,
                     message=str(error),
-                    rule=rule,
-                    ruleset=ruleset,
-                    rule_uuid=rule_uuid,
-                    ruleset_uuid=ruleset_uuid,
+                    rule=metadata.rule,
+                    ruleset=metadata.rule_set,
+                    rule_uuid=metadata.rule_uuid,
+                    ruleset_uuid=metadata.rule_set_uuid,
                 )
             )
 
