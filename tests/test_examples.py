@@ -2247,6 +2247,7 @@ WORKFLOW_TEMPLATE_ERRORS = [
 ]
 
 
+@pytest.mark.jira("AAP-9829")
 @pytest.mark.parametrize("err_msg,err", WORKFLOW_TEMPLATE_ERRORS)
 @pytest.mark.asyncio
 async def test_79_workflow_job_template_exception(err_msg, err):
@@ -2293,6 +2294,7 @@ async def test_79_workflow_job_template_exception(err_msg, err):
             assert set(action.keys()).issuperset(required_keys)
 
 
+@pytest.mark.jira("AAP-9829")
 @pytest.mark.asyncio
 async def test_79_workflow_job_template():
     ruleset_queues, event_log = load_rulebook(
@@ -2381,6 +2383,7 @@ async def test_81_match_single_rule():
         await validate_events(event_log, **checks)
 
 
+@pytest.mark.jira("AAP-16038")
 @pytest.mark.asyncio
 async def test_82_non_alpha_keys():
     ruleset_queues, event_log = load_rulebook("examples/82_non_alpha_keys.yml")
