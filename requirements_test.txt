@@ -13,6 +13,7 @@ pytest-timeout
 pytest-xdist
 pytest-cov
 pytest-check
+pytest-jira
 dynaconf==3.1.11
 freezegun
 oauthlib>=3.2.0

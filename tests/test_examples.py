@@ -2103,7 +2103,8 @@ async def test_46_job_template():
     job_url = "https://examples.com/#/jobs/945/details"
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.builtin.job_template_runner.run_job_template",
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.run_job_template",
             return_value=response_obj,
         ):
             await run_rulesets(
@@ -2138,7 +2139,8 @@ async def test_46_job_template_exception(err_msg, err):
     rs = ruleset_queues[0][0]
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.builtin.job_template_runner.run_job_template",
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.run_job_template",
             side_effect=err,
         ):
             await run_rulesets(
@@ -2245,6 +2247,7 @@ WORKFLOW_TEMPLATE_ERRORS = [
 ]
 
 
+@pytest.mark.jira("AAP-9829")
 @pytest.mark.parametrize("err_msg,err", WORKFLOW_TEMPLATE_ERRORS)
 @pytest.mark.asyncio
 async def test_79_workflow_job_template_exception(err_msg, err):
@@ -2256,8 +2259,8 @@ async def test_79_workflow_job_template_exception(err_msg, err):
     rs = ruleset_queues[0][0]
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.builtin.job_template_runner."
-            "run_workflow_job_template",
+            "ansible_rulebook.action.run_workflow_template."
+            "job_template_runner.run_workflow_job_template",
             side_effect=err,
         ):
             await run_rulesets(
@@ -2291,6 +2294,7 @@ async def test_79_workflow_job_template_exception(err_msg, err):
             assert set(action.keys()).issuperset(required_keys)
 
 
+@pytest.mark.jira("AAP-9829")
 @pytest.mark.asyncio
 async def test_79_workflow_job_template():
     ruleset_queues, event_log = load_rulebook(
@@ -2306,8 +2310,8 @@ async def test_79_workflow_job_template():
     job_url = "https://examples.com/#/jobs/workflow/945/details"
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.builtin.job_template_runner."
-            "run_workflow_job_template",
+            "ansible_rulebook.action.run_workflow_template."
+            "job_template_runner.run_workflow_job_template",
             return_value=response_obj,
         ):
             await run_rulesets(
@@ -2379,6 +2383,7 @@ async def test_81_match_single_rule():
         await validate_events(event_log, **checks)
 
 
+@pytest.mark.jira("AAP-16038")
 @pytest.mark.asyncio
 async def test_82_non_alpha_keys():
     ruleset_queues, event_log = load_rulebook("examples/82_non_alpha_keys.yml")
