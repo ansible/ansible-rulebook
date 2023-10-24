@@ -15,6 +15,7 @@
 import asyncio
 import logging
 import uuid
+from typing import Callable
 from urllib.parse import urljoin
 
 import drools
@@ -31,36 +32,105 @@ from .metadata import Metadata
 logger = logging.getLogger(__name__)
 
 
-class RunTemplate:
-    """Common superclass for template-based actions.  Launches the appropriate
+class RunBase:
+    """Common superclass for "run" actions."""
+
+    @property
+    def _job_data(self) -> dict:
+        data = {
+            "run_at": run_at(),
+            "matching_events": self.helper.get_events(),
+            "action": self.helper.action,
+            "name": self.name,
+            "job_id": self.job_id,
+            "ansible_rulebook_id": settings.identifier,
+        }
+        return data
+
+    @property
+    def _template_id(self) -> str:
+        raise NotImplementedError
+
+    def __init__(self, metadata: Metadata, control: Control, **action_args):
+        self.helper = Helper(metadata, control, self._template_id)
+        self.action_args = action_args
+        self.job_id = str(uuid.uuid4())
+        self.name = self.action_args["name"]
+
+    async def __call__(self):
+        raise NotImplementedError
+
+    async def _do_run(self) -> bool:
+        raise NotImplementedError
+
+    async def _run(self):
+        retries = self.action_args.get("retries", 0)
+        if self.action_args.get("retry", False):
+            retries = max(self.action_args.get("retries", 0), 1)
+        delay = self.action_args.get("delay", 0)
+
+        for i in range(retries + 1):
+            if i > 0:
+                if delay > 0:
+                    await asyncio.sleep(delay)
+                logger.info(
+                    "Previous %s failed. Retry %d of %d",
+                    self._template_id,
+                    i,
+                    retries,
+                )
+
+            retry = await self._do_run()
+            if not retry:
+                break
+
+        await self._post_process()
+
+    async def _pre_process(self) -> None:
+        pass
+
+    async def _post_process(self) -> None:
+        pass
+
+    async def _job_start_event(self):
+        await self.helper.send_status(
+            self._job_data,
+            obj_type="Job",
+        )
+
+
+class RunTemplate(RunBase):
+    """Superclass for template-based run actions.  Launches the appropriate
     specified template on the controller. It waits for the job to be complete.
     """
 
     @property
-    def _exceptions(self):
+    def _exceptions(self) -> tuple:
         return (ControllerApiException,)
 
     @property
-    def _template(self):
+    def _job_data(self) -> dict:
+        data = super()._job_data
+        data["hosts"] = ",".join(self.helper.control.hosts)
+        return data
+
+    @property
+    def _run_job(self) -> Callable:
         raise NotImplementedError
 
     @property
-    def _template_id(self):
+    def _template_name(self) -> str:
         raise NotImplementedError
 
     @property
-    def _template_name(self):
-        raise NotImplementedError
-
-    @property
-    def _url_path(self):
+    def _url_path(self) -> str:
         return self._url_prefix + f"{self.controller_job['id']}/" + "details"
 
     @property
-    def _url_prefix(self):
+    def _url_prefix(self) -> str:
         return "/#/"
 
-    def _make_log(self):
+    def _make_log(self) -> dict:
         log = {
             "organization": self.organization,
             "job_id": self.job_id,
@@ -75,11 +145,8 @@ class RunTemplate:
         return log
 
     def __init__(self, metadata: Metadata, control: Control, **action_args):
-        self.helper = Helper(metadata, control, self._template_id)
-        self.action_args = action_args
-        self.name = self.action_args["name"]
+        super().__init__(metadata, control, **action_args)
         self.organization = self.action_args["organization"]
-        self.job_id = str(uuid.uuid4())
         self.job_args = self.action_args.get("job_args", {})
         self.job_args["limit"] = ",".join(self.helper.control.hosts)
         self.controller_job = {}
@@ -103,34 +170,16 @@ class RunTemplate:
         await self._job_start_event()
         await self._run()
 
-    async def _run(self):
-        retries = self.action_args.get("retries", 0)
-        if self.action_args.get("retry", False):
-            retries = max(self.action_args.get("retries", 0), 1)
-        delay = self.action_args.get("delay", 0)
-
+    async def _do_run(self) -> bool:
+        exception = False
         try:
-            for i in range(retries + 1):
-                if i > 0:
-                    if delay > 0:
-                        await asyncio.sleep(delay)
-                    logger.info(
-                        "Previous %s failed. "
-                        "Retry %d of %d",
-                        self._template_id,
-                        i,
-                        retries,
-                    )
-                controller_job = (
-                    await self._template(
-                        self.name,
-                        self.organization,
-                        self.job_args,
-                    )
-                )
-                if controller_job["status"] != "failed":
-                    break
+            controller_job = await self._run_job(
+                self.name,
+                self.organization,
+                self.job_args,
+            )
         except self._exceptions as ex:
+            exception = True
             logger.error(ex)
             controller_job = {}
             controller_job["status"] = "failed"
@@ -138,7 +187,8 @@ class RunTemplate:
             controller_job["error"] = str(ex)
 
         self.controller_job = controller_job
-        await self._post_process()
+
+        return (not exception) and (self.controller_job["status"] == "failed")
 
     async def _post_process(self) -> None:
         a_log = self._make_log()
@@ -163,19 +213,7 @@ class RunTemplate:
             else:
                 logger.debug("Empty facts are not set")
 
-    async def _job_start_event(self):
-        await self.helper.send_status(
-            {
-                "run_at": run_at(),
-                "matching_events": self.helper.get_events(),
-                "action": self.helper.action,
-                "hosts": ",".join(self.helper.control.hosts),
-                "name": self.name,
-                "job_id": self.job_id,
-                "ansible_rulebook_id": settings.identifier,
-            },
-            obj_type="Job",
-        )
+        await super()._post_process()
 
     def _controller_job_url(self) -> str:
         if "id" in self.controller_job:

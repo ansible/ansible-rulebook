@@ -15,10 +15,9 @@
 import logging
 
 from ansible_rulebook.exception import JobTemplateNotFoundException
-
 from ansible_rulebook.job_template_runner import job_template_runner
 
-from .run_template import RunTemplate
+from .run_base import RunTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,7 @@ class RunJobTemplate(RunTemplate):
         return super()._exceptions + (JobTemplateNotFoundException,)
 
     @property
-    def _template(self):
+    def _run_job(self):
         return job_template_runner.run_job_template
 
     @property
