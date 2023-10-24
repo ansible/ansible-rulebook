@@ -109,11 +109,11 @@ async def test_run_workflow_template_exception(err_msg, err):
 
 DROOLS_CALLS = [
     (
-        "ansible_rulebook.action.run_workflow_template.lang.assert_fact",
+        "drools.ruleset.assert_fact",
         dict(set_facts=True),
     ),
     (
-        "ansible_rulebook.action.run_workflow_template.lang.post",
+        "drools.ruleset.post",
         dict(post_events=True),
     ),
 ]
@@ -212,7 +212,7 @@ async def test_run_workflow_template_retries():
         side_effect=controller_job,
     ):
         with patch(
-            "ansible_rulebook.action.run_workflow_template.lang.assert_fact"
+            "drools.ruleset.assert_fact",
         ) as drools_mock:
             await RunWorkflowTemplate(metadata, control, **action_args)()
             drools_mock.assert_called_once()

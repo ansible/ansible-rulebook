@@ -52,7 +52,7 @@ async def test_noop():
 
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         with patch(
-            "ansible_rulebook.action.run_job_template.lang.post"
+            "drools.ruleset.post",
         ) as drools_mock:
             await PostEvent(metadata, control, **action_args)()
             drools_mock.assert_called_once_with(

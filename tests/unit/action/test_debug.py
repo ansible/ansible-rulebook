@@ -89,7 +89,7 @@ async def test_debug():
 
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         with patch(
-            "ansible_rulebook.action.run_job_template.lang.get_facts",
+            "drools.ruleset.get_facts",
             return_value={"a": 1},
         ) as drools_mock:
             await Debug(metadata, control, **action_args)()

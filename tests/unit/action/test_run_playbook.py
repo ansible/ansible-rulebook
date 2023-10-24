@@ -80,11 +80,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 DROOLS_CALLS = [
     (
-        "ansible_rulebook.action.run_job_template.lang.assert_fact",
+        "drools.ruleset.assert_fact",
         dict(set_facts=True),
     ),
     (
-        "ansible_rulebook.action.run_job_template.lang.post",
+        "drools.ruleset.post",
         dict(post_events=True),
     ),
 ]
