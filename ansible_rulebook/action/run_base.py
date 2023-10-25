@@ -58,7 +58,10 @@ class RunBase:
         self.name = self.action_args["name"]
 
     async def __call__(self):
-        raise NotImplementedError
+        await self._pre_process()
+        await self._job_start_event()
+        await self._run()
+        await self._post_process()
 
     async def _do_run(self) -> bool:
         raise NotImplementedError
@@ -83,8 +86,6 @@ class RunBase:
             retry = await self._do_run()
             if not retry:
                 break
-
-        await self._post_process()
 
     async def _pre_process(self) -> None:
         pass
@@ -167,8 +168,7 @@ class RunTemplate(RunBase):
         self.job_args["extra_vars"] = self.helper.collect_extra_vars(
             self.job_args.get("extra_vars", {})
         )
-        await self._job_start_event()
-        await self._run()
+        await super().__call__()
 
     async def _do_run(self) -> bool:
         exception = False

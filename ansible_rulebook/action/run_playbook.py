@@ -79,15 +79,13 @@ class RunPlaybook(RunBase):
                 f"rule: {self.helper.metadata.rule}"
             )
             logger.debug("private data dir %s", self.private_data_dir)
-            await self._pre_process()
-            await self._job_start_event()
-            logger.info("Calling Ansible runner")
-            await self._run()
+            await super().__call__()
         finally:
             if os.path.exists(self.private_data_dir):
                 shutil.rmtree(self.private_data_dir)
 
     async def _do_run(self) -> bool:
+        logger.info("Calling Ansible runner")
         await Runner(
             self.private_data_dir,
             self.host_limit,
