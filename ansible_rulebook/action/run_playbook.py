@@ -52,14 +52,14 @@ class RunPlaybook(RunBase):
     """
 
     @property
+    def _action_name(self) -> str:
+        return "run_playbook"
+
+    @property
     def _job_data(self) -> dict:
         data = super()._job_data
         data["hosts"] = self.host_limit
         return data
-
-    @property
-    def _template_id(self) -> str:
-        return "run_playbook"
 
     def __init__(self, metadata: Metadata, control: Control, **action_args):
         super().__init__(metadata, control, **action_args)

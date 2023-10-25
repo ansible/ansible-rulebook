@@ -28,16 +28,16 @@ class RunJobTemplate(RunTemplate):
     """
 
     @property
+    def _action_name(self):
+        return "run_job_template"
+
+    @property
     def _exceptions(self):
         return super()._exceptions + (JobTemplateNotFoundException,)
 
     @property
     def _run_job(self):
         return job_template_runner.run_job_template
-
-    @property
-    def _template_id(self):
-        return "run_job_template"
 
     @property
     def _template_name(self):

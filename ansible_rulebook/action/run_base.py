@@ -48,11 +48,11 @@ class RunBase:
         return data
 
     @property
-    def _template_id(self) -> str:
+    def _action_name(self) -> str:
         raise NotImplementedError
 
     def __init__(self, metadata: Metadata, control: Control, **action_args):
-        self.helper = Helper(metadata, control, self._template_id)
+        self.helper = Helper(metadata, control, self._action_name)
         self.action_args = action_args
         self.job_id = str(uuid.uuid4())
         self.name = self.action_args["name"]
@@ -75,7 +75,7 @@ class RunBase:
                     await asyncio.sleep(delay)
                 logger.info(
                     "Previous %s failed. Retry %d of %d",
-                    self._template_id,
+                    self._action_name,
                     i,
                     retries,
                 )
