@@ -161,6 +161,65 @@ async def test_run_job_template(drools_call, additional_args):
         _validate(queue, True)
 
 
+URL_PARAMETERS = [
+    (
+        None,
+        "",
+    ),
+    (
+        10,
+        "job url:",
+    ),
+]
+
+
+@pytest.mark.parametrize("job_id, stdout", URL_PARAMETERS)
+@pytest.mark.asyncio
+async def test_run_job_template_url(job_id, stdout, capfd):
+    queue = asyncio.Queue()
+    metadata = Metadata(
+        rule="r1",
+        rule_set="rs1",
+        rule_uuid="u1",
+        rule_set_uuid="u2",
+        rule_run_at="abc",
+    )
+    control = Control(
+        queue=queue,
+        inventory="abc",
+        hosts=["all"],
+        variables={"a": 1},
+        project_data_file="",
+    )
+    action_args = {
+        "name": "fred",
+        "organization": "Default",
+        "retries": 0,
+        "retry": True,
+        "delay": 0,
+    }
+    controller_job = {
+        "status": "success",
+        "rc": 0,
+        "artifacts": dict(b=1),
+        "created": "abc",
+    }
+    if job_id is not None:
+        controller_job["id"] = job_id
+
+    with patch(
+        "ansible_rulebook.action.run_job_template."
+        "job_template_runner.run_job_template",
+        return_value=controller_job,
+    ):
+        await RunJobTemplate(metadata, control, **action_args)()
+        captured = capfd.readouterr()
+
+        assert ((not job_id) and (captured.out == stdout)) or (
+            job_id and captured.out.startswith(stdout)
+        )
+
+
 @pytest.mark.asyncio
 async def test_run_job_template_retries():
     queue = asyncio.Queue()

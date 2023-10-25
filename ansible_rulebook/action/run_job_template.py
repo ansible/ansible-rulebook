@@ -69,6 +69,9 @@ class RunJobTemplate:
         )
         await self._job_start_event()
         await self._run()
+        url = self._controller_job_url()
+        if url:
+            print(f"job url: {url}")
 
     async def _run(self):
         retries = self.action_args.get("retries", 0)
