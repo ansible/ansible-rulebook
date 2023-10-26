@@ -71,7 +71,7 @@ class RunWorkflowTemplate:
         await self._run()
         url = self._controller_job_url()
         if url:
-            print(f"job url: {url}")
+            print(f"job results url: {url}")
 
     async def _run(self):
         retries = self.action_args.get("retries", 0)

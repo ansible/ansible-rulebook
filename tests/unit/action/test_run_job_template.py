@@ -168,7 +168,7 @@ URL_PARAMETERS = [
     ),
     (
         10,
-        "job url:",
+        "job results url:",
     ),
 ]
 
