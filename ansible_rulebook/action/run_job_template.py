@@ -46,7 +46,13 @@ class RunJobTemplate:
         self.organization = self.action_args["organization"]
         self.job_id = str(uuid.uuid4())
         self.job_args = self.action_args.get("job_args", {})
-        self.job_args["limit"] = ",".join(self.helper.control.hosts)
+        if "limit" in self.job_args:
+            if isinstance(self.job_args["limit"], list):
+                self.job_args["limit"] = ",".join(self.job_args["limit"])
+            else:
+                self.job_args["limit"] = str(self.job_args["limit"])
+        else:
+            self.job_args["limit"] = ",".join(self.helper.control.hosts)
         self.controller_job = {}
 
     async def __call__(self):
