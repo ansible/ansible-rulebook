@@ -4,6 +4,7 @@
 ## [Unreleased]
 
 ### Added
+- ssl_verify option now also supports "true" or "false" values
 
 ### Fixed
 

@@ -84,9 +84,9 @@ class JobTemplateRunner:
     @cached_property
     def _sslcontext(self) -> Union[bool, ssl.SSLContext]:
         if self.host.startswith("https"):
-            if self.verify_ssl.lower() == "yes":
+            if self.verify_ssl.lower() in ["yes", "true"]:
                 return True
-            elif not self.verify_ssl.lower() == "no":
+            if self.verify_ssl.lower() not in ["no", "false"]:
                 return ssl.create_default_context(cafile=self.verify_ssl)
         return False
 
