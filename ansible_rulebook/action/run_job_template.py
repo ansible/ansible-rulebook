@@ -46,7 +46,10 @@ class RunJobTemplate:
         self.organization = self.action_args["organization"]
         self.job_id = str(uuid.uuid4())
         self.job_args = self.action_args.get("job_args", {})
-        process_controller_host_limit(self)
+        self.job_args["limit"] = process_controller_host_limit(
+            self.job_args,
+            self.helper.control.hosts,
+        )
         self.controller_job = {}
 
     async def __call__(self):
