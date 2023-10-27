@@ -6,6 +6,7 @@
 ### Added
 
 ### Fixed
+- Job_template and workflow_template actions honor custom hosts limit
 
 ### Removed
 
