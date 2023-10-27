@@ -84,8 +84,11 @@ class RunPlaybook(RunBase):
             if os.path.exists(self.private_data_dir):
                 shutil.rmtree(self.private_data_dir)
 
-    async def _do_run(self) -> bool:
+    async def _run(self):
         logger.info("Calling Ansible runner")
+        await super()._run()
+
+    async def _do_run(self) -> bool:
         await Runner(
             self.private_data_dir,
             self.host_limit,
