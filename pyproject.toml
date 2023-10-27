@@ -3,12 +3,12 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.black]
-line-length = 79
+line-length = 120
 target-version = ["py39", "py310"]
 extend-exclude = "docs"
 
 [tool.isort]
 profile = "black"
 combine_as_imports = true
-line_length = 79
+line_length = 120
 extend_skip = ["docs"]
