@@ -21,8 +21,7 @@ from watchdog.observers import Observer
 def main(queue, args):
 
     log_file_patterns = {
-        os.path.abspath(log_file): patterns
-        for log_file, patterns in args.get("log_file_patterns", {}).items()
+        os.path.abspath(log_file): patterns for log_file, patterns in args.get("log_file_patterns", {}).items()
     }
     log_file_locs = {log_file: 0 for log_file in log_file_patterns}
 

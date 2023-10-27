@@ -79,9 +79,7 @@ async def test_job_template_get_config_error(mocked_job_template_runner):
 @pytest.mark.asyncio
 async def test_job_template_get_config_auth_error(mocked_job_template_runner):
     with aioresponses() as mocked:
-        mocked.get(
-            f"{mocked_job_template_runner.host}{CONFIG_SLUG}", status=401
-        )
+        mocked.get(f"{mocked_job_template_runner.host}{CONFIG_SLUG}", status=401)
         with pytest.raises(ControllerApiException):
             await mocked_job_template_runner.get_config()
 
@@ -90,20 +88,17 @@ async def test_job_template_get_config_auth_error(mocked_job_template_runner):
 async def test_run_job_template(mocked_job_template_runner):
     with aioresponses() as mocked:
         mocked.get(
-            f"{mocked_job_template_runner.host}"
-            f"{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
+            f"{mocked_job_template_runner.host}" f"{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
             status=200,
             body=json.dumps(UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE),
         )
         mocked.get(
-            f"{mocked_job_template_runner.host}"
-            f"{UNIFIED_JOB_TEMPLATE_PAGE2_SLUG}",
+            f"{mocked_job_template_runner.host}" f"{UNIFIED_JOB_TEMPLATE_PAGE2_SLUG}",
             status=200,
             body=json.dumps(UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE),
         )
         mocked.post(
-            f"{mocked_job_template_runner.host}"
-            f"{JOB_TEMPLATE_1_LAUNCH_SLUG}",
+            f"{mocked_job_template_runner.host}" f"{JOB_TEMPLATE_1_LAUNCH_SLUG}",
             status=200,
             body=json.dumps(JOB_TEMPLATE_POST_RESPONSE),
         )
@@ -117,9 +112,7 @@ async def test_run_job_template(mocked_job_template_runner):
             status=200,
             body=json.dumps(JOB_1_SUCCESSFUL),
         )
-        data = await mocked_job_template_runner.run_job_template(
-            JOB_TEMPLATE_NAME_1, ORGANIZATION_NAME, {"a": 1}
-        )
+        data = await mocked_job_template_runner.run_job_template(JOB_TEMPLATE_NAME_1, ORGANIZATION_NAME, {"a": 1})
         assert data["status"] == "successful"
         assert data["artifacts"] == {"fred": 45, "barney": 90}
 
@@ -128,20 +121,17 @@ async def test_run_job_template(mocked_job_template_runner):
 async def test_run_workflow_template(mocked_job_template_runner):
     with aioresponses() as mocked:
         mocked.get(
-            f"{mocked_job_template_runner.host}"
-            f"{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
+            f"{mocked_job_template_runner.host}" f"{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
             status=200,
             body=json.dumps(UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE),
         )
         mocked.get(
-            f"{mocked_job_template_runner.host}"
-            f"{UNIFIED_JOB_TEMPLATE_PAGE2_SLUG}",
+            f"{mocked_job_template_runner.host}" f"{UNIFIED_JOB_TEMPLATE_PAGE2_SLUG}",
             status=200,
             body=json.dumps(UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE),
         )
         mocked.post(
-            f"{mocked_job_template_runner.host}"
-            f"{JOB_TEMPLATE_2_LAUNCH_SLUG}",
+            f"{mocked_job_template_runner.host}" f"{JOB_TEMPLATE_2_LAUNCH_SLUG}",
             status=200,
             body=json.dumps(JOB_TEMPLATE_POST_RESPONSE),
         )
@@ -167,50 +157,41 @@ async def test_run_workflow_template(mocked_job_template_runner):
 async def test_missing_job_template(mocked_job_template_runner):
     with aioresponses() as mocked:
         mocked.get(
-            f"{mocked_job_template_runner.host}"
-            f"{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
+            f"{mocked_job_template_runner.host}" f"{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
             status=200,
             body=json.dumps(NO_JOB_TEMPLATE_PAGE1_RESPONSE),
         )
         with pytest.raises(JobTemplateNotFoundException):
-            await mocked_job_template_runner.run_job_template(
-                JOB_TEMPLATE_NAME_1, ORGANIZATION_NAME, {"a": 1}
-            )
+            await mocked_job_template_runner.run_job_template(JOB_TEMPLATE_NAME_1, ORGANIZATION_NAME, {"a": 1})
 
 
 @pytest.mark.asyncio
 async def test_missing_workflow_template(mocked_job_template_runner):
     with aioresponses() as mocked:
         mocked.get(
-            f"{mocked_job_template_runner.host}"
-            f"{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
+            f"{mocked_job_template_runner.host}" f"{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
             status=200,
             body=json.dumps(NO_JOB_TEMPLATE_PAGE1_RESPONSE),
         )
         with pytest.raises(WorkflowJobTemplateNotFoundException):
-            await mocked_job_template_runner.run_workflow_job_template(
-                JOB_TEMPLATE_NAME_1, ORGANIZATION_NAME, {"a": 1}
-            )
+            await mocked_job_template_runner.run_workflow_job_template(JOB_TEMPLATE_NAME_1, ORGANIZATION_NAME, {"a": 1})
 
 
 @pytest.mark.asyncio
 async def test_run_workflow_template_fail(mocked_job_template_runner):
     with aioresponses() as mocked:
         mocked.get(
-            f"{mocked_job_template_runner.host}"
-            f"{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
+            f"{mocked_job_template_runner.host}" f"{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
             status=200,
             body=json.dumps(UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE),
         )
         mocked.get(
-            f"{mocked_job_template_runner.host}"
-            f"{UNIFIED_JOB_TEMPLATE_PAGE2_SLUG}",
+            f"{mocked_job_template_runner.host}" f"{UNIFIED_JOB_TEMPLATE_PAGE2_SLUG}",
             status=200,
             body=json.dumps(UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE),
         )
         mocked.post(
-            f"{mocked_job_template_runner.host}"
-            f"{JOB_TEMPLATE_2_LAUNCH_SLUG}",
+            f"{mocked_job_template_runner.host}" f"{JOB_TEMPLATE_2_LAUNCH_SLUG}",
             status=400,
             body=json.dumps({"msg": "Custom error message"}),
         )

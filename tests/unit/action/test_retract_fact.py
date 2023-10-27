@@ -58,10 +58,7 @@ async def test_retract_fact(partial, keys_excluded):
     }
 
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
-        with patch(
-            "ansible_rulebook.action.run_job_template."
-            "lang.retract_matching_facts"
-        ) as drools_mock:
+        with patch("ansible_rulebook.action.run_job_template." "lang.retract_matching_facts") as drools_mock:
             await RetractFact(metadata, control, **action_args)()
             drools_mock.assert_called_once_with(
                 action_args["ruleset"],

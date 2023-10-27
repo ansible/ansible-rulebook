@@ -35,9 +35,7 @@ def main():
                 try:
                     with open(os.path.join(root, file)) as f:
                         data = yaml.safe_load(f.read())
-                        ruleset = generate_dict_rulesets(
-                            parse_rule_sets(data), {}
-                        )
+                        ruleset = generate_dict_rulesets(parse_rule_sets(data), {})
 
                     with open(os.path.join(HERE, "asts", file), "w") as f:
                         f.write(yaml.dump(ruleset))

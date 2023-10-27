@@ -112,9 +112,7 @@ class Helper:
 
     def embellish_internal_event(self, event: Dict) -> Dict:
         """Insert metadata for every internally generated event"""
-        return insert_meta(
-            event, **{"source_name": self.action, "source_type": "internal"}
-        )
+        return insert_meta(event, **{"source_name": self.action, "source_type": "internal"})
 
     def set_action(self, action) -> None:
         self.action = action

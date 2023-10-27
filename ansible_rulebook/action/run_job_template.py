@@ -20,10 +20,7 @@ from urllib.parse import urljoin
 from drools import ruleset as lang
 
 from ansible_rulebook.conf import settings
-from ansible_rulebook.exception import (
-    ControllerApiException,
-    JobTemplateNotFoundException,
-)
+from ansible_rulebook.exception import ControllerApiException, JobTemplateNotFoundException
 from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.util import run_at
 
@@ -61,9 +58,7 @@ class RunJobTemplate:
             self.helper.metadata.rule,
         )
 
-        self.job_args["extra_vars"] = self.helper.collect_extra_vars(
-            self.job_args.get("extra_vars", {})
-        )
+        self.job_args["extra_vars"] = self.helper.collect_extra_vars(self.job_args.get("extra_vars", {}))
         await self._job_start_event()
         await self._run()
 
@@ -119,9 +114,7 @@ class RunJobTemplate:
         post_events = self.action_args.get("post_events", False)
 
         if set_facts or post_events:
-            ruleset = self.action_args.get(
-                "ruleset", self.helper.metadata.rule_set
-            )
+            ruleset = self.action_args.get("ruleset", self.helper.metadata.rule_set)
             logger.debug("set_facts")
             facts = self.controller_job.get("artifacts", {})
             if facts:

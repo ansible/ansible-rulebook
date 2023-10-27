@@ -36,9 +36,7 @@ class PrintEvent:
         if "pretty" in self.action_args:
             print_fn = pprint
 
-        var_name = (
-            "events" if "events" in self.helper.control.variables else "event"
-        )
+        var_name = "events" if "events" in self.helper.control.variables else "event"
 
         print_fn(self.helper.control.variables[var_name])
         sys.stdout.flush()

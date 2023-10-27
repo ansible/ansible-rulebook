@@ -91,9 +91,7 @@ async def validate_events(event_log, **kwargs):
         if "timeout" in kwargs:
             event = await get_queue_item(event_log, kwargs["timeout"])
             if not event:
-                raise TimedOutException(
-                    "Validate events, failed no event received"
-                )
+                raise TimedOutException("Validate events, failed no event received")
         else:
             event = event_log.get_nowait()
 
@@ -101,9 +99,7 @@ async def validate_events(event_log, **kwargs):
         print(event)
         if event["type"] == "Action":
             action_events += 1
-            actions.append(
-                f"{event['ruleset']}::{event['rule']}::{event['action']}"
-            )
+            actions.append(f"{event['ruleset']}::{event['rule']}::{event['action']}")
         elif event["type"] == "Shutdown":
             shutdown_events += 1
         elif event["type"] == "Job":
@@ -135,9 +131,7 @@ test_data = [
 
 
 @freeze_time("2023-03-23 11:11:11")
-@pytest.mark.parametrize(
-    "source_name,filter_name, shutdown_message", test_data
-)
+@pytest.mark.parametrize("source_name,filter_name, shutdown_message", test_data)
 @pytest.mark.asyncio
 async def test_start_source(source_name, filter_name, shutdown_message):
     os.chdir(HERE)
@@ -174,9 +168,7 @@ test_data = [
 
 @pytest.mark.parametrize("source_name,filter_name,source_dir,ex", test_data)
 @pytest.mark.asyncio
-async def test_start_source_exceptions(
-    source_name, filter_name, source_dir, ex
-):
+async def test_start_source_exceptions(source_name, filter_name, source_dir, ex):
     os.chdir(HERE)
 
     queue = asyncio.Queue()
@@ -194,9 +186,7 @@ async def test_start_source_exceptions(
         )
 
 
-source_args = dict(
-    loop_count=-1, event_delay=1, startup_delay=30, payload=dict(i=1)
-)
+source_args = dict(loop_count=-1, event_delay=1, startup_delay=30, payload=dict(i=1))
 test_data = [
     ("generic", "noop", "sources", source_args),
 ]
@@ -204,9 +194,7 @@ test_data = [
 
 @pytest.mark.parametrize("source_name,filter_name,source_dir,args", test_data)
 @pytest.mark.asyncio
-async def test_start_source_with_args(
-    source_name, filter_name, source_dir, args
-):
+async def test_start_source_with_args(source_name, filter_name, source_dir, args):
     os.chdir(HERE)
 
     queue = asyncio.Queue()
@@ -226,10 +214,7 @@ async def test_start_source_with_args(
     await asyncio.sleep(0.02)
     task.cancel()
     last = await queue.get()
-    assert (
-        f"Source {source_name} task cancelled, initiated shutdown at"
-        in last.message
-    )
+    assert f"Source {source_name} task cancelled, initiated shutdown at" in last.message
 
 
 @pytest.mark.asyncio
@@ -265,9 +250,7 @@ async def test_run_rulesets():
 
 @pytest.mark.asyncio
 async def test_run_rules_with_assignment():
-    ruleset_queues, event_log = load_rulebook(
-        "rules/rules_with_assignment.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("rules/rules_with_assignment.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=0))
@@ -288,9 +271,7 @@ async def test_run_rules_with_assignment():
 
 @pytest.mark.asyncio
 async def test_run_rules_with_assignment2():
-    ruleset_queues, event_log = load_rulebook(
-        "rules/rules_with_assignment2.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("rules/rules_with_assignment2.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=0))
@@ -319,9 +300,7 @@ async def test_run_rules_simple():
     queue.put_nowait(dict(i=2))
     queue.put_nowait(Shutdown())
 
-    await run_rulesets(
-        event_log, ruleset_queues, dict(), "playbooks/inventory.yml"
-    )
+    await run_rulesets(event_log, ruleset_queues, dict(), "playbooks/inventory.yml")
 
     assert event_log.get_nowait()["type"] == "Action", "0"
     assert event_log.get_nowait()["type"] == "Action", "0.2"
@@ -343,9 +322,7 @@ async def test_run_rules_simple():
 
 @pytest.mark.asyncio
 async def test_run_multiple_hosts():
-    ruleset_queues, event_log = load_rulebook(
-        "rules/test_rules_multiple_hosts.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("rules/test_rules_multiple_hosts.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=0))
@@ -375,9 +352,7 @@ async def test_run_multiple_hosts():
 
 @pytest.mark.asyncio
 async def test_run_multiple_hosts2():
-    ruleset_queues, event_log = load_rulebook(
-        "rules/test_rules_multiple_hosts2.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("rules/test_rules_multiple_hosts2.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=0))
@@ -402,9 +377,7 @@ async def test_run_multiple_hosts2():
 
 @pytest.mark.asyncio
 async def test_run_multiple_hosts3():
-    ruleset_queues, event_log = load_rulebook(
-        "rules/test_rules_multiple_hosts3.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("rules/test_rules_multiple_hosts3.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=0))
@@ -437,9 +410,7 @@ async def test_filters():
     queue.put_nowait(dict(i=2))
     queue.put_nowait(Shutdown())
 
-    await run_rulesets(
-        event_log, ruleset_queues, dict(), "playbooks/inventory.yml"
-    )
+    await run_rulesets(event_log, ruleset_queues, dict(), "playbooks/inventory.yml")
 
     assert event_log.get_nowait()["type"] == "Action", "0"
     assert event_log.get_nowait()["type"] == "Action", "0.2"
@@ -492,9 +463,7 @@ async def test_run_rulesets_on_hosts():
 @pytest.mark.asyncio
 async def test_run_assert_facts():
     ruleset_queues, event_log = load_rulebook("rules/test_set_facts.yml")
-    inventory = dict(
-        all=dict(hosts=dict(localhost=dict(ansible_connection="local")))
-    )
+    inventory = dict(all=dict(hosts=dict(localhost=dict(ansible_connection="local"))))
     with tempfile.NamedTemporaryFile(mode="w+") as temp:
         temp.write(yaml.dump(inventory))
         temp.flush()

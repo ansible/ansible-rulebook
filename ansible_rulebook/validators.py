@@ -23,9 +23,7 @@ class Validate:
         if cls.schema:
             return cls.schema
 
-        path = resources.files(__package__).joinpath(
-            f"./schema/{DEFAULT_RULEBOOK_SCHEMA}.json"
-        )
+        path = resources.files(__package__).joinpath(f"./schema/{DEFAULT_RULEBOOK_SCHEMA}.json")
         data = path.read_text(encoding="utf-8")
         try:
             cls.schema = json.loads(data)

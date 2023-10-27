@@ -41,11 +41,7 @@ class SourceTask:
         self.queue = queue
 
     def __enter__(self):
-        self.task = asyncio.create_task(
-            start_source(
-                self.source, [self.source_dir], self.variables, self.queue
-            )
-        )
+        self.task = asyncio.create_task(start_source(self.source, [self.source_dir], self.variables, self.queue))
         return self.task
 
     def __exit__(self, *args):
@@ -432,9 +428,7 @@ async def test_14_sub():
 
 @pytest.mark.asyncio
 async def test_15_multiple_events_all():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/15_multiple_events_all.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/15_multiple_events_all.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(nested=dict(i=1, j=0)))
@@ -462,9 +456,7 @@ async def test_15_multiple_events_all():
 
 @pytest.mark.asyncio
 async def test_16_multiple_events_any():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/16_multiple_events_any.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/16_multiple_events_any.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(nested=dict(i=1, j=0)))
@@ -488,9 +480,7 @@ async def test_16_multiple_events_any():
 
 @pytest.mark.asyncio
 async def test_17_multiple_sources_any():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/17_multiple_sources_any.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/17_multiple_sources_any.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=1))
@@ -519,9 +509,7 @@ async def test_17_multiple_sources_any():
 
 @pytest.mark.asyncio
 async def test_18_multiple_sources_all():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/18_multiple_sources_all.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/18_multiple_sources_all.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=1))
@@ -713,9 +701,7 @@ async def test_24_max_attributes():
 
 @pytest.mark.asyncio
 async def test_25_max_attributes_nested():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/25_max_attributes_nested.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/25_max_attributes_nested.yml")
 
     with open("examples/replays/25_max_attributes_nested/00.json") as f:
         data = json.loads(f.read())
@@ -798,9 +784,7 @@ async def test_27_var_root():
 
 @pytest.mark.asyncio
 async def test_28_right_side_condition_template():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/28_right_side_condition_template.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/28_right_side_condition_template.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait({"i": 1})
@@ -852,9 +836,7 @@ async def test_29_run_module():
     assert event["action_uuid"] == DUMMY_UUID
     assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
     assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
-    assert event["matching_events"] == {
-        "m": {"i": 1, "meta": {"hosts": "localhost"}}
-    }
+    assert event["matching_events"] == {"m": {"i": 1, "meta": {"hosts": "localhost"}}}
     assert event["rc"] == 0, "2.1"
     assert event["status"] == "successful", "2.2"
     event = event_log.get_nowait()
@@ -867,9 +849,7 @@ async def test_29_run_module():
 
 @pytest.mark.asyncio
 async def test_30_run_module_missing():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/30_run_module_missing.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/30_run_module_missing.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
@@ -900,9 +880,7 @@ async def test_30_run_module_missing():
 
 @pytest.mark.asyncio
 async def test_31_run_module_missing_args():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/31_run_module_missing_args.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/31_run_module_missing_args.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
@@ -933,9 +911,7 @@ async def test_31_run_module_missing_args():
 
 @pytest.mark.asyncio
 async def test_32_run_module_fail():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/32_run_module_fail.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/32_run_module_fail.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
@@ -966,9 +942,7 @@ async def test_32_run_module_fail():
 
 @pytest.mark.asyncio
 async def test_35_multiple_rulesets_1_fired():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/35_multiple_rulesets_1_fired.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/35_multiple_rulesets_1_fired.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
@@ -998,13 +972,9 @@ async def test_35_multiple_rulesets_1_fired():
 
 @pytest.mark.asyncio
 async def test_36_multiple_rulesets_both_fired():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/36_multiple_rulesets_both_fired.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/36_multiple_rulesets_both_fired.yml")
 
-    with SourceTask(
-        ruleset_queues[0][0].sources[0], "sources", {}, ruleset_queues[0][1]
-    ):
+    with SourceTask(ruleset_queues[0][0].sources[0], "sources", {}, ruleset_queues[0][1]):
         with SourceTask(
             ruleset_queues[1][0].sources[0],
             "sources",
@@ -1289,21 +1259,15 @@ async def test_49_float():
             event = event_log.get_nowait()
             assert event["type"] == "Action", "1"
             assert event["action"] == "debug", "1"
-            assert event["matching_events"] == {
-                "m": {"pi": 3.14159, "meta": meta}
-            }, "3"
+            assert event["matching_events"] == {"m": {"pi": 3.14159, "meta": meta}}, "3"
             event = event_log.get_nowait()
             assert event["type"] == "Action", "3"
             assert event["action"] == "debug", "4"
-            assert event["matching_events"] == {
-                "m": {"mass": 5.97219, "meta": meta}
-            }, "5"
+            assert event["matching_events"] == {"m": {"mass": 5.97219, "meta": meta}}, "5"
             event = event_log.get_nowait()
             assert event["type"] == "Action", "6"
             assert event["action"] == "debug", "7"
-            assert event["matching_events"] == {
-                "m": {"radius": 300.42, "meta": meta}
-            }, "8"
+            assert event["matching_events"] == {"m": {"radius": 300.42, "meta": meta}}, "8"
             event = event_log.get_nowait()
             assert event["type"] == "Shutdown", "9"
 
@@ -1334,33 +1298,23 @@ async def test_50_negation():
             event = event_log.get_nowait()
             assert event["type"] == "Action", "1"
             assert event["action"] == "print_event", "1"
-            assert event["matching_events"] == {
-                "m": {"b": False, "meta": meta}
-            }, "1"
+            assert event["matching_events"] == {"m": {"b": False, "meta": meta}}, "1"
             event = event_log.get_nowait()
             assert event["type"] == "Action", "3"
             assert event["action"] == "print_event", "3"
-            assert event["matching_events"] == {
-                "m": {"bt": True, "meta": meta}
-            }, "3"
+            assert event["matching_events"] == {"m": {"bt": True, "meta": meta}}, "3"
             event = event_log.get_nowait()
             assert event["type"] == "Action", "5"
             assert event["action"] == "print_event", "5"
-            assert event["matching_events"] == {
-                "m": {"i": 10, "meta": meta}
-            }, "5"
+            assert event["matching_events"] == {"m": {"i": 10, "meta": meta}}, "5"
             event = event_log.get_nowait()
             assert event["type"] == "Action", "6"
             assert event["action"] == "print_event", "6"
-            assert event["matching_events"] == {
-                "m": {"msg": "Fred", "meta": meta}
-            }, "6"
+            assert event["matching_events"] == {"m": {"msg": "Fred", "meta": meta}}, "6"
             event = event_log.get_nowait()
             assert event["type"] == "Action", "7"
             assert event["action"] == "print_event", "7"
-            assert event["matching_events"] == {
-                "m": {"j": 9, "meta": meta}
-            }, "7"
+            assert event["matching_events"] == {"m": {"j": 9, "meta": meta}}, "7"
             event = event_log.get_nowait()
             assert event["type"] == "Shutdown", "8"
 
@@ -1469,9 +1423,7 @@ async def test_52_once_within():
 
 @pytest.mark.asyncio
 async def test_53_once_within_multiple_hosts():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/53_once_within_multiple_hosts.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/53_once_within_multiple_hosts.yml")
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
@@ -1587,9 +1539,7 @@ async def test_56_once_after():
 @pytest.mark.temporal
 @pytest.mark.long_run
 async def test_57_once_after_multiple():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/57_once_after_multi.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/57_once_after_multi.yml")
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
@@ -1637,9 +1587,7 @@ async def test_58_string_search():
 
 @pytest.mark.asyncio
 async def test_59_multiple_actions():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/59_multiple_actions.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/59_multiple_actions.yml")
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
@@ -1813,13 +1761,9 @@ async def test_65_selectattr_3():
 
 @pytest.mark.asyncio
 async def test_66_sleepy_playbook():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/66_sleepy_playbook.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/66_sleepy_playbook.yml")
 
-    with SourceTask(
-        ruleset_queues[0][0].sources[0], "sources", {}, ruleset_queues[0][1]
-    ):
+    with SourceTask(ruleset_queues[0][0].sources[0], "sources", {}, ruleset_queues[0][1]):
         with SourceTask(
             ruleset_queues[1][0].sources[0],
             "sources",
@@ -1849,9 +1793,7 @@ async def test_66_sleepy_playbook():
 async def test_67_shutdown_now():
     ruleset_queues, event_log = load_rulebook("examples/67_shutdown_now.yml")
 
-    with SourceTask(
-        ruleset_queues[0][0].sources[0], "sources", {}, ruleset_queues[0][1]
-    ):
+    with SourceTask(ruleset_queues[0][0].sources[0], "sources", {}, ruleset_queues[0][1]):
         with SourceTask(
             ruleset_queues[1][0].sources[0],
             "sources",
@@ -1987,9 +1929,7 @@ async def test_72_set_fact_with_type():
 
 @pytest.mark.asyncio
 async def test_73_mix_and_match_list():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/73_mix_and_match_list.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/73_mix_and_match_list.yml")
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
@@ -2017,9 +1957,7 @@ async def test_73_mix_and_match_list():
 
 @pytest.mark.asyncio
 async def test_74_self_referential():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/74_self_referential.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/74_self_referential.yml")
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
@@ -2096,15 +2034,12 @@ async def test_46_job_template():
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    response_obj = dict(
-        status="successful", id=945, created="dummy", artifacts=dict(a=1)
-    )
+    response_obj = dict(status="successful", id=945, created="dummy", artifacts=dict(a=1))
     job_template_runner.host = "https://examples.com"
     job_url = "https://examples.com/#/jobs/945/details"
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.action.run_job_template."
-            "job_template_runner.run_job_template",
+            "ansible_rulebook.action.run_job_template." "job_template_runner.run_job_template",
             return_value=response_obj,
         ):
             await run_rulesets(
@@ -2139,8 +2074,7 @@ async def test_46_job_template_exception(err_msg, err):
     rs = ruleset_queues[0][0]
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.action.run_job_template."
-            "job_template_runner.run_job_template",
+            "ansible_rulebook.action.run_job_template." "job_template_runner.run_job_template",
             side_effect=err,
         ):
             await run_rulesets(
@@ -2176,9 +2110,7 @@ async def test_46_job_template_exception(err_msg, err):
 
 @pytest.mark.asyncio
 async def test_77_default_events_ttl():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/77_default_events_ttl.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/77_default_events_ttl.yml")
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
@@ -2202,9 +2134,7 @@ async def test_77_default_events_ttl():
 
 @pytest.mark.asyncio
 async def test_78_complete_retract_fact():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/78_complete_retract_fact.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/78_complete_retract_fact.yml")
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=1))
@@ -2251,16 +2181,13 @@ WORKFLOW_TEMPLATE_ERRORS = [
 @pytest.mark.parametrize("err_msg,err", WORKFLOW_TEMPLATE_ERRORS)
 @pytest.mark.asyncio
 async def test_79_workflow_job_template_exception(err_msg, err):
-    ruleset_queues, event_log = load_rulebook(
-        "examples/79_workflow_template.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/79_workflow_template.yml")
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.action.run_workflow_template."
-            "job_template_runner.run_workflow_job_template",
+            "ansible_rulebook.action.run_workflow_template." "job_template_runner.run_workflow_job_template",
             side_effect=err,
         ):
             await run_rulesets(
@@ -2297,21 +2224,16 @@ async def test_79_workflow_job_template_exception(err_msg, err):
 @pytest.mark.jira("AAP-9829")
 @pytest.mark.asyncio
 async def test_79_workflow_job_template():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/79_workflow_template.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/79_workflow_template.yml")
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
-    response_obj = dict(
-        status="successful", id=945, created="dummy", artifacts=dict(a=1)
-    )
+    response_obj = dict(status="successful", id=945, created="dummy", artifacts=dict(a=1))
     job_template_runner.host = "https://examples.com"
     job_url = "https://examples.com/#/jobs/workflow/945/details"
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.action.run_workflow_template."
-            "job_template_runner.run_workflow_job_template",
+            "ansible_rulebook.action.run_workflow_template." "job_template_runner.run_workflow_job_template",
             return_value=response_obj,
         ):
             await run_rulesets(
@@ -2332,9 +2254,7 @@ async def test_79_workflow_job_template():
 
 @pytest.mark.asyncio
 async def test_80_match_multiple_rules():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/80_match_multiple_rules.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/80_match_multiple_rules.yml")
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]
@@ -2359,9 +2279,7 @@ async def test_80_match_multiple_rules():
 
 @pytest.mark.asyncio
 async def test_81_match_single_rule():
-    ruleset_queues, event_log = load_rulebook(
-        "examples/81_match_single_rule.yml"
-    )
+    ruleset_queues, event_log = load_rulebook("examples/81_match_single_rule.yml")
 
     queue = ruleset_queues[0][1]
     rs = ruleset_queues[0][0]

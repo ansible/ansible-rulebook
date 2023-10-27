@@ -21,13 +21,7 @@ from drools.rule import Rule as DroolsRule
 from drools.ruleset import Ruleset as DroolsRuleset
 
 from ansible_rulebook.json_generator import visit_ruleset
-from ansible_rulebook.rule_types import (
-    Action,
-    ActionContext,
-    EngineRuleSetQueuePlan,
-    Plan,
-    RuleSetQueue,
-)
+from ansible_rulebook.rule_types import Action, ActionContext, EngineRuleSetQueuePlan, Plan, RuleSetQueue
 
 logger = logging.getLogger(__name__)
 
@@ -112,11 +106,7 @@ def generate_rulesets(
                     ansible_ruleset.hosts,
                     plan,
                 )
-                drools_ruleset.add_rule(
-                    DroolsRule(name=ansible_rule.name, callback=fn)
-                )
+                drools_ruleset.add_rule(DroolsRule(name=ansible_rule.name, callback=fn))
 
-        rulesets.append(
-            EngineRuleSetQueuePlan(drools_ruleset, source_queue, plan)
-        )
+        rulesets.append(EngineRuleSetQueuePlan(drools_ruleset, source_queue, plan))
     return rulesets

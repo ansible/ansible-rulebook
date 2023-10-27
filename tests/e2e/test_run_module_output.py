@@ -85,9 +85,7 @@ async def test_run_module_output():
 
             matching_events = data["matching_events"]
             assert (
-                dpath.get(
-                    matching_events, rule_matches[rule_name]["event_key"]
-                )
+                dpath.get(matching_events, rule_matches[rule_name]["event_key"])
                 == rule_matches[rule_name]["event_value"]
             )
             assert data["action"] == rule_matches[rule_name]["action"]

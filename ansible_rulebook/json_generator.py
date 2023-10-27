@@ -34,11 +34,7 @@ from ansible_rulebook.condition_types import (
     String,
     to_condition_type,
 )
-from ansible_rulebook.exception import (
-    InvalidAssignmentException,
-    InvalidIdentifierException,
-    VarsKeyMissingException,
-)
+from ansible_rulebook.exception import InvalidAssignmentException, InvalidIdentifierException, VarsKeyMissingException
 from ansible_rulebook.rule_types import (
     Action,
     Condition as RuleCondition,
@@ -76,11 +72,7 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
     elif isinstance(parsed_condition, Condition):
         return visit_condition(parsed_condition.value, variables)
     elif isinstance(parsed_condition, Boolean):
-        return (
-            {"Boolean": True}
-            if parsed_condition.value == "true"
-            else {"Boolean": False}
-        )
+        return {"Boolean": True} if parsed_condition.value == "true" else {"Boolean": False}
     elif isinstance(parsed_condition, Identifier):
         if parsed_condition.value.startswith("fact."):
             return {"Fact": parsed_condition.value[5:]}
@@ -105,9 +97,7 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
             raise InvalidIdentifierException(msg)
 
     elif isinstance(parsed_condition, String):
-        return {
-            "String": substitute_variables(parsed_condition.value, variables)
-        }
+        return {"String": substitute_variables(parsed_condition.value, variables)}
     elif isinstance(parsed_condition, Null):
         return {"NullType": None}
     elif isinstance(parsed_condition, Integer):
@@ -120,9 +110,7 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
             pattern=visit_condition(parsed_condition.pattern, variables),
         )
         if parsed_condition.options:
-            data["options"] = [
-                visit_condition(v, variables) for v in parsed_condition.options
-            ]
+            data["options"] = [visit_condition(v, variables) for v in parsed_condition.options]
         return {"SearchType": data}
     elif isinstance(parsed_condition, SelectattrType):
         return dict(
@@ -153,51 +141,27 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
         elif parsed_condition.operator == "is":
             if isinstance(parsed_condition.right, String):
                 if parsed_condition.right.value == "defined":
-                    return {
-                        "IsDefinedExpression": visit_condition(
-                            parsed_condition.left, variables
-                        )
-                    }
+                    return {"IsDefinedExpression": visit_condition(parsed_condition.left, variables)}
             elif isinstance(parsed_condition.right, SearchType):
-                return create_binary_node(
-                    "SearchMatchesExpression", parsed_condition, variables
-                )
+                return create_binary_node("SearchMatchesExpression", parsed_condition, variables)
             elif isinstance(parsed_condition.right, SelectattrType):
-                return create_binary_node(
-                    "SelectAttrExpression", parsed_condition, variables
-                )
+                return create_binary_node("SelectAttrExpression", parsed_condition, variables)
             elif isinstance(parsed_condition.right, SelectType):
-                return create_binary_node(
-                    "SelectExpression", parsed_condition, variables
-                )
+                return create_binary_node("SelectExpression", parsed_condition, variables)
         elif parsed_condition.operator == "is not":
             if isinstance(parsed_condition.right, String):
                 if parsed_condition.right.value == "defined":
-                    return {
-                        "IsNotDefinedExpression": visit_condition(
-                            parsed_condition.left, variables
-                        )
-                    }
+                    return {"IsNotDefinedExpression": visit_condition(parsed_condition.left, variables)}
             elif isinstance(parsed_condition.right, SearchType):
-                return create_binary_node(
-                    "SearchNotMatchesExpression", parsed_condition, variables
-                )
+                return create_binary_node("SearchNotMatchesExpression", parsed_condition, variables)
             elif isinstance(parsed_condition.right, SelectattrType):
-                return create_binary_node(
-                    "SelectAttrNotExpression", parsed_condition, variables
-                )
+                return create_binary_node("SelectAttrNotExpression", parsed_condition, variables)
             elif isinstance(parsed_condition.right, SelectType):
-                return create_binary_node(
-                    "SelectNotExpression", parsed_condition, variables
-                )
+                return create_binary_node("SelectNotExpression", parsed_condition, variables)
         else:
             raise Exception(f"Unhandled token {parsed_condition}")
     elif isinstance(parsed_condition, NegateExpression):
-        return {
-            "NegateExpression": visit_condition(
-                parsed_condition.value, variables
-            )
-        }
+        return {"NegateExpression": visit_condition(parsed_condition.value, variables)}
     else:
         raise Exception(f"Unhandled token {parsed_condition}")
 
@@ -254,10 +218,7 @@ def visit_source(parsed_source: EventSource, variables: Dict):
             "name": parsed_source.name,
             "source_name": parsed_source.source_name,
             "source_args": parsed_source.source_args,
-            "source_filters": [
-                visit_source_filter(f, variables)
-                for f in parsed_source.source_filters
-            ],
+            "source_filters": [visit_source_filter(f, variables) for f in parsed_source.source_filters],
         }
     }
 
@@ -294,9 +255,7 @@ def visit_ruleset(ruleset: RuleSet, variables: Dict):
     data = {
         "name": ruleset.name,
         "hosts": ruleset.hosts,
-        "sources": [
-            visit_source(source, variables) for source in ruleset.sources
-        ],
+        "sources": [visit_source(source, variables) for source in ruleset.sources],
         "rules": [visit_rule(rule, variables) for rule in ruleset.rules],
     }
 
@@ -326,10 +285,7 @@ def validate_assignment_expression(value):
         raise InvalidAssignmentException(msg)
 
     if tokens[0] not in ["events", "facts"]:
-        msg = (
-            "Only events and facts can be used in assignment. "
-            + f"{value} is invalid."
-        )
+        msg = "Only events and facts can be used in assignment. " + f"{value} is invalid."
         raise InvalidAssignmentException(msg)
 
 

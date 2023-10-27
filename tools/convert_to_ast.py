@@ -33,9 +33,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-E",
         "--env-vars",
-        help=(
-            "Comma separated list of variables to import from the environment"
-        ),
+        help=("Comma separated list of variables to import from the environment"),
     )
     return parser
 

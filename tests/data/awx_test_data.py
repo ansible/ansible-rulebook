@@ -23,12 +23,8 @@ JOB_TEMPLATE_2 = dict(
     related=dict(launch=JOB_TEMPLATE_2_LAUNCH_SLUG),
 )
 
-UNIFIED_JOB_TEMPLATE_PAGE1_SLUG = (
-    f"/api/v2/unified_job_templates/?name={JOB_TEMPLATE_NAME_1}"
-)
-UNIFIED_JOB_TEMPLATE_PAGE2_SLUG = (
-    f"/api/v2/unified_job_templates/?name={JOB_TEMPLATE_NAME_1}&page=2"
-)
+UNIFIED_JOB_TEMPLATE_PAGE1_SLUG = f"/api/v2/unified_job_templates/?name={JOB_TEMPLATE_NAME_1}"
+UNIFIED_JOB_TEMPLATE_PAGE2_SLUG = f"/api/v2/unified_job_templates/?name={JOB_TEMPLATE_NAME_1}&page=2"
 UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE = dict(
     count=UNIFIED_JOB_TEMPLATE_COUNT,
     next=UNIFIED_JOB_TEMPLATE_PAGE2_SLUG,

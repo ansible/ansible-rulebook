@@ -51,13 +51,9 @@ async def test_noop():
     action_args = {"fact": {"b": 1}, "ruleset": metadata.rule_set}
 
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
-        with patch(
-            "ansible_rulebook.action.run_job_template.lang.assert_fact"
-        ) as drools_mock:
+        with patch("ansible_rulebook.action.run_job_template.lang.assert_fact") as drools_mock:
             await SetFact(metadata, control, **action_args)()
-            drools_mock.assert_called_once_with(
-                action_args["ruleset"], action_args["fact"]
-            )
+            drools_mock.assert_called_once_with(action_args["ruleset"], action_args["fact"])
 
     while not queue.empty():
         event = queue.get_nowait()

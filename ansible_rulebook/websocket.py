@@ -29,9 +29,7 @@ from ansible_rulebook.common import StartupArgs
 logger = logging.getLogger(__name__)
 
 
-async def request_workload(
-    activation_id: str, websocket_address: str, websocket_ssl_verify: str
-) -> StartupArgs:
+async def request_workload(activation_id: str, websocket_address: str, websocket_ssl_verify: str) -> StartupArgs:
     logger.info("websocket %s connecting", websocket_address)
     async with websockets.connect(
         websocket_address,
@@ -39,9 +37,7 @@ async def request_workload(
     ) as websocket:
         try:
             logger.info("websocket %s connected", websocket_address)
-            await websocket.send(
-                json.dumps(dict(type="Worker", activation_id=activation_id))
-            )
+            await websocket.send(json.dumps(dict(type="Worker", activation_id=activation_id)))
 
             project_data_fh = None
             response = StartupArgs()
@@ -58,20 +54,14 @@ async def request_workload(
                         ) = tempfile.mkstemp()
 
                     if data.get("data") and data.get("more"):
-                        os.write(
-                            project_data_fh, base64.b64decode(data.get("data"))
-                        )
+                        os.write(project_data_fh, base64.b64decode(data.get("data")))
                     if not data.get("data") and not data.get("more"):
                         os.close(project_data_fh)
                         logger.debug("wrote %s", response.project_data_file)
                 if data.get("type") == "Rulebook":
-                    response.rulesets = rules_parser.parse_rule_sets(
-                        yaml.safe_load(base64.b64decode(data.get("data")))
-                    )
+                    response.rulesets = rules_parser.parse_rule_sets(yaml.safe_load(base64.b64decode(data.get("data"))))
                 if data.get("type") == "ExtraVars":
-                    response.variables = yaml.safe_load(
-                        base64.b64decode(data.get("data"))
-                    )
+                    response.variables = yaml.safe_load(base64.b64decode(data.get("data")))
                 if data.get("type") == "ControllerInfo":
                     response.controller_url = data.get("url")
                     response.controller_token = data.get("token")
@@ -85,9 +75,7 @@ async def request_workload(
             return
 
 
-async def send_event_log_to_websocket(
-    event_log, websocket_address, websocket_ssl_verify
-):
+async def send_event_log_to_websocket(event_log, websocket_address, websocket_ssl_verify):
     logger.info("feedback websocket %s connecting", websocket_address)
     event = None
     async for websocket in websockets.connect(
@@ -121,9 +109,7 @@ async def send_event_log_to_websocket(
             logger.info("closing feedback websocket due to task cancelled")
             return
         except BaseException as err:
-            logger.error(
-                "feedback websocket error on %s err: %s", event, str(err)
-            )
+            logger.error("feedback websocket error on %s err: %s", event, str(err))
 
 
 def _sslcontext(url, ssl_verify) -> ssl.SSLContext:

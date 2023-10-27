@@ -52,9 +52,7 @@ DISABLED_RULES_EVENT_DELAY = SETTINGS["disabled_rules_event_delay"]
         ),
     ],
 )
-def test_program_return_code(
-    update_environment, rulebook, inventory, event_delay, expected_rc
-):
+def test_program_return_code(update_environment, rulebook, inventory, event_delay, expected_rc):
     """
     Execute a rulebook with various potential failure
     scenarios and validate that the return code is correct
@@ -62,9 +60,7 @@ def test_program_return_code(
     env = update_environment({"EVENT_DELAY": event_delay})
 
     rulebook = utils.BASE_DATA_PATH / f"rulebooks/{rulebook}"
-    cmd = utils.Command(
-        rulebook=rulebook, envvars="EVENT_DELAY", inventory=inventory
-    )
+    cmd = utils.Command(rulebook=rulebook, envvars="EVENT_DELAY", inventory=inventory)
 
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
@@ -108,14 +104,10 @@ def test_disabled_rules(update_environment):
     )
 
     with check:
-        assert (
-            "Enabled rule fired correctly" in result.stdout
-        ), "Enabled rule failed to fire"
+        assert "Enabled rule fired correctly" in result.stdout, "Enabled rule failed to fire"
 
     with check:
-        assert (
-            "Disabled rule should not have fired" not in result.stdout
-        ), "A disabled rule fired unexpectedly"
+        assert "Disabled rule should not have fired" not in result.stdout, "A disabled rule fired unexpectedly"
 
 
 @pytest.mark.e2e
@@ -159,38 +151,17 @@ def test_terminate_process_source_end(update_environment, shutdown_delay):
 
     with check:
         assert (
-            len(
-                [
-                    line
-                    for line in result.stdout.splitlines()
-                    if '"msg": "Sleeping..."' in line
-                ]
-            )
-            == 1
+            len([line for line in result.stdout.splitlines() if '"msg": "Sleeping..."' in line]) == 1
         ), "long-running playbook failed to fire"
 
     with check:
         assert (
-            len(
-                [
-                    line
-                    for line in result.stdout.splitlines()
-                    if "Parallel action triggered successfully" in line
-                ]
-            )
-            == 3
+            len([line for line in result.stdout.splitlines() if "Parallel action triggered successfully" in line]) == 3
         ), "a parallel action failed to fire"
 
     with check:
         assert (
-            len(
-                [
-                    line
-                    for line in result.stdout.splitlines()
-                    if '"msg": "Rise and shine..."' in line
-                ]
-            )
-            == 1
+            len([line for line in result.stdout.splitlines() if '"msg": "Rise and shine..."' in line]) == 1
         ), "long-running playbook failed to finish"
 
 

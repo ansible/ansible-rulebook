@@ -5,13 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from ansible_rulebook.app import (
-    load_rulebook,
-    load_vars,
-    run,
-    spawn_sources,
-    validate_actions,
-)
+from ansible_rulebook.app import load_rulebook, load_vars, run, spawn_sources, validate_actions
 from ansible_rulebook.cli import get_parser
 from ansible_rulebook.common import StartupArgs
 from ansible_rulebook.exception import (
@@ -34,9 +28,7 @@ TEST_ACTIONS = [
 
 
 @pytest.mark.parametrize("action,expectation", TEST_ACTIONS)
-def test_validate_action(
-    create_ruleset, create_action, create_rule, action, expectation
-):
+def test_validate_action(create_ruleset, create_action, create_rule, action, expectation):
     actions = [create_action(**dict(action=action))]
     rules = [create_rule(**dict(actions=actions))]
     startup_args = StartupArgs(rulesets=[create_ruleset(**dict(rules=rules))])
@@ -73,9 +65,7 @@ def test_load_vars():
 
 def test_load_vars_missing_key():
     parser = get_parser()
-    cmdline_args = parser.parse_args(
-        ["-r", "abc.yml", "-E", "TEST_ABC,TEST_XYZ"]
-    )
+    cmdline_args = parser.parse_args(["-r", "abc.yml", "-E", "TEST_ABC,TEST_XYZ"])
     with pytest.raises(KeyError):
         load_vars(cmdline_args)
 
@@ -92,9 +82,7 @@ def test_load_rulebook():
 
 def test_load_rulebook_via_collection():
     parser = get_parser()
-    cmdline_args = parser.parse_args(
-        ["-r", "ansible.eda.hello_events", "-i", "inventory.yml"]
-    )
+    cmdline_args = parser.parse_args(["-r", "ansible.eda.hello_events", "-i", "inventory.yml"])
     ruleset = load_rulebook(cmdline_args)[0]
     assert ruleset.name == "Hello Events"
     assert ruleset.rules[0].name == "Say Hello"
@@ -111,9 +99,7 @@ def test_load_rulebook_missing():
 @pytest.mark.asyncio
 async def test_spawn_sources(create_ruleset):
     with mock.patch("ansible_rulebook.app.start_source") as mock_start_source:
-        tasks, ruleset_queues = spawn_sources(
-            [create_ruleset()], dict(), ["."], 0.0
-        )
+        tasks, ruleset_queues = spawn_sources([create_ruleset()], dict(), ["."], 0.0)
         for task in tasks:
             task.cancel()
         assert mock_start_source.call_count == 1
@@ -123,14 +109,10 @@ async def test_spawn_sources(create_ruleset):
 async def test_run(create_ruleset):
     os.chdir(HERE)
     parser = get_parser()
-    cmdline_args = parser.parse_args(
-        ["-r", "./data/rulebook.yml", "-i", "./playbooks/inventory.yml"]
-    )
+    cmdline_args = parser.parse_args(["-r", "./data/rulebook.yml", "-i", "./playbooks/inventory.yml"])
 
     with mock.patch("ansible_rulebook.app.start_source") as mock_start_source:
-        with mock.patch(
-            "ansible_rulebook.app.run_rulesets"
-        ) as mock_run_rulesets:
+        with mock.patch("ansible_rulebook.app.run_rulesets") as mock_run_rulesets:
             await run(cmdline_args)
             assert mock_start_source.call_count == 1
             assert mock_run_rulesets.call_count == 1
@@ -141,17 +123,11 @@ async def test_run_with_websocket(create_ruleset):
     os.chdir(HERE)
     rulesets = [create_ruleset()]
     parser = get_parser()
-    cmdline_args = parser.parse_args(
-        ["-r", "./data/rulebook.yml", "-W", "fake", "--id", "1", "-w"]
-    )
+    cmdline_args = parser.parse_args(["-r", "./data/rulebook.yml", "-W", "fake", "--id", "1", "-w"])
 
     with mock.patch("ansible_rulebook.app.start_source") as mock_start_source:
-        with mock.patch(
-            "ansible_rulebook.app.run_rulesets"
-        ) as mock_run_rulesets:
-            with mock.patch(
-                "ansible_rulebook.app.request_workload"
-            ) as mock_request_workload:
+        with mock.patch("ansible_rulebook.app.run_rulesets") as mock_run_rulesets:
+            with mock.patch("ansible_rulebook.app.request_workload") as mock_request_workload:
                 mock_request_workload.return_value = StartupArgs(
                     rulesets=rulesets,
                     controller_url="abc",
@@ -174,13 +150,9 @@ async def test_run_with_websocket(create_ruleset):
 async def test_failed_run_with_websocket(create_ruleset):
     os.chdir(HERE)
     parser = get_parser()
-    cmdline_args = parser.parse_args(
-        ["-r", "./data/rulebook.yml", "-W", "fake", "--id", "1", "-w"]
-    )
+    cmdline_args = parser.parse_args(["-r", "./data/rulebook.yml", "-W", "fake", "--id", "1", "-w"])
 
-    with mock.patch(
-        "ansible_rulebook.app.request_workload"
-    ) as mock_request_workload:
+    with mock.patch("ansible_rulebook.app.request_workload") as mock_request_workload:
         mock_request_workload.return_value = None
         with pytest.raises(WebSocketExchangeException):
             await run(cmdline_args)

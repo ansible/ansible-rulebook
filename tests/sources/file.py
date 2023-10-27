@@ -28,17 +28,9 @@ def send_facts(queue, filename):
             queue.put(data)
         else:
             if not isinstance(data, list):
-                raise Exception(
-                    f"Unsupported facts type, expects a list of dicts"
-                    f" found {type(data)}"
-                )
-            if not all(
-                [True if isinstance(item, dict) else False for item in data]
-            ):
-                raise Exception(
-                    f"Unsupported facts type, expects a list of dicts"
-                    f" found {data}"
-                )
+                raise Exception(f"Unsupported facts type, expects a list of dicts" f" found {type(data)}")
+            if not all([True if isinstance(item, dict) else False for item in data]):
+                raise Exception(f"Unsupported facts type, expects a list of dicts" f" found {data}")
             for item in data:
                 queue.put(item)
 

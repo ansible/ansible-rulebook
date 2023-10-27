@@ -132,9 +132,7 @@ async def test_run_playbook(drools_call, additional_args):
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         with patch(drools_call) as drools_mock:
             await RunPlaybook(metadata, control, **action_args)()
-            drools_mock.assert_called_once_with(
-                action_args["ruleset"], set_fact_args
-            )
+            drools_mock.assert_called_once_with(action_args["ruleset"], set_fact_args)
 
     _validate(queue, metadata, "successful", 0)
 

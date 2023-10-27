@@ -34,9 +34,7 @@ if not os.environ.get("JAVA_HOME"):
 import ansible_rulebook  # noqa: E402
 from ansible_rulebook import app  # noqa: E402
 from ansible_rulebook.conf import settings  # noqa: E402
-from ansible_rulebook.job_template_runner import (  # noqa: E402
-    job_template_runner,
-)
+from ansible_rulebook.job_template_runner import job_template_runner  # noqa: E402
 
 DEFAULT_VERBOSITY = 0
 
@@ -44,9 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter
-    )
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument(
         "-r",
         "--rulebook",
@@ -60,9 +56,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-E",
         "--env-vars",
-        help=(
-            "Comma separated list of variables to import from the environment"
-        ),
+        help=("Comma separated list of variables to import from the environment"),
     )
     parser.add_argument(
         "-v",
@@ -126,8 +120,7 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--controller-token",
-        help="Controller API authentication token, can also be passed "
-        "via env var EDA_CONTROLLER_TOKEN",
+        help="Controller API authentication token, can also be passed " "via env var EDA_CONTROLLER_TOKEN",
         default=os.environ.get("EDA_CONTROLLER_TOKEN", ""),
     )
     parser.add_argument(
@@ -162,8 +155,7 @@ def get_parser() -> argparse.ArgumentParser:
         "--heartbeat",
         default=0,
         type=int,
-        help="Send heartbeat to the server after every n seconds"
-        "Default is 0, no heartbeat is sent",
+        help="Send heartbeat to the server after every n seconds" "Default is 0, no heartbeat is sent",
     )
     parser.add_argument(
         "--execution-strategy",
@@ -200,9 +192,7 @@ def get_version() -> str:
 
 def validate_args(args: argparse.Namespace) -> None:
     if args.worker and (not args.id or not args.websocket_address):
-        raise ValueError(
-            "Worker mode needs an id and websocket address specfied"
-        )
+        raise ValueError("Worker mode needs an id and websocket address specfied")
     if not args.worker and not args.rulebook:
         raise ValueError("Rulebook must be specified in non worker mode")
 

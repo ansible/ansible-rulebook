@@ -54,6 +54,4 @@ class Shutdown:
                 message,
             )
         )
-        raise ShutdownException(
-            ShutdownMessage(message=message, delay=delay, kind=kind)
-        )
+        raise ShutdownException(ShutdownMessage(message=message, delay=delay, kind=kind))

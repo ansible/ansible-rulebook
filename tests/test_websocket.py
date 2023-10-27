@@ -10,10 +10,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 import websockets
 
-from ansible_rulebook.websocket import (
-    request_workload,
-    send_event_log_to_websocket,
-)
+from ansible_rulebook.websocket import request_workload, send_event_log_to_websocket
 
 
 def file_sha256(filename: str) -> str:

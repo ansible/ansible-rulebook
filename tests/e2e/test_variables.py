@@ -31,12 +31,8 @@ def test_variables_sanity(update_environment):
         }
     )
 
-    rulebook = (
-        utils.BASE_DATA_PATH / "rulebooks/variables/test_variables_sanity.yml"
-    )
-    vars_file = (
-        utils.BASE_DATA_PATH / "extra_vars/test_variables_extra_vars.yml"
-    )
+    rulebook = utils.BASE_DATA_PATH / "rulebooks/variables/test_variables_sanity.yml"
+    vars_file = utils.BASE_DATA_PATH / "extra_vars/test_variables_extra_vars.yml"
     cmd = utils.Command(
         rulebook=rulebook,
         envvars="DEFAULT_EVENT_DELAY,E2E_AGENT_ID,E2E_AGENT_NAME",
@@ -54,31 +50,19 @@ def test_variables_sanity(update_environment):
     )
 
     with check:
-        assert (
-            "Intruder detected in hobart" in result.stdout
-        ), "Failure parsing string variables from file"
+        assert "Intruder detected in hobart" in result.stdout, "Failure parsing string variables from file"
 
     with check:
-        assert (
-            "Rule name: Intruder detected in hobart" in result.stdout
-        ), "Failure parsing variable in rule name"
+        assert "Rule name: Intruder detected in hobart" in result.stdout, "Failure parsing variable in rule name"
 
     with check:
-        assert (
-            "Notifying agent Maxwell Smart, ID 86" in result.stdout
-        ), "Failure parsing environment variables"
+        assert "Notifying agent Maxwell Smart, ID 86" in result.stdout, "Failure parsing environment variables"
 
     with check:
-        assert (
-            "Notifying law enforcement" in result.stdout
-        ), "Failure parsing single condition variable from file"
+        assert "Notifying law enforcement" in result.stdout, "Failure parsing single condition variable from file"
 
     with check:
-        assert (
-            "Lockdown level 9.0 initiated" in result.stdout
-        ), "Failure parsing multi-condition variables from file"
+        assert "Lockdown level 9.0 initiated" in result.stdout, "Failure parsing multi-condition variables from file"
 
     with check:
-        assert (
-            "Intruder neutralized" in result.stdout
-        ), "Failure parsing null value from variables file"
+        assert "Intruder neutralized" in result.stdout, "Failure parsing null value from variables file"
