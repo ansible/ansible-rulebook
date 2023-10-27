@@ -261,3 +261,21 @@ def _builtin_filter_path(name: str) -> Tuple[bool, str]:
     dirname = os.path.dirname(os.path.realpath(__file__))
     path = os.path.join(dirname, "event_filter", filter_name + ".py")
     return os.path.exists(path), path
+
+
+# TODO(alex): This function should be removed after the
+# controller templates are refactored to deduplicate code
+def process_controller_host_limit(template_obj):
+    if "limit" in template_obj.job_args:
+        if isinstance(template_obj.job_args["limit"], list):
+            template_obj.job_args["limit"] = ",".join(
+                template_obj.job_args["limit"],
+            )
+        else:
+            template_obj.job_args["limit"] = str(
+                template_obj.job_args["limit"],
+            )
+    else:
+        template_obj.job_args["limit"] = ",".join(
+            template_obj.helper.control.hosts,
+        )

@@ -25,7 +25,7 @@ from ansible_rulebook.exception import (
     JobTemplateNotFoundException,
 )
 from ansible_rulebook.job_template_runner import job_template_runner
-from ansible_rulebook.util import run_at
+from ansible_rulebook.util import process_controller_host_limit, run_at
 
 from .control import Control
 from .helper import Helper
@@ -46,13 +46,7 @@ class RunJobTemplate:
         self.organization = self.action_args["organization"]
         self.job_id = str(uuid.uuid4())
         self.job_args = self.action_args.get("job_args", {})
-        if "limit" in self.job_args:
-            if isinstance(self.job_args["limit"], list):
-                self.job_args["limit"] = ",".join(self.job_args["limit"])
-            else:
-                self.job_args["limit"] = str(self.job_args["limit"])
-        else:
-            self.job_args["limit"] = ",".join(self.helper.control.hosts)
+        process_controller_host_limit(self)
         self.controller_job = {}
 
     async def __call__(self):
