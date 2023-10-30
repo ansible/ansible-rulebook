@@ -1,4 +1,4 @@
-#  Copyright 2022 Red Hat, Inc.
+#  Copyright 2023 Red Hat, Inc.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -12,6 +12,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-"""Top-level package for Ansible Events."""
+import logging
 
-__version__ = "1.0.3"
+from .control import Control
+from .helper import Helper
+from .metadata import Metadata
+
+logger = logging.getLogger(__name__)
+
+
+class Noop:
+    """The No Op action usually used for debugging, doesn't do anything and
+    just sends the action status
+    """
+
+    def __init__(self, metadata: Metadata, control: Control, **action_args):
+        self.helper = Helper(metadata, control, "noop")
+        self.action_args = action_args
+
+    async def __call__(self):
+        await self.helper.send_default_status()

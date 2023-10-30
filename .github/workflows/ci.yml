@@ -79,3 +79,13 @@ jobs:
           flags: "unittests-${{ matrix.python-version }}"
           name: codecov-umbrella
           verbose: true
+
+  build-and-test-image:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Build and test the container image
+      uses: ./.github/actions/image-test
