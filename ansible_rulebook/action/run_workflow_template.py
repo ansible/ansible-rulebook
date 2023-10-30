@@ -25,7 +25,7 @@ from ansible_rulebook.exception import (
     WorkflowJobTemplateNotFoundException,
 )
 from ansible_rulebook.job_template_runner import job_template_runner
-from ansible_rulebook.util import run_at
+from ansible_rulebook.util import process_controller_host_limit, run_at
 
 from .control import Control
 from .helper import Helper
@@ -46,7 +46,10 @@ class RunWorkflowTemplate:
         self.organization = self.action_args["organization"]
         self.job_id = str(uuid.uuid4())
         self.job_args = self.action_args.get("job_args", {})
-        self.job_args["limit"] = ",".join(self.helper.control.hosts)
+        self.job_args["limit"] = process_controller_host_limit(
+            self.job_args,
+            self.helper.control.hosts,
+        )
         self.controller_job = {}
 
     async def __call__(self):
