@@ -63,7 +63,11 @@ class RunBase:
         await self._run()
         await self._post_process()
 
-    async def _do_run(self) -> bool:
+    async def _do_run(self):
+        """Performs a standalone single attempt to effect the requested
+        operation. In the event of success or non-retriable error raises
+        StopAsyncIteration exception.
+        """
         raise NotImplementedError
 
     async def _run(self):
@@ -83,8 +87,9 @@ class RunBase:
                     retries,
                 )
 
-            retry = await self._do_run()
-            if not retry:
+            try:
+                await self._do_run()
+            except StopAsyncIteration:
                 break
 
     async def _pre_process(self) -> None:
@@ -170,7 +175,7 @@ class RunTemplate(RunBase):
         )
         await super().__call__()
 
-    async def _do_run(self) -> bool:
+    async def _do_run(self):
         exception = False
         try:
             controller_job = await self._run_job(
@@ -188,7 +193,8 @@ class RunTemplate(RunBase):
 
         self.controller_job = controller_job
 
-        return (not exception) and (self.controller_job["status"] == "failed")
+        if exception or (self.controller_job["status"] != "failed"):
+            raise StopAsyncIteration
 
     async def _post_process(self) -> None:
         a_log = self._make_log()

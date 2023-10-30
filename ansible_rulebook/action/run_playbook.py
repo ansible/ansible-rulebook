@@ -88,7 +88,7 @@ class RunPlaybook(RunBase):
         logger.info("Calling Ansible runner")
         await super()._run()
 
-    async def _do_run(self) -> bool:
+    async def _do_run(self):
         await Runner(
             self.private_data_dir,
             self.host_limit,
@@ -98,7 +98,8 @@ class RunPlaybook(RunBase):
             self.helper,
             self._runner_args(),
         )()
-        return self._get_latest_artifact("status") == "failed"
+        if self._get_latest_artifact("status") != "failed":
+            raise StopAsyncIteration
 
     def _runner_args(self) -> dict:
         return {"playbook": self.name, "inventory": self.inventory}
