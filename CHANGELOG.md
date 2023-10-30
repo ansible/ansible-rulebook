@@ -4,12 +4,22 @@
 ## [Unreleased]
 
 ### Added
-- support for firing multiple rules
 
 ### Fixed
+- Job_template and workflow_template actions honor custom hosts limit
 
 ### Removed
 
+## [1.0.3] - 2023-10-17
+
+### Added
+- support for firing multiple rules
+
+### Fixed
+- bug fix in run_workflow_template
+
+
+### Removed
 ## [1.0.2] - 2023-08-14
 
 ### Added
