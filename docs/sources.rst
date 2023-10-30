@@ -59,7 +59,7 @@ There are 3 basic patterns that you'll be developing against when considering a 
 
 #. Event Bus Plugins
     These are plugins that listen to a stream of events from a source where the connection
-    is established by the plugin itself. Examples of this are the ``kafka`` and ``mqtt`` plugins.
+    is established by the plugin itself. Examples of this are the ``kafka`` and ``aws_sqs_queue`` plugins.
 
     This is the most ideal and reliable pattern to follow. Durability and Reliability of the data
     is the responsibility of the event source and availability of the data can follow the patterns
