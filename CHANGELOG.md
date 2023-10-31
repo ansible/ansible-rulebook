@@ -6,8 +6,15 @@
 ### Added
 
 ### Fixed
+
+## [1.0.4] - 2023-10-30
+
+### Added
+
+### Fixed
 - Job_template and workflow_template actions honor custom hosts limit
-- upgraded to 0.3.8 of drools_jpy
+- Upgraded to 0.3.8 of drools_jpy
+- Add missing watchdog dependency
 
 ### Removed
 
