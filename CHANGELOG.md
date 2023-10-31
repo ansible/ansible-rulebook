@@ -7,6 +7,7 @@
 
 ### Fixed
 - Job_template and workflow_template actions honor custom hosts limit
+- upgraded to 0.3.8 of drools_jpy
 
 ### Removed
 
