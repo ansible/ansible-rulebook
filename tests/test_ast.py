@@ -25,32 +25,25 @@ from ansible_rulebook.exception import (
     SelectattrOperatorException,
     SelectOperatorException,
 )
-from ansible_rulebook.json_generator import (
-    generate_dict_rulesets,
-    visit_condition,
-)
+from ansible_rulebook.json_generator import generate_dict_rulesets, visit_condition
 from ansible_rulebook.rules_parser import parse_rule_sets
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def test_parse_condition():
-    assert {"Fact": "range.i"} == visit_condition(
-        parse_condition("fact.range.i"), {}
-    )
+    assert {"Fact": "range.i"} == visit_condition(parse_condition("fact.range.i"), {})
     assert {"Boolean": True} == visit_condition(parse_condition("True"), {})
     assert {"Boolean": False} == visit_condition(parse_condition("False"), {})
     assert {"Integer": 42} == visit_condition(parse_condition("42"), {})
     assert {"Float": 3.1415} == visit_condition(parse_condition("3.1415"), {})
-    assert {"String": "Hello"} == visit_condition(
-        parse_condition("'Hello'"), {}
+    assert {"String": "Hello"} == visit_condition(parse_condition("'Hello'"), {})
+    assert {"EqualsExpression": {"lhs": {"Fact": "range.i"}, "rhs": {"Integer": 1}}} == visit_condition(
+        parse_condition("fact.range.i == 1"), {}
     )
-    assert {
-        "EqualsExpression": {"lhs": {"Fact": "range.i"}, "rhs": {"Integer": 1}}
-    } == visit_condition(parse_condition("fact.range.i == 1"), {})
-    assert {
-        "EqualsExpression": {"lhs": {"Fact": "['i']"}, "rhs": {"Integer": 1}}
-    } == visit_condition(parse_condition("fact['i'] == 1"), {})
+    assert {"EqualsExpression": {"lhs": {"Fact": "['i']"}, "rhs": {"Integer": 1}}} == visit_condition(
+        parse_condition("fact['i'] == 1"), {}
+    )
     assert {
         "EqualsExpression": {
             "lhs": {"Fact": "range.pi"},
@@ -88,9 +81,7 @@ def test_parse_condition():
             "lhs": {"Fact": 'range["pi"].value'},
             "rhs": {"Float": 3.1415},
         }
-    } == visit_condition(
-        parse_condition('fact.range["pi"].value == 3.1415'), {}
-    )
+    } == visit_condition(parse_condition('fact.range["pi"].value == 3.1415'), {})
     assert {
         "EqualsExpression": {
             "lhs": {"Fact": "range[0]"},
@@ -114,9 +105,7 @@ def test_parse_condition():
             "lhs": {"Fact": 'range["x"][1][2].a["b"]'},
             "rhs": {"Float": 3.1415},
         }
-    } == visit_condition(
-        parse_condition('fact.range["x"][1][2].a["b"] == 3.1415'), {}
-    )
+    } == visit_condition(parse_condition('fact.range["x"][1][2].a["b"] == 3.1415'), {})
 
     assert {
         "NegateExpression": {
@@ -182,9 +171,7 @@ def test_parse_condition():
                 }
             },
         }
-    } == visit_condition(
-        parse_condition("events.first << fact.range.i == 'Hello'"), {}
-    )
+    } == visit_condition(parse_condition("events.first << fact.range.i == 'Hello'"), {})
     assert {"IsDefinedExpression": {"Fact": "range.i"}} == visit_condition(
         parse_condition("fact.range.i is defined"), {}
     )
@@ -205,9 +192,7 @@ def test_parse_condition():
             "rhs": {"IsDefinedExpression": {"Fact": "range.i"}},
         }
     } == visit_condition(
-        parse_condition(
-            "(fact.range.i is not defined) or (fact.range.i is defined)"
-        ),
+        parse_condition("(fact.range.i is not defined) or (fact.range.i is defined)"),
         {},
     )
     assert {
@@ -216,9 +201,7 @@ def test_parse_condition():
             "rhs": {"IsDefinedExpression": {"Fact": "range.i"}},
         }
     } == visit_condition(
-        parse_condition(
-            "(fact.range.i is not defined) and (fact.range.i is defined)"
-        ),
+        parse_condition("(fact.range.i is not defined) and (fact.range.i is defined)"),
         {},
     )
     assert {
@@ -237,10 +220,7 @@ def test_parse_condition():
             },
         }
     } == visit_condition(
-        parse_condition(
-            "(fact.range.i is not defined) and (fact.range.i is defined) "
-            "and (fact.range.i == 1)"
-        ),
+        parse_condition("(fact.range.i is not defined) and (fact.range.i is defined) " "and (fact.range.i == 1)"),
         {},
     )
     assert {
@@ -259,10 +239,7 @@ def test_parse_condition():
             },
         }
     } == visit_condition(
-        parse_condition(
-            "(fact.range.i is not defined) and (fact.range.i is defined) "
-            "or (fact.range.i == 1)"
-        ),
+        parse_condition("(fact.range.i is not defined) and (fact.range.i is defined) " "or (fact.range.i == 1)"),
         {},
     )
 
@@ -282,10 +259,7 @@ def test_parse_condition():
             },
         }
     } == visit_condition(
-        parse_condition(
-            "(fact.range.i is not defined) and "
-            "((fact.range.i is defined) or (fact.range.i == 1))"
-        ),
+        parse_condition("(fact.range.i is not defined) and " "((fact.range.i is defined) or (fact.range.i == 1))"),
         {},
     )
 
@@ -305,9 +279,7 @@ def test_parse_condition():
                 {"String": "wilma"},
             ],
         }
-    } == visit_condition(
-        parse_condition("fact.name in ['fred','barney','wilma']"), {}
-    )
+    } == visit_condition(parse_condition("fact.name in ['fred','barney','wilma']"), {})
 
     assert {
         "ItemNotInListExpression": {
@@ -325,9 +297,7 @@ def test_parse_condition():
                 {"String": "wilma"},
             ],
         }
-    } == visit_condition(
-        parse_condition("fact.name not in ['fred','barney','wilma']"), {}
-    )
+    } == visit_condition(parse_condition("fact.name not in ['fred','barney','wilma']"), {})
     assert {
         "ItemNotInListExpression": {
             "lhs": {"Fact": "radius"},
@@ -337,9 +307,7 @@ def test_parse_condition():
                 {"Float": 2106.1234},
             ],
         }
-    } == visit_condition(
-        parse_condition("fact.radius not in [1079.6234,3985.8,2106.1234]"), {}
-    )
+    } == visit_condition(parse_condition("fact.radius not in [1079.6234,3985.8,2106.1234]"), {})
     assert {
         "ListContainsItemExpression": {
             "lhs": {"Fact": "mylist"},
@@ -366,9 +334,7 @@ def test_parse_condition():
             "lhs": {"Fact": "friends"},
             "rhs": {"String": "fred"},
         }
-    } == visit_condition(
-        parse_condition("fact.friends not contains 'fred'"), {}
-    )
+    } == visit_condition(parse_condition("fact.friends not contains 'fred'"), {})
 
     assert {
         "SearchMatchesExpression": {
@@ -376,9 +342,7 @@ def test_parse_condition():
             "rhs": {
                 "SearchType": {
                     "kind": {"String": "match"},
-                    "pattern": {
-                        "String": "https://example.com/users/.*/resources"
-                    },
+                    "pattern": {"String": "https://example.com/users/.*/resources"},
                     "options": [
                         {
                             "name": {"String": "ignorecase"},
@@ -389,11 +353,7 @@ def test_parse_condition():
             },
         }
     } == visit_condition(
-        parse_condition(
-            "event['url'] is "
-            + 'match("https://example.com/users/.*/resources", '
-            + "ignorecase=true)"
-        ),
+        parse_condition("event['url'] is " + 'match("https://example.com/users/.*/resources", ' + "ignorecase=true)"),
         {},
     )
     assert {
@@ -402,9 +362,7 @@ def test_parse_condition():
             "rhs": {
                 "SearchType": {
                     "kind": {"String": "match"},
-                    "pattern": {
-                        "String": "https://example.com/users/.*/resources"
-                    },
+                    "pattern": {"String": "https://example.com/users/.*/resources"},
                     "options": [
                         {
                             "name": {"String": "ignorecase"},
@@ -415,11 +373,7 @@ def test_parse_condition():
             },
         }
     } == visit_condition(
-        parse_condition(
-            "event.url is "
-            + 'match("https://example.com/users/.*/resources", '
-            + "ignorecase=true)"
-        ),
+        parse_condition("event.url is " + 'match("https://example.com/users/.*/resources", ' + "ignorecase=true)"),
         {},
     )
 
@@ -429,9 +383,7 @@ def test_parse_condition():
             "rhs": {
                 "SearchType": {
                     "kind": {"String": "match"},
-                    "pattern": {
-                        "String": "https://example.com/users/.*/resources"
-                    },
+                    "pattern": {"String": "https://example.com/users/.*/resources"},
                     "options": [
                         {
                             "name": {"String": "ignorecase"},
@@ -442,10 +394,7 @@ def test_parse_condition():
             },
         }
     } == visit_condition(
-        parse_condition(
-            "event.url is not "
-            + 'match("https://example.com/users/.*/resources",ignorecase=true)'
-        ),
+        parse_condition("event.url is not " + 'match("https://example.com/users/.*/resources",ignorecase=true)'),
         {},
     )
     assert {
@@ -465,9 +414,7 @@ def test_parse_condition():
             },
         }
     } == visit_condition(
-        parse_condition(
-            'event.url is regex("example.com/foo",ignorecase=true)'
-        ),
+        parse_condition('event.url is regex("example.com/foo",ignorecase=true)'),
         {},
     )
 
@@ -495,9 +442,7 @@ def test_parse_condition():
             },
         }
     } == visit_condition(
-        parse_condition(
-            'event.persons is selectattr("person.employed", "==", true)'
-        ),
+        parse_condition('event.persons is selectattr("person.employed", "==", true)'),
         {},
     )
 
@@ -511,9 +456,7 @@ def test_parse_condition():
             },
         }
     } == visit_condition(
-        parse_condition(
-            'event.persons is not selectattr("person.name", "==", "fred")'
-        ),
+        parse_condition('event.persons is not selectattr("person.name", "==", "fred")'),
         {},
     )
 
@@ -542,9 +485,7 @@ def test_parse_condition():
             "lhs": {"Event": "is_true"},
             "rhs": {"operator": {"String": "=="}, "value": {"Boolean": False}},
         }
-    } == visit_condition(
-        parse_condition('event.is_true is select("==", False)'), {}
-    )
+    } == visit_condition(parse_condition('event.is_true is select("==", False)'), {})
 
     assert {
         "SelectExpression": {
@@ -554,9 +495,7 @@ def test_parse_condition():
                 "value": {"Event": "my_int"},
             },
         }
-    } == visit_condition(
-        parse_condition("event.my_list is select('==', event.my_int)"), {}
-    )
+    } == visit_condition(parse_condition("event.my_list is select('==', event.my_int)"), {})
 
     assert {
         "SelectExpression": {
@@ -581,9 +520,7 @@ def test_parse_condition():
             },
         }
     } == visit_condition(
-        parse_condition(
-            "event.persons is selectattr('person.age', '>', vars.minimum_age)"
-        ),
+        parse_condition("event.persons is selectattr('person.age', '>', vars.minimum_age)"),
         dict(minimum_age=42),
     )
 
@@ -595,9 +532,7 @@ def test_invalid_select_operator():
 
 def test_invalid_selectattr_operator():
     with pytest.raises(SelectattrOperatorException):
-        parse_condition(
-            'event.persons is not selectattr("name", "cmp", "fred")'
-        )
+        parse_condition('event.persons is not selectattr("name", "cmp", "fred")')
 
 
 def test_null_type():
@@ -649,9 +584,7 @@ def test_generate_dict_ruleset(rulebook):
 
 def test_invalid_assignment_operator():
     with pytest.raises(InvalidAssignmentException):
-        visit_condition(
-            parse_condition("event.first << fact.range.i == 'Hello'"), {}
-        )
+        visit_condition(parse_condition("event.first << fact.range.i == 'Hello'"), {})
 
 
 def test_invalid_nested_assignment_operator():

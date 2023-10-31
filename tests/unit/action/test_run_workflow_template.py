@@ -19,10 +19,7 @@ import pytest
 from ansible_rulebook.action.control import Control
 from ansible_rulebook.action.metadata import Metadata
 from ansible_rulebook.action.run_workflow_template import RunWorkflowTemplate
-from ansible_rulebook.exception import (
-    ControllerApiException,
-    WorkflowJobTemplateNotFoundException,
-)
+from ansible_rulebook.exception import ControllerApiException, WorkflowJobTemplateNotFoundException
 
 
 def _validate(queue, success, reason=None):
@@ -99,8 +96,7 @@ async def test_run_workflow_template_exception(err_msg, err):
         "delay": 0,
     }
     with patch(
-        "ansible_rulebook.action.run_workflow_template."
-        "job_template_runner.run_workflow_job_template",
+        "ansible_rulebook.action.run_workflow_template." "job_template_runner.run_workflow_job_template",
         side_effect=err,
     ):
         await RunWorkflowTemplate(metadata, control, **action_args)()
@@ -153,8 +149,7 @@ async def test_run_workflow_template(drools_call, additional_args):
         "id": 10,
     }
     with patch(
-        "ansible_rulebook.action.run_workflow_template."
-        "job_template_runner.run_workflow_job_template",
+        "ansible_rulebook.action.run_workflow_template." "job_template_runner.run_workflow_job_template",
         return_value=controller_job,
     ):
         with patch(drools_call) as drools_mock:
@@ -207,13 +202,10 @@ async def test_run_workflow_template_retries():
     ]
 
     with patch(
-        "ansible_rulebook.action.run_workflow_template."
-        "job_template_runner.run_workflow_job_template",
+        "ansible_rulebook.action.run_workflow_template." "job_template_runner.run_workflow_job_template",
         side_effect=controller_job,
     ):
-        with patch(
-            "ansible_rulebook.action.run_workflow_template.lang.assert_fact"
-        ) as drools_mock:
+        with patch("ansible_rulebook.action.run_workflow_template.lang.assert_fact") as drools_mock:
             await RunWorkflowTemplate(metadata, control, **action_args)()
             drools_mock.assert_called_once()
 

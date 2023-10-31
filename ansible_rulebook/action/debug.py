@@ -52,11 +52,7 @@ class Debug:
         elif "var" in self.action_args:
             key = self.action_args.get("var")
             try:
-                print(
-                    dpath.get(
-                        self.helper.control.variables, key, separator="."
-                    )
-                )
+                print(dpath.get(self.helper.control.variables, key, separator="."))
             except KeyError:
                 logger.error("Key %s not found in variable pool", key)
                 raise

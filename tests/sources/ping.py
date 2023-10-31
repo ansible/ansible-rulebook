@@ -30,9 +30,7 @@ def main(queue, args):
         for ip in ips:
 
             result = subprocess.call(["ping", "-c", "1", "-t", timeout, ip])
-            queue.put(
-                dict(ping=dict(ip=ip, timeout=result != 0, exit_code=result))
-            )
+            queue.put(dict(ping=dict(ip=ip, timeout=result != 0, exit_code=result)))
 
         time.sleep(delay)
 

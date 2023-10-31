@@ -22,10 +22,7 @@ from typing import Dict, List, Optional, Union, cast
 
 import dpath
 from drools import ruleset as lang
-from drools.exceptions import (
-    MessageNotHandledException,
-    MessageObservedException,
-)
+from drools.exceptions import MessageNotHandledException, MessageObservedException
 from drools.ruleset import session_stats
 
 from ansible_rulebook.action.control import Control
@@ -42,23 +39,11 @@ from ansible_rulebook.action.run_workflow_template import RunWorkflowTemplate
 from ansible_rulebook.action.set_fact import SetFact
 from ansible_rulebook.action.shutdown import Shutdown as ShutdownAction
 from ansible_rulebook.conf import settings
-from ansible_rulebook.exception import (
-    ShutdownException,
-    UnsupportedActionException,
-)
+from ansible_rulebook.exception import ShutdownException, UnsupportedActionException
 from ansible_rulebook.messages import Shutdown
-from ansible_rulebook.rule_types import (
-    Action,
-    ActionContext,
-    EngineRuleSetQueuePlan,
-    ExecutionStrategy,
-)
+from ansible_rulebook.rule_types import Action, ActionContext, EngineRuleSetQueuePlan, ExecutionStrategy
 from ansible_rulebook.rules_parser import parse_hosts
-from ansible_rulebook.util import (
-    run_at,
-    send_session_stats,
-    substitute_variables,
-)
+from ansible_rulebook.util import run_at, send_session_stats, substitute_variables
 
 logger = logging.getLogger(__name__)
 
@@ -107,19 +92,11 @@ class RuleSetRunner:
         tasks = []
         try:
             prime_facts(self.name, self.hosts_facts)
-            task_name = (
-                f"action_plan_task:: {self.ruleset_queue_plan.ruleset.name}"
-            )
-            self.action_loop_task = asyncio.create_task(
-                self._drain_actionplan_queue(), name=task_name
-            )
+            task_name = f"action_plan_task:: {self.ruleset_queue_plan.ruleset.name}"
+            self.action_loop_task = asyncio.create_task(self._drain_actionplan_queue(), name=task_name)
             tasks.append(self.action_loop_task)
-            task_name = (
-                f"source_reader_task:: {self.ruleset_queue_plan.ruleset.name}"
-            )
-            self.source_loop_task = asyncio.create_task(
-                self._drain_source_queue(), name=task_name
-            )
+            task_name = f"source_reader_task:: {self.ruleset_queue_plan.ruleset.name}"
+            self.source_loop_task = asyncio.create_task(self._drain_source_queue(), name=task_name)
             tasks.append(self.source_loop_task)
             await asyncio.wait([self.action_loop_task])
         except asyncio.CancelledError:
@@ -139,11 +116,7 @@ class RuleSetRunner:
         if not self.source_loop_task.done():
             self.source_loop_task.cancel()
 
-        if (
-            self.active_actions
-            and self.shutdown
-            and self.shutdown.kind == "graceful"
-        ):
+        if self.active_actions and self.shutdown and self.shutdown.kind == "graceful":
             logger.info("Waiting for active actions to end")
             await asyncio.wait(
                 self.active_actions,
@@ -176,14 +149,9 @@ class RuleSetRunner:
             str(self.shutdown),
         )
         if self.shutdown.kind == "now":
-            logger.info(
-                "ruleset: %s has issued an immediate shutdown", self.name
-            )
+            logger.info("ruleset: %s has issued an immediate shutdown", self.name)
             self.action_loop_task.cancel()
-        elif (
-            self.ruleset_queue_plan.plan.queue.empty()
-            and not self.active_actions
-        ):
+        elif self.ruleset_queue_plan.plan.queue.empty() and not self.active_actions:
             logger.info("ruleset: %s shutdown no pending work", self.name)
             self.action_loop_task.cancel()
         else:
@@ -206,9 +174,7 @@ class RuleSetRunner:
                 if self.parsed_args and self.parsed_args.print_events:
                     PrettyPrinter(indent=4).pprint(data)
 
-                logger.debug(
-                    "Ruleset: %s, received event: %s ", self.name, str(data)
-                )
+                logger.debug("Ruleset: %s, received event: %s ", self.name, str(data))
                 if isinstance(data, Shutdown):
                     self.shutdown = data
                     return await self._handle_shutdown()
@@ -234,10 +200,7 @@ class RuleSetRunner:
                     logger.error(e)
                 finally:
                     logger.debug(lang.get_pending_events(self.name))
-                    if (
-                        settings.gc_after
-                        and self.event_counter > settings.gc_after
-                    ):
+                    if settings.gc_after and self.event_counter > settings.gc_after:
                         self.event_counter = 0
                         gc.collect()
                     else:
@@ -255,11 +218,7 @@ class RuleSetRunner:
             task.get_name(),
             len(self.active_actions),
         )
-        if (
-            self.ruleset_queue_plan.plan.queue.empty()
-            and self.shutdown
-            and len(self.active_actions) == 0
-        ):
+        if self.ruleset_queue_plan.plan.queue.empty() and self.shutdown and len(self.active_actions) == 0:
             logger.info("All actions done")
             if not self.action_loop_task.done():
                 self.action_loop_task.cancel()
@@ -277,25 +236,16 @@ class RuleSetRunner:
                         session_stats(self.ruleset_queue_plan.ruleset.name),
                     )
                 if len(action_item.actions) > 1:
-                    task = asyncio.create_task(
-                        self._run_multiple_actions(action_item, rule_run_at)
-                    )
+                    task = asyncio.create_task(self._run_multiple_actions(action_item, rule_run_at))
                     self.active_actions.add(task)
                     task.add_done_callback(self._handle_action_completion)
                 else:
-                    task = self._run_action(
-                        action_item.actions[0], action_item, rule_run_at
-                    )
+                    task = self._run_action(action_item.actions[0], action_item, rule_run_at)
 
-                if (
-                    self.rule_set.execution_strategy
-                    == ExecutionStrategy.SEQUENTIAL
-                ):
+                if self.rule_set.execution_strategy == ExecutionStrategy.SEQUENTIAL:
                     await task
         except asyncio.CancelledError:
-            logger.debug(
-                "Action Plan Task Cancelled for ruleset %s", self.name
-            )
+            logger.debug("Action Plan Task Cancelled for ruleset %s", self.name)
             raise
         except BaseException as e:
             logger.error(e)
@@ -303,20 +253,12 @@ class RuleSetRunner:
         finally:
             await self._cleanup()
 
-    async def _run_multiple_actions(
-        self, action_item: ActionContext, rule_run_at: str
-    ) -> None:
+    async def _run_multiple_actions(self, action_item: ActionContext, rule_run_at: str) -> None:
         for action in action_item.actions:
             await self._run_action(action, action_item, rule_run_at)
 
-    def _run_action(
-        self, action: Action, action_item: ActionContext, rule_run_at: str
-    ) -> asyncio.Task:
-        task_name = (
-            f"action::{action.action}::"
-            f"{self.ruleset_queue_plan.ruleset.name}::"
-            f"{action_item.rule}"
-        )
+    def _run_action(self, action: Action, action_item: ActionContext, rule_run_at: str) -> asyncio.Task:
+        task_name = f"action::{action.action}::" f"{self.ruleset_queue_plan.ruleset.name}::" f"{action_item.rule}"
         logger.debug("Creating action task %s", task_name)
         metadata = Metadata(
             rule_set=action_item.ruleset,
@@ -358,10 +300,7 @@ class RuleSetRunner:
         error = None
         if action in ACTION_CLASSES:
             try:
-                if (
-                    action == "run_job_template"
-                    or action == "run_workflow_template"
-                ):
+                if action == "run_job_template" or action == "run_workflow_template":
                     limit = dpath.get(
                         action_args,
                         "job_args.limit",
@@ -397,9 +336,7 @@ class RuleSetRunner:
                     for event in variables_copy["events"].values():
                         if "meta" in event:
                             if "hosts" in event["meta"]:
-                                new_hosts.extend(
-                                    parse_hosts(event["meta"]["hosts"])
-                                )
+                                new_hosts.extend(parse_hosts(event["meta"]["hosts"]))
                     if new_hosts:
                         hosts = new_hosts
 
@@ -417,10 +354,7 @@ class RuleSetRunner:
                     action_args,
                     variables_copy,
                 )
-                action_args = {
-                    k: substitute_variables(v, variables_copy)
-                    for k, v in action_args.items()
-                }
+                action_args = {k: substitute_variables(v, variables_copy) for k, v in action_args.items()}
                 logger.info("action args: %s", action_args)
 
                 if "ruleset" not in action_args:
@@ -434,9 +368,7 @@ class RuleSetRunner:
                     project_data_file=self.project_data_file,
                 )
 
-                await ACTION_CLASSES[action](
-                    metadata, control, **action_args
-                )()
+                await ACTION_CLASSES[action](metadata, control, **action_args)()
 
             except KeyError as e:
                 logger.error(
@@ -446,18 +378,14 @@ class RuleSetRunner:
                 )
                 error = e
             except MessageNotHandledException as e:
-                logger.error(
-                    "Message cannot be handled: %s err %s", action_args, str(e)
-                )
+                logger.error("Message cannot be handled: %s err %s", action_args, str(e))
                 error = e
             except MessageObservedException as e:
                 logger.info("MessageObservedException: %s", action_args)
                 error = e
             except ShutdownException as e:
                 if self.shutdown:
-                    logger.info(
-                        "A shutdown is already in progress, ignoring this one"
-                    )
+                    logger.info("A shutdown is already in progress, ignoring this one")
                 else:
                     await self.broadcast_method(e.shutdown)
             except asyncio.CancelledError:
@@ -471,9 +399,7 @@ class RuleSetRunner:
                 raise
         else:
             logger.error("Action %s not supported", action)
-            error = UnsupportedActionException(
-                f"Action {action} not supported"
-            )
+            error = UnsupportedActionException(f"Action {action} not supported")
 
         if error:
             await self.event_log.put(
@@ -507,9 +433,7 @@ def _update_variables(variables: Dict, var_root: Union[str, Dict]):
     var_roots = {var_root: var_root} if isinstance(var_root, str) else var_root
     if "event" in variables:
         for key, _new_key in var_roots.items():
-            new_value = dpath.get(
-                variables["event"], key, separator=".", default=None
-            )
+            new_value = dpath.get(variables["event"], key, separator=".", default=None)
             if new_value:
                 variables["event"] = new_value
                 break

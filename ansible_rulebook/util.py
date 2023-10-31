@@ -33,10 +33,7 @@ from packaging import version
 from packaging.version import InvalidVersion
 
 from ansible_rulebook.conf import settings
-from ansible_rulebook.exception import (
-    InvalidFilterNameException,
-    InventoryNotFound,
-)
+from ansible_rulebook.exception import InvalidFilterNameException, InventoryNotFound
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +49,7 @@ def get_horizontal_rule(character):
 
 def render_string(value: str, context: Dict) -> str:
     if "{{" in value and "}}" in value:
-        return NativeTemplate(value, undefined=jinja2.StrictUndefined).render(
-            context
-        )
+        return NativeTemplate(value, undefined=jinja2.StrictUndefined).render(context)
 
     return value
 
@@ -65,9 +60,7 @@ def render_string_or_return_value(value: Any, context: Dict) -> Any:
     return value
 
 
-def substitute_variables(
-    value: Union[str, int, Dict, List], context: Dict
-) -> Union[str, int, Dict, List]:
+def substitute_variables(value: Union[str, int, Dict, List], context: Dict) -> Union[str, int, Dict, List]:
     if isinstance(value, str):
         return render_string_or_return_value(value, context)
     elif isinstance(value, list):
@@ -86,9 +79,7 @@ def substitute_variables(
 
 def collect_ansible_facts(inventory: str) -> List[Dict]:
     hosts_facts = []
-    with tempfile.TemporaryDirectory(
-        prefix="gather_facts"
-    ) as private_data_dir:
+    with tempfile.TemporaryDirectory(prefix="gather_facts") as private_data_dir:
         inventory_dir = os.path.join(private_data_dir, "inventory")
         os.mkdir(inventory_dir)
         create_inventory(inventory_dir, inventory)
@@ -99,14 +90,9 @@ def collect_ansible_facts(inventory: str) -> List[Dict]:
             host_pattern="*",
         )
         if r.rc != 0:
-            raise Exception(
-                "Error collecting facts in ansible_runner.run "
-                f"rc={r.rc}, status={r.status}"
-            )
+            raise Exception("Error collecting facts in ansible_runner.run " f"rc={r.rc}, status={r.status}")
 
-        host_path = os.path.join(
-            private_data_dir, "artifacts", "*", "fact_cache", "*"
-        )
+        host_path = os.path.join(private_data_dir, "artifacts", "*", "fact_cache", "*")
         for host_file in glob.glob(host_path):
             hostname = os.path.basename(host_file)
             with open(host_file) as f:
@@ -183,8 +169,7 @@ def check_jvm():
     java_home = get_java_home()
     if not java_home:
         print(
-            "Java executable or JAVA_HOME environment variable not found."
-            "Please install a valid JVM.",
+            "Java executable or JAVA_HOME environment variable not found." "Please install a valid JVM.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -198,8 +183,7 @@ def check_jvm():
             java_version = clean_version.groups()[0]
         if version.parse(java_version) < version.parse("17"):
             print(
-                "The minimum supported Java version is 17. "
-                f"Found version: {java_version}",
+                "The minimum supported Java version is 17. " f"Found version: {java_version}",
                 file=sys.stderr,
             )
             sys.exit(1)

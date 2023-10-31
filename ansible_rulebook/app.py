@@ -22,21 +22,14 @@ from typing import Any, Dict, List, Optional, Tuple
 import yaml
 
 from ansible_rulebook import rules_parser as rules_parser
-from ansible_rulebook.collection import (
-    has_rulebook,
-    load_rulebook as collection_load_rulebook,
-    split_collection_name,
-)
+from ansible_rulebook.collection import has_rulebook, load_rulebook as collection_load_rulebook, split_collection_name
 from ansible_rulebook.common import StartupArgs
 from ansible_rulebook.conf import settings
 from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.rule_types import RuleSet, RuleSetQueue
 from ansible_rulebook.validators import Validate
-from ansible_rulebook.websocket import (
-    request_workload,
-    send_event_log_to_websocket,
-)
+from ansible_rulebook.websocket import request_workload, send_event_log_to_websocket
 
 from .exception import (
     ControllerNeededException,
@@ -73,22 +66,13 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
         )
         if not startup_args:
             logger.error("Error communicating with web socket server")
-            raise WebSocketExchangeException(
-                "Error communicating with web socket server"
-            )
+            raise WebSocketExchangeException("Error communicating with web socket server")
     else:
         startup_args = StartupArgs()
         startup_args.variables = load_vars(parsed_args)
-        startup_args.rulesets = load_rulebook(
-            parsed_args, startup_args.variables
-        )
-        if parsed_args.hot_reload is True and os.path.exists(
-            parsed_args.rulebook
-        ):
-            logger.critical(
-                "HOT-RELOAD: Hot-reload was requested, "
-                + "will monitor for rulebook file changes"
-            )
+        startup_args.rulesets = load_rulebook(parsed_args, startup_args.variables)
+        if parsed_args.hot_reload is True and os.path.exists(parsed_args.rulebook):
+            logger.critical("HOT-RELOAD: Hot-reload was requested, " + "will monitor for rulebook file changes")
             file_monitor = parsed_args.rulebook
         if parsed_args.inventory:
             startup_args.inventory = parsed_args.inventory
@@ -140,9 +124,7 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
 
     await event_log.put(dict(type="Exit"))
     if feedback_task:
-        await asyncio.wait(
-            [feedback_task], timeout=settings.max_feedback_timeout
-        )
+        await asyncio.wait([feedback_task], timeout=settings.max_feedback_timeout)
 
     logger.info("Cancelling event source tasks")
     for task in tasks:
@@ -151,9 +133,7 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
     error_found = False
     results = await asyncio.gather(*tasks, return_exceptions=True)
     for result in results:
-        if isinstance(result, Exception) and not isinstance(
-            result, CancelledError
-        ):
+        if isinstance(result, Exception) and not isinstance(result, CancelledError):
             logger.error(result)
             error_found = True
 
@@ -177,25 +157,19 @@ def load_vars(parsed_args) -> Dict[str, str]:
         for env_var in parsed_args.env_vars.split(","):
             env_var = env_var.strip()
             if env_var not in os.environ:
-                raise KeyError(
-                    f"Could not find environment variable {env_var!r}"
-                )
+                raise KeyError(f"Could not find environment variable {env_var!r}")
             variables[env_var] = os.environ[env_var]
 
     return variables
 
 
 # TODO(cutwater): Maybe move to util.py
-def load_rulebook(
-    parsed_args: argparse.ArgumentParser, variables: Optional[Dict] = None
-) -> List[RuleSet]:
+def load_rulebook(parsed_args: argparse.ArgumentParser, variables: Optional[Dict] = None) -> List[RuleSet]:
     if not parsed_args.rulebook:
         logger.debug("Loading no rules")
         return []
     elif os.path.exists(parsed_args.rulebook):
-        logger.debug(
-            "Loading rules from the file system %s", parsed_args.rulebook
-        )
+        logger.debug("Loading rules from the file system %s", parsed_args.rulebook)
         with open(parsed_args.rulebook) as f:
             data = yaml.safe_load(f.read())
             Validate.rulebook(data)
@@ -203,18 +177,10 @@ def load_rulebook(
                 variables = {}
             rulesets = rules_parser.parse_rule_sets(data, variables)
     elif has_rulebook(*split_collection_name(parsed_args.rulebook)):
-        logger.debug(
-            "Loading rules from a collection %s", parsed_args.rulebook
-        )
-        rulesets = rules_parser.parse_rule_sets(
-            collection_load_rulebook(
-                *split_collection_name(parsed_args.rulebook)
-            )
-        )
+        logger.debug("Loading rules from a collection %s", parsed_args.rulebook)
+        rulesets = rules_parser.parse_rule_sets(collection_load_rulebook(*split_collection_name(parsed_args.rulebook)))
     else:
-        raise RulebookNotFoundException(
-            f"Could not find rulebook {parsed_args.rulebook}"
-        )
+        raise RulebookNotFoundException(f"Could not find rulebook {parsed_args.rulebook}")
 
     return rulesets
 
@@ -250,21 +216,13 @@ def validate_actions(startup_args: StartupArgs) -> None:
             for action in rule.actions:
                 if action.action in CONTROLLER_ACTIONS:
                     startup_args.check_controller_connection = True
-                if (
-                    action.action in INVENTORY_ACTIONS
-                    and not startup_args.inventory
-                ):
+                if action.action in INVENTORY_ACTIONS and not startup_args.inventory:
                     raise InventoryNeededException(
-                        f"Rule {rule.name} has an action {action.action} "
-                        "which needs inventory to be defined"
+                        f"Rule {rule.name} has an action {action.action} " "which needs inventory to be defined"
                     )
 
-                if action.action in INVENTORY_ACTIONS and not os.path.exists(
-                    startup_args.inventory
-                ):
-                    raise InventoryNotFound(
-                        f"Inventory {startup_args.inventory} not found"
-                    )
+                if action.action in INVENTORY_ACTIONS and not os.path.exists(startup_args.inventory):
+                    raise InventoryNotFound(f"Inventory {startup_args.inventory} not found")
                 if (
                     action.action in CONTROLLER_ACTIONS
                     and not startup_args.controller_url

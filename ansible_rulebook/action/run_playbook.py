@@ -24,11 +24,7 @@ import uuid
 import yaml
 from drools import ruleset as lang
 
-from ansible_rulebook.collection import (
-    find_playbook,
-    has_playbook,
-    split_collection_name,
-)
+from ansible_rulebook.collection import find_playbook, has_playbook, split_collection_name
 from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import (
     MissingArtifactKeyException,
@@ -68,10 +64,7 @@ class RunPlaybook:
 
     async def __call__(self):
         try:
-            logger.info(
-                f"ruleset: {self.helper.metadata.rule_set}, "
-                f"rule: {self.helper.metadata.rule}"
-            )
+            logger.info(f"ruleset: {self.helper.metadata.rule_set}, " f"rule: {self.helper.metadata.rule}")
             logger.debug("private data dir %s", self.private_data_dir)
             await self._pre_process()
             await self._job_start_event()
@@ -106,9 +99,7 @@ class RunPlaybook:
             if i > 0:
                 if delay > 0:
                     await asyncio.sleep(delay)
-                logger.info(
-                    "Previous run_playbook failed. Retry %d of %d", i, retries
-                )
+                logger.info("Previous run_playbook failed. Retry %d of %d", i, retries)
 
             await Runner(
                 self.private_data_dir,
@@ -128,9 +119,7 @@ class RunPlaybook:
         return {"playbook": self.name, "inventory": self.inventory}
 
     async def _pre_process(self) -> None:
-        playbook_extra_vars = self.helper.collect_extra_vars(
-            self.action_args.get("extra_vars", {})
-        )
+        playbook_extra_vars = self.helper.collect_extra_vars(self.action_args.get("extra_vars", {}))
 
         env_dir = os.path.join(self.private_data_dir, "env")
         inventory_dir = os.path.join(self.private_data_dir, "inventory")
@@ -143,19 +132,13 @@ class RunPlaybook:
 
         if self.helper.control.inventory:
             create_inventory(inventory_dir, self.helper.control.inventory)
-            self.inventory = os.path.join(
-                inventory_dir, os.path.basename(self.helper.control.inventory)
-            )
+            self.inventory = os.path.join(inventory_dir, os.path.basename(self.helper.control.inventory))
         os.mkdir(project_dir)
 
-        logger.debug(
-            "project_data_file: %s", self.helper.control.project_data_file
-        )
+        logger.debug("project_data_file: %s", self.helper.control.project_data_file)
         if self.helper.control.project_data_file:
             if os.path.exists(self.helper.control.project_data_file):
-                await self._untar_project(
-                    project_dir, self.helper.control.project_data_file
-                )
+                await self._untar_project(project_dir, self.helper.control.project_data_file)
                 return
         self._copy_playbook_files(project_dir)
 
@@ -177,10 +160,7 @@ class RunPlaybook:
                     os.path.join(project_dir, self.name),
                 )
             else:
-                msg = (
-                    f"Could not find a playbook for {self.name} "
-                    f"from {os.getcwd()}"
-                )
+                msg = f"Could not find a playbook for {self.name} " f"from {os.getcwd()}"
                 logger.error(msg)
                 raise PlaybookNotFoundException(msg)
 
@@ -210,22 +190,17 @@ class RunPlaybook:
         if rc == 0 and (set_facts or post_events):
             logger.debug("set_facts")
             fact_folder = self._get_latest_artifact("fact_cache", False)
-            ruleset = self.action_args.get(
-                "ruleset", self.helper.metadata.rule_set
-            )
+            ruleset = self.action_args.get("ruleset", self.helper.metadata.rule_set)
             for host_facts in glob.glob(os.path.join(fact_folder, "*")):
                 with open(host_facts) as file_handle:
                     fact = json.loads(file_handle.read())
                 if self.output_key:
                     if self.output_key not in fact:
                         logger.error(
-                            "The artifacts from the ansible-runner "
-                            "does not have key %s",
+                            "The artifacts from the ansible-runner " "does not have key %s",
                             self.output_key,
                         )
-                        raise MissingArtifactKeyException(
-                            f"Missing key: {self.output_key} in artifacts"
-                        )
+                        raise MissingArtifactKeyException(f"Missing key: {self.output_key} in artifacts")
                     fact = fact[self.output_key]
                 fact = self.helper.embellish_internal_event(fact)
                 logger.debug("fact %s", fact)
@@ -235,9 +210,7 @@ class RunPlaybook:
                     lang.post(ruleset, fact)
 
     def _get_latest_artifact(self, component: str, content: bool = True):
-        files = glob.glob(
-            os.path.join(self.private_data_dir, "artifacts", "*", component)
-        )
+        files = glob.glob(os.path.join(self.private_data_dir, "artifacts", "*", component))
         files.sort(key=os.path.getmtime, reverse=True)
         if not files:
             raise PlaybookStatusNotFoundException(f"No {component} file found")

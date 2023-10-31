@@ -46,9 +46,7 @@ def create_event_source(create_event_source_filter, **kwargs):
         name = kwargs.pop("name", "es")
         source_name = kwargs.pop("source_name", "sample_source_name")
         source_args = kwargs.pop("source_args", dict(arg1=1))
-        source_filters = kwargs.pop(
-            "source_filters", [create_event_source_filter()]
-        )
+        source_filters = kwargs.pop("source_filters", [create_event_source_filter()])
         return EventSource(name, source_name, source_args, source_filters)
 
     return _event_source

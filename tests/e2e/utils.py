@@ -68,9 +68,7 @@ class Command:
         if self.websocket:
             result.extend(["--websocket-address", self.websocket])
         if self.project_tarball:
-            result.extend(
-                ["--project-tarball", str(self.project_tarball.absolute())]
-            )
+            result.extend(["--project-tarball", str(self.project_tarball.absolute())])
         if self.worker_mode:
             result.append("--worker")
         if self.rulebook:
@@ -119,9 +117,7 @@ def assert_playbook_output(result: CompletedProcess) -> List[dict]:
     return output
 
 
-async def msg_handler(
-    websocket: ws_server.WebSocketServerProtocol, queue: asyncio.Queue
-):
+async def msg_handler(websocket: ws_server.WebSocketServerProtocol, queue: asyncio.Queue):
     """
     Handler for a websocket server that passes json messages
     from ansible-rulebook in the given queue

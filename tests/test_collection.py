@@ -50,9 +50,7 @@ def test_load_rulebook():
 
 
 def test_load_rulebook_missing():
-    assert not load_rulebook(
-        *split_collection_name("missing.eda.hello_events")
-    )
+    assert not load_rulebook(*split_collection_name("missing.eda.hello_events"))
 
 
 def test_has_rulebook():
@@ -60,9 +58,7 @@ def test_has_rulebook():
 
 
 def test_find_playbook():
-    assert (
-        find_playbook(*split_collection_name("ansible.eda.hello")) is not None
-    )
+    assert find_playbook(*split_collection_name("ansible.eda.hello")) is not None
 
 
 def test_find_playbook_missing():

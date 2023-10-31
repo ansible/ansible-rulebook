@@ -65,9 +65,7 @@ async def test_non_alpha_numeric_keys():
         },
         "r2": {
             "action": "debug",
-            "matching_events": {
-                "m": {"urls": {"http://www.example.com": "up"}}
-            },
+            "matching_events": {"m": {"urls": {"http://www.example.com": "up"}}},
         },
         "r3": {
             "action": "print_event",
@@ -90,9 +88,7 @@ async def test_non_alpha_numeric_keys():
 
             matching_events = data["matching_events"]
             del matching_events["m"]["meta"]
-            assert (
-                matching_events == rule_matches[rule_name]["matching_events"]
-            )
+            assert matching_events == rule_matches[rule_name]["matching_events"]
             assert data["action"] == rule_matches[rule_name]["action"]
 
         if data["type"] == "SessionStats":

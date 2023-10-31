@@ -16,9 +16,7 @@ import uuid
 from typing import Any, Dict, List, Optional
 
 import ansible_rulebook.rule_types as rt
-from ansible_rulebook.condition_parser import (
-    parse_condition as parse_condition_value,
-)
+from ansible_rulebook.condition_parser import parse_condition as parse_condition_value
 from ansible_rulebook.conf import settings
 from ansible_rulebook.util import substitute_variables
 
@@ -39,9 +37,7 @@ def parse_hosts(hosts):
         raise Exception(f"Unsupported hosts value {hosts}")
 
 
-def parse_rule_sets(
-    rule_sets: Dict, variables: Optional[Dict] = None
-) -> List[rt.RuleSet]:
+def parse_rule_sets(rule_sets: Dict, variables: Optional[Dict] = None) -> List[rt.RuleSet]:
     rule_set_list = []
     ruleset_names = []
     for rule_set in rule_sets:
@@ -51,23 +47,17 @@ def parse_rule_sets(
 
         name = name.strip()
         if name == "":
-            raise RulesetNameEmptyException(
-                "Ruleset name cannot be an empty string"
-            )
+            raise RulesetNameEmptyException("Ruleset name cannot be an empty string")
 
         if name in ruleset_names:
-            raise RulesetNameDuplicateException(
-                f"Ruleset with name: {name} defined multiple times"
-            )
+            raise RulesetNameDuplicateException(f"Ruleset with name: {name} defined multiple times")
 
         ruleset_names.append(name)
 
         if variables is None:
             variables = {}
 
-        strategy = rule_set.get(
-            "execution_strategy", settings.default_execution_strategy
-        )
+        strategy = rule_set.get("execution_strategy", settings.default_execution_strategy)
         if strategy == "sequential":
             execution_strategy = rt.ExecutionStrategy.SEQUENTIAL
         elif strategy == "parallel":
@@ -83,9 +73,7 @@ def parse_rule_sets(
                 gather_facts=rule_set.get("gather_facts", False),
                 uuid=str(uuid.uuid4()),
                 default_events_ttl=rule_set.get("default_events_ttl", None),
-                match_multiple_rules=rule_set.get(
-                    "match_multiple_rules", False
-                ),
+                match_multiple_rules=rule_set.get("match_multiple_rules", False),
             )
         )
     return rule_set_list
@@ -138,9 +126,7 @@ def parse_rules(rules: Dict, variables: Dict) -> List[rt.Rule]:
             raise RulenameEmptyException("Rule name cannot be an empty string")
 
         if name in rule_names:
-            raise RulenameDuplicateException(
-                f"Rule with name {name} defined multiple times"
-            )
+            raise RulenameDuplicateException(f"Rule with name {name} defined multiple times")
 
         rule_names.append(name)
         if "throttle" in rule:
@@ -200,9 +186,7 @@ def parse_condition(condition: Any) -> rt.Condition:
                 timeout,
             )
         else:
-            raise Exception(
-                f"Condition should have one of any, all, not_all: {condition}"
-            )
+            raise Exception(f"Condition should have one of any, all, not_all: {condition}")
 
     else:
         raise Exception(f"Unsupported condition {condition}")

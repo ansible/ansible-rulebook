@@ -82,10 +82,7 @@ def has_object(collection, name, object_types, extensions):
 
     for object_type in object_types:
         for extension in extensions:
-            if os.path.exists(
-                os.path.join(find_collection(collection), object_type, name)
-                + extension
-            ):
+            if os.path.exists(os.path.join(find_collection(collection), object_type, name) + extension):
                 return True
     return False
 
@@ -99,16 +96,11 @@ def find_object(collection, name, object_types, extensions):
 
     for object_type in object_types:
         for extension in extensions:
-            location = (
-                os.path.join(find_collection(collection), object_type, name)
-                + extension
-            )
+            location = os.path.join(find_collection(collection), object_type, name) + extension
             if os.path.exists(location):
                 return location
 
-    raise FileNotFoundError(
-        f"Cannot find {object_type} {name} in {collection} at {location}"
-    )
+    raise FileNotFoundError(f"Cannot find {object_type} {name} in {collection} at {location}")
 
 
 def has_rulebook(collection, rulebook):
@@ -171,12 +163,8 @@ def find_source_filter(collection, source_filter):
 
 
 def has_playbook(collection, playbook):
-    return has_object(
-        collection, playbook, EDA_PLAYBOOKS_PATHS, EDA_YAML_EXTENSIONS
-    )
+    return has_object(collection, playbook, EDA_PLAYBOOKS_PATHS, EDA_YAML_EXTENSIONS)
 
 
 def find_playbook(collection, playbook):
-    return find_object(
-        collection, playbook, EDA_PLAYBOOKS_PATHS, EDA_YAML_EXTENSIONS
-    )
+    return find_object(collection, playbook, EDA_PLAYBOOKS_PATHS, EDA_YAML_EXTENSIONS)

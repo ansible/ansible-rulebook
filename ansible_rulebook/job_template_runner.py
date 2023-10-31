@@ -38,15 +38,11 @@ class JobTemplateRunner:
     CONFIG_SLUG = "/api/v2/config/"
     JOB_COMPLETION_STATUSES = ["successful", "failed", "error", "canceled"]
 
-    def __init__(
-        self, host: str = "", token: str = "", verify_ssl: str = "yes"
-    ):
+    def __init__(self, host: str = "", token: str = "", verify_ssl: str = "yes"):
         self.token = token
         self.host = host
         self.verify_ssl = verify_ssl
-        self.refresh_delay = float(
-            os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10.0)
-        )
+        self.refresh_delay = float(os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10.0))
         self._session = None
 
     async def close_session(self):
@@ -66,9 +62,7 @@ class JobTemplateRunner:
         try:
             url = urljoin(self.host, href_slug)
             self._create_session()
-            async with self._session.get(
-                url, params=params, ssl=self._sslcontext
-            ) as response:
+            async with self._session.get(url, params=params, ssl=self._sslcontext) as response:
                 return json.loads(await response.text())
         except aiohttp.ClientError as e:
             logger.error("Error connecting to controller %s", str(e))
@@ -90,15 +84,11 @@ class JobTemplateRunner:
                 return ssl.create_default_context(cafile=self.verify_ssl)
         return False
 
-    async def _get_template_obj(
-        self, name: str, organization: str, unified_type: str
-    ) -> dict:
+    async def _get_template_obj(self, name: str, organization: str, unified_type: str) -> dict:
         params = {"name": name}
 
         while True:
-            json_body = await self._get_page(
-                self.UNIFIED_TEMPLATE_SLUG, params
-            )
+            json_body = await self._get_page(self.UNIFIED_TEMPLATE_SLUG, params)
             for jt in json_body["results"]:
                 if (
                     jt["type"] == unified_type
@@ -114,12 +104,8 @@ class JobTemplateRunner:
                     return {
                         "launch": dpath.get(jt, "related.launch", ".", None),
                         "ask_limit_on_launch": jt["ask_limit_on_launch"],
-                        "ask_inventory_on_launch": jt[
-                            "ask_inventory_on_launch"
-                        ],
-                        "ask_variables_on_launch": jt[
-                            "ask_variables_on_launch"
-                        ],
+                        "ask_inventory_on_launch": jt["ask_inventory_on_launch"],
+                        "ask_variables_on_launch": jt["ask_variables_on_launch"],
                     }
 
             if json_body.get("next", None):
@@ -136,10 +122,7 @@ class JobTemplateRunner:
         obj = await self._get_template_obj(name, organization, "job_template")
         if not obj:
             raise JobTemplateNotFoundException(
-                (
-                    f"Job template {name} in organization "
-                    f"{organization} does not exist"
-                )
+                (f"Job template {name} in organization " f"{organization} does not exist")
             )
         url = urljoin(self.host, obj["launch"])
         job = await self._launch(job_params, url)
@@ -151,26 +134,18 @@ class JobTemplateRunner:
         organization: str,
         job_params: dict,
     ) -> dict:
-        obj = await self._get_template_obj(
-            name, organization, "workflow_job_template"
-        )
+        obj = await self._get_template_obj(name, organization, "workflow_job_template")
         if not obj:
             raise WorkflowJobTemplateNotFoundException(
-                (
-                    f"Workflow template {name} in organization "
-                    f"{organization} does not exist"
-                )
+                (f"Workflow template {name} in organization " f"{organization} does not exist")
             )
         url = urljoin(self.host, obj["launch"])
         if not obj["ask_limit_on_launch"] and "limit" in job_params:
-            logger.warning(
-                "Workflow template %s does not accept limit, removing it", name
-            )
+            logger.warning("Workflow template %s does not accept limit, removing it", name)
             job_params.pop("limit")
         if not obj["ask_variables_on_launch"] and "extra_vars" in job_params:
             logger.warning(
-                "Workflow template %s does not accept extra vars, "
-                "removing it",
+                "Workflow template %s does not accept extra vars, " "removing it",
                 name,
             )
             job_params.pop("extra_vars")

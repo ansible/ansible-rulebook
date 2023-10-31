@@ -19,10 +19,7 @@ import pytest
 from ansible_rulebook.action.control import Control
 from ansible_rulebook.action.metadata import Metadata
 from ansible_rulebook.action.run_job_template import RunJobTemplate
-from ansible_rulebook.exception import (
-    ControllerApiException,
-    JobTemplateNotFoundException,
-)
+from ansible_rulebook.exception import ControllerApiException, JobTemplateNotFoundException
 
 
 def _validate(queue, success, reason=None):
@@ -96,8 +93,7 @@ async def test_run_job_template_exception(err_msg, err):
         "delay": 0,
     }
     with patch(
-        "ansible_rulebook.action.run_job_template."
-        "job_template_runner.run_job_template",
+        "ansible_rulebook.action.run_job_template." "job_template_runner.run_job_template",
         side_effect=err,
     ):
         await RunJobTemplate(metadata, control, **action_args)()
@@ -150,8 +146,7 @@ async def test_run_job_template(drools_call, additional_args):
         "id": 10,
     }
     with patch(
-        "ansible_rulebook.action.run_job_template."
-        "job_template_runner.run_job_template",
+        "ansible_rulebook.action.run_job_template." "job_template_runner.run_job_template",
         return_value=controller_job,
     ):
         with patch(drools_call) as drools_mock:
@@ -204,13 +199,10 @@ async def test_run_job_template_retries():
     ]
 
     with patch(
-        "ansible_rulebook.action.run_job_template."
-        "job_template_runner.run_job_template",
+        "ansible_rulebook.action.run_job_template." "job_template_runner.run_job_template",
         side_effect=controller_job,
     ):
-        with patch(
-            "ansible_rulebook.action.run_job_template.lang.assert_fact"
-        ) as drools_mock:
+        with patch("ansible_rulebook.action.run_job_template.lang.assert_fact") as drools_mock:
             await RunJobTemplate(metadata, control, **action_args)()
             drools_mock.assert_called_once()
 

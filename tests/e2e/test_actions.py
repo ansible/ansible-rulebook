@@ -41,17 +41,13 @@ def test_actions_sanity(update_environment):
         }
     )
 
-    rulebook = (
-        utils.BASE_DATA_PATH / "rulebooks/actions/test_actions_sanity.yml"
-    )
+    rulebook = utils.BASE_DATA_PATH / "rulebooks/actions/test_actions_sanity.yml"
     inventory = utils.BASE_DATA_PATH / "inventories/default_inventory.ini"
     cmd = utils.Command(
         rulebook=rulebook,
         inventory=inventory,
         execution_strategy="parallel",
-        envvars="DEFAULT_SHUTDOWN_AFTER,"
-        "DEFAULT_EVENT_DELAY,"
-        "DEFAULT_STARTUP_DELAY",
+        envvars="DEFAULT_SHUTDOWN_AFTER," "DEFAULT_EVENT_DELAY," "DEFAULT_STARTUP_DELAY",
     )
 
     LOGGER.info(f"Running command: {cmd}")
@@ -69,29 +65,19 @@ def test_actions_sanity(update_environment):
 
     # assert each expected output per action tested
     with check:
-        assert (
-            "'action': 'run_playbook'" in result.stdout
-        ), "run_playbook action failed"
+        assert "'action': 'run_playbook'" in result.stdout, "run_playbook action failed"
 
     with check:
-        assert (
-            "'action': 'run_module'" in result.stdout
-        ), "run_module action failed"
+        assert "'action': 'run_module'" in result.stdout, "run_module action failed"
 
     with check:
-        assert (
-            "'action': 'print_event'" in result.stdout
-        ), "print_event action with single event failed"
+        assert "'action': 'print_event'" in result.stdout, "print_event action with single event failed"
 
     with check:
-        assert (
-            "'action': 'print_event_multi_1'" in result.stdout
-        ), "print_event action with multiple events 1 failed"
+        assert "'action': 'print_event_multi_1'" in result.stdout, "print_event action with multiple events 1 failed"
 
     with check:
-        assert (
-            "'action': 'print_event_multi_2'" in result.stdout
-        ), "print_event action with multiple events 2 failed"
+        assert "'action': 'print_event_multi_2'" in result.stdout, "print_event action with multiple events 2 failed"
 
     with check:
         expected_debug_lines = [
@@ -110,14 +96,10 @@ def test_actions_sanity(update_environment):
         ]
 
         for line in expected_debug_lines:
-            assert (
-                line in result.stdout
-            ), f"debug action failed, expected: {line}"
+            assert line in result.stdout, f"debug action failed, expected: {line}"
 
     with check:
-        uuid_regex = (
-            r"[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}"
-        )
+        uuid_regex = r"[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}"
         expected_debug_regexs = [
             r"'rule_uuid':" + f" '{uuid_regex}'",
             r"'rule_set_uuid':" + f" '{uuid_regex}'",
@@ -125,34 +107,23 @@ def test_actions_sanity(update_environment):
         ]
 
         for regex in expected_debug_regexs:
-            assert re.search(
-                regex, result.stdout
-            ), f"debug action failed, expected: {regex}"
+            assert re.search(regex, result.stdout), f"debug action failed, expected: {regex}"
+
+    with check:
+        assert "Event matched in same ruleset: sent" in result.stdout, "post_event action failed"
+
+    with check:
+        assert "Event matched in different ruleset: sent" in result.stdout, "post_event action across rulesets failed"
+
+    with check:
+        assert "Fact matched in same ruleset: sent" in result.stdout, "set_fact action failed"
+
+    with check:
+        assert "Fact matched in different ruleset: sent" in result.stdout, "set_fact action across rulesets failed"
 
     with check:
         assert (
-            "Event matched in same ruleset: sent" in result.stdout
-        ), "post_event action failed"
-
-    with check:
-        assert (
-            "Event matched in different ruleset: sent" in result.stdout
-        ), "post_event action across rulesets failed"
-
-    with check:
-        assert (
-            "Fact matched in same ruleset: sent" in result.stdout
-        ), "set_fact action failed"
-
-    with check:
-        assert (
-            "Fact matched in different ruleset: sent" in result.stdout
-        ), "set_fact action across rulesets failed"
-
-    with check:
-        assert (
-            "Retracted fact in same ruleset, this should not be printed"
-            not in result.stdout
+            "Retracted fact in same ruleset, this should not be printed" not in result.stdout
         ), "retract_fact action failed"
 
     multiple_actions_expected_output = (
@@ -163,18 +134,12 @@ def test_actions_sanity(update_environment):
     )
 
     with check:
-        assert (
-            multiple_actions_expected_output in result.stdout
-        ), "multiple sequential actions failed"
+        assert multiple_actions_expected_output in result.stdout, "multiple sequential actions failed"
 
     with check:
-        assert (
-            "'action': 'multiple_actions'" in result.stdout
-        ), "multiple_action action failed"
+        assert "'action': 'multiple_actions'" in result.stdout, "multiple_action action failed"
 
-    assert (
-        len(result.stdout.splitlines()) == 105
-    ), "unexpected output from the rulebook"
+    assert len(result.stdout.splitlines()) == 105, "unexpected output from the rulebook"
 
 
 @pytest.mark.e2e
@@ -210,34 +175,22 @@ def test_run_playbook(update_environment):
     assert result.returncode == 0
     assert not result.stderr
 
-    retry_attempts = result.stdout.count(
-        '"msg": "Remediation failed on simba"'
-    )
+    retry_attempts = result.stdout.count('"msg": "Remediation failed on simba"')
 
     with check:
-        assert (
-            "Post-processing complete on nala" in result.stdout
-        ), "run_playbook set_facts to secondary ruleset failed"
+        assert "Post-processing complete on nala" in result.stdout, "run_playbook set_facts to secondary ruleset failed"
 
     with check:
-        assert (
-            retry_attempts == 1
-        ), "run_playbook retry attempt failed or did not match"
+        assert retry_attempts == 1, "run_playbook retry attempt failed or did not match"
 
     with check:
-        assert (
-            "Remediation successful" in result.stdout
-        ), "run_playbook post_events failed"
+        assert "Remediation successful" in result.stdout, "run_playbook post_events failed"
 
     with check:
-        assert (
-            "verbosity: 4" in result.stdout
-        ), "run_playbook verbosity setting failed"
+        assert "verbosity: 4" in result.stdout, "run_playbook verbosity setting failed"
 
     with check:
-        assert (
-            "Post-processing complete on simba" in result.stdout
-        ), "run_playbook set_facts to same ruleset failed"
+        assert "Post-processing complete on simba" in result.stdout, "run_playbook set_facts to same ruleset failed"
 
 
 @pytest.mark.e2e
@@ -246,9 +199,7 @@ def test_shutdown_action_graceful(update_environment):
     Execute a rulebook to validate the shutdown action with kind graceful
     """
 
-    rulebook = (
-        utils.BASE_DATA_PATH / "rulebooks/actions/test_shutdown_graceful.yml"
-    )
+    rulebook = utils.BASE_DATA_PATH / "rulebooks/actions/test_shutdown_graceful.yml"
     env = update_environment({"DEFAULT_EVENT_DELAY": str(DEFAULT_EVENT_DELAY)})
 
     cmd = utils.Command(rulebook=rulebook, envvars="DEFAULT_EVENT_DELAY")
@@ -268,37 +219,20 @@ def test_shutdown_action_graceful(update_environment):
 
     with check:
         assert (
-            len(
-                [
-                    line
-                    for line in result.stdout.splitlines()
-                    if '"msg": "Sleeping..."' in line
-                ]
-            )
-            == 1
+            len([line for line in result.stdout.splitlines() if '"msg": "Sleeping..."' in line]) == 1
         ), "long-running playbook failed to fire"
 
     with check:
-        assert (
-            "Sequential action triggered successfully" in result.stdout
-        ), "a sequential action failed to fire"
+        assert "Sequential action triggered successfully" in result.stdout, "a sequential action failed to fire"
 
     with check:
         assert (
-            "Shutdown gracefully has initiated shutdown "
-            "of type: graceful." in result.stdout
+            "Shutdown gracefully has initiated shutdown " "of type: graceful." in result.stdout
         ), "graceful shutdown failed to initiate"
 
     with check:
         assert (
-            len(
-                [
-                    line
-                    for line in result.stdout.splitlines()
-                    if '"msg": "Rise and shine..."' in line
-                ]
-            )
-            == 1
+            len([line for line in result.stdout.splitlines() if '"msg": "Rise and shine..."' in line]) == 1
         ), "long-running playbook failed to finish"
 
     with check:
@@ -340,26 +274,15 @@ def test_shutdown_action_now(update_environment):
     assert not result.stderr
 
     with check:
-        assert (
-            "Sequential action triggered successfully" in result.stdout
-        ), "a sequential action failed to fire"
+        assert "Sequential action triggered successfully" in result.stdout, "a sequential action failed to fire"
 
     with check:
         assert (
-            len(
-                [
-                    line
-                    for line in result.stdout.splitlines()
-                    if '"msg": "Sleeping..."' in line
-                ]
-            )
-            == 1
+            len([line for line in result.stdout.splitlines() if '"msg": "Sleeping..."' in line]) == 1
         ), "long-running playbook failed to fire"
 
     with check:
-        assert (
-            "Shutdown has initiated shutdown of type: now" in result.stdout
-        ), "shutdown now failed to initiate"
+        assert "Shutdown has initiated shutdown of type: now" in result.stdout, "shutdown now failed to initiate"
 
     with check:
         assert (

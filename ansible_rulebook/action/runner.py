@@ -102,9 +102,7 @@ class Runner:
                     ),
                 )
             except CancelledError:
-                logger.debug(
-                    "Ansible Runner Thread Pool executor task cancelled"
-                )
+                logger.debug("Ansible Runner Thread Pool executor task cancelled")
                 shutdown = True
                 raise
             finally:
