@@ -69,9 +69,6 @@ class RunJobTemplate:
         )
         await self._job_start_event()
         await self._run()
-        url = self._controller_job_url()
-        if url:
-            print(f"job results url: {url}")
 
     async def _run(self):
         retries = self.action_args.get("retries", 0)
@@ -116,6 +113,12 @@ class RunJobTemplate:
             "url": self._controller_job_url(),
             "matching_events": self.helper.get_events(),
         }
+        a_log["job_results_url"] = (
+            None
+            if not self._controller_job_url()
+            else self._controller_job_url()
+        )
+        logger.info(f"job results url: {a_log['job_results_url']}")
         if "error" in self.controller_job:
             a_log["message"] = self.controller_job["error"]
             a_log["reason"] = {"error": self.controller_job["error"]}

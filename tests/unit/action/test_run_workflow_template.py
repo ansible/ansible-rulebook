@@ -54,6 +54,7 @@ def _validate(queue, success, reason=None):
         "url",
         "organization",
         "job_id",
+        "job_results_url",
     }
 
     if not success:
@@ -61,6 +62,7 @@ def _validate(queue, success, reason=None):
 
     x = set(action.keys()).difference(required_keys)
     assert len(x) == 0
+    return action
 
 
 WORKFLOW_TEMPLATE_ERRORS = [
@@ -221,20 +223,14 @@ async def test_run_workflow_template_retries():
 
 
 URL_PARAMETERS = [
-    (
-        None,
-        "",
-    ),
-    (
-        10,
-        "job results url:",
-    ),
+    (None,),
+    (10,),
 ]
 
 
-@pytest.mark.parametrize("job_id, stdout", URL_PARAMETERS)
+@pytest.mark.parametrize("job_id", URL_PARAMETERS)
 @pytest.mark.asyncio
-async def test_run_workflow_template_retries_url(job_id, stdout, capfd):
+async def test_run_workflow_template_url(job_id):
     queue = asyncio.Queue()
     metadata = Metadata(
         rule="r1",
@@ -272,8 +268,9 @@ async def test_run_workflow_template_retries_url(job_id, stdout, capfd):
         return_value=controller_job,
     ):
         await RunWorkflowTemplate(metadata, control, **action_args)()
-        captured = capfd.readouterr()
 
-        assert ((not job_id) and (captured.out == stdout)) or (
-            job_id and captured.out.startswith(stdout)
+        action = _validate(queue, True)
+
+        assert ((not job_id) and (action["job_results_url"] is None)) or (
+            job_id and (action["job_results_url"] is not None)
         )
