@@ -185,6 +185,22 @@ Single condition
 
 When an event comes with ``outage`` attribute as true, the specified playbook is executed.
 
+Single boolean
+--------------
+
+    .. code-block:: yaml
+
+        name: An automatic remediation rule
+        condition: event.outage
+        action:
+          run_playbook:
+            name: remediate_outage.yml
+
+If the ``outage`` attribute is a boolean, you can use it
+by itself in the condition. This is a shorter version of
+the previous example. If the value is true the condition
+passes and the action is triggered.
+
 Multiple conditions where **all** of them have to match
 -------------------------------------------------------
 

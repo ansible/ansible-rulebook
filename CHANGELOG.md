@@ -4,6 +4,7 @@
 ## [Unreleased]
 
 ### Added
+- Support for standalone boolean in conditions
 
 ### Fixed
 
