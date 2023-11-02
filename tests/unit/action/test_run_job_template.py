@@ -54,7 +54,6 @@ def _validate(queue, success, reason=None):
         "url",
         "organization",
         "job_id",
-        "job_results_url",
     }
 
     if not success:
@@ -212,8 +211,8 @@ async def test_run_job_template_url(job_id):
 
         action = _validate(queue, True)
 
-        assert ((not job_id) and (action["job_results_url"] is None)) or (
-            job_id and (action["job_results_url"] is not None)
+        assert ((not job_id) and (action["url"] == "")) or (
+            job_id and (action["url"] != "")
         )
 
 

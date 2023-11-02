@@ -113,15 +113,11 @@ class RunJobTemplate:
             "url": self._controller_job_url(),
             "matching_events": self.helper.get_events(),
         }
-        a_log["job_results_url"] = (
-            None
-            if not self._controller_job_url()
-            else self._controller_job_url()
-        )
-        logger.info(f"job results url: {a_log['job_results_url']}")
         if "error" in self.controller_job:
             a_log["message"] = self.controller_job["error"]
             a_log["reason"] = {"error": self.controller_job["error"]}
+        else:
+            logger.info(f"job results url: {a_log['url']}")
 
         await self.helper.send_status(a_log)
         set_facts = self.action_args.get("set_facts", False)
