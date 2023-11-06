@@ -260,7 +260,7 @@ async def run_rulesets(
     ruleset_queues: List[RuleSetQueue],
     variables: Dict,
     inventory: str = "",
-    parsed_args: argparse.ArgumentParser = None,
+    parsed_args: argparse.Namespace = None,
     project_data_file: Optional[str] = None,
     file_monitor: str = None,
 ) -> bool:
