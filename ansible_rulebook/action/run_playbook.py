@@ -68,14 +68,14 @@ class RunPlaybook:
 
     async def __call__(self):
         try:
-            logger.info(
+            logger.debug(
                 f"ruleset: {self.helper.metadata.rule_set}, "
                 f"rule: {self.helper.metadata.rule}"
             )
             logger.debug("private data dir %s", self.private_data_dir)
             await self._pre_process()
             await self._job_start_event()
-            logger.info("Calling Ansible runner")
+            logger.debug("Calling Ansible runner")
             await self._run()
         finally:
             if os.path.exists(self.private_data_dir):
