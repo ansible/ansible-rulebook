@@ -61,7 +61,7 @@ CONTROLLER_ACTIONS = ("run_job_template", "run_workflow_template")
 
 
 # FIXME(cutwater): Replace parsed_args with clear interface
-async def run(parsed_args: argparse.ArgumentParser) -> None:
+async def run(parsed_args: argparse.Namespace) -> None:
     file_monitor = None
 
     if parsed_args.worker and parsed_args.websocket_address and parsed_args.id:
@@ -187,7 +187,7 @@ def load_vars(parsed_args) -> Dict[str, str]:
 
 # TODO(cutwater): Maybe move to util.py
 def load_rulebook(
-    parsed_args: argparse.ArgumentParser, variables: Optional[Dict] = None
+    parsed_args: argparse.Namespace, variables: Optional[Dict] = None
 ) -> List[RuleSet]:
     if not parsed_args.rulebook:
         logger.debug("Loading no rules")
