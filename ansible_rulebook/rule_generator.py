@@ -69,7 +69,7 @@ def make_fn(
     plan: Plan,
 ) -> Callable:
     def fn(rule_engine_results):
-        logger.info("calling %s", ansible_rule.name)
+        logger.debug("callback calling %s", ansible_rule.name)
         add_to_plan(
             ruleset,
             ruleset_uuid,
