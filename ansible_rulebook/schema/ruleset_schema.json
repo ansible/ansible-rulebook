@@ -206,6 +206,9 @@
                             },
                             {
                                 "$ref": "#/$defs/shutdown-action"
+                            },
+                            {
+                                "$ref": "#/$defs/kafka-notify-action"
                             }
                         ]
                     }
@@ -244,6 +247,9 @@
                         },
                         {
                             "$ref": "#/$defs/shutdown-action"
+                        },
+                        {
+                            "$ref": "#/$defs/kafka-notify-action"
                         }
                     ]
                 }
@@ -708,6 +714,38 @@
                 "shutdown"
             ],
             "additionalProperties": false
+        },
+        "kafka-notify-action": {
+            "type": "object",
+            "properties": {
+                "kafka_notify": {
+                    "type": "object",
+                    "properties": {
+                        "connection": {
+                            "type": "object"
+                        },
+                        "topic": {
+                            "type": "string"
+                        },
+                        "event": {
+                            "type": [
+                                "string",
+                                "object"
+                            ]
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                        "connection",
+                        "topic",
+                        "event"
+                    ]
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "kafka_notify"
+            ]
         }
     }
 }
