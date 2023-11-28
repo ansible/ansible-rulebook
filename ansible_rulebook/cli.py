@@ -101,7 +101,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--websocket-ssl-verify",
         help="How to verify SSL when connecting to the "
-        "websocket, yes|no|<path to a CA bundle>, "
+        "websocket: (yes|true) | (no|false) | <path to a CA bundle>, "
         "default to yes for wss connection.",
         default="yes",
     )
@@ -133,7 +133,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--controller-ssl-verify",
         help="How to verify SSL when connecting to the "
-        "controller, yes|no|<path to a CA bundle>, "
+        "controller: (yes|true) | (no|false) | <path to a CA bundle>, "
         "default to yes for https connection."
         "can also be passed via env var EDA_CONTROLLER_SSL_VERIFY",
         default=os.environ.get("EDA_CONTROLLER_SSL_VERIFY", "yes"),
