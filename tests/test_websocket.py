@@ -96,7 +96,7 @@ async def test_request_workload():
         assert sha1 == sha2
         assert response.controller_url == controller_url
         assert response.controller_token == controller_token
-        assert response.controller_verify_ssl == controller_ssl_verify
+        assert response.controller_ssl_verify == controller_ssl_verify
         assert response.rulesets[0].name == "Demo rules"
         assert len(response.rulesets[0].rules) == 6
 

@@ -76,7 +76,7 @@ async def request_workload(
                 if data.get("type") == "ControllerInfo":
                     response.controller_url = data.get("url")
                     response.controller_token = data.get("token")
-                    response.controller_verify_ssl = data.get("ssl_verify")
+                    response.controller_ssl_verify = data.get("ssl_verify")
             return response
         except CancelledError:
             logger.info("closing websocket due to task cancelled")
