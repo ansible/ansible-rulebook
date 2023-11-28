@@ -58,7 +58,7 @@ class RunJobTemplate:
             self.name,
             self.organization,
         )
-        logger.info(
+        logger.debug(
             "ruleset: %s, rule %s",
             self.helper.metadata.rule_set,
             self.helper.metadata.rule,

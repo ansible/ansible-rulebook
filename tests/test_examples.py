@@ -2408,3 +2408,29 @@ async def test_82_non_alpha_keys():
             ],
         }
         await validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_83_boolean_true():
+    ruleset_queues, event_log = load_rulebook("examples/83_boolean_true.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+
+        checks = {
+            "max_events": 4,
+            "shutdown_events": 1,
+            "actions": [
+                "83 boolean true::r1::print_event",
+                "83 boolean true::r1::print_event",
+                "83 boolean true::r1::print_event",
+            ],
+        }
+        await validate_events(event_log, **checks)

@@ -189,6 +189,8 @@ def parse_action(action: Dict) -> rt.Action:
 def parse_condition(condition: Any) -> rt.Condition:
     if isinstance(condition, str):
         return rt.Condition("all", [parse_condition_value(condition)])
+    elif isinstance(condition, bool):
+        return rt.Condition("all", [parse_condition_value(str(condition))])
     elif isinstance(condition, dict):
         timeout = condition.pop("timeout", None)
         keys = list(condition.keys())
@@ -196,7 +198,7 @@ def parse_condition(condition: Any) -> rt.Condition:
             when = keys[0]
             return rt.Condition(
                 when,
-                [parse_condition_value(c) for c in condition[when]],
+                [parse_condition_value(str(c)) for c in condition[when]],
                 timeout,
             )
         else:

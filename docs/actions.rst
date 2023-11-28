@@ -122,8 +122,11 @@ Run a job template.
 
 .. note::
     ``--controller-url`` and ``--controller-token`` cmd options must be provided to use this action
-    
+
     In order to access event information under the ``ansible_eda`` namespace, be sure to check the box for "Prompt on launch" for the Variables field within the job template. Alternatively, a survey can be created that includes the variable ``ansible_eda``. Similarly, if you plan to limit host execution based on event information, enable "Prompt on launch" for the Limit field within the job template.
+
+.. note::
+    You can define the environment variable ``EDA_CONTROLLER_CONNECTION_LIMIT`` to limit the number of concurrent connections to the controller. The default is 30.
 
 
 .. list-table::
@@ -171,6 +174,10 @@ Run a workflow template.
 
 .. note::
     ``--controller-url`` and ``--controller-token`` cmd options must be provided to use this action
+
+.. note::
+    You can define the environment variable ``EDA_CONTROLLER_CONNECTION_LIMIT`` to limit the number of concurrent connections to the controller. The default is 30.
+
 
 .. list-table::
    :widths: 25 150 10
@@ -331,7 +338,7 @@ retract_fact
      - The name of the rule set to retract the fact, default is the current rule set name
      - No
    * - partial
-     - The fact being requested to retracted is partial and doesn't have all the keys. Default is true 
+     - The fact being requested to retracted is partial and doesn't have all the keys. Default is true
      - No
 
 Example:
@@ -398,7 +405,7 @@ shutdown
      - A numeric value about how long to wait in seconds before shutting down, default 60.0
      - No
    * - message
-     - A message to be associated with this shutdown 
+     - A message to be associated with this shutdown
      - No
    * - kind
      - Kind of shutdown can be either **graceful** or **now**. default is graceful.
@@ -471,7 +478,7 @@ Example:
        condition: event.i >= 5
        action:
           debug:
-            msg: 
+            msg:
                - "Message 1 {{ event }}"
                - Second Message
 

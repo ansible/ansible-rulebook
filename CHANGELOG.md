@@ -4,9 +4,18 @@
 ## [Unreleased]
 
 ### Added
+- Support for standalone boolean in conditions
+
+### Fixed
+
+## [1.0.4] - 2023-10-30
+
+### Added
 
 ### Fixed
 - Job_template and workflow_template actions honor custom hosts limit
+- Upgraded to 0.3.8 of drools_jpy
+- Add missing watchdog dependency
 
 ### Removed
 
