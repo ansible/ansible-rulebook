@@ -135,7 +135,7 @@ class RuleSetRunner:
             raise
 
     async def _cleanup(self):
-        logger.info("Cleaning up ruleset %s", self.name)
+        logger.debug("Cleaning up ruleset %s", self.name)
         if not self.source_loop_task.done():
             self.source_loop_task.cancel()
 
@@ -144,7 +144,7 @@ class RuleSetRunner:
             and self.shutdown
             and self.shutdown.kind == "graceful"
         ):
-            logger.info("Waiting for active actions to end")
+            logger.debug("Waiting for active actions to end")
             await asyncio.wait(
                 self.active_actions,
                 return_when=asyncio.FIRST_EXCEPTION,
@@ -176,7 +176,7 @@ class RuleSetRunner:
             str(self.shutdown),
         )
         if self.shutdown.kind == "now":
-            logger.info(
+            logger.debug(
                 "ruleset: %s has issued an immediate shutdown", self.name
             )
             self.action_loop_task.cancel()
@@ -184,10 +184,10 @@ class RuleSetRunner:
             self.ruleset_queue_plan.plan.queue.empty()
             and not self.active_actions
         ):
-            logger.info("ruleset: %s shutdown no pending work", self.name)
+            logger.debug("ruleset: %s shutdown no pending work", self.name)
             self.action_loop_task.cancel()
         else:
-            logger.info(
+            logger.debug(
                 "ruleset: %s waiting %f for shutdown",
                 self.name,
                 self.shutdown.delay,
@@ -250,7 +250,7 @@ class RuleSetRunner:
 
     def _handle_action_completion(self, task):
         self.active_actions.discard(task)
-        logger.info(
+        logger.debug(
             "Task %s finished, active actions %d",
             task.get_name(),
             len(self.active_actions),
@@ -260,7 +260,7 @@ class RuleSetRunner:
             and self.shutdown
             and len(self.active_actions) == 0
         ):
-            logger.info("All actions done")
+            logger.debug("All actions done")
             if not self.action_loop_task.done():
                 self.action_loop_task.cancel()
 
@@ -352,7 +352,7 @@ class RuleSetRunner:
         hosts: List,
         rules_engine_result,
     ) -> None:
-        logger.info("call_action %s", action)
+        logger.debug("call_action %s", action)
         action_args = immutable_action_args.copy()
 
         error = None
@@ -405,14 +405,14 @@ class RuleSetRunner:
 
                 if "var_root" in action_args:
                     var_root = action_args.pop("var_root")
-                    logger.info(
+                    logger.debug(
                         "Update variables [%s] with new root [%s]",
                         variables_copy,
                         var_root,
                     )
                     _update_variables(variables_copy, var_root)
 
-                logger.info(
+                logger.debug(
                     "substitute_variables [%s] [%s]",
                     action_args,
                     variables_copy,
@@ -421,7 +421,7 @@ class RuleSetRunner:
                     k: substitute_variables(v, variables_copy)
                     for k, v in action_args.items()
                 }
-                logger.info("action args: %s", action_args)
+                logger.debug("action args: %s", action_args)
 
                 if "ruleset" not in action_args:
                     action_args["ruleset"] = metadata.rule_set
@@ -451,11 +451,11 @@ class RuleSetRunner:
                 )
                 error = e
             except MessageObservedException as e:
-                logger.info("MessageObservedException: %s", action_args)
+                logger.debug("MessageObservedException: %s", action_args)
                 error = e
             except ShutdownException as e:
                 if self.shutdown:
-                    logger.info(
+                    logger.debug(
                         "A shutdown is already in progress, ignoring this one"
                     )
                 else:

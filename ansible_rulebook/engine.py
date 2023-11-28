@@ -72,8 +72,8 @@ async def heartbeat_task(
 
 
 async def broadcast(shutdown: Shutdown):
-    logger.info(f"Broadcast to queues: {all_source_queues}")
-    logger.info(f"Broadcasting shutdown: {shutdown}")
+    logger.debug(f"Broadcast to queues: {all_source_queues}")
+    logger.debug(f"Broadcasting shutdown: {shutdown}")
     for queue in all_source_queues:
         await queue.put(shutdown)
 
@@ -105,7 +105,7 @@ async def start_source(
 ) -> None:
     all_source_queues.append(queue)
     try:
-        logger.info("load source")
+        logger.info("load source %s", source.source_name)
         if (
             source_dirs
             and source_dirs[0]
@@ -127,12 +127,10 @@ async def start_source(
 
         source_filters = []
 
-        logger.info("load source filters")
-
         source.source_filters.append(meta_info_filter(source))
 
         for source_filter in source.source_filters:
-            logger.info("loading %s", source_filter.filter_name)
+            logger.info("loading source filter %s", source_filter.filter_name)
             if os.path.exists(
                 os.path.join("event_filter", source_filter.filter_name + ".py")
             ):
@@ -167,7 +165,7 @@ async def start_source(
             for k, v in source.source_args.items()
         }
         fqueue = FilteredQueue(source_filters, queue)
-        logger.info("Calling main in %s", source.source_name)
+        logger.debug("Calling main in %s", source.source_name)
 
         try:
             entrypoint = module["main"]
@@ -199,7 +197,7 @@ async def start_source(
             f"Source {source.source_name} task cancelled, "
             + f"initiated shutdown at {str(datetime.now())}"
         )
-        logger.info("Task cancelled " + shutdown_msg)
+        logger.debug("Task cancelled " + shutdown_msg)
     except BaseException as e:
         logger.error("Source error %s", str(e))
         shutdown_msg = (
@@ -208,7 +206,7 @@ async def start_source(
         logger.error(shutdown_msg)
         raise
     finally:
-        logger.info("Broadcast shutdown to all source plugins")
+        logger.debug("Broadcast shutdown to all source plugins")
         asyncio.create_task(
             broadcast(
                 Shutdown(
@@ -264,7 +262,7 @@ async def run_rulesets(
     project_data_file: Optional[str] = None,
     file_monitor: str = None,
 ) -> bool:
-    logger.info("run_ruleset")
+    logger.debug("run_ruleset")
     rulesets_queue_plans = rule_generator.generate_rulesets(
         ruleset_queues, variables, inventory
     )
@@ -273,7 +271,7 @@ async def run_rulesets(
         return
 
     for ruleset_queue_plan in rulesets_queue_plans:
-        logger.info("ruleset define: %s", ruleset_queue_plan.ruleset.define())
+        logger.debug("ruleset define: %s", ruleset_queue_plan.ruleset.define())
 
     hosts_facts = []
     ruleset_names = []
@@ -335,9 +333,9 @@ async def run_rulesets(
         logger.debug("Hot-reload, setting should_reload")
         should_reload = True
 
-    logger.info("Waiting on gather")
+    logger.debug("Waiting on gather")
     asyncio.gather(*ruleset_tasks, return_exceptions=True)
-    logger.info("Returning from run_rulesets")
+    logger.debug("Returning from run_rulesets")
     if send_heartbeat_task:
         send_heartbeat_task.cancel()
 
