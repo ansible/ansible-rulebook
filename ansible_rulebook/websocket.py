@@ -18,6 +18,7 @@ import logging
 import os
 import ssl
 import tempfile
+import typing as tp
 from asyncio.exceptions import CancelledError
 
 import websockets
@@ -75,7 +76,7 @@ async def request_workload(
                 if data.get("type") == "ControllerInfo":
                     response.controller_url = data.get("url")
                     response.controller_token = data.get("token")
-                    response.controller_verify_ssl = data.get("ssl_verify")
+                    response.controller_ssl_verify = data.get("ssl_verify")
             return response
         except CancelledError:
             logger.info("closing websocket due to task cancelled")
@@ -126,11 +127,11 @@ async def send_event_log_to_websocket(
             )
 
 
-def _sslcontext(url, ssl_verify) -> ssl.SSLContext:
+def _sslcontext(url: str, ssl_verify: str) -> tp.Optional[ssl.SSLContext]:
     if url.startswith("wss"):
-        if ssl_verify.lower() == "yes":
+        if ssl_verify.lower() in ["yes", "true"]:
             return ssl.create_default_context()
-        elif ssl_verify.lower() == "no":
+        if ssl_verify.lower() in ["no", "false"]:
             return ssl._create_unverified_context()
         return ssl.create_default_context(cafile=ssl_verify)
     return None
