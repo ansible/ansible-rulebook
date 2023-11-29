@@ -122,6 +122,8 @@ class RunWorkflowTemplate:
         if "error" in self.controller_job:
             a_log["message"] = self.controller_job["error"]
             a_log["reason"] = {"error": self.controller_job["error"]}
+        else:
+            logger.info(f"job results url: {a_log['url']}")
 
         await self.helper.send_status(a_log)
         set_facts = self.action_args.get("set_facts", False)
