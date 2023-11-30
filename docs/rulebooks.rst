@@ -50,7 +50,7 @@ A ruleset has the following properties:
 | The default_events_ttl takes time in the following format
 | default_events_ttl : **nnn seconds|minutes|hours|days**
 | e.g. default_events_ttl : 3 hours
-| If the rule set doesn't define this attribute the default events ttl that is 
+| If the rule set doesn't define this attribute the default events ttl that is
 | enforced by the rule engine is 2 hours
 
 | When we start a rulebook we can optionally collect artifacts from the different hosts
@@ -84,9 +84,9 @@ A ruleset has the following properties:
 
 | A ruleset **must** contain one or more source plugins, the configuration parameters
 | can be specified after the source plugin type. The source plugin
-| can also be configured with event filters which allow you to transform the 
+| can also be configured with event filters which allow you to transform the
 | data before passing it to the rules engine. The filters can also be used to
-| limit the data that gets passed to the rules engine. The source plugin is 
+| limit the data that gets passed to the rules engine. The source plugin is
 | started by the **ansible-rulebook** and runs in the background putting events
 | into the queue to be passed onto the rules engine.
 | When the source plugin ends we automatically generate a shutdown event and the ruleset
@@ -135,3 +135,13 @@ To avoid name conflicts the source data structure can use nested keys.
 **Notes:**
 
 If any source terminates, it shuts down the whole engine. All events from other sources may be lost.
+
+
+
+Distributing rulebooks
+^^^^^^^^^^^^^^^^^^^^^^
+
+The recommended method for distributing rulebooks is through a collection. In this case
+the rulebook file should be placed under ``extensions/eda/rulebooks`` folder
+and referred to by FQCN in the command line argument. `Eda-server <https://github.com/ansible/eda-server>`_ project will honor this path
+for the projects even if the repository is not real collection.

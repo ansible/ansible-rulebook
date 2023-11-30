@@ -192,7 +192,7 @@ Distributing plugins
 For local tests the plugin source file can be saved under a folder specified by
 the ``-S`` argument in the ansible-rulebook CLI. The recommended method for
 distributing and installing the plugin is through a collection. In this case
-the plugin source file should be placed under ``plugins/event_source`` folder
+the plugin source file should be placed under ``extensions/eda/plugins/event_source`` folder
 and referred to by FQCN. The following rulebook example illustrates how to
 refer to the range plugin provided by ``ansible.eda`` collection:
 
