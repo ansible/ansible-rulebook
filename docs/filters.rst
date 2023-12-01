@@ -50,7 +50,7 @@ e.g.
 | Keys in the event payload can only contain letters, numbers and underscores.
 | The period (.) is used to access nested keys.
 
-| Since every event should record the origin of the event we have a filter 
+| Since every event should record the origin of the event we have a filter
 | eda.builtin.insert_meta_info which will be added automatically by
 | ansible-rulebook to add the source name and type and received_at.
 | The received_at stores a date time in UTC ISO8601 format and includes
@@ -68,4 +68,4 @@ e.g.
 | The meta key is used to store metadata about the event and its needed to
 | correctly report about the events in the aap-server.
 
-.. _collection: https://github.com/ansible/event-driven-ansible/tree/main/plugins/event_filter
+.. _collection: https://github.com/ansible/event-driven-ansible/tree/main/extensions/eda/plugins/event_filter
