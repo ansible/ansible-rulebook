@@ -89,3 +89,62 @@ async def test_print_event():
     assert action["matching_events"] == {"m": {"a": 1}}
 
     assert len(set(action.keys()).difference(required_keys)) == 0
+
+
+@freeze_time("2023-11-30 14:51:30")
+@pytest.mark.asyncio
+async def test_pretty_print_event(capsys):
+    # Use a large payload so pretty printing will produce multiline output.
+    payload = {
+        "aaaaaaaaaaaaaaaaaaaa": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "bbbbbbbbbbbbbbbbbbbb": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "cccccccccccccccccccc": "cccccccccccccccccccccccccccccccccccccccc",
+        "dddddddddddddddddddd": "dddddddddddddddddddddddddddddddddddddddd",
+        "eeeeeeeeeeeeeeeeeeee": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    }
+    queue = asyncio.Queue()
+    metadata = Metadata(
+        rule="r1",
+        rule_set="rs1",
+        rule_uuid=RULE_UUID,
+        rule_set_uuid=RULE_SET_UUID,
+        rule_run_at=RULE_RUN_AT,
+    )
+    control = Control(
+        queue=queue,
+        inventory="abc",
+        hosts=["all"],
+        variables={"event": payload},
+        project_data_file="",
+    )
+
+    # The not pretty-printed event.
+    action_args = dict(pretty=False)
+
+    with patch("uuid.uuid4", return_value=DUMMY_UUID):
+        await PrintEvent(metadata, control, **action_args)()
+
+    while not queue.empty():
+        event = queue.get_nowait()
+        if event["type"] == "Action":
+            unpretty_action = event
+
+    unpretty = capsys.readouterr()
+    assert len(unpretty.out.strip().splitlines()) == 1
+
+    # The pretty-printed event.
+    action_args = dict(pretty=True)
+
+    with patch("uuid.uuid4", return_value=DUMMY_UUID):
+        await PrintEvent(metadata, control, **action_args)()
+
+    while not queue.empty():
+        event = queue.get_nowait()
+        if event["type"] == "Action":
+            pretty_action = event
+
+    pretty = capsys.readouterr()
+    assert len(pretty.out.strip().splitlines()) > 1
+
+    # Assert there was no difference in content.
+    assert pretty_action == unpretty_action
