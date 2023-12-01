@@ -33,7 +33,7 @@ class PrintEvent:
 
     async def __call__(self):
         print_fn: Callable = print
-        if "pretty" in self.action_args:
+        if self.action_args.get("pretty", False):
             print_fn = pprint
 
         var_name = (
