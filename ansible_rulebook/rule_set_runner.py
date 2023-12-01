@@ -16,7 +16,7 @@ import asyncio
 import gc
 import logging
 import uuid
-from pprint import PrettyPrinter, pformat
+from pprint import pformat
 from types import MappingProxyType
 from typing import Dict, List, Optional, Union, cast
 
@@ -28,6 +28,7 @@ from drools.exceptions import (
 )
 from drools.ruleset import session_stats
 
+from ansible_rulebook import terminal
 from ansible_rulebook.action.control import Control
 from ansible_rulebook.action.debug import Debug
 from ansible_rulebook.action.metadata import Metadata
@@ -102,6 +103,7 @@ class RuleSetRunner:
         self.active_actions = set()
         self.broadcast_method = broadcast_method
         self.event_counter = 0
+        self.display = terminal.Display()
 
     async def run_ruleset(self):
         tasks = []
@@ -204,7 +206,7 @@ class RuleSetRunner:
             while True:
                 data = await self.ruleset_queue_plan.source_queue.get()
                 if self.parsed_args and self.parsed_args.print_events:
-                    PrettyPrinter(indent=4).pprint(data)
+                    self.display.banner_pretty("rule set runner", data)
 
                 logger.debug(
                     "Ruleset: %s, received event: %s ", self.name, str(data)

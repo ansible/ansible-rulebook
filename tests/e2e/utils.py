@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from subprocess import CompletedProcess
@@ -92,6 +93,60 @@ class Command:
 
     def to_string(self) -> str:
         return " ".join(self.to_list())
+
+
+class BannerError(Exception):
+    pass
+
+
+class BannerNotFoundError(BannerError):
+    pass
+
+
+class BannerIncompleteError(BannerError):
+    pass
+
+
+def get_banner_output(banner: str, output: str) -> List[str]:
+    """
+    With the stdout results from a test returns a list of "banner" outputs (as
+    single strings) from it.  A "banner" output has the following form:
+
+        ** <date> <time> [<banner>] ******************************************
+        <content>
+        **********************************************************************
+
+    The number of asterixes varies as it is limited by the terminal window
+    width (if there is one) or 80 columnns otherwise.
+    """
+    start = re.compile(
+        r"^\*\* \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6} "
+        r"\[" + banner + r"\] \*{0,}$"
+    )
+    end = re.compile(r"^\*{1,}$")
+
+    banners = []
+    current_banner = []
+    for line in output.strip().splitlines():
+        if current_banner:
+            current_banner.append(line)
+            if re.search(end, line):
+                banners.append(" ".join(current_banner))
+                current_banner = []
+            continue
+
+        if re.search(start, line):
+            current_banner.append(line)
+
+    if current_banner:
+        raise BannerIncompleteError(
+            f"banner '{banner}' incomplete: {current_banner}"
+        )
+
+    if not banners:
+        raise BannerNotFoundError(f"banner '{banner}' not found")
+
+    return banners
 
 
 def jsonify_output(output: str) -> List[dict]:

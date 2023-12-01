@@ -14,6 +14,7 @@
 
 from ansible_rulebook.exception import ShutdownException
 from ansible_rulebook.messages import Shutdown as ShutdownMessage
+from ansible_rulebook.terminal import Display
 from ansible_rulebook.util import run_at
 
 from .control import Control
@@ -43,16 +44,12 @@ class Shutdown:
                 "kind": kind,
             }
         )
-        print(
-            "Ruleset: %s rule: %s has initiated shutdown of type: %s. "
-            "Delay: %.3f seconds, Message: %s"
-            % (
-                self.helper.metadata.rule_set,
-                self.helper.metadata.rule,
-                kind,
-                delay,
-                message,
-            )
+        Display.instance().banner(
+            "ruleset",
+            f"{self.helper.metadata.rule_set}"
+            f" rule: {self.helper.metadata.rule}"
+            f" has initiated shutdown of type: {kind}."
+            f" Delay: {delay:.3f} seconds, Message: {message}",
         )
         raise ShutdownException(
             ShutdownMessage(message=message, delay=delay, kind=kind)

@@ -16,6 +16,8 @@ import logging
 
 from drools import ruleset as lang
 
+from ansible_rulebook import terminal
+
 from .control import Control
 from .helper import Helper
 from .metadata import Metadata
@@ -34,8 +36,10 @@ class PostEvent:
     def __init__(self, metadata: Metadata, control: Control, **action_args):
         self.helper = Helper(metadata, control, "post_event")
         self.action_args = action_args
+        self.display = terminal.Display()
 
     async def __call__(self):
+        self.display.banner_pretty("post event", self.action_args["event"])
         lang.post(
             self.action_args["ruleset"],
             self.helper.embellish_internal_event(self.action_args["event"]),

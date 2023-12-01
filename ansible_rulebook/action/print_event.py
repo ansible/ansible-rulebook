@@ -13,8 +13,9 @@
 #  limitations under the License.
 
 import sys
-from pprint import pprint
 from typing import Callable
+
+from ansible_rulebook import terminal
 
 from .control import Control
 from .helper import Helper
@@ -30,16 +31,17 @@ class PrintEvent:
     def __init__(self, metadata: Metadata, control: Control, **action_args):
         self.helper = Helper(metadata, control, "print_event")
         self.action_args = action_args
+        self.display = terminal.Display()
 
     async def __call__(self):
-        print_fn: Callable = print
+        print_fn: Callable = self.display.banner
         if self.action_args.get("pretty", False):
-            print_fn = pprint
+            print_fn = self.display.banner_pretty
 
         var_name = (
             "events" if "events" in self.helper.control.variables else "event"
         )
 
-        print_fn(self.helper.control.variables[var_name])
+        print_fn("event", self.helper.control.variables[var_name])
         sys.stdout.flush()
         await self.helper.send_default_status()

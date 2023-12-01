@@ -33,10 +33,13 @@ if not os.environ.get("JAVA_HOME"):
 
 import ansible_rulebook  # noqa: E402
 from ansible_rulebook import app  # noqa: E402
+from ansible_rulebook import terminal  # noqa: E402
 from ansible_rulebook.conf import settings  # noqa: E402
 from ansible_rulebook.job_template_runner import (  # noqa: E402
     job_template_runner,
 )
+
+display = terminal.Display()
 
 DEFAULT_VERBOSITY = 0
 
@@ -227,10 +230,15 @@ def setup_logging(args: argparse.Namespace) -> None:
     if args.verbosity >= 2:
         level = logging.DEBUG
         stream = sys.stdout
-        args.print_events = False
+        args.print_events = True
     elif args.verbosity == 1:
         level = logging.INFO
         stream = sys.stdout
+
+    # As Display is a singleton if it was created elsewhere we may need to
+    # adjust the verbosity.
+    if display.verbosity < args.verbosity:
+        display.verbosity = args.verbosity
 
     logging.basicConfig(stream=stream, level=level, format=LOG_FORMAT)
     logging.getLogger("drools.").setLevel(level)
@@ -244,6 +252,7 @@ def main(args: List[str] = None) -> int:
 
     args = parser.parse_args(args)
     validate_args(args)
+    setup_logging(args)
 
     if args.controller_url:
         job_template_runner.host = args.controller_url
@@ -256,9 +265,10 @@ def main(args: List[str] = None) -> int:
             job_template_runner.username = args.controller_username
             job_template_runner.password = args.controller_password
         else:
-            print(
-                "Error: controller_token or",
-                "controller_username and controller_password is required",
+            display.banner(
+				"error", 
+				"controller_token or"
+                " controller_username and controller_password is required",
             )
             return 1
 
@@ -270,8 +280,6 @@ def main(args: List[str] = None) -> int:
 
     if args.execution_strategy:
         settings.default_execution_strategy = args.execution_strategy
-
-    setup_logging(args)
 
     try:
         asyncio.run(app.run(args))

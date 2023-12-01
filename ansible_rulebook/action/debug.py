@@ -15,12 +15,11 @@
 import logging
 import sys
 from dataclasses import asdict
-from pprint import pprint
 
 import dpath
 from drools import ruleset as lang
 
-from ansible_rulebook.util import get_horizontal_rule
+from ansible_rulebook import terminal
 
 from .control import Control
 from .helper import Helper
@@ -41,6 +40,7 @@ class Debug:
     def __init__(self, metadata: Metadata, control: Control, **action_args):
         self.helper = Helper(metadata, control, "debug")
         self.action_args = action_args
+        self.display = terminal.Display()
 
     async def __call__(self):
         if "msg" in self.action_args:
@@ -48,21 +48,18 @@ class Debug:
             if not isinstance(messages, list):
                 messages = [messages]
             for msg in messages:
-                print(msg)
+                self.display.banner("debug", msg)
         elif "var" in self.action_args:
             key = self.action_args.get("var")
             try:
-                print(
-                    dpath.get(
-                        self.helper.control.variables, key, separator="."
-                    )
+                value = dpath.get(
+                    self.helper.control.variables, key, separator="."
                 )
+                self.display.banner("debug", f"{key}: {value}")
             except KeyError:
                 logger.error("Key %s not found in variable pool", key)
                 raise
         else:
-            print(get_horizontal_rule("="))
-            print("kwargs:")
             args = asdict(self.helper.metadata)
             project_data_file = self.helper.control.project_data_file
             args.update(
@@ -73,11 +70,10 @@ class Debug:
                     "project_data_file": project_data_file,
                 }
             )
-            pprint(args)
-            print(get_horizontal_rule("="))
-            print("facts:")
-            pprint(lang.get_facts(self.helper.metadata.rule_set))
-            print(get_horizontal_rule("="))
+            self.display.banner_pretty("debug: kwargs", args)
+            self.display.banner_pretty(
+                "debug: facts", lang.get_facts(self.helper.metadata.rule_set)
+            )
 
         sys.stdout.flush()
         await self.helper.send_default_status()

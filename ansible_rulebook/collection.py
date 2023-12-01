@@ -20,6 +20,8 @@ from functools import lru_cache
 
 import yaml
 
+from ansible_rulebook import terminal
+
 ANSIBLE_GALAXY = shutil.which("ansible-galaxy")
 EDA_PATH_PREFIX = "extensions/eda"
 
@@ -130,7 +132,9 @@ def load_rulebook(collection, rulebook):
     if not location:
         return False
     with open(location) as f:
-        print(f"Loading rulebook from {location}")
+        terminal.Display.instance().banner(
+            "collection", f"Loading rulebook from {location}"
+        )
         return yaml.safe_load(f.read())
 
 

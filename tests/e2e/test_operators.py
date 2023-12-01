@@ -227,12 +227,16 @@ def test_relational_operators(update_environment):
         ), "testcase #22 failed"
 
     with check:
-        assert (
-            "Ruleset: Test relational operators rule: Finish"
-            " - test shutdown msg has initiated shutdown" in result.stdout
-        ), "Shutdown message failed"
+        banners = utils.get_banner_output("ruleset", result.stdout)
+        banners = [
+            banner
+            for banner in banners
+            if "Test relational operators rule: Finish"
+            " - test shutdown msg has initiated shutdown" in banner
+        ]
+        assert banners, "Shutdown message failed"
 
-    assert len(result.stdout.splitlines()) == 25, "Unexpected output"
+    assert len(result.stdout.splitlines()) == 100, "Unexpected output"
 
 
 @pytest.mark.e2e
@@ -359,7 +363,7 @@ def test_membership_operators(update_environment):
             "Output for Testcase #12" in result.stdout
         ), "Testcase #12 failed"
 
-    assert len(result.stdout.splitlines()) == 19, "Unexpected output"
+    assert len(result.stdout.splitlines()) == 76, "Unexpected output"
 
 
 @pytest.mark.e2e
