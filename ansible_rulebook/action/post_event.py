@@ -39,7 +39,9 @@ class PostEvent:
         self.display = terminal.Display()
 
     async def __call__(self):
-        self.display.banner_pretty("post event", self.action_args["event"])
+        self.display.banner(
+            "post event", self.action_args["event"], pretty=True
+        )
         lang.post(
             self.action_args["ruleset"],
             self.helper.embellish_internal_event(self.action_args["event"]),

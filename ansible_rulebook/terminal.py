@@ -53,6 +53,8 @@ class Display(Singleton):
         self,
         banner: str = "",
         content: typing.Any = None,
+        *,
+        pretty: bool = False,
         verbosity: int = 0,
         **kwargs,
     ) -> None:
@@ -64,27 +66,26 @@ class Display(Singleton):
             formatted_banner = f"\n{formatted_banner}"
         self.output(
             formatted_banner,
-            verbosity,
+            verbosity=verbosity,
             file=kwargs.get("file", None),
             flush=kwargs.get("flush", False),
         )
         if content is not None:
-            self.output(content, verbosity, **kwargs)
+            self.output(content, pretty=pretty, verbosity=verbosity, **kwargs)
             self.banner(verbosity=verbosity, **kwargs)
 
-    def banner_pretty(
-        self, banner: str = "", *args, verbosity: int = 0, **kwargs
-    ) -> None:
-        self.banner(banner, pprint.pformat(*args), verbosity, **kwargs)
-
     def output(
-        self, content: typing.Any, verbosity: int = 0, **kwargs
+        self,
+        content: typing.Any,
+        *,
+        pretty: bool = False,
+        verbosity: int = 0,
+        **kwargs,
     ) -> None:
         if verbosity <= self.verbosity:
+            if pretty:
+                content = pprint.pformat(content)
             print(content, **kwargs)
-
-    def pretty(self, *args, verbosity: int = 0, **kwargs) -> None:
-        self.output(pprint.pformat(*args), verbosity, **kwargs)
 
     def __init__(self, verbosity: int = 0) -> None:
         super().__init__()

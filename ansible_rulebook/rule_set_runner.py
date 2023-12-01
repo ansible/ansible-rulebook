@@ -206,7 +206,7 @@ class RuleSetRunner:
             while True:
                 data = await self.ruleset_queue_plan.source_queue.get()
                 if self.parsed_args and self.parsed_args.print_events:
-                    self.display.banner_pretty("rule set runner", data)
+                    self.display.banner("rule set runner", data, pretty=True)
 
                 logger.debug(
                     "Ruleset: %s, received event: %s ", self.name, str(data)

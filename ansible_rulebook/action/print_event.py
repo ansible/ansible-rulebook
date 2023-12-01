@@ -13,7 +13,6 @@
 #  limitations under the License.
 
 import sys
-from typing import Callable
 
 from ansible_rulebook import terminal
 
@@ -34,14 +33,14 @@ class PrintEvent:
         self.display = terminal.Display()
 
     async def __call__(self):
-        print_fn: Callable = self.display.banner
-        if self.action_args.get("pretty", False):
-            print_fn = self.display.banner_pretty
-
         var_name = (
             "events" if "events" in self.helper.control.variables else "event"
         )
 
-        print_fn("event", self.helper.control.variables[var_name])
+        self.display.banner(
+            "event",
+            self.helper.control.variables[var_name],
+            pretty=self.action_args.get("pretty", False),
+        )
         sys.stdout.flush()
         await self.helper.send_default_status()

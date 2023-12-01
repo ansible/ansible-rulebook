@@ -70,9 +70,11 @@ class Debug:
                     "project_data_file": project_data_file,
                 }
             )
-            self.display.banner_pretty("debug: kwargs", args)
-            self.display.banner_pretty(
-                "debug: facts", lang.get_facts(self.helper.metadata.rule_set)
+            self.display.banner("debug: kwargs", args, pretty=True)
+            self.display.banner(
+                "debug: facts",
+                lang.get_facts(self.helper.metadata.rule_set),
+                pretty=True,
             )
 
         sys.stdout.flush()
