@@ -7,6 +7,8 @@ import subprocess
 import pytest
 from pytest_check import check
 
+from ansible_rulebook import terminal
+
 from . import utils
 from .settings import SETTINGS
 
@@ -227,7 +229,7 @@ def test_relational_operators(update_environment):
         ), "testcase #22 failed"
 
     with check:
-        banners = utils.get_banner_output("ruleset", result.stdout)
+        banners = terminal.Display.get_banners("ruleset", result.stdout)
         banners = [
             banner
             for banner in banners

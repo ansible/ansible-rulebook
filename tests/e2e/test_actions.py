@@ -8,6 +8,8 @@ import subprocess
 import pytest
 from pytest_check import check
 
+from ansible_rulebook import terminal
+
 from . import utils
 from .settings import SETTINGS
 
@@ -167,7 +169,7 @@ def test_actions_sanity(update_environment):
     )
 
     with check:
-        banners = utils.get_banner_output("ruleset", result.stdout)
+        banners = terminal.Display.get_banners("ruleset", result.stdout)
         banners = [
             banner
             for banner in banners
@@ -176,7 +178,7 @@ def test_actions_sanity(update_environment):
         assert banners, "multiple sequential actions ruleset failed"
 
     with check:
-        banners = utils.get_banner_output("debug", result.stdout)
+        banners = terminal.Display.get_banners("debug", result.stdout)
         banners = [
             banner
             for banner in banners
