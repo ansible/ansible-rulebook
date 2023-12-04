@@ -205,12 +205,18 @@ class RuleSetRunner:
         try:
             while True:
                 data = await self.ruleset_queue_plan.source_queue.get()
-                if self.parsed_args and self.parsed_args.print_events:
-                    self.display.banner("rule set runner", data, pretty=True)
+                # Default to output events at debug level.
+                level = logging.DEBUG
 
-                logger.debug(
-                    "Ruleset: %s, received event: %s ", self.name, str(data)
+                # If print_events is specified adjust the level to
+                # the logger's effective level to guarantee output.
+                if self.parsed_args and self.parsed_args.print_events:
+                    level = logger.getEffectiveLevel()
+
+                self.display.banner(
+                    "rule set runner", data, pretty=True, level=level
                 )
+
                 if isinstance(data, Shutdown):
                     self.shutdown = data
                     return await self._handle_shutdown()

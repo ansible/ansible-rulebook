@@ -57,11 +57,11 @@ class DisplayBannerIncompleteError(DisplayBannerError):
 class Display(Singleton):
     ###########################################################################
     @classmethod
-    def instance(cls, verbosity: int = None):
+    def instance(cls, level: int = None):
         instance = cls()
-        # Display is a singleton; adjust the verbosity if specified
-        if verbosity is not None:
-            instance.verbosity = verbosity
+        # Display is a singleton; adjust the level if specified
+        if level is not None:
+            instance.level = level
         return instance
 
     ###########################################################################
@@ -117,7 +117,7 @@ class Display(Singleton):
         content: typing.Any = None,
         *,
         pretty: bool = False,
-        verbosity: int = 0,
+        level: int = logging.INFO,
         **kwargs,
     ) -> None:
         banner = banner.strip()
@@ -128,13 +128,13 @@ class Display(Singleton):
             formatted_banner = f"\n{formatted_banner}"
         self.output(
             formatted_banner,
-            verbosity=verbosity,
+            level=level,
             file=kwargs.get("file", None),
             flush=kwargs.get("flush", False),
         )
         if content is not None:
-            self.output(content, pretty=pretty, verbosity=verbosity, **kwargs)
-            self.banner(verbosity=verbosity, **kwargs)
+            self.output(content, pretty=pretty, level=level, **kwargs)
+            self.banner(level=level, **kwargs)
 
     ###########################################################################
     def output(
@@ -142,18 +142,18 @@ class Display(Singleton):
         content: typing.Any,
         *,
         pretty: bool = False,
-        verbosity: int = 0,
+        level: int = logging.INFO,
         **kwargs,
     ) -> None:
-        if verbosity <= self.verbosity:
+        if level >= self.level:
             if pretty:
                 content = pprint.pformat(content)
             print(content, **kwargs)
 
     ###########################################################################
-    def __init__(self, verbosity: int = 0) -> None:
+    def __init__(self, level: int = logging.INFO) -> None:
         super().__init__()
-        self.verbosity = verbosity
+        self.level = level
 
     ###########################################################################
     def _format_banner(self, banner: str) -> str:

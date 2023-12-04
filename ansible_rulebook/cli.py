@@ -230,15 +230,14 @@ def setup_logging(args: argparse.Namespace) -> None:
     if args.verbosity >= 2:
         level = logging.DEBUG
         stream = sys.stdout
-        args.print_events = True
     elif args.verbosity == 1:
         level = logging.INFO
         stream = sys.stdout
 
     # As Display is a singleton if it was created elsewhere we may need to
-    # adjust the verbosity.
-    if display.verbosity < args.verbosity:
-        display.verbosity = args.verbosity
+    # adjust the level.
+    if display.level > level:
+        display.level = level
 
     logging.basicConfig(stream=stream, level=level, format=LOG_FORMAT)
     logging.getLogger("drools.").setLevel(level)
