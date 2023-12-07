@@ -64,13 +64,9 @@ CONTROLLER_ACTIONS = ("run_job_template", "run_workflow_template")
 async def run(parsed_args: argparse.Namespace) -> None:
     file_monitor = None
 
-    if parsed_args.worker and parsed_args.websocket_address and parsed_args.id:
+    if parsed_args.worker and parsed_args.websocket_url and parsed_args.id:
         logger.info("Starting worker mode")
-        startup_args = await request_workload(
-            parsed_args.id,
-            parsed_args.websocket_address,
-            parsed_args.websocket_ssl_verify,
-        )
+        startup_args = await request_workload(parsed_args.id)
         if not startup_args:
             logger.error("Error communicating with web socket server")
             raise WebSocketExchangeException(
@@ -102,7 +98,7 @@ async def run(parsed_args: argparse.Namespace) -> None:
     if startup_args.check_controller_connection:
         await validate_controller_params(startup_args)
 
-    if parsed_args.websocket_address:
+    if parsed_args.websocket_url:
         event_log = asyncio.Queue()
     else:
         event_log = NullQueue()
@@ -118,13 +114,9 @@ async def run(parsed_args: argparse.Namespace) -> None:
     logger.info("Starting rules")
 
     feedback_task = None
-    if parsed_args.websocket_address:
+    if parsed_args.websocket_url:
         feedback_task = asyncio.create_task(
-            send_event_log_to_websocket(
-                event_log,
-                parsed_args.websocket_address,
-                parsed_args.websocket_ssl_verify,
-            )
+            send_event_log_to_websocket(event_log=event_log)
         )
         tasks.append(feedback_task)
 

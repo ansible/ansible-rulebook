@@ -97,16 +97,32 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-W",
-        "--websocket-address",
         "--websocket-url",
+        "--websocket-address",
         help="Connect the event log to a websocket",
+        default=os.environ.get("EDA_WEBSOCKET_URL", ""),
     )
     parser.add_argument(
         "--websocket-ssl-verify",
         help="How to verify SSL when connecting to the "
         "websocket: (yes|true) | (no|false) | <path to a CA bundle>, "
         "default to yes for wss connection.",
-        default="yes",
+        default=os.environ.get("EDA_WEBSOCKET_SSL_VERIFY", "yes"),
+    )
+    parser.add_argument(
+        "--websocket-access-token",
+        help="Token used to autheticate the websocket connection.",
+        default=os.environ.get("EDA_WEBSOCKET_ACCESS_TOKEN", ""),
+    )
+    parser.add_argument(
+        "--websocket-refresh-token",
+        help="Token used to renew a websocket access token.",
+        default=os.environ.get("EDA_WEBSOCKET_REFRESH_TOKEN", ""),
+    )
+    parser.add_argument(
+        "--websocket-token-url",
+        help="Url to renew websocket access token.",
+        default=os.environ.get("EDA_WEBSOCKET_TOKEN_URL", ""),
     )
     parser.add_argument("--id", help="Identifier")
     parser.add_argument(
@@ -215,10 +231,8 @@ def get_version() -> str:
 
 
 def validate_args(args: argparse.Namespace) -> None:
-    if args.worker and (not args.id or not args.websocket_address):
-        raise ValueError(
-            "Worker mode needs an id and websocket address specfied"
-        )
+    if args.worker and (not args.id or not args.websocket_url):
+        raise ValueError("Worker mode needs an id and websocket url specfied")
     if not args.worker and not args.rulebook:
         raise ValueError("Rulebook must be specified in non worker mode")
 
@@ -255,6 +269,11 @@ def update_settings(args: argparse.Namespace) -> None:
         settings.default_execution_strategy = args.execution_strategy
 
     settings.print_events = args.print_events
+    settings.websocket_url = args.websocket_url
+    settings.websocket_ssl_verify = args.websocket_ssl_verify
+    settings.websocket_token_url = args.websocket_token_url
+    settings.websocket_access_token = args.websocket_access_token
+    settings.websocket_refresh_token = args.websocket_refresh_token
 
 
 def main(args: List[str] = None) -> int:
