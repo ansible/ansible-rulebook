@@ -17,6 +17,7 @@ def base_metadata():
     )
 
 
+# TODO : Seems like asyncio.Queue() in a fixture is causing test failure
 @pytest.fixture
 def base_control():
     return Control(
