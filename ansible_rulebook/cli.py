@@ -131,6 +131,18 @@ def get_parser() -> argparse.ArgumentParser:
         default=os.environ.get("EDA_CONTROLLER_TOKEN", ""),
     )
     parser.add_argument(
+        "--controller-username",
+        help="Controller API authentication username, can also be passed "
+        "via env var EDA_CONTROLLER_USERNAME",
+        default=os.environ.get("EDA_CONTROLLER_USERNAME", ""),
+    )
+    parser.add_argument(
+        "--controller-password",
+        help="Controller API authentication password, can also be passed "
+        "via env var EDA_CONTROLLER_PASSWORD",
+        default=os.environ.get("EDA_CONTROLLER_PASSWORD", ""),
+    )
+    parser.add_argument(
         "--controller-ssl-verify",
         help="How to verify SSL when connecting to the "
         "controller: (yes|true) | (no|false) | <path to a CA bundle>, "
@@ -234,13 +246,20 @@ def main(args: List[str] = None) -> int:
     validate_args(args)
 
     if args.controller_url:
+        job_template_runner.host = args.controller_url
+        if args.controller_ssl_verify:
+            job_template_runner.verify_ssl = args.controller_ssl_verify
+
         if args.controller_token:
-            job_template_runner.host = args.controller_url
             job_template_runner.token = args.controller_token
-            if args.controller_ssl_verify:
-                job_template_runner.verify_ssl = args.controller_ssl_verify
+        elif args.controller_username and args.controller_password:
+            job_template_runner.username = args.controller_username
+            job_template_runner.password = args.controller_password
         else:
-            print("Error: controller_token is required")
+            print(
+                "Error: controller_token or",
+                "controller_username and controller_password is required",
+            )
             return 1
 
     if args.id:

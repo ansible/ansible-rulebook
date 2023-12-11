@@ -121,7 +121,7 @@ run_job_template
 Run a job template.
 
 .. note::
-    ``--controller-url`` and ``--controller-token`` cmd options must be provided to use this action
+    ``--controller-url`` and either ``--controller-token`` or ``--controller-username`` and ``--controller-password`` cmd options must be provided to use this action
 
     In order to access event information under the ``ansible_eda`` namespace, be sure to check the box for "Prompt on launch" for the Variables field within the job template. Alternatively, a survey can be created that includes the variable ``ansible_eda``. Similarly, if you plan to limit host execution based on event information, enable "Prompt on launch" for the Limit field within the job template.
 
@@ -173,7 +173,7 @@ run_workflow_template
 Run a workflow template.
 
 .. note::
-    ``--controller-url`` and ``--controller-token`` cmd options must be provided to use this action
+    ``--controller-url`` and either ``--controller-token`` or ``--controller-username`` and ``--controller-password`` cmd options must be provided to use this action
 
 .. note::
     You can define the environment variable ``EDA_CONTROLLER_CONNECTION_LIMIT`` to limit the number of concurrent connections to the controller. The default is 30.
