@@ -208,10 +208,10 @@ class RuleSetRunner:
                 # Default to output events at debug level.
                 level = logging.DEBUG
 
-                # If print_events is specified adjust the level to
-                # the logger's effective level to guarantee output.
+                # If print_events is specified adjust the level to the
+                # display's current level to guarantee output.
                 if self.parsed_args and self.parsed_args.print_events:
-                    level = logger.getEffectiveLevel()
+                    level = self.display.level
 
                 self.display.banner(
                     "rule set runner", data, pretty=True, level=level
