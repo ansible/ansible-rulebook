@@ -57,7 +57,7 @@ class DisplayBannerIncompleteError(DisplayBannerError):
 class Display(Singleton):
     ###########################################################################
     @classmethod
-    def instance(cls, level: int = None):
+    def instance(cls, level: typing.Optional[int] = None):
         instance = cls()
         # Display is a singleton; adjust the level if specified
         if level is not None:
@@ -114,7 +114,7 @@ class Display(Singleton):
     def banner(
         self,
         banner: str = "",
-        content: typing.Any = None,
+        content: typing.Optional[typing.Any] = None,
         *,
         pretty: bool = False,
         level: int = logging.INFO,
