@@ -23,7 +23,6 @@ import typing
 logger = logging.getLogger(__name__)
 
 
-###############################################################################
 class _Singleton(type):
     def __init__(cls, name, bases, dct, **kwargs) -> None:
         super().__init__(name, bases, dct, **kwargs)
@@ -38,24 +37,19 @@ class _Singleton(type):
         return cls.__singleton
 
 
-###############################################################################
 class Singleton(metaclass=_Singleton):
     pass
 
 
-###############################################################################
 class DisplayBannerError(Exception):
     pass
 
 
-###############################################################################
 class DisplayBannerIncompleteError(DisplayBannerError):
     pass
 
 
-###############################################################################
 class Display(Singleton):
-    ###########################################################################
     @classmethod
     def instance(cls, level: typing.Optional[int] = None):
         instance = cls()
@@ -64,7 +58,6 @@ class Display(Singleton):
             instance.level = level
         return instance
 
-    ###########################################################################
     @classmethod
     def get_banners(cls, banner: str, content: str) -> typing.List[str]:
         """
@@ -110,7 +103,6 @@ class Display(Singleton):
 
         return banners
 
-    ###########################################################################
     def banner(
         self,
         banner: str = "",
@@ -136,7 +128,6 @@ class Display(Singleton):
             self.output(content, pretty=pretty, level=level, **kwargs)
             self.banner(level=level, **kwargs)
 
-    ###########################################################################
     def output(
         self,
         content: typing.Any,
@@ -150,23 +141,19 @@ class Display(Singleton):
                 content = pprint.pformat(content)
             print(content, **kwargs)
 
-    ###########################################################################
     def __init__(self, level: int = logging.INFO) -> None:
         super().__init__()
         self.level = level
 
-    ###########################################################################
     def _format_banner(self, banner: str) -> str:
         if len(banner) > 0:
             banner = self._prefix_time(banner)
         banner = self._rule_embed(banner)
         return banner
 
-    ###########################################################################
     def _prefix_time(self, content: str) -> str:
         return f"{datetime.datetime.now().isoformat(' ')} {content}"
 
-    ###########################################################################
     def _rule(self, character: str = "*", /, text_length: int = 0) -> str:
         try:
             rule_length = int(os.get_terminal_size()[0])
@@ -176,7 +163,6 @@ class Display(Singleton):
         rule_length = max(0, rule_length - text_length)
         return character * rule_length
 
-    ###########################################################################
     def _rule_embed(self, content: str) -> str:
         prefix = "** "
         suffix = " "
