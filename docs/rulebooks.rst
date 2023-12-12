@@ -63,6 +63,7 @@ A ruleset has the following properties:
 
     - name: Example
       hosts: all
+      gather_facts: true
       sources:
         - name: range
           range:
