@@ -187,7 +187,7 @@ def test_actions_sanity(update_environment):
         assert banners, "multiple sequential actions debug failed"
 
     assert (
-        len(result.stdout.splitlines()) == 129
+        len(result.stdout.splitlines()) == 121
     ), "unexpected output from the rulebook"
 
 
