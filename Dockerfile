@@ -1,15 +1,22 @@
-FROM registry.access.redhat.com/ubi8/python-39
+FROM quay.io/centos/centos:stream9-development
 
 ARG USER_ID=${USER_ID:-1001}
+ARG APP_DIR=${APP_DIR:-/app}
 ARG DEVEL_COLLECTION_LIBRARY=0
 ARG DEVEL_COLLECTION_REPO=git+https://github.com/ansible/event-driven-ansible.git
-WORKDIR $HOME
 
 USER 0
-RUN dnf install -y java-17-openjdk-devel
+RUN useradd -u $USER_ID -d $APP_DIR appuser
+WORKDIR $APP_DIR
+COPY . $WORKDIR
+RUN chown -R $USER_ID $APP_DIR
+RUN dnf install -y java-17-openjdk-devel python3-pip
+
+USER $USER_ID
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+ENV PATH="${PATH}:$APP_DIR/.local/bin"
 RUN pip install -U pip \
-    && pip install ansible \
+    && pip install ansible-core \
     ansible-runner \
     jmespath \
     asyncio \
@@ -22,8 +29,4 @@ RUN pip install -U pip \
 RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
     ansible-galaxy collection install ${DEVEL_COLLECTION_REPO} --force; fi"
 
-COPY . $WORKDIR
-RUN chown -R $USER_ID ./
-
-USER $USER_ID
 RUN pip install .

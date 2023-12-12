@@ -39,10 +39,17 @@ class JobTemplateRunner:
     JOB_COMPLETION_STATUSES = ["successful", "failed", "error", "canceled"]
 
     def __init__(
-        self, host: str = "", token: str = "", verify_ssl: str = "yes"
+        self,
+        host: str = "",
+        token: str = "",
+        username: str = "",
+        password: str = "",
+        verify_ssl: str = "yes",
     ):
         self.token = token
         self.host = host
+        self.username = username
+        self.password = password
         self.verify_ssl = verify_ssl
         self.refresh_delay = float(
             os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10.0)
@@ -59,6 +66,7 @@ class JobTemplateRunner:
             self._session = aiohttp.ClientSession(
                 connector=aiohttp.TCPConnector(limit=limit),
                 headers=self._auth_headers(),
+                auth=self._basic_auth(),
                 raise_for_status=True,
             )
 
@@ -79,7 +87,14 @@ class JobTemplateRunner:
         return await self._get_page(self.CONFIG_SLUG, {})
 
     def _auth_headers(self) -> dict:
-        return dict(Authorization=f"Bearer {self.token}")
+        if self.token:
+            return dict(Authorization=f"Bearer {self.token}")
+
+    def _basic_auth(self) -> aiohttp.BasicAuth:
+        if self.username and self.password:
+            return aiohttp.BasicAuth(
+                login=self.username, password=self.password
+            )
 
     @cached_property
     def _sslcontext(self) -> Union[bool, ssl.SSLContext]:

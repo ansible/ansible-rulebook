@@ -6,6 +6,7 @@
 ### Added
 - ssl_verify option now also supports "true" or "false" values
 - Support for standalone boolean in conditions
+- Add basic auth to controller
 
 ### Fixed
 
