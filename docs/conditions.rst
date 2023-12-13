@@ -252,7 +252,7 @@ Multiple conditions where **all** of them have to match with internal references
       - name: Delayed comparison
         hosts: all
         sources:
-        - generic:
+        - ansible.eda.generic:
             payload:
               - friend_list:
                   names:
@@ -293,7 +293,7 @@ Multiple conditions where **all** of them have to match with internal references
       - name: multiple conditions caching
         hosts: all
         sources:
-          - generic:
+          - ansible.eda.generic:
               payload:
                 - request:
                     type: Delete
@@ -977,7 +977,7 @@ Example:
 | placement of this rule is important. If the rule is defined
 | first in the rulebook it will get executed all the time till
 | the variable gets defined this might lead to misleading results and
-| skipping of other rules. You should typically combine the 
+| skipping of other rules. You should typically combine the
 | is not defined with another comparison. It's not important to check
 | if an attribute exists before you use it in a condition. The rule engine
 | will check for the existence and only then compare it. If its missing, the
