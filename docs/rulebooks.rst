@@ -66,7 +66,7 @@ A ruleset has the following properties:
       gather_facts: true
       sources:
         - name: range
-          range:
+          ansible.eda.range:
             limit: 5
       rules:
         - name: r1
