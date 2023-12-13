@@ -37,7 +37,8 @@ def test_display_get_banners(display):
 
     # Complete banner output.
     result = display.get_banners(banner, complete)
-    assert result, "get complete banner failed"
+    assert len(result) == 1, "get complete banner failed"
+    assert result[0] == complete, "incorrect banner returned"
 
     # Multiple banners.
     multiple = os.linesep.join(
@@ -51,22 +52,32 @@ def test_display_get_banners(display):
     )
     result = display.get_banners(banner, multiple)
     assert len(result) == 2, "get multiple banners failed"
+    assert result[0] == complete, "incorrect first banner returned"
+    assert result[1] == complete, "incorrect second banner returned"
 
     # Specific banner from multiple.
     specific = os.linesep.join(
         [
-            "line",
-            complete,
             "** 2023-12-12 12:34:56.123456 [specific] ******",
             "line",
             "line",
             "***********************************************",
-            complete,
-            "line",
         ]
     )
-    result = display.get_banners("specific", specific)
+    result = display.get_banners(
+        "specific",
+        os.linesep.join(
+            [
+                "line",
+                complete,
+                specific,
+                complete,
+                "line",
+            ]
+        ),
+    )
     assert len(result) == 1, "get specific banner failed"
+    assert result[0] == specific, "incorrect specific banner returned"
 
 
 def test_display_banner(display, capsys):
