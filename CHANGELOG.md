@@ -7,6 +7,7 @@
 - ssl_verify option now also supports "true" or "false" values
 - Support for standalone boolean in conditions
 - Add basic auth to controller
+- Support for python 3.12
 
 ### Fixed
 
@@ -130,7 +131,7 @@
 
 ### Removed
 
-- Redis and durability 
+- Redis and durability
 - envvar for rules_engine
 
 
@@ -140,12 +141,12 @@
 
 - Support for vars namespace
 - Support for negation
-- Support for Floats 
-- Log format and set the log stream for debug/verbose 
-- A builtin action : echo 
-- Cmdline option --print_events 
-- New action: run_job_template 
-- Support for in and contains in condition 
+- Support for Floats
+- Log format and set the log stream for debug/verbose
+- A builtin action : echo
+- Cmdline option --print_events
+- New action: run_job_template
+- Support for in and contains in condition
 - Add more info to --version flag
 - Add EDA prefix to environment variables
 - Enable drools for python 3.11
@@ -160,9 +161,9 @@
 
 ### Changed
 
-- Configure controller API access 
-- Switch the default rules engine back to drools 
-- Print help if run without arguments 
+- Configure controller API access
+- Switch the default rules engine back to drools
+- Print help if run without arguments
 
 ### Removed
 
@@ -176,7 +177,7 @@
 
 ### Changed
 
-Update minimal python version 
+Update minimal python version
 Improves error messages for unhandled events
 
 ### Removed
@@ -189,7 +190,7 @@ Improves error messages for unhandled events
 
 ### Added
 
-- Job details for eda-server usage 
+- Job details for eda-server usage
 - add arg to install devel collection
 
 ### Fixed
@@ -249,7 +250,7 @@ Improves error messages for unhandled events
 
 ### Fixed
 
-- An error msg 
+- An error msg
 
 ## [0.6.0] - 2022-08-24
 
