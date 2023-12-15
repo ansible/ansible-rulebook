@@ -213,9 +213,11 @@ class RuleSetRunner:
                 if self.parsed_args and self.parsed_args.print_events:
                     level = self.display.level
 
-                self.display.banner(
-                    "rule set runner", data, pretty=True, level=level
-                )
+                self.display.banner("received event", level=level)
+                self.display.output(f"Ruleset: {self.name}", level=level)
+                self.display.output("Event:", level=level)
+                self.display.output(data, pretty=True, level=level)
+                self.display.banner(level=level)
 
                 if isinstance(data, Shutdown):
                     self.shutdown = data
