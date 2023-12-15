@@ -264,10 +264,9 @@ def main(args: List[str] = None) -> int:
             job_template_runner.username = args.controller_username
             job_template_runner.password = args.controller_password
         else:
-            display.banner(
-                "error",
-                "controller_token or"
-                " controller_username and controller_password is required",
+            print(
+                "Error: controller_token or",
+                "controller_username and controller_password is required",
             )
             return 1
 
