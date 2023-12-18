@@ -445,7 +445,12 @@ class RuleSetRunner:
                 )
 
                 await ACTION_CLASSES[action](
-                    metadata, control, **action_args
+                    metadata,
+                    control,
+                    print_events=(
+                        self.parsed_args and self.parsed_args.print_events
+                    ),
+                    **action_args,
                 )()
 
             except KeyError as e:

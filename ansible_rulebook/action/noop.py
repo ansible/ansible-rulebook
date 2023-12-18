@@ -26,9 +26,16 @@ class Noop:
     just sends the action status
     """
 
-    def __init__(self, metadata: Metadata, control: Control, **action_args):
+    def __init__(
+        self,
+        metadata: Metadata,
+        control: Control,
+        print_events=False,
+        **action_args,
+    ):
         self.helper = Helper(metadata, control, "noop")
         self.action_args = action_args
+        self.print_events = print_events
 
     async def __call__(self):
         await self.helper.send_default_status()

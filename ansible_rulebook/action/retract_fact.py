@@ -37,8 +37,15 @@ class RetractFact:
          information.
     """
 
-    def __init__(self, metadata: Metadata, control: Control, **action_args):
+    def __init__(
+        self,
+        metadata: Metadata,
+        control: Control,
+        print_events=False,
+        **action_args,
+    ):
         self.helper = Helper(metadata, control, "retract_fact")
+        self.print_events = print_events
         self.action_args = action_args
 
     async def __call__(self):

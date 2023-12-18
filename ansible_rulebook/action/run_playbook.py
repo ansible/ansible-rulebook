@@ -24,6 +24,7 @@ import uuid
 import yaml
 from drools import ruleset as lang
 
+from ansible_rulebook import terminal
 from ansible_rulebook.collection import (
     find_playbook,
     has_playbook,
@@ -52,7 +53,13 @@ class RunPlaybook:
     ansible-runner
     """
 
-    def __init__(self, metadata: Metadata, control: Control, **action_args):
+    def __init__(
+        self,
+        metadata: Metadata,
+        control: Control,
+        print_events=False,
+        **action_args,
+    ):
         self.helper = Helper(metadata, control, "run_playbook")
         self.action_args = action_args
         self.job_id = str(uuid.uuid4())
@@ -65,6 +72,8 @@ class RunPlaybook:
         self.private_data_dir = tempfile.mkdtemp(prefix="eda")
         self.output_key = None
         self.inventory = None
+        self.print_events = print_events
+        self.display = terminal.Display()
 
     async def __call__(self):
         try:
@@ -208,7 +217,19 @@ class RunPlaybook:
         post_events = self.action_args.get("post_events", False)
 
         if rc == 0 and (set_facts or post_events):
-            logger.debug("set_facts")
+            # Default to output events at debug level.
+            level = logging.DEBUG
+
+            # If print_events is specified adjust the level to the display's
+            # current level to guarantee output.
+            if self.print_events:
+                level = self.display.level
+
+            # The class hierarchy uses names of the form "Run<type>".
+            # We only want to output the <type> portion (in lowercase).
+            run_type = self.__class__.__name__.lower()[3:]
+            self.display.banner(f"{run_type}: set-facts", level=level)
+
             fact_folder = self._get_latest_artifact("fact_cache", False)
             ruleset = self.action_args.get(
                 "ruleset", self.helper.metadata.rule_set
@@ -228,11 +249,14 @@ class RunPlaybook:
                         )
                     fact = fact[self.output_key]
                 fact = self.helper.embellish_internal_event(fact)
-                logger.debug("fact %s", fact)
+                self.display.output(fact, level=level, pretty=True)
+
                 if set_facts:
                     lang.assert_fact(ruleset, fact)
                 if post_events:
                     lang.post(ruleset, fact)
+
+            self.display.banner(level=level)
 
     def _get_latest_artifact(self, component: str, content: bool = True):
         files = glob.glob(

@@ -19,6 +19,7 @@ from urllib.parse import urljoin
 
 from drools import ruleset as lang
 
+from ansible_rulebook import terminal
 from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import (
     ControllerApiException,
@@ -39,7 +40,13 @@ class RunJobTemplate:
     the controller. It waits for the job to be complete.
     """
 
-    def __init__(self, metadata: Metadata, control: Control, **action_args):
+    def __init__(
+        self,
+        metadata: Metadata,
+        control: Control,
+        print_events=False,
+        **action_args,
+    ):
         self.helper = Helper(metadata, control, "run_job_template")
         self.action_args = action_args
         self.name = self.action_args["name"]
@@ -51,6 +58,8 @@ class RunJobTemplate:
             self.helper.control.hosts,
         )
         self.controller_job = {}
+        self.print_events = print_events
+        self.display = terminal.Display()
 
     async def __call__(self):
         logger.info(
@@ -124,20 +133,29 @@ class RunJobTemplate:
         post_events = self.action_args.get("post_events", False)
 
         if set_facts or post_events:
+            # Default to output events at debug level.
+            level = logging.DEBUG
+
+            # If print_events is specified adjust the level to the display's
+            # current level to guarantee output.
+            if self.print_events:
+                level = self.display.level
+
+            self.display.banner("job: set-facts", level=level)
             ruleset = self.action_args.get(
                 "ruleset", self.helper.metadata.rule_set
             )
-            logger.debug("set_facts")
             facts = self.controller_job.get("artifacts", {})
             if facts:
                 facts = self.helper.embellish_internal_event(facts)
-                logger.debug("facts %s", facts)
+                self.display.output(facts, level=level, pretty=True)
                 if set_facts:
                     lang.assert_fact(ruleset, facts)
                 if post_events:
                     lang.post(ruleset, facts)
             else:
-                logger.debug("Empty facts are not set")
+                self.display.output("Empty facts are not set", level=level)
+            self.display.banner(level=level)
 
     async def _job_start_event(self):
         await self.helper.send_status(
