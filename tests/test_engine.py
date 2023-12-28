@@ -248,7 +248,7 @@ async def test_run_rulesets():
 
     await run_rulesets(
         event_log,
-        (),
+        [],
         ruleset_queues,
         dict(),
         "playbooks/inventory.yml",
@@ -277,7 +277,7 @@ async def test_run_rules_with_assignment():
 
     await run_rulesets(
         event_log,
-        (),
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -301,7 +301,7 @@ async def test_run_rules_with_assignment2():
 
     await run_rulesets(
         event_log,
-        (),
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -361,7 +361,7 @@ async def test_run_multiple_hosts():
 
     await run_rulesets(
         event_log,
-        (),
+        [],
         ruleset_queues,
         dict(),
         "playbooks/inventory1.yml",
@@ -394,7 +394,7 @@ async def test_run_multiple_hosts2():
 
     await run_rulesets(
         event_log,
-        (),
+        [],
         ruleset_queues,
         dict(),
         "playbooks/inventory1.yml",
@@ -422,7 +422,7 @@ async def test_run_multiple_hosts3():
 
     await run_rulesets(
         event_log,
-        (),
+        [],
         ruleset_queues,
         dict(),
         "playbooks/inventory.yml",
@@ -480,7 +480,7 @@ async def test_run_rulesets_on_hosts():
 
     await run_rulesets(
         event_log,
-        (),
+        [],
         ruleset_queues,
         dict(),
         "playbooks/inventory1.yml",
@@ -511,7 +511,7 @@ async def test_run_assert_facts():
         queue.put_nowait(Shutdown())
         await run_rulesets(
             event_log,
-            (),
+            [],
             ruleset_queues,
             dict(Naboo="naboo"),
             temp.name,
