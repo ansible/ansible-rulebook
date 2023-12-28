@@ -18,7 +18,7 @@ import logging
 import uuid
 from pprint import PrettyPrinter, pformat
 from types import MappingProxyType
-from typing import Dict, List, Optional, Tuple, Union, cast
+from typing import Dict, List, Optional, Union, cast
 
 import dpath
 from drools import ruleset as lang
@@ -82,7 +82,7 @@ class RuleSetRunner:
         self,
         event_log: asyncio.Queue,
         ruleset_queue_plan: EngineRuleSetQueuePlan,
-        source_tasks: Tuple[List[asyncio.Task]],
+        source_tasks: List[asyncio.Task],
         hosts_facts,
         variables,
         rule_set,
