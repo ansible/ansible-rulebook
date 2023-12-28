@@ -18,7 +18,7 @@ import logging
 import os
 import runpy
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from drools.dispatch import establish_async_channel, handle_async_messages
 from drools.ruleset import session_stats
@@ -255,6 +255,7 @@ async def monitor_rulebook(rulebook_file):
 
 async def run_rulesets(
     event_log: asyncio.Queue,
+    source_tasks: Tuple[List[asyncio.Task]],
     ruleset_queues: List[RuleSetQueue],
     variables: Dict,
     inventory: str = "",
@@ -299,6 +300,7 @@ async def run_rulesets(
         ruleset_runner = RuleSetRunner(
             event_log=event_log,
             ruleset_queue_plan=ruleset_queue_plan,
+            source_tasks=source_tasks,
             hosts_facts=hosts_facts,
             variables=variables,
             rule_set=rulesets[ruleset_queue_plan.ruleset.name],

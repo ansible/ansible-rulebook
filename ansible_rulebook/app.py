@@ -130,6 +130,7 @@ async def run(parsed_args: argparse.Namespace) -> None:
 
     should_reload = await run_rulesets(
         event_log,
+        tasks,
         ruleset_queues,
         startup_args.variables,
         startup_args.inventory,
