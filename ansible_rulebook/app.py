@@ -108,7 +108,7 @@ async def run(parsed_args: argparse.Namespace) -> None:
         event_log = NullQueue()
 
     logger.info("Starting sources")
-    tasks, ruleset_queues = spawn_sources(
+    source_tasks, ruleset_queues = spawn_sources(
         startup_args.rulesets,
         startup_args.variables,
         [parsed_args.source_dir],
@@ -126,11 +126,10 @@ async def run(parsed_args: argparse.Namespace) -> None:
                 parsed_args.websocket_ssl_verify,
             )
         )
-        tasks.append(feedback_task)
 
     should_reload = await run_rulesets(
         event_log,
-        tasks,
+        source_tasks,
         ruleset_queues,
         startup_args.variables,
         startup_args.inventory,
@@ -145,9 +144,16 @@ async def run(parsed_args: argparse.Namespace) -> None:
             [feedback_task], timeout=settings.max_feedback_timeout
         )
 
+    tasks = []
     logger.info("Cancelling event source tasks")
-    for task in tasks:
+    for task in source_tasks:
+        tasks.append(task)
         task.cancel()
+
+    if feedback_task:
+        logger.info("Cancelling feedback task")
+        tasks.append(feedback_task)
+        feedback_task.cancel()
 
     error_found = False
     results = await asyncio.gather(*tasks, return_exceptions=True)
