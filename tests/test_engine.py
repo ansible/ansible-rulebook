@@ -323,7 +323,7 @@ async def test_run_rules_simple():
     queue.put_nowait(Shutdown())
 
     await run_rulesets(
-        event_log, (), ruleset_queues, dict(), "playbooks/inventory.yml"
+        event_log, [], ruleset_queues, dict(), "playbooks/inventory.yml"
     )
 
     assert event_log.get_nowait()["type"] == "Action", "0"
@@ -444,7 +444,7 @@ async def test_filters():
     queue.put_nowait(Shutdown())
 
     await run_rulesets(
-        event_log, (), ruleset_queues, dict(), "playbooks/inventory.yml"
+        event_log, [], ruleset_queues, dict(), "playbooks/inventory.yml"
     )
 
     assert event_log.get_nowait()["type"] == "Action", "0"
