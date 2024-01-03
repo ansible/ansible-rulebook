@@ -10,7 +10,7 @@ RUN useradd -u $USER_ID -d $APP_DIR appuser
 WORKDIR $APP_DIR
 COPY . $WORKDIR
 RUN chown -R $USER_ID $APP_DIR
-RUN dnf install -y java-17-openjdk-devel python3-pip
+RUN dnf install -y java-17-openjdk-devel python3-pip gcc
 
 USER $USER_ID
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
