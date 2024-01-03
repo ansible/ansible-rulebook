@@ -130,7 +130,8 @@ async def test_pretty_print_event(capsys):
             unpretty_action = event
 
     unpretty = capsys.readouterr()
-    assert len(unpretty.out.strip().splitlines()) == 1
+    # Three lines as a result of displaying in a banner.
+    assert len(unpretty.out.strip().splitlines()) == 3
 
     # The pretty-printed event.
     action_args = dict(pretty=True)
@@ -144,7 +145,7 @@ async def test_pretty_print_event(capsys):
             pretty_action = event
 
     pretty = capsys.readouterr()
-    assert len(pretty.out.strip().splitlines()) > 1
+    assert len(pretty.out.strip().splitlines()) > 3
 
     # Assert there was no difference in content.
     assert pretty_action == unpretty_action
