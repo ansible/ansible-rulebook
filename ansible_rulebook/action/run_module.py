@@ -33,10 +33,9 @@ class RunModule(RunPlaybook):
         self,
         metadata: Metadata,
         control: Control,
-        print_events=False,
         **action_args,
     ):
-        super().__init__(metadata, control, print_events, **action_args)
+        super().__init__(metadata, control, **action_args)
         self.helper.set_action("run_module")
         self.output_key = self.MODULE_OUTPUT_KEY
 

@@ -132,9 +132,12 @@ async def test_run_playbook(drools_call, additional_args, capsys):
 
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         with patch(drools_call) as drools_mock:
-            await RunPlaybook(
-                metadata, control, print_events=True, **action_args
-            )()
+            old_setting = settings.print_events
+            settings.print_events = True
+            try:
+                await RunPlaybook(metadata, control, **action_args)()
+            finally:
+                settings.print_events = old_setting
             captured = capsys.readouterr()
             drools_mock.assert_called_once_with(
                 action_args["ruleset"], set_fact_args

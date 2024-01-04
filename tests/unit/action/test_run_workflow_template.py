@@ -20,6 +20,7 @@ from ansible_rulebook import terminal
 from ansible_rulebook.action.control import Control
 from ansible_rulebook.action.metadata import Metadata
 from ansible_rulebook.action.run_workflow_template import RunWorkflowTemplate
+from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import (
     ControllerApiException,
     WorkflowJobTemplateNotFoundException,
@@ -160,12 +161,12 @@ async def test_run_workflow_template(drools_call, additional_args, capsys):
         return_value=controller_job,
     ):
         with patch(drools_call) as drools_mock:
-            await RunWorkflowTemplate(
-                metadata,
-                control,
-                print_events=True,
-                **action_args,
-            )()
+            old_setting = settings.print_events
+            settings.print_events = True
+            try:
+                await RunWorkflowTemplate(metadata, control, **action_args)()
+            finally:
+                settings.print_events = old_setting
             captured = capsys.readouterr()
             drools_mock.assert_called_once()
 

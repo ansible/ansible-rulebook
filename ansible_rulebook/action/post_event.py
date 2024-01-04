@@ -35,12 +35,10 @@ class PostEvent:
         self,
         metadata: Metadata,
         control: Control,
-        print_events=False,
         **action_args,
     ):
         self.helper = Helper(metadata, control, "post_event")
         self.action_args = action_args
-        self.print_events = print_events
 
     async def __call__(self):
         lang.post(

@@ -29,12 +29,10 @@ class Shutdown:
         self,
         metadata: Metadata,
         control: Control,
-        print_events=False,
         **action_args,
     ):
         self.helper = Helper(metadata, control, "shutdown")
         self.action_args = action_args
-        self.print_events = print_events
 
     async def __call__(self):
         delay = self.action_args.get("delay", 60.0)

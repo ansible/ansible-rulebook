@@ -57,7 +57,6 @@ class RunPlaybook:
         self,
         metadata: Metadata,
         control: Control,
-        print_events=False,
         **action_args,
     ):
         self.helper = Helper(metadata, control, "run_playbook")
@@ -72,7 +71,6 @@ class RunPlaybook:
         self.private_data_dir = tempfile.mkdtemp(prefix="eda")
         self.output_key = None
         self.inventory = None
-        self.print_events = print_events
         self.display = terminal.Display()
 
     async def __call__(self):
@@ -220,9 +218,9 @@ class RunPlaybook:
             # Default to output events at debug level.
             level = logging.DEBUG
 
-            # If print_events is specified adjust the level to the display's
+            # If we are printing events adjust the level to the display's
             # current level to guarantee output.
-            if self.print_events:
+            if settings.print_events:
                 level = self.display.level
 
             # The class hierarchy uses names of the form "Run<type>".

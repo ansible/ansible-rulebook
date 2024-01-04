@@ -31,13 +31,11 @@ class PrintEvent:
         self,
         metadata: Metadata,
         control: Control,
-        print_events=False,
         **action_args,
     ):
         self.helper = Helper(metadata, control, "print_event")
         self.action_args = action_args
         self.display = terminal.Display()
-        self.print_events = print_events
 
     async def __call__(self):
         var_name = (

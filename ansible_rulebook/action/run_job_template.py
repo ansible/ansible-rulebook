@@ -44,7 +44,6 @@ class RunJobTemplate:
         self,
         metadata: Metadata,
         control: Control,
-        print_events=False,
         **action_args,
     ):
         self.helper = Helper(metadata, control, "run_job_template")
@@ -58,7 +57,6 @@ class RunJobTemplate:
             self.helper.control.hosts,
         )
         self.controller_job = {}
-        self.print_events = print_events
         self.display = terminal.Display()
 
     async def __call__(self):
@@ -136,9 +134,9 @@ class RunJobTemplate:
             # Default to output events at debug level.
             level = logging.DEBUG
 
-            # If print_events is specified adjust the level to the display's
+            # If we are printing events adjust the level to the display's
             # current level to guarantee output.
-            if self.print_events:
+            if settings.print_events:
                 level = self.display.level
 
             self.display.banner("job: set-facts", level=level)
