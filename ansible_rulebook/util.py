@@ -32,6 +32,7 @@ from jinja2.nativetypes import NativeTemplate
 from packaging import version
 from packaging.version import InvalidVersion
 
+from ansible_rulebook import terminal
 from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import (
     InvalidFilterNameException,
@@ -40,14 +41,8 @@ from ansible_rulebook.exception import (
 
 logger = logging.getLogger(__name__)
 
+
 EDA_BUILTIN_FILTER_PREFIX = "eda.builtin."
-
-
-def get_horizontal_rule(character):
-    try:
-        return character * int(os.get_terminal_size()[0])
-    except OSError:
-        return character * 80
 
 
 def render_string(value: str, context: Dict) -> str:
@@ -182,7 +177,8 @@ def check_jvm():
     """
     java_home = get_java_home()
     if not java_home:
-        print(
+        terminal.Display.instance().banner(
+            "util",
             "Java executable or JAVA_HOME environment variable not found."
             "Please install a valid JVM.",
             file=sys.stderr,
@@ -197,14 +193,16 @@ def check_jvm():
         if clean_version:
             java_version = clean_version.groups()[0]
         if version.parse(java_version) < version.parse("17"):
-            print(
+            terminal.Display.instance().banner(
+                "util",
                 "The minimum supported Java version is 17. "
                 f"Found version: {java_version}",
                 file=sys.stderr,
             )
             sys.exit(1)
     except InvalidVersion as exinfo:
-        print(
+        terminal.Display.instance().banner(
+            "util: exception",
             exinfo,
             file=sys.stderr,
         )
