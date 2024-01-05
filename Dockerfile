@@ -8,14 +8,15 @@ ARG APP_DIR
 ARG DEVEL_COLLECTION_LIBRARY=0
 ARG DEVEL_COLLECTION_REPO=git+https://github.com/ansible/event-driven-ansible.git
 
-RUN dnf install -y java-17-openjdk-devel java-17-openjdk-jmods binutils python3-pip
+RUN dnf install -y --setopt=install_weak_deps=0 --setopt=tsflags=nodocs \
+    java-17-openjdk-devel java-17-openjdk-jmods binutils python3-pip
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 
+RUN pip install -U pip virtualenv \
+    && virtualenv --always-copy $APP_DIR/venv
 ENV PATH="$APP_DIR/venv/bin:${PATH}"
 
-RUN python3 -m venv $APP_DIR/venv \
-    && pip install -U pip \
-    && pip install ansible-core \
+RUN pip install ansible-core \
     ansible-runner \
     jmespath \
     asyncio \
@@ -29,7 +30,7 @@ RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
     ansible-galaxy collection install ${DEVEL_COLLECTION_REPO} --force; fi"
 
 WORKDIR $APP_DIR
-COPY . $WORKDIR
+COPY . $APP_DIR
 
 RUN pip install .
 
@@ -57,8 +58,10 @@ ENV JAVA_HOME=/jre
 
 COPY --from=build $APP_DIR/custom_jre $JAVA_HOME
 COPY --from=build $APP_DIR/venv $APP_DIR/venv
+COPY . $APP_DIR
 
-RUN microdnf install -y shadow-utils \
+RUN microdnf install -y --setopt=install_weak_deps=0 --setopt=tsflags=nodocs \
+    shadow-utils python3-libs \
     && useradd -u $USER_ID -d $APP_DIR appuser \
     && chown -R $USER_ID $APP_DIR \
     && chmod -R 0775 $APP_DIR \
