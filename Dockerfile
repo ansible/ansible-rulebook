@@ -1,7 +1,7 @@
 ARG USER_ID=${USER_ID:-1001}
 ARG APP_DIR=${APP_DIR:-/app}
 
-FROM quay.io/centos/centos:stream9-development as build
+FROM quay.io/centos/centos:stream9 as build
 
 ARG USER_ID
 ARG APP_DIR
