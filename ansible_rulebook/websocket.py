@@ -66,13 +66,18 @@ async def request_workload(
                         os.close(project_data_fh)
                         logger.debug("wrote %s", response.project_data_file)
                 if data.get("type") == "Rulebook":
-                    response.rulesets = rules_parser.parse_rule_sets(
-                        yaml.safe_load(base64.b64decode(data.get("data")))
+                    rulesets = yaml.safe_load(
+                        base64.b64decode(data.get("data"))
                     )
+                    response.rulesets = rules_parser.parse_rule_sets(rulesets)
                 if data.get("type") == "ExtraVars":
                     response.variables = yaml.safe_load(
                         base64.b64decode(data.get("data"))
                     )
+                if data.get("type") == "Inventory":
+                    response.inventory = base64.b64decode(
+                        data.get("data")
+                    ).decode()
                 if data.get("type") == "ControllerInfo":
                     response.controller_url = data.get("url")
                     response.controller_token = data.get("token")
