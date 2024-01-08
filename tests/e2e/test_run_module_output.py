@@ -98,7 +98,7 @@ async def test_run_module_output():
             assert stats["ruleSetName"] == "29 run module"
             assert stats["numberOfRules"] == 2
             assert stats["numberOfDisabledRules"] == 0
-            assert data["activation_id"] == proc_id
+            assert data["activation_instance_id"] == proc_id
 
     assert stats["rulesTriggered"] == 2
     assert stats["eventsProcessed"] == 6
