@@ -25,7 +25,12 @@ from .metadata import Metadata
 class Shutdown:
     """shutdown action initiates a shutdown from inside of a rulebook"""
 
-    def __init__(self, metadata: Metadata, control: Control, **action_args):
+    def __init__(
+        self,
+        metadata: Metadata,
+        control: Control,
+        **action_args,
+    ):
         self.helper = Helper(metadata, control, "shutdown")
         self.action_args = action_args
 

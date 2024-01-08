@@ -208,9 +208,9 @@ class RuleSetRunner:
                 # Default to output events at debug level.
                 level = logging.DEBUG
 
-                # If print_events is specified adjust the level to the
-                # display's current level to guarantee output.
-                if self.parsed_args and self.parsed_args.print_events:
+                # If we are printing events adjust the level to the display's
+                # current level to guarantee output.
+                if settings.print_events:
                     level = self.display.level
 
                 self.display.banner("received event", level=level)
@@ -445,7 +445,9 @@ class RuleSetRunner:
                 )
 
                 await ACTION_CLASSES[action](
-                    metadata, control, **action_args
+                    metadata,
+                    control,
+                    **action_args,
                 )()
 
             except KeyError as e:

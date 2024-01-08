@@ -21,6 +21,7 @@ class _Settings:
         self.gc_after = 1000
         self.default_execution_strategy = "sequential"
         self.max_feedback_timeout = 5
+        self.print_events = False
 
 
 settings = _Settings()

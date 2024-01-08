@@ -156,6 +156,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--print-events",
         action="store_true",
+        default=settings.print_events,
         help="Print events to stdout, redundant and disabled with -vv",
     )
     parser.add_argument(
@@ -222,7 +223,7 @@ def validate_args(args: argparse.Namespace) -> None:
         raise ValueError("Rulebook must be specified in non worker mode")
 
 
-def setup_logging(args: argparse.Namespace) -> None:
+def setup_logging_and_display(args: argparse.Namespace) -> None:
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     stream = sys.stderr
     level = logging.WARNING
@@ -234,13 +235,26 @@ def setup_logging(args: argparse.Namespace) -> None:
         level = logging.INFO
         stream = sys.stdout
 
+    logging.basicConfig(stream=stream, level=level, format=LOG_FORMAT)
+    logging.getLogger("drools.").setLevel(level)
+
     # As Display is a singleton if it was created elsewhere we may need to
     # adjust the level.
     if display.level > level:
         display.level = level
 
-    logging.basicConfig(stream=stream, level=level, format=LOG_FORMAT)
-    logging.getLogger("drools.").setLevel(level)
+
+def update_settings(args: argparse.Namespace) -> None:
+    if args.id:
+        settings.identifier = args.id
+
+    if args.gc_after is not None:
+        settings.gc_after = args.gc_after
+
+    if args.execution_strategy:
+        settings.default_execution_strategy = args.execution_strategy
+
+    settings.print_events = args.print_events
 
 
 def main(args: List[str] = None) -> int:
@@ -251,7 +265,8 @@ def main(args: List[str] = None) -> int:
 
     args = parser.parse_args(args)
     validate_args(args)
-    setup_logging(args)
+    update_settings(args)
+    setup_logging_and_display(args)
 
     if args.controller_url:
         job_template_runner.host = args.controller_url
@@ -269,15 +284,6 @@ def main(args: List[str] = None) -> int:
                 "controller_username and controller_password is required",
             )
             return 1
-
-    if args.id:
-        settings.identifier = args.id
-
-    if args.gc_after is not None:
-        settings.gc_after = args.gc_after
-
-    if args.execution_strategy:
-        settings.default_execution_strategy = args.execution_strategy
 
     try:
         asyncio.run(app.run(args))

@@ -77,8 +77,9 @@ class Display(Singleton):
         The number of asterixes varies as it is limited by the terminal window
         (if there is one) width or 80 columnns otherwise.
         """
+        # Support a banner timestamp both with and without microseconds.
         start = re.compile(
-            r"^\*\* \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6} "
+            r"^\*\* \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(|\.\d{6}) "
             r"\[" + banner + r"\] \*{0,}$"
         )
         end = re.compile(r"^\*{1,}$")

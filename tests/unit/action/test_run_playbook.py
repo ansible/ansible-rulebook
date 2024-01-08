@@ -18,6 +18,7 @@ from unittest.mock import patch
 import pytest
 from freezegun import freeze_time
 
+from ansible_rulebook import terminal
 from ansible_rulebook.action.control import Control
 from ansible_rulebook.action.metadata import Metadata
 from ansible_rulebook.action.run_playbook import RunPlaybook
@@ -94,7 +95,7 @@ DROOLS_CALLS = [
 @pytest.mark.asyncio
 @freeze_time("2023-06-11 12:13:14")
 @pytest.mark.asyncio
-async def test_run_playbook(drools_call, additional_args):
+async def test_run_playbook(drools_call, additional_args, capsys):
     os.chdir(HERE)
     queue = asyncio.Queue()
     metadata = Metadata(
@@ -131,12 +132,19 @@ async def test_run_playbook(drools_call, additional_args):
 
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         with patch(drools_call) as drools_mock:
-            await RunPlaybook(metadata, control, **action_args)()
+            old_setting = settings.print_events
+            settings.print_events = True
+            try:
+                await RunPlaybook(metadata, control, **action_args)()
+            finally:
+                settings.print_events = old_setting
+            captured = capsys.readouterr()
             drools_mock.assert_called_once_with(
                 action_args["ruleset"], set_fact_args
             )
 
     _validate(queue, metadata, "successful", 0)
+    assert terminal.Display.get_banners("playbook: set-facts", captured.out)
 
 
 @freeze_time("2023-06-11 12:13:14")

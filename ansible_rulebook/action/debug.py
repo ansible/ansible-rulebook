@@ -37,7 +37,12 @@ class Debug:
     At the end we send back the action status
     """
 
-    def __init__(self, metadata: Metadata, control: Control, **action_args):
+    def __init__(
+        self,
+        metadata: Metadata,
+        control: Control,
+        **action_args,
+    ):
         self.helper = Helper(metadata, control, "debug")
         self.action_args = action_args
         self.display = terminal.Display()
