@@ -33,6 +33,9 @@ class Command:
     verbose: bool = False
     debug: bool = False
     websocket: Optional[str] = None
+    token_url: Optional[str] = None
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
     project_tarball: Optional[Path] = None
     worker_mode: bool = False
     verbosity: int = 0
@@ -66,7 +69,13 @@ class Command:
         if self.proc_id:
             result.extend(["--id", str(self.proc_id)])
         if self.websocket:
-            result.extend(["--websocket-address", self.websocket])
+            result.extend(["--websocket-url", self.websocket])
+        if self.access_token:
+            result.extend(["--websocket-access-token", self.access_token])
+        if self.refresh_token:
+            result.extend(["--websocket-refresh-token", self.refresh_token])
+        if self.token_url:
+            result.extend(["--websocket-token-url", self.token_url])
         if self.project_tarball:
             result.extend(
                 ["--project-tarball", str(self.project_tarball.absolute())]

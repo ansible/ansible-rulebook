@@ -22,6 +22,11 @@ class _Settings:
         self.default_execution_strategy = "sequential"
         self.max_feedback_timeout = 5
         self.print_events = False
+        self.websocket_url = None
+        self.websocket_ssl_verify = "yes"
+        self.websocket_token_url = None
+        self.websocket_access_token = None
+        self.websocket_refresh_token = None
 
 
 settings = _Settings()

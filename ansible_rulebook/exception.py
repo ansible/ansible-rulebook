@@ -166,3 +166,8 @@ class InventoryNotFound(Exception):
 class MissingArtifactKeyException(Exception):
 
     pass
+
+
+class TokenNotFound(Exception):
+
+    pass

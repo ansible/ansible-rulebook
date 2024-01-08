@@ -11,6 +11,7 @@
 - ssl_verify option now also supports "true" or "false" values
 - Support for standalone boolean in conditions
 - Add basic auth to controller
+- Use token for websocket authentication
 
 ### Changed
 - Generic print as well as printing of events use new banner style
