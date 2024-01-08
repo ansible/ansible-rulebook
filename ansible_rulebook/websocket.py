@@ -124,21 +124,27 @@ async def _connect_websocket(
     return result
 
 
-async def request_workload(activation_id: str) -> StartupArgs:
+async def request_workload(activation_instance_id: str) -> StartupArgs:
     return await _connect_websocket(
         handler=_handle_request_workload,
         retry=False,
-        activation_id=activation_id,
+        activation_instance_id=activation_instance_id,
     )
 
 
 async def _handle_request_workload(
     websocket: WebSocketClientProtocol,
-    activation_id: str,
+    activation_instance_id: str,
 ) -> StartupArgs:
     logger.info("workload websocket connected")
     await websocket.send(
-        json.dumps(dict(type="Worker", activation_id=activation_id))
+        json.dumps(
+            dict(
+                type="Worker",
+                activation_id=activation_instance_id,
+                activation_instance_id=activation_instance_id,
+            )
+        )
     )
 
     project_data_fh = None

@@ -494,6 +494,7 @@ class RuleSetRunner:
                     action=action,
                     action_uuid=str(uuid.uuid4()),
                     activation_id=settings.identifier,
+                    activation_instance_id=settings.identifier,
                     playbook_name=action_args.get("name"),
                     status="failed",
                     run_at=run_at(),

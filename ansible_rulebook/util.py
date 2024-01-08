@@ -229,6 +229,7 @@ async def send_session_stats(event_log: asyncio.Queue, stats: Dict):
         dict(
             type="SessionStats",
             activation_id=settings.identifier,
+            activation_instance_id=settings.identifier,
             stats=stats,
             reported_at=run_at(),
         )
