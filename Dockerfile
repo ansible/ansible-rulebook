@@ -12,6 +12,9 @@ COPY . $WORKDIR
 RUN chown -R $USER_ID $APP_DIR
 RUN dnf install -y java-17-openjdk-devel python3-pip
 
+RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
+    dnf install -y git; fi"
+
 USER $USER_ID
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 ENV PATH="${PATH}:$APP_DIR/.local/bin"
