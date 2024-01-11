@@ -42,6 +42,7 @@ class Command:
     heartbeat: int = 0
     execution_strategy: Optional[str] = None
     hot_reload: bool = False
+    skip_audit_events: bool = False
 
     def __post_init__(self):
         # verbosity overrides verbose and debug
@@ -96,6 +97,8 @@ class Command:
             result.extend(["--execution-strategy", self.execution_strategy])
         if self.hot_reload:
             result.append("--hot-reload")
+        if self.skip_audit_events:
+            result.append("--skip-audit-events")
 
         return result
 

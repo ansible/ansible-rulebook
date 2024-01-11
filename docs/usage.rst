@@ -9,7 +9,7 @@ The `ansible-rulebook` CLI supports the following options:
     usage: ansible-rulebook [-h] [-r RULEBOOK] [-e VARS] [-E ENV_VARS] [-v] [--version] [-S SOURCE_DIR] [-i INVENTORY] [-W WEBSOCKET_URL] [--websocket-ssl-verify WEBSOCKET_SSL_VERIFY]
                             [--websocket-token-url WEBSOCKET_TOKEN_URL] [--websocket-access-token WEBSOCKET_ACCESS_TOKEN] [--websocket-refresh-token WEBSOCKET_REFRESH_TOKEN]
                             [--id ID] [-w] [-T PROJECT_TARBALL] [--controller-url CONTROLLER_URL] [--controller-token CONTROLLER_TOKEN] [--controller-ssl-verify CONTROLLER_SSL_VERIFY]
-                            [--print-events] [--heartbeat n] [--execution-strategy sequential|parallel]
+                            [--print-events] [--heartbeat n] [--execution-strategy sequential|parallel] [--skip-audit-events]
 
     optional arguments:
     -h, --help            show this help message and exit
@@ -51,6 +51,7 @@ The `ansible-rulebook` CLI supports the following options:
     --heartbeat <n> Send heartbeat to the server after every n seconds. Default is 0, no heartbeat is sent
 
     --execution-strategy sequential|parallel. The default execution strategy is sequential.
+    --skip-audit-events  Skip sending audit events to the EDA server, default is false
 
 To get help from `ansible-rulebook` run the following:
 

@@ -12,6 +12,7 @@
 - Support for standalone boolean in conditions
 - Add basic auth to controller
 - Use token for websocket authentication
+- skip-audit-events to disable sending audit events to server 
 
 ### Changed
 - Generic print as well as printing of events use new banner style

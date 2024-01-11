@@ -27,6 +27,7 @@ class _Settings:
         self.websocket_token_url = None
         self.websocket_access_token = None
         self.websocket_refresh_token = None
+        self.skip_audit_events = False
 
 
 settings = _Settings()
