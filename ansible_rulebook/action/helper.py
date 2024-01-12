@@ -71,6 +71,8 @@ class Helper:
 
     async def send_status(self, data: Dict, obj_type: str = "Action") -> None:
         """Send Action status information on the queue"""
+        if settings.skip_audit_events:
+            return
         payload = {
             "type": obj_type,
             "action": self.action,
@@ -88,6 +90,8 @@ class Helper:
 
     async def send_default_status(self):
         """Send default action status information on the queue"""
+        if settings.skip_audit_events:
+            return
         await self.send_status(
             {
                 "run_at": run_at(),

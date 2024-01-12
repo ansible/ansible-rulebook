@@ -213,6 +213,12 @@ def get_parser() -> argparse.ArgumentParser:
         default="false",
         action="store_true",
     )
+    parser.add_argument(
+        "--skip-audit-events",
+        action="store_true",
+        default=settings.skip_audit_events,
+        help="Don't send audit events to the server",
+    )
     return parser
 
 
@@ -274,6 +280,7 @@ def update_settings(args: argparse.Namespace) -> None:
     settings.websocket_token_url = args.websocket_token_url
     settings.websocket_access_token = args.websocket_access_token
     settings.websocket_refresh_token = args.websocket_refresh_token
+    settings.skip_audit_events = args.skip_audit_events
 
 
 def main(args: List[str] = None) -> int:
