@@ -26,7 +26,7 @@ async def test_run_module_output():
     host = "127.0.0.1"
     endpoint = "/api/ws2"
     proc_id = "42"
-    port = 31415
+    port = 31416
     rulebook = utils.EXAMPLES_PATH / "29_run_module.yml"
     websocket_address = f"ws://127.0.0.1:{port}{endpoint}"
     cmd = utils.Command(

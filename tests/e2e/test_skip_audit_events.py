@@ -26,7 +26,7 @@ async def test_skip_audit_events():
     host = "127.0.0.1"
     endpoint = "/api/ws2"
     proc_id = "42"
-    port = 31415
+    port = 31417
     rulebook = utils.BASE_DATA_PATH / "rulebooks/test_match_multiple_rules.yml"
     websocket_address = f"ws://127.0.0.1:{port}{endpoint}"
     cmd = utils.Command(
