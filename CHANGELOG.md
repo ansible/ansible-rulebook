@@ -5,6 +5,7 @@
 ### Changed
 ### Added
 ### Fixed
+- Allow user to optionally include matching events
 
 
 ## [1.1.1] - 2024-09-19
