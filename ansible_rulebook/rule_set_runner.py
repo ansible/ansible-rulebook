@@ -31,6 +31,7 @@ from drools.ruleset import session_stats
 from ansible_rulebook import terminal
 from ansible_rulebook.action.control import Control
 from ansible_rulebook.action.debug import Debug
+from ansible_rulebook.action.kafka_notify import KafkaNotify
 from ansible_rulebook.action.metadata import Metadata
 from ansible_rulebook.action.noop import Noop
 from ansible_rulebook.action.post_event import PostEvent
@@ -75,6 +76,7 @@ ACTION_CLASSES = {
     "run_module": RunModule,
     "run_job_template": RunJobTemplate,
     "run_workflow_template": RunWorkflowTemplate,
+    "kafka_notify": KafkaNotify,
 }
 
 
