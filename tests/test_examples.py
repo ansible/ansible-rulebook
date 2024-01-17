@@ -2528,3 +2528,47 @@ async def test_include_events(
                 list(mocked_obj.call_args.args[2]["extra_vars"].keys())
                 == expected_keys
             )
+
+
+@pytest.mark.asyncio
+async def test_84_source_error_with_msg(caplog):
+    ruleset_queues, event_log = load_rulebook(
+        "examples/89_source_error_with_msg.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+    expected_msg = (
+        "ERROR Source error: TestException: "
+        "Source plugin failed with error message: 'range fail with msg'"
+    )
+    assert expected_msg in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_85_source_error_without_msg(caplog):
+    ruleset_queues, event_log = load_rulebook(
+        "examples/90_source_error_without_msg.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+    expected_msg = (
+        "ERROR Source error: Unknown error "
+        "TestException: source plugin failed with no error message."
+    )
+    assert expected_msg in caplog.text

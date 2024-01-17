@@ -4,6 +4,7 @@
 ## [Unreleased]
 ### Changed
 ### Added
+- Add generic error message for unknown source errors
 ### Fixed
 - Allow user to optionally include matching events
 
