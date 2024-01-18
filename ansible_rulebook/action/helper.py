@@ -24,6 +24,8 @@ from .metadata import Metadata
 
 KEY_EDA_VARS = "ansible_eda"
 INTERNAL_ACTION_STATUS = "successful"
+FAILED_STATUS = "failed"
+SUCCESSFUL_STATUS = "successful"
 
 
 class Helper:
