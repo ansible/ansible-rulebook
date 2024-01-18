@@ -41,6 +41,9 @@ EDA_PLAYBOOKS_PATHS = [".", "playbooks"]
 
 EDA_YAML_EXTENSIONS = [".yml", ".yaml"]
 
+EDA_ACTION_PATHS = [
+    f"{EDA_PATH_PREFIX}/plugins/rule_action",
+]
 logger = logging.getLogger(__name__)
 
 
@@ -136,6 +139,24 @@ def load_rulebook(collection, rulebook):
             "collection", f"Loading rulebook from {location}"
         )
         return yaml.safe_load(f.read())
+
+
+def has_action(collection, action):
+    return has_object(
+        collection,
+        action,
+        EDA_ACTION_PATHS,
+        ".py",
+    )
+
+
+def find_action(collection, action):
+    return find_object(
+        collection,
+        action,
+        EDA_ACTION_PATHS,
+        ".py",
+    )
 
 
 def has_source(collection, source):

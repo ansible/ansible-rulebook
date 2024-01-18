@@ -107,3 +107,5 @@ ENV/
 
 # awx provision
 tests/e2e/utils/awx/artifacts
+
+.DS_Store

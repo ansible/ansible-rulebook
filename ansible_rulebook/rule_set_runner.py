@@ -15,6 +15,8 @@
 import asyncio
 import gc
 import logging
+import os
+import runpy
 import uuid
 from pprint import pformat
 from types import MappingProxyType
@@ -42,6 +44,11 @@ from ansible_rulebook.action.run_playbook import RunPlaybook
 from ansible_rulebook.action.run_workflow_template import RunWorkflowTemplate
 from ansible_rulebook.action.set_fact import SetFact
 from ansible_rulebook.action.shutdown import Shutdown as ShutdownAction
+from ansible_rulebook.collection import (
+    find_action,
+    has_action,
+    split_collection_name,
+)
 from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import (
     ShutdownException,
@@ -89,6 +96,7 @@ class RuleSetRunner:
         project_data_file: Optional[str] = None,
         parsed_args=None,
         broadcast_method=None,
+        action_directories=None,
     ):
         self.action_loop_task = None
         self.event_log = event_log
@@ -104,6 +112,14 @@ class RuleSetRunner:
         self.broadcast_method = broadcast_method
         self.event_counter = 0
         self.display = terminal.Display()
+        self.action_directories = action_directories
+
+    def find_action(self, action: str):
+        for action_dir in self.action_directories:
+            action_plugin_file = os.path.join(action_dir, f"{action}.py")
+            if os.path.exists(action_plugin_file):
+                return runpy.run_path(action_plugin_file)
+        return None
 
     async def run_ruleset(self):
         tasks = []
@@ -352,6 +368,89 @@ class RuleSetRunner:
         task.add_done_callback(self._handle_action_completion)
         return task
 
+    def _build_control(
+        self,
+        action,
+        action_args,
+        rules_engine_result,
+        variables,
+        metadata,
+        inventory,
+        hosts,
+    ):
+        if action == "run_job_template" or action == "run_workflow_template":
+            limit = dpath.get(
+                action_args,
+                "job_args.limit",
+                separator=".",
+                default=None,
+            )
+            if isinstance(limit, list):
+                hosts = limit
+            elif isinstance(limit, str):
+                hosts = [limit]
+        elif action == "shutdown":
+            if self.parsed_args and "delay" not in action_args:
+                action_args["delay"] = self.parsed_args.shutdown_delay
+
+        single_match = None
+        keys = list(rules_engine_result.data.keys())
+        if len(keys) == 0:
+            single_match = {}
+        elif len(keys) == 1 and keys[0] == "m":
+            single_match = rules_engine_result.data[keys[0]]
+        else:
+            multi_match = rules_engine_result.data
+        variables_copy = variables.copy()
+        if single_match is not None:
+            variables_copy["event"] = single_match
+            event = single_match
+            if "meta" in event:
+                if "hosts" in event["meta"]:
+                    hosts = parse_hosts(event["meta"]["hosts"])
+        else:
+            variables_copy["events"] = multi_match
+            new_hosts = []
+            for event in variables_copy["events"].values():
+                if "meta" in event:
+                    if "hosts" in event["meta"]:
+                        new_hosts.extend(parse_hosts(event["meta"]["hosts"]))
+            if new_hosts:
+                hosts = new_hosts
+
+        if "var_root" in action_args:
+            var_root = action_args.pop("var_root")
+            logger.debug(
+                "Update variables [%s] with new root [%s]",
+                variables_copy,
+                var_root,
+            )
+            _update_variables(variables_copy, var_root)
+
+        logger.debug(
+            "substitute_variables [%s] [%s]",
+            action_args,
+            variables_copy,
+        )
+        action_args = {
+            k: substitute_variables(v, variables_copy)
+            for k, v in action_args.items()
+        }
+        logger.debug("action args: %s", action_args)
+
+        if "ruleset" not in action_args:
+            action_args["ruleset"] = metadata.rule_set
+
+        control = Control(
+            queue=self.event_log,
+            inventory=inventory,
+            hosts=hosts,
+            variables=variables_copy,
+            project_data_file=self.project_data_file,
+        )
+
+        return control, action_args, variables_copy
+
     async def _call_action(
         self,
         metadata: Metadata,
@@ -368,80 +467,15 @@ class RuleSetRunner:
         error = None
         if action in ACTION_CLASSES:
             try:
-                if (
-                    action == "run_job_template"
-                    or action == "run_workflow_template"
-                ):
-                    limit = dpath.get(
-                        action_args,
-                        "job_args.limit",
-                        separator=".",
-                        default=None,
-                    )
-                    if isinstance(limit, list):
-                        hosts = limit
-                    elif isinstance(limit, str):
-                        hosts = [limit]
-                elif action == "shutdown":
-                    if self.parsed_args and "delay" not in action_args:
-                        action_args["delay"] = self.parsed_args.shutdown_delay
 
-                single_match = None
-                keys = list(rules_engine_result.data.keys())
-                if len(keys) == 0:
-                    single_match = {}
-                elif len(keys) == 1 and keys[0] == "m":
-                    single_match = rules_engine_result.data[keys[0]]
-                else:
-                    multi_match = rules_engine_result.data
-                variables_copy = variables.copy()
-                if single_match is not None:
-                    variables_copy["event"] = single_match
-                    event = single_match
-                    if "meta" in event:
-                        if "hosts" in event["meta"]:
-                            hosts = parse_hosts(event["meta"]["hosts"])
-                else:
-                    variables_copy["events"] = multi_match
-                    new_hosts = []
-                    for event in variables_copy["events"].values():
-                        if "meta" in event:
-                            if "hosts" in event["meta"]:
-                                new_hosts.extend(
-                                    parse_hosts(event["meta"]["hosts"])
-                                )
-                    if new_hosts:
-                        hosts = new_hosts
-
-                if "var_root" in action_args:
-                    var_root = action_args.pop("var_root")
-                    logger.debug(
-                        "Update variables [%s] with new root [%s]",
-                        variables_copy,
-                        var_root,
-                    )
-                    _update_variables(variables_copy, var_root)
-
-                logger.debug(
-                    "substitute_variables [%s] [%s]",
+                control, action_args, variables_copy = self._build_control(
+                    action,
                     action_args,
-                    variables_copy,
-                )
-                action_args = {
-                    k: substitute_variables(v, variables_copy)
-                    for k, v in action_args.items()
-                }
-                logger.debug("action args: %s", action_args)
-
-                if "ruleset" not in action_args:
-                    action_args["ruleset"] = metadata.rule_set
-
-                control = Control(
-                    queue=self.event_log,
-                    inventory=inventory,
-                    hosts=hosts,
-                    variables=variables_copy,
-                    project_data_file=self.project_data_file,
+                    rules_engine_result,
+                    variables,
+                    metadata,
+                    inventory,
+                    hosts,
                 )
 
                 await ACTION_CLASSES[action](
@@ -475,6 +509,43 @@ class RuleSetRunner:
             except asyncio.CancelledError:
                 logger.debug("Action task caught Cancelled error")
                 raise
+            except Exception as e:
+                logger.error("Error calling action %s, err %s", action, str(e))
+                error = e
+            except BaseException as e:
+                logger.error(e)
+                raise
+        elif action_plugin := self.find_action(action):
+            try:
+                control, action_args, variables_copy = self._build_control(
+                    action,
+                    action_args,
+                    rules_engine_result,
+                    variables,
+                    metadata,
+                    inventory,
+                    hosts,
+                )
+                await action_plugin["main"](metadata, control, **action_args)
+            except Exception as e:
+                logger.error("Error calling action %s, err %s", action, str(e))
+                error = e
+            except BaseException as e:
+                logger.error(e)
+                raise
+        elif has_action(*split_collection_name(action)):
+            action_plugin = find_action(*split_collection_name(action))
+            try:
+                control, action_args, variables_copy = self._build_control(
+                    action,
+                    action_args,
+                    rules_engine_result,
+                    variables,
+                    metadata,
+                    inventory,
+                    hosts,
+                )
+                await action_plugin.main(metadata, control, **action_args)
             except Exception as e:
                 logger.error("Error calling action %s, err %s", action, str(e))
                 error = e
