@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream9-development
+FROM quay.io/centos/centos:stream9
 
 ARG USER_ID=${USER_ID:-1001}
 ARG APP_DIR=${APP_DIR:-/app}
@@ -10,7 +10,13 @@ RUN useradd -u $USER_ID -d $APP_DIR appuser
 WORKDIR $APP_DIR
 COPY . $WORKDIR
 RUN chown -R $USER_ID $APP_DIR
-RUN dnf install -y java-17-openjdk-devel python3-pip postgresql-devel gcc python3-devel
+RUN dnf install -y \
+    java-17-openjdk-devel \
+    python3.11 \
+    python3.11-pip \
+    postgresql-devel \
+    gcc \
+    python3.11-devel
 
 RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
     dnf install -y git; fi"
@@ -18,7 +24,7 @@ RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
 USER $USER_ID
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 ENV PATH="${PATH}:$APP_DIR/.local/bin"
-RUN pip install -U pip \
+RUN pip3.11 install -U pip \
     && pip install ansible-core \
     ansible-runner \
     jmespath \

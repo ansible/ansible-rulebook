@@ -8,7 +8,7 @@ Please ensure you have installed all components listed in the **Requirements** s
 Requirements
 ------------
 
-* Python >= 3.9
+* Python >= 3.11
 * Python 3 pip
 
 * Java development kit >= 17
