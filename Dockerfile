@@ -13,7 +13,10 @@ RUN chown -R $USER_ID $APP_DIR
 RUN dnf install -y \
     java-17-openjdk-devel \
     python3.11 \
-    python3.11-pip
+    python3.11-pip \
+    postgresql-devel \
+    gcc \
+    python3.11-devel
 
 RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
     dnf install -y git; fi"
