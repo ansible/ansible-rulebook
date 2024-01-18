@@ -30,7 +30,6 @@ from websockets.client import WebSocketClientProtocol
 from ansible_rulebook import rules_parser as rules_parser
 from ansible_rulebook.common import StartupArgs
 from ansible_rulebook.conf import settings
-from ansible_rulebook.exception import ShutdownException
 from ansible_rulebook.token import renew_token
 
 logger = logging.getLogger(__name__)
@@ -42,9 +41,41 @@ BACKOFF_FACTOR = 1.618
 BACKOFF_INITIAL = 5
 
 
+async def _wait_before_retry(backoff_delay: float) -> float:
+    # Sleep and retry implemention duplicated from
+    # websockets.lagacy.client.Client
+
+    # Add a random initial delay between 0 and 5 seconds.
+    # See 7.2.3. Recovering from Abnormal Closure in RFC 6544.
+    if backoff_delay == BACKOFF_MIN:
+        initial_delay = random.random() * BACKOFF_INITIAL
+        logger.info(
+            "! websocket connect failed; reconnecting in %.1f seconds",
+            initial_delay,
+            exc_info=False,
+        )
+        await asyncio.sleep(initial_delay)
+    else:
+        logger.info(
+            "! websocket connect failed again; retrying in %d seconds",
+            int(backoff_delay),
+            exc_info=False,
+        )
+        await asyncio.sleep(int(backoff_delay))
+    # Increase delay with truncated exponential backoff.
+    backoff_delay = backoff_delay * BACKOFF_FACTOR
+    backoff_delay = min(backoff_delay, BACKOFF_MAX)
+    return backoff_delay
+
+
+async def _update_authorization_header(headers: dict) -> None:
+    new_token = await renew_token()
+    headers["Authorization"] = f"Bearer {new_token}"
+
+
 async def _connect_websocket(
     handler: tp.Callable[[WebSocketClientProtocol], tp.Awaitable],
-    retry: bool,
+    retry_on_close: bool,
     **kwargs: list,
 ) -> tp.Any:
     logger.info("websocket %s connecting", settings.websocket_url)
@@ -55,79 +86,57 @@ async def _connect_websocket(
     else:
         extra_headers = {}
 
-    result = None
-    refresh = True
+    refresh_token = True
 
+    backoff_delay = BACKOFF_MIN
     while True:
-        backoff_delay = BACKOFF_MIN
         try:
             async with websockets.connect(
                 settings.websocket_url,
                 ssl=_sslcontext(),
                 extra_headers=extra_headers,
             ) as websocket:
-                result = await handler(websocket, **kwargs)
-                if not retry:
-                    break
+                # Connection succeeded - reset backoff delay and refresh_token
+                backoff_delay = BACKOFF_MIN
+                refresh_token = True
+                return await handler(websocket, **kwargs)
         except asyncio.CancelledError:  # pragma: no cover
             raise
-        except ShutdownException:
-            break
-        except Exception as e:
-            status403_legacy = (
-                isinstance(e, websockets.exceptions.InvalidStatusCode)
-                and e.status_code == 403
-            )
-            status403 = (
-                isinstance(e, websockets.exceptions.InvalidStatus)
-                and e.response.status_code == 403
-            )
-            if status403_legacy or status403:
-                if refresh and settings.websocket_refresh_token:
-                    new_token = await renew_token()
-                    extra_headers["Authorization"] = f"Bearer {new_token}"
-                    # Only attempt to refresh token once. If a new token cannot
-                    # establish the connection, something else must cause 403
-                    refresh = False
-                else:
-                    raise
-            elif isinstance(e, OSError) and "[Errno 61]" in str(e):
-                # Sleep and retry implemention duplicated from
-                # websockets.lagacy.client.Client
-
-                # Add a random initial delay between 0 and 5 seconds.
-                # See 7.2.3. Recovering from Abnormal Closure in RFC 6544.
-                if backoff_delay == BACKOFF_MIN:
-                    initial_delay = random.random() * BACKOFF_INITIAL
-                    logger.info(
-                        "! connect failed; reconnecting in %.1f seconds",
-                        initial_delay,
-                        exc_info=True,
-                    )
-                    await asyncio.sleep(initial_delay)
-                else:
-                    logger.info(
-                        "! connect failed again; retrying in %d seconds",
-                        int(backoff_delay),
-                        exc_info=True,
-                    )
-                    await asyncio.sleep(int(backoff_delay))
-                # Increase delay with truncated exponential backoff.
-                backoff_delay = backoff_delay * BACKOFF_FACTOR
-                backoff_delay = min(backoff_delay, BACKOFF_MAX)
-                continue
-        else:
-            # Connection succeeded - reset backoff delay
-            backoff_delay = BACKOFF_MIN
-            refresh = True
-
-    return result
+        except websockets.exceptions.InvalidStatusCode as e:
+            if refresh_token and e.status_code == 403:
+                await _update_authorization_header(extra_headers)
+                # Only attempt to refresh token once. If a new token cannot
+                # establish the connection, something else must have caused 403
+                refresh_token = False
+            else:
+                raise  # abort
+        except websockets.exceptions.InvalidStatus as e:
+            if refresh_token and e.response.status_code == 403:
+                await _update_authorization_header(extra_headers)
+                refresh_token = False
+            else:
+                raise  # abort
+        except OSError as e:
+            if "[Errno 61]" in str(e):
+                # if connection cannot be established, retry later
+                backoff_delay = await _wait_before_retry(backoff_delay)
+            else:
+                raise  # abort
+        except websockets.exceptions.ConnectionClosedError as e:
+            if e.code == 1011:
+                # unexpected error raised from server
+                raise  # abort
+            if retry_on_close:
+                backoff_delay = await _wait_before_retry(backoff_delay)
+        except websockets.exceptions.ConnectionClosedOK:
+            if retry_on_close:
+                backoff_delay = await _wait_before_retry(backoff_delay)
 
 
 async def request_workload(activation_instance_id: str) -> StartupArgs:
     return await _connect_websocket(
         handler=_handle_request_workload,
-        retry=False,
+        retry_on_close=False,
         activation_instance_id=activation_instance_id,
     )
 
@@ -193,7 +202,7 @@ async def send_event_log_to_websocket(event_log: asyncio.Queue):
 
     return await _connect_websocket(
         handler=_handle_send_event_log,
-        retry=True,
+        retry_on_close=True,
         logs=logs,
     )
 
@@ -206,7 +215,8 @@ async def _handle_send_event_log(
 
     if logs.event:
         logger.info("Resending last event...")
-        await websocket.send(json.dumps(logs.event))
+        json_str = json.dumps(logs.event)
+        await websocket.send(json_str)
         logs.event = None
 
     while True:
@@ -215,10 +225,11 @@ async def _handle_send_event_log(
 
         if event == dict(type="Exit"):
             logger.info("Exiting feedback websocket task")
-            raise ShutdownException(shutdown=None)
+            break
 
         logs.event = event
-        await websocket.send(json.dumps(event))
+        json_str = json.dumps(event)
+        await websocket.send(json_str)
         logs.event = None
 
 
