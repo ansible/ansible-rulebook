@@ -14,6 +14,8 @@
 
 import uuid
 
+from ansible_rulebook.vault import Vault
+
 
 class _Settings:
     def __init__(self):
@@ -28,6 +30,7 @@ class _Settings:
         self.websocket_access_token = None
         self.websocket_refresh_token = None
         self.skip_audit_events = False
+        self.vault = Vault()
 
 
 settings = _Settings()

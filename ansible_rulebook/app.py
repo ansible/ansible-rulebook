@@ -32,7 +32,9 @@ from ansible_rulebook.conf import settings
 from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.rule_types import RuleSet, RuleSetQueue
+from ansible_rulebook.util import substitute_variables
 from ansible_rulebook.validators import Validate
+from ansible_rulebook.vault import has_vaulted_str
 from ansible_rulebook.websocket import (
     request_workload,
     send_event_log_to_websocket,
@@ -75,9 +77,7 @@ async def run(parsed_args: argparse.Namespace) -> None:
     else:
         startup_args = StartupArgs()
         startup_args.variables = load_vars(parsed_args)
-        startup_args.rulesets = load_rulebook(
-            parsed_args, startup_args.variables
-        )
+        startup_args.rulesets = load_rulebook(parsed_args, startup_args)
         if parsed_args.hot_reload is True and os.path.exists(
             parsed_args.rulebook
         ):
@@ -94,6 +94,7 @@ async def run(parsed_args: argparse.Namespace) -> None:
         startup_args.controller_ssl_verify = parsed_args.controller_ssl_verify
 
     validate_actions(startup_args)
+    validate_variables(startup_args)
 
     if startup_args.check_controller_connection:
         await validate_controller_params(startup_args)
@@ -179,7 +180,8 @@ def load_vars(parsed_args) -> Dict[str, str]:
 
 # TODO(cutwater): Maybe move to util.py
 def load_rulebook(
-    parsed_args: argparse.Namespace, variables: Optional[Dict] = None
+    parsed_args: argparse.Namespace,
+    startup_args: Optional[StartupArgs] = None,
 ) -> List[RuleSet]:
     if not parsed_args.rulebook:
         logger.debug("Loading no rules")
@@ -188,21 +190,24 @@ def load_rulebook(
         logger.debug(
             "Loading rules from the file system %s", parsed_args.rulebook
         )
-        with open(parsed_args.rulebook) as f:
-            data = yaml.safe_load(f.read())
+        with open(parsed_args.rulebook, "rb") as f:
+            raw_data = f.read()
+            if startup_args:
+                startup_args.check_vault = has_vaulted_str(raw_data)
+            data = yaml.safe_load(raw_data)
             Validate.rulebook(data)
-            if variables is None:
-                variables = {}
+            variables = startup_args.variables if startup_args else {}
             rulesets = rules_parser.parse_rule_sets(data, variables)
     elif has_rulebook(*split_collection_name(parsed_args.rulebook)):
         logger.debug(
             "Loading rules from a collection %s", parsed_args.rulebook
         )
-        rulesets = rules_parser.parse_rule_sets(
-            collection_load_rulebook(
-                *split_collection_name(parsed_args.rulebook)
-            )
+        vaulted, rulesets = collection_load_rulebook(
+            *split_collection_name(parsed_args.rulebook)
         )
+        rulesets = rules_parser.parse_rule_sets(rulesets)
+        if startup_args:
+            startup_args.check_vault = vaulted
     else:
         raise RulebookNotFoundException(
             f"Could not find rulebook {parsed_args.rulebook}"
@@ -236,6 +241,12 @@ def spawn_sources(
     return tasks, ruleset_queues
 
 
+def validate_variables(startup_args: StartupArgs) -> None:
+    for _key, value in startup_args.variables.items():
+        # attempt to substitute, raise an error on failure
+        substitute_variables(value, {})
+
+
 def validate_actions(startup_args: StartupArgs) -> None:
     for ruleset in startup_args.rulesets:
         for rule in ruleset.rules:
@@ -266,6 +277,10 @@ def validate_actions(startup_args: StartupArgs) -> None:
                         f"Rule {rule.name} has an action {action.action} "
                         "which needs controller url and token to be defined"
                     )
+                if startup_args.check_vault:
+                    for _key, value in action.action_args.items():
+                        # attempt to substitute, raise an error on failure
+                        substitute_variables(value, {})
 
 
 async def validate_controller_params(startup_args: StartupArgs) -> None:
