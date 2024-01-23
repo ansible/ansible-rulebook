@@ -14,6 +14,8 @@
 - Use token for websocket authentication
 - skip-audit-events to disable sending audit events to server
 - Add generic error message for unknown source errors
+- restrict drools async connection to localhost
+
 
 ### Changed
 - Generic print as well as printing of events use new banner style

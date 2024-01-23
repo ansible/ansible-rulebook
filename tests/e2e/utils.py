@@ -132,13 +132,22 @@ def assert_playbook_output(result: CompletedProcess) -> List[dict]:
 
 
 async def msg_handler(
-    websocket: ws_server.WebSocketServerProtocol, queue: asyncio.Queue
+    websocket: ws_server.WebSocketServerProtocol,
+    queue: asyncio.Queue,
+    failed: bool = False,
 ):
     """
     Handler for a websocket server that passes json messages
     from ansible-rulebook in the given queue
     """
+    i = 0
     async for message in websocket:
         payload = json.loads(message)
         data = {"path": websocket.path, "payload": payload}
         await queue.put(data)
+        if i == 1:
+            if failed:
+                print(data["bad"])  # force a coding error
+            else:
+                await websocket.close()  # should be auto reconnected
+        i += 1

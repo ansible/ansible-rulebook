@@ -16,7 +16,8 @@ DEFAULT_TIMEOUT = 15
 
 @pytest.mark.e2e
 @pytest.mark.asyncio
-async def test_websocket_messages():
+@pytest.mark.parametrize("expect_failure", [True, False])
+async def test_websocket_messages(expect_failure):
     """
     Verify that ansible-rulebook can correctly
     send event messages to a websocket server
@@ -25,7 +26,7 @@ async def test_websocket_messages():
     host = "127.0.0.1"
     endpoint = "/api/ws2"
     proc_id = "42"
-    port = 31415
+    port = 31415 if expect_failure else 31414
     rulebook = (
         utils.BASE_DATA_PATH / "rulebooks/websockets/test_websocket_range.yml"
     )
@@ -39,7 +40,7 @@ async def test_websocket_messages():
 
     # run server and ansible-rulebook
     queue = asyncio.Queue()
-    handler = partial(utils.msg_handler, queue=queue)
+    handler = partial(utils.msg_handler, queue=queue, failed=expect_failure)
     async with ws_server.serve(handler, host, port):
         LOGGER.info(f"Running command: {cmd}")
         proc = await asyncio.create_subprocess_shell(
@@ -50,7 +51,12 @@ async def test_websocket_messages():
         )
 
         await asyncio.wait_for(proc.wait(), timeout=DEFAULT_TIMEOUT)
-        assert proc.returncode == 0
+        if expect_failure:
+            assert proc.returncode == 1
+            assert queue.qsize() == 2
+            return
+        else:
+            assert proc.returncode == 0
 
     # Verify data
     assert not queue.empty()
