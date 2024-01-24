@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - stable/1.0
     tags:
       - "v*"
 
