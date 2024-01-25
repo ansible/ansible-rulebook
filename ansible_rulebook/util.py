@@ -273,3 +273,9 @@ def process_controller_host_limit(
             return ",".join(job_args["limit"])
         return str(job_args["limit"])
     return ",".join(parent_hosts)
+
+
+def ensure_trailing_slash(url: str) -> str:
+    if not url.endswith("/"):
+        return url + "/"
+    return url
