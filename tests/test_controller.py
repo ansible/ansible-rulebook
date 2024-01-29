@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import json
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from aiohttp import ClientError
@@ -39,7 +40,17 @@ from .data.awx_test_data import (
     UNIFIED_JOB_TEMPLATE_PAGE2_SLUG,
 )
 
-CONFIG_SLUG = "/api/v2/config/"
+CONFIG_SLUG = "api/v2/config/"
+
+
+@pytest.fixture
+def new_job_template_runner():
+    from ansible_rulebook.job_template_runner import JobTemplateRunner
+
+    return JobTemplateRunner(
+        host="https://example.com",
+        token="DUMMY",
+    )
 
 
 @pytest.fixture
@@ -221,3 +232,45 @@ async def test_run_workflow_template_fail(mocked_job_template_runner):
                 ORGANIZATION_NAME,
                 {"a": 1, "limit": "all"},
             )
+
+
+@pytest.mark.parametrize(
+    ("host", "expected"),
+    [
+        ("https://example.com", "https://example.com/api/v2/config/"),
+        ("https://example.com/", "https://example.com/api/v2/config/"),
+        (
+            "https://example.com/custom/awx",
+            "https://example.com/custom/awx/api/v2/config/",
+        ),
+        (
+            "https://example.com/awx/",
+            "https://example.com/awx/api/v2/config/",
+        ),
+        (
+            "https://example.com/custom/awx/",
+            "https://example.com/custom/awx/api/v2/config/",
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_session_get_called_with_expected_url(
+    new_job_template_runner,
+    host,
+    expected,
+):
+    with patch(
+        "ansible_rulebook.job_template_runner.aiohttp.ClientSession"
+    ) as mock:
+        mocked_session = AsyncMock()
+        mocked_session.get = MagicMock()
+        mocked_session.get.return_value.__aenter__.return_value = MagicMock(
+            status=200,
+            text=AsyncMock(return_value=json.dumps({"a": 1})),
+        )
+        mock.return_value = mocked_session
+        new_job_template_runner.host = host
+        await new_job_template_runner.get_config()
+        calls = mocked_session.get.mock_calls[0]
+        args = calls[1]
+        assert args[0] == expected
