@@ -2531,7 +2531,7 @@ async def test_include_events(
 
 
 @pytest.mark.asyncio
-async def test_84_source_error_with_msg(caplog):
+async def test_89_source_error_with_msg(caplog):
     ruleset_queues, event_log = load_rulebook(
         "examples/89_source_error_with_msg.yml"
     )
@@ -2553,7 +2553,7 @@ async def test_84_source_error_with_msg(caplog):
 
 
 @pytest.mark.asyncio
-async def test_85_source_error_without_msg(caplog):
+async def test_90_source_error_without_msg(caplog):
     ruleset_queues, event_log = load_rulebook(
         "examples/90_source_error_without_msg.yml"
     )

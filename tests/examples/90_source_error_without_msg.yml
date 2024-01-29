@@ -3,7 +3,7 @@
   hosts: all
   sources:
     - name: range_fail_without_msg
-      range_exception:
+      source_with_exception:
         error_msg: ""
   rules:
     - name: r1
