@@ -83,6 +83,11 @@ There are 3 basic patterns that you'll be developing against when considering a 
     These can also require other ingress policies and firewall rules to be available and configured properly
     to operate.
 
+    .. warning::
+        When running within a Podman container, be aware that by default (with rootlesskit) Podman networking 
+        changes the source IP of all requests to usually 10.0.2.100. Adjust the value of ``host:`` accordingly.
+        By default the ``webhook`` plugin listens to all interfaces.
+
 It's strongly recommended to adopt one of the first two patterns and only consider callback plugins in the absence
 of any other solution.
 
