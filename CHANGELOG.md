@@ -12,12 +12,15 @@
 - Support for standalone boolean in conditions
 - Add basic auth to controller
 - Use token for websocket authentication
-- skip-audit-events to disable sending audit events to server 
+- skip-audit-events to disable sending audit events to server
+- restrict drools async connection to localhost
+
 
 ### Changed
 - Generic print as well as printing of events use new banner style
 
 ### Fixed
+- Support a base path for the controller url
 
 ## [1.0.4] - 2023-10-30
 

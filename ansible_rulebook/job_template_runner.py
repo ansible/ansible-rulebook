@@ -24,6 +24,7 @@ from urllib.parse import urljoin
 import aiohttp
 import dpath
 
+from ansible_rulebook import util
 from ansible_rulebook.exception import (
     ControllerApiException,
     JobTemplateNotFoundException,
@@ -34,8 +35,8 @@ logger = logging.getLogger(__name__)
 
 
 class JobTemplateRunner:
-    UNIFIED_TEMPLATE_SLUG = "/api/v2/unified_job_templates/"
-    CONFIG_SLUG = "/api/v2/config/"
+    UNIFIED_TEMPLATE_SLUG = "api/v2/unified_job_templates/"
+    CONFIG_SLUG = "api/v2/config/"
     JOB_COMPLETION_STATUSES = ["successful", "failed", "error", "canceled"]
 
     def __init__(
@@ -47,6 +48,7 @@ class JobTemplateRunner:
         verify_ssl: str = "yes",
     ):
         self.token = token
+        self._host = ""
         self.host = host
         self.username = username
         self.password = password
@@ -55,6 +57,14 @@ class JobTemplateRunner:
             os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10.0)
         )
         self._session = None
+
+    @property
+    def host(self):
+        return self._host
+
+    @host.setter
+    def host(self, value: str):
+        self._host = util.ensure_trailing_slash(value)
 
     async def close_session(self):
         if self._session and not self._session.closed:
