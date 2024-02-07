@@ -2,6 +2,12 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+### Added
+### Fixed
+
+
+## [1.0.5] - 2024-02-07
 
 ### Changed
 - Job template, workflow template, module and playbook output facts/events
