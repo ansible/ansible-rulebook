@@ -29,6 +29,12 @@ To accommodate this, the EDA collection provides the `insert_hosts_to_meta` filt
 allowing any plugin to customize the value of `event.meta.hosts` based on the contents
 of a specific key in the event.
 
+.. note::
+
+    The `host_path` in filter `insert_hosts_to_meta` don't expect the `event` root key unlike conditions
+    or action arguments and it won't take action if the `host_path` is not found in the event.
+
+
 Example:
 
 .. code-block:: yaml
