@@ -48,17 +48,6 @@ Examples:
             exclude_keys: ['*_url', '_links', 'base', 'sender', 'owner', 'user']
         - dashes_to_underscores:
 
-
-.. code-block:: yaml
-
-    sources:
-        - foo.bar.my_custom_source:
-            url: https://my_custom_source.com
-          filters:
-            - ansible.eda.insert_hosts_to_meta:
-                host_path: "alert.meta.instances"
-
-
 | In the above example the data is first passed thru the json_filter and then
 | thru the dashes_to_underscores filter.
 | Keys in the event payload can only contain letters, numbers and underscores.
