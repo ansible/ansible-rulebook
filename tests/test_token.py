@@ -59,3 +59,10 @@ async def test_renew_invalid_token():
         mock.return_value = MockResponse(data)
         with pytest.raises(TokenNotFound):
             await token.renew_token()
+
+
+@pytest.mark.asyncio
+async def test_renew_non_json_body():
+    prepare_settings()
+    with pytest.raises(TokenNotFound):
+        await token.renew_token()
