@@ -31,8 +31,8 @@ of a specific key in the event.
 
 .. note::
 
-    The `host_path` in filter `insert_hosts_to_meta` don't expect the `event` root key unlike conditions
-    or action arguments and it won't take action if the `host_path` is not found in the event.
+    The host_path argument in the filter `insert_hosts_to_meta` does not need the `event.` prefix
+    like conditions or action arguments.
 
 
 Example:
@@ -42,7 +42,6 @@ Example:
     sources:
         - ansible.eda.webhook:
             port: 4444
-            host: 0.0.0.0
           filters:
             - ansible.eda.insert_hosts_to_meta:
                 host_path: "payload.alert.instances"
