@@ -11,7 +11,7 @@ from ansible_rulebook.util import check_jvm
 def test_get_version():
     output = get_version()
     pattern = re.compile(
-        r"""\d+\.\d+\.\d+
+        r"""\d+\.\d+\.\d+(.+)
   Executable location = (.+)
   Drools_jpy version = \d+\.\d+\.\d+
   Java home = (.+)

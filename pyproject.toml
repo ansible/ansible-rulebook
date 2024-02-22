@@ -12,3 +12,31 @@ profile = "black"
 combine_as_imports = true
 line_length = 79
 extend_skip = ["docs"]
+
+[tool.bumpver]
+current_version = "1.0.6b8"
+version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
+commit_message = "chore: bump version {old_version} -> {new_version}"
+tag_message = "{new_version}"
+tag_scope = "default"
+pre_commit_hook = ""
+post_commit_hook = ""
+commit = true
+tag = true
+push = true
+
+[tool.setuptools_scm]
+
+
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'current_version = "{version}"',
+]
+"ansible_rulebook/__init__.py" = [
+    '__version__ = "{version}"',
+]
+"setup.cfg" = [
+    'version = {version}',
+]
+

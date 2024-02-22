@@ -1,0 +1,36 @@
+---
+name: Release ansible-rulebook
+
+env:
+  LC_ALL: "C.UTF-8" # prevent ERROR: Ansible could not initialize the preferred locale: unsupported locale setting
+
+on:
+  workflow_dispatch:
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      packages: write
+      contents: write
+    steps:
+      - name: Checkout ansible-rulebook
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Get python version from Makefile
+        run: echo py_version=`make PYTHON_VERSION` >> $GITHUB_ENV
+
+      - name: Install python ${{ env.py_version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.py_version }}
+
+      - name: Install python deps
+        run: pip install -r requirements_dev.txt
+
+      - name: Create release
+        run: ansible-playbook tools/ansible/release.yml -i localhost -e github_token=${{ secrets.GITHUB_TOKEN }}

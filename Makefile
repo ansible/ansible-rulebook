@@ -89,3 +89,6 @@ install: clean ## install the package to the active Python's site-packages
 
 minimal-ee:
 	ansible-builder build -f ./minimal-decision-environment.yml -t minimal-de:latest
+
+PYTHON_VERSION:
+	@echo '3.9'

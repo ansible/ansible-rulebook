@@ -2,7 +2,7 @@
 -r requirements_lint.txt
 -r docs/requirements.txt
 
-bump2version
+bumpver
 
 # Packaging / distribution
 twine
@@ -16,3 +16,6 @@ coverage
 ansible-builder
 
 pre-commit
+
+# For buiding releases
+setuptools-scm

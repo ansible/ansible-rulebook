@@ -12,11 +12,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-"""Top-level package for Ansible Events."""
+"""Top-level package for Ansible Rulebook."""
 
 import yaml
-
-__version__ = "1.0.5"
 
 
 def construct_vault_encrypted_unicode(loader, node):
@@ -24,3 +22,5 @@ def construct_vault_encrypted_unicode(loader, node):
 
 
 yaml.SafeLoader.add_constructor("!vault", construct_vault_encrypted_unicode)
+
+__version__ = "1.0.6b8"
