@@ -4,6 +4,8 @@
 ## [Unreleased]
 ### Changed
 ### Added
+- Support for vaulted variables
+
 ### Fixed
 
 
@@ -20,7 +22,6 @@
 - Use token for websocket authentication
 - skip-audit-events to disable sending audit events to server
 - restrict drools async connection to localhost
-
 
 ### Changed
 - Generic print as well as printing of events use new banner style
