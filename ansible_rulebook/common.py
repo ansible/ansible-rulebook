@@ -28,3 +28,4 @@ class StartupArgs:
     project_data_file: str = field(default="")
     inventory: str = field(default="")
     check_controller_connection: bool = field(default=False)
+    check_vault: bool = field(default=True)
