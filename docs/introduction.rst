@@ -123,12 +123,3 @@ there are a variety of resources to enhance your automation knowledge:
 -  `Ansible Rulebook
    CLI <https://github.com/ansible/ansible-rulebook>`__
 
-Office Hours
-------------
-
-Join us for Office Hours on the Event-Driven Ansible developer preview
-on December 14th at 11AM ET. Get some tips and techniques, ask questions
-and share your feedback! Learn from the community. See you there.
-https://www.ansible.com/resources/webinars-training/event-driven-ansible-office-hours-dec
-
-

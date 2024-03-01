@@ -31,6 +31,7 @@ from ansible_rulebook import rules_parser as rules_parser
 from ansible_rulebook.common import StartupArgs
 from ansible_rulebook.conf import settings
 from ansible_rulebook.token import renew_token
+from ansible_rulebook.vault import Vault, has_vaulted_str
 
 logger = logging.getLogger(__name__)
 
@@ -163,6 +164,8 @@ async def _handle_request_workload(
         data = json.loads(msg)
         if data.get("type") == "EndOfResponse":
             break
+        if data.get("type") == "VaultCollection":
+            settings.vault = Vault(passwords=data.get("data"))
         if data.get("type") == "ProjectData":
             if not project_data_fh:
                 (
@@ -176,8 +179,10 @@ async def _handle_request_workload(
                 os.close(project_data_fh)
                 logger.debug("wrote %s", response.project_data_file)
         if data.get("type") == "Rulebook":
+            raw_data = base64.b64decode(data.get("data"))
+            response.check_vault = has_vaulted_str(raw_data)
             response.rulesets = rules_parser.parse_rule_sets(
-                yaml.safe_load(base64.b64decode(data.get("data")))
+                yaml.safe_load(raw_data)
             )
         if data.get("type") == "ExtraVars":
             response.variables = yaml.safe_load(

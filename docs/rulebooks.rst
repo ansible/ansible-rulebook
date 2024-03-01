@@ -138,6 +138,68 @@ To avoid name conflicts the source data structure can use nested keys.
 If any source terminates, it shuts down the whole engine. All events from other sources may be lost.
 
 
+Using vaulted strings
+--------------------------
+
+Sensitive data referenced by a rulebook must be encrypted by `ansible-vault <https://docs.ansible.com/ansible/latest/vault_guide/vault_encrypting_content.html#encrypting-content-with-ansible-vault>`_
+cli. The vaulted strings can be directly embeded in the rulebook, or placed in a variables file and 
+referenced in the rulebook via extra vars. Only arguments to source plugins or actions can be vaulted.
+Example for a rulebook that has embeded vaulted strings:
+
+.. code-block:: yaml
+
+      action:
+        run_playbook:
+          name: !vault |
+            $ANSIBLE_VAULT;1.1;AES256
+            34363839636133343562323339363066616165326363626133616264326565336633386438333936
+            3833303135313062343861353765383633643931613535340a356532376531656566643133303833
+            39396335636439363838386430346532623633303763626362646435633736613834333534663532
+            3966643666326535620a626166616465386639373136396236336161333836303664633330356134
+            30396661336162343734353837366437383433343461333564663236313639376633616238633463
+            3765626362303336303761373538343939396434346261356164
+          extra_vars:
+            foo: "{{ foo_var }}"
+
+Example for a variables file with vaulted strings:
+
+    .. code-block:: yaml
+
+        ---
+        foo_var: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          33353433303339303239653832383938613664323063313065326365323232366537613762303736
+          3864333763656663646332653738316135383562343962300a653333303538353132366336323337
+          39366365303563386636613834633463303835613461393066643632356338393038306366616631
+          3534326432333466390a303037323232663239636132343836313434333139623530386134326130
+          3465
+        match_this_int: 2
+
+
+    .. warning::
+        Encryption with Ansible Vault ONLY protects ‘data at rest’. Once the content is decrypted (‘data in use’), 
+        rulebook and source plugin authors are responsible for avoiding any secret disclosure.
+
+The password to decrypt the vaulted strings can be provided through one the cli arguments, namely
+`--vault-id`, `--vault-password-file`, or `--ask-vault-pass`. If only one password file is used, it can be also
+set via env var EDA_VAULT_PASSWORD_FILE.
+
+Example to receive one password for all vaulted strings:
+
+.. code-block:: console
+
+    ansible-rulebook --rulebook rules_with_vaulted_vars.yml --vault-password-file mypassword.txt
+
+Example to receive multiple passwords:
+
+.. code-block:: console
+
+    ansible-rulebook --rulebook rules.yml --vars vars.yml --vault-id pass1@mypassword1.txt --vault-id pass2@mypassword2.txt
+
+Refer to the `Usage <usage.html>`_ page for more information.
+
+Please note vaulted strings in a rulebook or varialbles file are not supported if the ansible-rulebook cli version
+is 1.0.4 or older. You will see an error like `ERROR - Terminating could not determine a constructor for the tag '!vault'`
 
 Distributing rulebooks
 ^^^^^^^^^^^^^^^^^^^^^^

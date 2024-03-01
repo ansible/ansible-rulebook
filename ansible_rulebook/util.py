@@ -47,10 +47,12 @@ EDA_BUILTIN_FILTER_PREFIX = "eda.builtin."
 
 def render_string(value: str, context: Dict) -> str:
     if "{{" in value and "}}" in value:
-        return NativeTemplate(value, undefined=jinja2.StrictUndefined).render(
+        value = NativeTemplate(value, undefined=jinja2.StrictUndefined).render(
             context
         )
 
+    if isinstance(value, str) and settings.vault.is_encrypted(value):
+        value = settings.vault.decrypt(value)
     return value
 
 

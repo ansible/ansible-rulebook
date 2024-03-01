@@ -35,3 +35,4 @@ RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
 RUN pip install .[production]
 
 RUN chmod -R 0775 $APP_DIR
+RUN chmod -x $APP_DIR/tests/e2e/files/passwords/*.*
