@@ -32,7 +32,12 @@ async def renew_token() -> str:
             data={"refresh": settings.websocket_refresh_token},
             ssl_context=_sslcontext(),
         ) as resp:
-            data = await resp.json()
+            try:
+                data = await resp.json()
+            except aiohttp.client_exceptions.ContentTypeError as e:
+                logger.error(f"failed to renew token. Error: {e}")
+                msg = "Refresh token URL does not return expected format"
+                raise TokenNotFound(msg) from e
             if "access" not in data:
                 logger.error(f"Failed to renew token. Error: {str(data)}")
                 raise TokenNotFound("Response does not contain access token")
