@@ -18,8 +18,13 @@ Ready to contribute? Here's how to set up `ansible_rulebook` for local developme
    * Maven 3.8.1+ installed, might come bundled in some Java installs
    * Environment variable JAVA_HOME set accordingly if you want to use a specific Java version different from the default one
 
+4. Before you install local packages for ansible-rulebook, make sure you have installed the PostgreSQL C interface library in your system. Here: https://www.postgresql.org/docs/devel/libpq.html. E.g. in Fedora: 
 
-4. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development:
+.. code-block:: console
+
+    sudo dnf install libpq-devel
+
+5. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development:
 
 .. code-block:: console
 
@@ -31,7 +36,7 @@ Ready to contribute? Here's how to set up `ansible_rulebook` for local developme
     ansible-galaxy collection install ansible.eda
     npm install commitlint
 
-5. Create a branch for local development:
+6. Create a branch for local development:
 
 .. code-block:: console
 
@@ -39,7 +44,7 @@ Ready to contribute? Here's how to set up `ansible_rulebook` for local developme
 
 Now you can make your changes locally.
 
-6. When you're done making changes, check that your changes pass flake8 and the
+7. When you're done making changes, check that your changes pass flake8 and the
    tests, including testing other Python versions with tox:
 
 .. code-block:: console
@@ -50,7 +55,7 @@ Now you can make your changes locally.
 
 To get flake8 and tox, just pip install them into your virtualenv.
 
-7. Commit your changes and push your branch to GitHub:
+8. Commit your changes and push your branch to GitHub:
    We follow the conventionalcommit_ standards for commit message
    During the pre-commit phase we will validate the commit message
    You have to install the hook with the following command:
@@ -67,7 +72,7 @@ To get flake8 and tox, just pip install them into your virtualenv.
     git commit -m "fix: title about the bug fix"
     git push origin name-of-your-bugfix-or-feature
 
-8. Submit a pull request through the GitHub website.
+9. Submit a pull request through the GitHub website.
 
 
 
@@ -154,7 +159,3 @@ Releasing
     bump2version patch # possible: major / minor / patch
     git push
     git push --tags
-
-
-
-
