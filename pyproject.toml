@@ -14,7 +14,7 @@ line_length = 79
 extend_skip = ["docs"]
 
 [tool.bumpver]
-current_version = "1.0.6b8"
+current_version = "1.0.6b9"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "chore: bump version {old_version} -> {new_version}"
 tag_message = "{new_version}"
