@@ -4,7 +4,7 @@
   connection: local
   gather_facts: true
   vars:
-    repo_identifier: "ansible/ansible-rulebook"
+    repo_identifier: "benthomasson/ansible-rulebook2"
     api_repo_prefix: "https://api.github.com/repos/{{ repo_identifier }}"
 
   # Note:
