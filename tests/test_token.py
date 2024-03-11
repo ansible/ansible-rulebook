@@ -12,8 +12,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+import aiohttp
 import pytest
 
 from ansible_rulebook import token
@@ -26,6 +27,10 @@ class MockResponse:
         self.data = data
 
     async def json(self):
+        if not isinstance(self.data, dict):
+            raise aiohttp.client_exceptions.ContentTypeError(
+                MagicMock(), MagicMock()
+            )
         return self.data
 
     async def __aexit__(self, exc_type, exc, tb):
@@ -64,5 +69,8 @@ async def test_renew_invalid_token():
 @pytest.mark.asyncio
 async def test_renew_non_json_body():
     prepare_settings()
-    with pytest.raises(TokenNotFound):
-        await token.renew_token()
+    with patch("ansible_rulebook.token.aiohttp.ClientSession.post") as mock:
+        data = "non json text"
+        mock.return_value = MockResponse(data)
+        with pytest.raises(TokenNotFound):
+            await token.renew_token()
