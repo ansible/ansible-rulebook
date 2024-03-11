@@ -32,7 +32,7 @@ RUN pip install -U pip \
 RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
     ansible-galaxy collection install ${DEVEL_COLLECTION_REPO} --force; fi"
 
-RUN pip install .
+RUN pip install .[production]
 
 RUN chmod -R 0775 $APP_DIR
 RUN chmod -x $APP_DIR/tests/e2e/files/passwords/*.*
