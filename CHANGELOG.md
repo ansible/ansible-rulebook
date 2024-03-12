@@ -7,6 +7,9 @@
 ### Fixed
 
 
+## [1.0.6] - 2024-03-11
+No user-facing changes
+
 ## [1.0.5] - 2024-02-07
 
 ### Changed
