@@ -22,6 +22,9 @@ Event Filters
      - Include and exclude keys from the event object
    * - dashes_to_underscores
      - This filter changes the dashes in all keys in the payload to be underscore.
+   * - insert_hosts_to_meta
+     - This filter inserts the hosts from the event into the meta key within the event
+       based on a custom path in the event object.
 
 | Events filters can be chained one after the other, and the updated data is
 | sent from one filter to the next.
@@ -30,7 +33,7 @@ Event Filters
 | When the rulebook starts the Source plugin it associates the correct filters
 | and transforms the data before putting it into the queue.
 
-e.g.
+Examples:
 
 .. code-block:: yaml
 
