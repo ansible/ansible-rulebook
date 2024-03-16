@@ -85,6 +85,7 @@ class RuleSetRunner:
         self,
         event_log: asyncio.Queue,
         ruleset_queue_plan: EngineRuleSetQueuePlan,
+        source_tasks: List[asyncio.Task],
         hosts_facts,
         variables,
         rule_set,
@@ -95,6 +96,7 @@ class RuleSetRunner:
         self.action_loop_task = None
         self.event_log = event_log
         self.ruleset_queue_plan = ruleset_queue_plan
+        self.source_tasks = source_tasks
         self.name = ruleset_queue_plan.ruleset.name
         self.rule_set = rule_set
         self.hosts_facts = hosts_facts
@@ -179,6 +181,8 @@ class RuleSetRunner:
             self.name,
             str(self.shutdown),
         )
+        for task in self.source_tasks:
+            task.cancel()
         if self.shutdown.kind == "now":
             logger.debug(
                 "ruleset: %s has issued an immediate shutdown", self.name
