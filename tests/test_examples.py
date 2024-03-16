@@ -2434,3 +2434,47 @@ async def test_83_boolean_true():
             ],
         }
         await validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_84_source_error_with_msg(caplog):
+    ruleset_queues, event_log = load_rulebook(
+        "examples/84_source_error_with_msg.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+    expected_msg = (
+        "ERROR Source error: TestException: "
+        "Source plugin failed with error message: 'range fail with msg'"
+    )
+    assert expected_msg in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_85_source_error_without_msg(caplog):
+    ruleset_queues, event_log = load_rulebook(
+        "examples/85_source_error_without_msg.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+    expected_msg = (
+        "ERROR Source error: Unknown error "
+        "TestException: source plugin failed with no error message."
+    )
+    assert expected_msg in caplog.text
