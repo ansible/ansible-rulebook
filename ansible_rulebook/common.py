@@ -25,6 +25,8 @@ class StartupArgs:
     controller_url: str = field(default="")
     controller_token: str = field(default="")
     controller_ssl_verify: str = field(default="")
+    controller_username: str = field(default="")
+    controller_password: str = field(default="")
     project_data_file: str = field(default="")
     inventory: str = field(default="")
     check_controller_connection: bool = field(default=False)
