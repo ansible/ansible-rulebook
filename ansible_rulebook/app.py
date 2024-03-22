@@ -92,6 +92,8 @@ async def run(parsed_args: argparse.Namespace) -> None:
         startup_args.controller_url = parsed_args.controller_url
         startup_args.controller_token = parsed_args.controller_token
         startup_args.controller_ssl_verify = parsed_args.controller_ssl_verify
+        startup_args.controller_username = parsed_args.controller_username
+        startup_args.controller_password = parsed_args.controller_password
 
     validate_actions(startup_args)
     validate_variables(startup_args)
@@ -289,6 +291,13 @@ async def validate_controller_params(startup_args: StartupArgs) -> None:
         job_template_runner.token = startup_args.controller_token
         if startup_args.controller_ssl_verify:
             job_template_runner.verify_ssl = startup_args.controller_ssl_verify
+
+        if (
+            startup_args.controller_username
+            and startup_args.controller_password
+        ):
+            job_template_runner.username = startup_args.controller_username
+            job_template_runner.password = startup_args.controller_password
 
         data = await job_template_runner.get_config()
         logger.info("AAP Version %s", data["version"])

@@ -192,6 +192,8 @@ async def _handle_request_workload(
             response.controller_url = data.get("url")
             response.controller_token = data.get("token")
             response.controller_ssl_verify = data.get("ssl_verify")
+            response.controller_username = data.get("username", "")
+            response.controller_password = data.get("password", "")
     return response
 
 
