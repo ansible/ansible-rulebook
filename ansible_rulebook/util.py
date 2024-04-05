@@ -45,6 +45,21 @@ logger = logging.getLogger(__name__)
 EDA_BUILTIN_FILTER_PREFIX = "eda.builtin."
 
 
+def decrypted_context(
+    obj: Union[Dict, List, str, bool, int]
+) -> Union[Dict, List, str, bool, int]:
+    if isinstance(obj, dict):
+        return {k: decrypted_context(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [decrypted_context(item) for item in obj]
+    elif isinstance(obj, str):
+        if settings.vault.is_encrypted(obj):
+            return settings.vault.decrypt(obj)
+        else:
+            return obj
+    return obj
+
+
 def render_string(value: str, context: Dict) -> str:
     if "{{" in value and "}}" in value:
         value = NativeTemplate(value, undefined=jinja2.StrictUndefined).render(

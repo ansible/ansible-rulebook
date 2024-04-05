@@ -5,6 +5,7 @@
 ### Changed
 ### Added
 - Support for vaulted variables
+- Support for string interpolation from encrypted variables
 
 ### Fixed
 
