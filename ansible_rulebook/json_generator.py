@@ -48,7 +48,7 @@ from ansible_rulebook.rule_types import (
     RuleSet,
     Throttle,
 )
-from ansible_rulebook.util import substitute_variables
+from ansible_rulebook.util import decrypted_context, substitute_variables
 
 OPERATOR_MNEMONIC = {
     "!=": "NotEqualsExpression",
@@ -273,7 +273,8 @@ def visit_source_filter(parsed_source: EventSourceFilter, variables: Dict):
 
 def generate_condition(ansible_condition: RuleCondition, variables: Dict):
     """Generate the condition AST."""
-    condition = visit_condition(ansible_condition.value, variables)
+    context = decrypted_context(variables)
+    condition = visit_condition(ansible_condition.value, context)
     if ansible_condition.when == "any":
         data = {"AnyCondition": condition}
     elif ansible_condition.when == "all":

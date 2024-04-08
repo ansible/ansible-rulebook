@@ -65,3 +65,38 @@ def test_decrypt_vault_ask_pass():
     child.readline()
     child.readline()
     assert b"hello" in child.readline()
+
+
+@pytest.mark.e2e
+def test_decrypt_vault_with_interpolation():
+    """
+    Execute a rulebook that has variable encrypted with string interpolation.
+    """
+    rulebook = (
+        utils.BASE_DATA_PATH
+        / "rulebooks/test_vaulted_rulebook_interpolate.yml"
+    )
+    vars_file = utils.BASE_DATA_PATH / "extra_vars/vaulted_variables.yml"
+    vault_password_file = utils.BASE_DATA_PATH / "passwords/pass3.txt"
+    vault_ids = [
+        ("label1", utils.BASE_DATA_PATH / "passwords/pass1.txt"),
+        (None, utils.BASE_DATA_PATH / "passwords/pass2.txt"),
+    ]
+    cmd = utils.Command(
+        rulebook=rulebook,
+        vars_file=vars_file,
+        vault_ids=vault_ids,
+        vault_password_file=vault_password_file,
+    )
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_CMD_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+    )
+    assert result.returncode == 0
+    assert not result.stderr
+    assert "hello" in result.stdout
