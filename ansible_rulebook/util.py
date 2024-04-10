@@ -37,6 +37,7 @@ from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import (
     InvalidFilterNameException,
     InventoryNotFound,
+    VaultDecryptException,
 )
 
 logger = logging.getLogger(__name__)
@@ -58,6 +59,22 @@ def decrypted_context(
         else:
             return obj
     return obj
+
+
+def decryptable(obj: Union[Dict, List, str, bool, int]) -> None:
+    if isinstance(obj, dict):
+        for _, v in obj.items():
+            decryptable(v)
+    elif isinstance(obj, list):
+        for item in obj:
+            decryptable(item)
+    elif isinstance(obj, str):
+        if settings.vault.is_encrypted(obj):
+            try:
+                settings.vault.decrypt(obj)
+            except VaultDecryptException as e:
+                logger.error(f"{obj} cannot be decrypted {e}")
+                raise
 
 
 def render_string(value: str, context: Dict) -> str:

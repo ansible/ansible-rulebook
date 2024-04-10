@@ -32,7 +32,7 @@ from ansible_rulebook.conf import settings
 from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.rule_types import RuleSet, RuleSetQueue
-from ansible_rulebook.util import substitute_variables
+from ansible_rulebook.util import decryptable
 from ansible_rulebook.validators import Validate
 from ansible_rulebook.vault import has_vaulted_str
 from ansible_rulebook.websocket import (
@@ -244,9 +244,7 @@ def spawn_sources(
 
 
 def validate_variables(startup_args: StartupArgs) -> None:
-    for _key, value in startup_args.variables.items():
-        # attempt to substitute, raise an error on failure
-        substitute_variables(value, {})
+    decryptable(startup_args.variables)
 
 
 def validate_actions(startup_args: StartupArgs) -> None:
@@ -280,9 +278,7 @@ def validate_actions(startup_args: StartupArgs) -> None:
                         "which needs controller url and token to be defined"
                     )
                 if startup_args.check_vault:
-                    for _key, value in action.action_args.items():
-                        # attempt to substitute, raise an error on failure
-                        substitute_variables(value, {})
+                    decryptable(action.action_args)
 
 
 async def validate_controller_params(startup_args: StartupArgs) -> None:
