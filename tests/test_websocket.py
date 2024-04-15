@@ -10,10 +10,18 @@ from unittest.mock import AsyncMock, patch
 import pytest
 import websockets
 
+from ansible_rulebook.conf import settings
 from ansible_rulebook.websocket import (
     request_workload,
     send_event_log_to_websocket,
 )
+
+
+def prepare_settings() -> None:
+    settings.websocket_url = "wss://dummy.org/ws"
+    settings.websocket_token_url = "https://dummy.org/token"
+    settings.websocket_access_token = "dummy"
+    settings.websocket_refresh_token = "dummy"
 
 
 def file_sha256(filename: str) -> str:
@@ -64,6 +72,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 @pytest.mark.asyncio
 async def test_request_workload():
+    prepare_settings()
     os.chdir(HERE)
     controller_url = "https://www.example.com"
     controller_token = "abc"
@@ -91,7 +100,7 @@ async def test_request_workload():
         mo.return_value.__aenter__.return_value.recv.side_effect = test_data
         mo.return_value.__aenter__.return_value.send.return_value = None
 
-        response = await request_workload("dummy", "dummy", "yes")
+        response = await request_workload("dummy")
         sha2 = file_sha256(response.project_data_file)
         assert sha1 == sha2
         assert response.controller_url == controller_url
@@ -103,6 +112,7 @@ async def test_request_workload():
 
 @pytest.mark.asyncio
 async def test_send_event_log_to_websocket():
+    prepare_settings()
     queue = asyncio.Queue()
     queue.put_nowait({"a": 1})
     queue.put_nowait({"b": 1})
@@ -120,15 +130,23 @@ async def test_send_event_log_to_websocket():
         mo.return_value.__anext__.return_value = mock_object
         mo.return_value.__aiter__.side_effect = [mock_object]
         mo.return_value.send.side_effect = my_func
-        await send_event_log_to_websocket(queue, "dummy", "yes")
+        await send_event_log_to_websocket(queue)
         assert data_sent == ['{"a": 1}', '{"b": 1}']
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "exception_class",
+    [
+        websockets.exceptions.ConnectionClosedError,
+        websockets.exceptions.ConnectionClosedError,
+    ],
+)
 @mock.patch("ansible_rulebook.websocket.websockets.connect")
 async def test_send_event_log_to_websocket_with_exception(
-    socket_mock: AsyncMock,
+    socket_mock: AsyncMock, exception_class
 ):
+    prepare_settings()
     queue = asyncio.Queue()
     queue.put_nowait({"a": 1})
     queue.put_nowait({"b": 2})
@@ -143,10 +161,37 @@ async def test_send_event_log_to_websocket_with_exception(
     socket_mock.return_value.__aiter__.side_effect = [mock_object]
 
     socket_mock.return_value.send.side_effect = [
-        websockets.exceptions.ConnectionClosed(rcvd=None, sent=None),
+        exception_class(rcvd=None, sent=None),
         data_sent.append({"a": 1}),
         data_sent.append({"b": 2}),
     ]
 
-    await send_event_log_to_websocket(queue, "dummy", "yes")
+    await send_event_log_to_websocket(queue)
     assert data_sent == [{"a": 1}, {"b": 2}]
+
+
+@pytest.mark.asyncio
+@mock.patch("ansible_rulebook.websocket.websockets.connect")
+async def test_send_event_log_to_websocket_with_non_recoverable_exception(
+    socket_mock: AsyncMock,
+):
+    prepare_settings()
+    queue = asyncio.Queue()
+    queue.put_nowait({"a": 1})
+    queue.put_nowait({"b": 2})
+    queue.put_nowait(dict(type="Exit"))
+
+    mock_object = AsyncMock()
+    socket_mock.return_value = mock_object
+    socket_mock.return_value.__aenter__.return_value = mock_object
+    socket_mock.return_value.__anext__.return_value = mock_object
+    socket_mock.return_value.__aiter__.side_effect = [mock_object]
+
+    rcvd = mock.Mock()
+    rcvd.code = 1011
+    socket_mock.return_value.send.side_effect = (
+        websockets.exceptions.ConnectionClosedError(rcvd=rcvd, sent=None)
+    )
+
+    with pytest.raises(websockets.exceptions.ConnectionClosedError):
+        await send_event_log_to_websocket(queue)

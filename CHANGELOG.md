@@ -2,13 +2,33 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+### Added
+- Support for vaulted variables
+- Support for string interpolation from encrypted variables
+
+### Fixed
+
+
+## [1.0.5] - 2024-02-07
+
+### Changed
+- Job template, workflow template, module and playbook output facts/events
+  using banner style
 
 ### Added
 - ssl_verify option now also supports "true" or "false" values
 - Support for standalone boolean in conditions
 - Add basic auth to controller
+- Use token for websocket authentication
+- skip-audit-events to disable sending audit events to server
+- restrict drools async connection to localhost
+
+### Changed
+- Generic print as well as printing of events use new banner style
 
 ### Fixed
+- Support a base path for the controller url
 
 ## [1.0.4] - 2023-10-30
 
@@ -130,7 +150,7 @@
 
 ### Removed
 
-- Redis and durability 
+- Redis and durability
 - envvar for rules_engine
 
 
@@ -140,12 +160,12 @@
 
 - Support for vars namespace
 - Support for negation
-- Support for Floats 
-- Log format and set the log stream for debug/verbose 
-- A builtin action : echo 
-- Cmdline option --print_events 
-- New action: run_job_template 
-- Support for in and contains in condition 
+- Support for Floats
+- Log format and set the log stream for debug/verbose
+- A builtin action : echo
+- Cmdline option --print_events
+- New action: run_job_template
+- Support for in and contains in condition
 - Add more info to --version flag
 - Add EDA prefix to environment variables
 - Enable drools for python 3.11
@@ -160,9 +180,9 @@
 
 ### Changed
 
-- Configure controller API access 
-- Switch the default rules engine back to drools 
-- Print help if run without arguments 
+- Configure controller API access
+- Switch the default rules engine back to drools
+- Print help if run without arguments
 
 ### Removed
 
@@ -176,7 +196,7 @@
 
 ### Changed
 
-Update minimal python version 
+Update minimal python version
 Improves error messages for unhandled events
 
 ### Removed
@@ -189,7 +209,7 @@ Improves error messages for unhandled events
 
 ### Added
 
-- Job details for eda-server usage 
+- Job details for eda-server usage
 - add arg to install devel collection
 
 ### Fixed
@@ -249,7 +269,7 @@ Improves error messages for unhandled events
 
 ### Fixed
 
-- An error msg 
+- An error msg
 
 ## [0.6.0] - 2022-08-24
 

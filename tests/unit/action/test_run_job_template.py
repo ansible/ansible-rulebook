@@ -16,9 +16,11 @@ from unittest.mock import patch
 
 import pytest
 
+from ansible_rulebook import terminal
 from ansible_rulebook.action.control import Control
 from ansible_rulebook.action.metadata import Metadata
 from ansible_rulebook.action.run_job_template import RunJobTemplate
+from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import (
     ControllerApiException,
     JobTemplateNotFoundException,
@@ -119,7 +121,7 @@ DROOLS_CALLS = [
 
 @pytest.mark.parametrize("drools_call,additional_args", DROOLS_CALLS)
 @pytest.mark.asyncio
-async def test_run_job_template(drools_call, additional_args):
+async def test_run_job_template(drools_call, additional_args, capsys):
     queue = asyncio.Queue()
     metadata = Metadata(
         rule="r1",
@@ -156,10 +158,17 @@ async def test_run_job_template(drools_call, additional_args):
         return_value=controller_job,
     ):
         with patch(drools_call) as drools_mock:
-            await RunJobTemplate(metadata, control, **action_args)()
+            old_setting = settings.print_events
+            settings.print_events = True
+            try:
+                await RunJobTemplate(metadata, control, **action_args)()
+            finally:
+                settings.print_events = old_setting
+            captured = capsys.readouterr()
             drools_mock.assert_called_once()
 
         _validate(queue, True)
+        assert terminal.Display.get_banners("job: set-facts", captured.out)
 
 
 URL_PARAMETERS = [

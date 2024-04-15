@@ -10,7 +10,10 @@ RUN useradd -u $USER_ID -d $APP_DIR appuser
 WORKDIR $APP_DIR
 COPY . $WORKDIR
 RUN chown -R $USER_ID $APP_DIR
-RUN dnf install -y java-17-openjdk-devel python3-pip
+RUN dnf install -y java-17-openjdk-devel python3-pip postgresql-devel gcc python3-devel
+
+RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
+    dnf install -y git; fi"
 
 USER $USER_ID
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
@@ -29,6 +32,7 @@ RUN pip install -U pip \
 RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
     ansible-galaxy collection install ${DEVEL_COLLECTION_REPO} --force; fi"
 
-RUN pip install .
+RUN pip install .[production]
 
 RUN chmod -R 0775 $APP_DIR
+RUN chmod -x $APP_DIR/tests/e2e/files/passwords/*.*

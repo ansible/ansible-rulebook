@@ -54,7 +54,7 @@ def _validate(queue, metadata):
 
     assert action["action"] == "debug"
     assert action["action_uuid"] == DUMMY_UUID
-    assert action["activation_id"] == settings.identifier
+    assert action["activation_instance_id"] == settings.identifier
     assert action["run_at"] == ACTION_RUN_AT
     assert action["rule_run_at"] == metadata.rule_run_at
     assert action["rule"] == metadata.rule

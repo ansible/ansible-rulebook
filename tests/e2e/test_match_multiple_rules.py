@@ -79,7 +79,7 @@ async def test_match_multiple_rules():
             assert stats["ruleSetName"] == "Test match multiple rules"
             assert stats["numberOfRules"] == 2
             assert stats["numberOfDisabledRules"] == 0
-            assert data["activation_id"] == proc_id
+            assert data["activation_instance_id"] == proc_id
 
     assert stats["rulesTriggered"] == 2
     assert stats["eventsProcessed"] == 5

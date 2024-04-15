@@ -31,7 +31,12 @@ class PostEvent:
     indicate that its an internal event.
     """
 
-    def __init__(self, metadata: Metadata, control: Control, **action_args):
+    def __init__(
+        self,
+        metadata: Metadata,
+        control: Control,
+        **action_args,
+    ):
         self.helper = Helper(metadata, control, "post_event")
         self.action_args = action_args
 

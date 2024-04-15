@@ -26,7 +26,7 @@ Ready to contribute? Here's how to set up `ansible_rulebook` for local developme
     cd ansible_rulebook/
     python3.9 -m venv venv
     source venv/bin/activate
-    pip install -e .
+    pip install -e .[development]
     pip install -r requirements_dev.txt
     ansible-galaxy collection install ansible.eda
     npm install commitlint

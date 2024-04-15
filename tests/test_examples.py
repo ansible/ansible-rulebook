@@ -2233,7 +2233,7 @@ async def test_46_job_template_exception(err_msg, err):
             required_keys = {
                 "action",
                 "action_uuid",
-                "activation_id",
+                "activation_instance_id",
                 "message",
                 "rule_run_at",
                 "run_at",

@@ -16,7 +16,7 @@ import asyncio
 import gc
 import logging
 import uuid
-from pprint import PrettyPrinter, pformat
+from pprint import pformat
 from types import MappingProxyType
 from typing import Dict, List, Optional, Union, cast
 
@@ -28,10 +28,12 @@ from drools.exceptions import (
 )
 from drools.ruleset import session_stats
 
+from ansible_rulebook import terminal
 from ansible_rulebook.action.control import Control
 from ansible_rulebook.action.debug import Debug
 from ansible_rulebook.action.metadata import Metadata
 from ansible_rulebook.action.noop import Noop
+from ansible_rulebook.action.pg_notify import PGNotify
 from ansible_rulebook.action.post_event import PostEvent
 from ansible_rulebook.action.print_event import PrintEvent
 from ansible_rulebook.action.retract_fact import RetractFact
@@ -55,6 +57,7 @@ from ansible_rulebook.rule_types import (
 )
 from ansible_rulebook.rules_parser import parse_hosts
 from ansible_rulebook.util import (
+    decrypted_context,
     run_at,
     send_session_stats,
     substitute_variables,
@@ -74,6 +77,7 @@ ACTION_CLASSES = {
     "run_module": RunModule,
     "run_job_template": RunJobTemplate,
     "run_workflow_template": RunWorkflowTemplate,
+    "pg_notify": PGNotify,
 }
 
 
@@ -104,6 +108,7 @@ class RuleSetRunner:
         self.active_actions = set()
         self.broadcast_method = broadcast_method
         self.event_counter = 0
+        self.display = terminal.Display()
 
     async def run_ruleset(self):
         tasks = []
@@ -207,12 +212,20 @@ class RuleSetRunner:
         try:
             while True:
                 data = await self.ruleset_queue_plan.source_queue.get()
-                if self.parsed_args and self.parsed_args.print_events:
-                    PrettyPrinter(indent=4).pprint(data)
+                # Default to output events at debug level.
+                level = logging.DEBUG
 
-                logger.debug(
-                    "Ruleset: %s, received event: %s ", self.name, str(data)
-                )
+                # If we are printing events adjust the level to the display's
+                # current level to guarantee output.
+                if settings.print_events:
+                    level = self.display.level
+
+                self.display.banner("received event", level=level)
+                self.display.output(f"Ruleset: {self.name}", level=level)
+                self.display.output("Event:", level=level)
+                self.display.output(data, pretty=True, level=level)
+                self.display.banner(level=level)
+
                 if isinstance(data, Shutdown):
                     self.shutdown = data
                     return await self._handle_shutdown()
@@ -421,8 +434,9 @@ class RuleSetRunner:
                     action_args,
                     variables_copy,
                 )
+                context = decrypted_context(variables_copy)
                 action_args = {
-                    k: substitute_variables(v, variables_copy)
+                    k: substitute_variables(v, context)
                     for k, v in action_args.items()
                 }
                 logger.debug("action args: %s", action_args)
@@ -439,7 +453,9 @@ class RuleSetRunner:
                 )
 
                 await ACTION_CLASSES[action](
-                    metadata, control, **action_args
+                    metadata,
+                    control,
+                    **action_args,
                 )()
 
             except KeyError as e:
@@ -486,6 +502,7 @@ class RuleSetRunner:
                     action=action,
                     action_uuid=str(uuid.uuid4()),
                     activation_id=settings.identifier,
+                    activation_instance_id=settings.identifier,
                     playbook_name=action_args.get("name"),
                     status="failed",
                     run_at=run_at(),

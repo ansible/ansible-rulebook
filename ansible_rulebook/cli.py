@@ -23,6 +23,7 @@ from typing import List
 
 import ansible_rulebook.util as util
 from ansible_rulebook.messages import DEFAULT_SHUTDOWN_DELAY
+from ansible_rulebook.vault import Vault
 
 # ensure a valid JVM is available and configures JAVA_HOME if necessary
 # must be done before importing any other modules
@@ -33,10 +34,13 @@ if not os.environ.get("JAVA_HOME"):
 
 import ansible_rulebook  # noqa: E402
 from ansible_rulebook import app  # noqa: E402
+from ansible_rulebook import terminal  # noqa: E402
 from ansible_rulebook.conf import settings  # noqa: E402
 from ansible_rulebook.job_template_runner import (  # noqa: E402
     job_template_runner,
 )
+
+display = terminal.Display()
 
 DEFAULT_VERBOSITY = 0
 
@@ -94,16 +98,32 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-W",
-        "--websocket-address",
         "--websocket-url",
+        "--websocket-address",
         help="Connect the event log to a websocket",
+        default=os.environ.get("EDA_WEBSOCKET_URL", ""),
     )
     parser.add_argument(
         "--websocket-ssl-verify",
         help="How to verify SSL when connecting to the "
         "websocket: (yes|true) | (no|false) | <path to a CA bundle>, "
         "default to yes for wss connection.",
-        default="yes",
+        default=os.environ.get("EDA_WEBSOCKET_SSL_VERIFY", "yes"),
+    )
+    parser.add_argument(
+        "--websocket-access-token",
+        help="Token used to autheticate the websocket connection.",
+        default=os.environ.get("EDA_WEBSOCKET_ACCESS_TOKEN", ""),
+    )
+    parser.add_argument(
+        "--websocket-refresh-token",
+        help="Token used to renew a websocket access token.",
+        default=os.environ.get("EDA_WEBSOCKET_REFRESH_TOKEN", ""),
+    )
+    parser.add_argument(
+        "--websocket-token-url",
+        help="Url to renew websocket access token.",
+        default=os.environ.get("EDA_WEBSOCKET_TOKEN_URL", ""),
     )
     parser.add_argument("--id", help="Identifier")
     parser.add_argument(
@@ -153,6 +173,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--print-events",
         action="store_true",
+        default=settings.print_events,
         help="Print events to stdout, redundant and disabled with -vv",
     )
     parser.add_argument(
@@ -193,6 +214,29 @@ def get_parser() -> argparse.ArgumentParser:
         default="false",
         action="store_true",
     )
+    parser.add_argument(
+        "--skip-audit-events",
+        action="store_true",
+        default=settings.skip_audit_events,
+        help="Don't send audit events to the server",
+    )
+    parser.add_argument(
+        "--vault-password-file",
+        help="The file containing one ansible vault password",
+        default=os.environ.get("EDA_VAULT_PASSWORD_FILE", ""),
+    )
+    parser.add_argument(
+        "--vault-id",
+        help="label@filename pointing to an ansible vault password file",
+        action="append",
+        default=[],
+    )
+    parser.add_argument(
+        "--ask-vault-pass",
+        help="Ask vault password interactively",
+        action="store_true",
+        default=False,
+    )
     return parser
 
 
@@ -211,15 +255,13 @@ def get_version() -> str:
 
 
 def validate_args(args: argparse.Namespace) -> None:
-    if args.worker and (not args.id or not args.websocket_address):
-        raise ValueError(
-            "Worker mode needs an id and websocket address specfied"
-        )
+    if args.worker and (not args.id or not args.websocket_url):
+        raise ValueError("Worker mode needs an id and websocket url specfied")
     if not args.worker and not args.rulebook:
         raise ValueError("Rulebook must be specified in non worker mode")
 
 
-def setup_logging(args: argparse.Namespace) -> None:
+def setup_logging_and_display(args: argparse.Namespace) -> None:
     LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     stream = sys.stderr
     level = logging.WARNING
@@ -227,13 +269,59 @@ def setup_logging(args: argparse.Namespace) -> None:
     if args.verbosity >= 2:
         level = logging.DEBUG
         stream = sys.stdout
-        args.print_events = False
     elif args.verbosity == 1:
         level = logging.INFO
         stream = sys.stdout
 
     logging.basicConfig(stream=stream, level=level, format=LOG_FORMAT)
     logging.getLogger("drools.").setLevel(level)
+
+    # As Display is a singleton if it was created elsewhere we may need to
+    # adjust the level.
+    if display.level > level:
+        display.level = level
+
+
+def update_settings(args: argparse.Namespace) -> None:
+    if args.id:
+        settings.identifier = args.id
+
+    if args.gc_after is not None:
+        settings.gc_after = args.gc_after
+
+    if args.execution_strategy:
+        settings.default_execution_strategy = args.execution_strategy
+
+    settings.print_events = args.print_events
+    settings.websocket_url = args.websocket_url
+    settings.websocket_ssl_verify = args.websocket_ssl_verify
+    settings.websocket_token_url = args.websocket_token_url
+    settings.websocket_access_token = args.websocket_access_token
+    settings.websocket_refresh_token = args.websocket_refresh_token
+    settings.skip_audit_events = args.skip_audit_events
+    parse_vault_passwords(args)
+
+
+def parse_vault_passwords(args: argparse.Namespace) -> None:
+    if (
+        not args.vault_password_file
+        and not args.vault_id
+        and not args.ask_vault_pass
+    ):
+        return
+
+    secret_files = []
+
+    if args.vault_password_file:
+        secret_files.append(args.vault_password_file)
+
+    secret_files += args.vault_id
+
+    settings.vault = Vault(
+        password_file=args.vault_password_file,
+        vault_ids=args.vault_id,
+        ask_pass=args.ask_vault_pass,
+    )
 
 
 def main(args: List[str] = None) -> int:
@@ -244,6 +332,8 @@ def main(args: List[str] = None) -> int:
 
     args = parser.parse_args(args)
     validate_args(args)
+    update_settings(args)
+    setup_logging_and_display(args)
 
     if args.controller_url:
         job_template_runner.host = args.controller_url
@@ -262,17 +352,6 @@ def main(args: List[str] = None) -> int:
             )
             return 1
 
-    if args.id:
-        settings.identifier = args.id
-
-    if args.gc_after is not None:
-        settings.gc_after = args.gc_after
-
-    if args.execution_strategy:
-        settings.default_execution_strategy = args.execution_strategy
-
-    setup_logging(args)
-
     try:
         asyncio.run(app.run(args))
     except KeyboardInterrupt:
@@ -280,6 +359,8 @@ def main(args: List[str] = None) -> int:
     except Exception as err:
         logger.error("Terminating %s", str(err))
         return 1
+    finally:
+        settings.vault.close()
     return 0
 
 

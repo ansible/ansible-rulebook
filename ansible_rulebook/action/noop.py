@@ -26,7 +26,12 @@ class Noop:
     just sends the action status
     """
 
-    def __init__(self, metadata: Metadata, control: Control, **action_args):
+    def __init__(
+        self,
+        metadata: Metadata,
+        control: Control,
+        **action_args,
+    ):
         self.helper = Helper(metadata, control, "noop")
         self.action_args = action_args
 
