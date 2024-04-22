@@ -785,6 +785,7 @@ Check if an item exists in a list
 | The following examples show how to use `in` `not in` `contains` and `not contains` operators to check if an item exists in a list
 
     .. code-block:: yaml
+
         # variables file
         expected_levels:
           - "WARNING"
