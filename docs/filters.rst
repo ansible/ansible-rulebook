@@ -62,6 +62,7 @@ Examples:
 | The event payload would be modified to include the following  data
 
 .. code-block:: yaml
+
    event = { ..., 'meta': {'source': {'name': 'azure_service_bus',
                                       'type': 'ansible.eda.azure_service_bus'},
                            'received_at': '2023-03-23T19:11:15.802274Z',
