@@ -27,6 +27,7 @@ RUN pip install -U pip \
     aiokafka \
     watchdog \
     azure-servicebus \
+    aiobotocore \
     && ansible-galaxy collection install ansible.eda
 
 RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
