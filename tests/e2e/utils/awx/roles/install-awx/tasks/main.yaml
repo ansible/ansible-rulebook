@@ -43,4 +43,5 @@
     label_selectors:
       - app.kubernetes.io/component=awx
     wait: yes
-    wait_sleep: 3
+    wait_sleep: 10
+    wait_timeout: 300
