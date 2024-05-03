@@ -156,9 +156,15 @@ class RuleSetRunner:
                 timeout=self.shutdown.delay,
             )
 
-        for task in self.active_actions:
-            logger.debug("Cancelling active task %s", task.get_name())
-            task.cancel()
+        if self.active_actions:
+            logger.info(
+                "Cancelling %d active tasks, ruleset %s cleanup",
+                len(self.active_actions),
+                self.name,
+            )
+            for task in self.active_actions:
+                logger.debug("Cancelling active task %s", task.get_name())
+                task.cancel()
         if self.shutdown:
             await self.event_log.put(
                 dict(
