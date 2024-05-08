@@ -6,6 +6,8 @@
 ### Added
 ### Fixed
 
+## [1.0.7] - 2024-05-08
+No user-facing changes
 
 ## [1.0.6] - 2024-03-11
 No user-facing changes
