@@ -4,12 +4,13 @@
 ## [Unreleased]
 ### Changed
 ### Added
+### Fixed
+
+## [1.1.0] - 2024-05-15
+### Added
 - Support for vaulted variables
 - Support for string interpolation from encrypted variables
 - Added aiobotocore package needed for our SQS plugin
-
-### Fixed
-
 
 ## [1.0.5] - 2024-02-07
 
