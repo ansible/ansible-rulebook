@@ -270,17 +270,33 @@ async def send_session_stats(event_log: asyncio.Queue, stats: Dict):
     )
 
 
-def create_inventory(runner_inventory_dir: str, inventory: str) -> None:
-    if os.path.isfile(inventory):
-        shutil.copy(os.path.abspath(inventory), runner_inventory_dir)
-    elif os.path.exists(inventory):
+def create_inventory(
+    runner_inventory_dir: str,
+    inventory: str,
+    copy_files: bool = False,
+) -> str:
+    inventory_src_basedir = inventory
+    inventory_dest_path = ""
+    absolute_inventory_path = os.path.abspath(inventory)
+
+    if not os.path.exists(absolute_inventory_path):
+        raise InventoryNotFound(f"Inventory {inventory} not found")
+
+    if os.path.isfile(absolute_inventory_path):
+        inventory_src_basedir = os.path.dirname(absolute_inventory_path)
+        inventory_dest_path = os.path.join(
+            runner_inventory_dir, os.path.basename(inventory)
+        )
+        if not copy_files:
+            shutil.copy(absolute_inventory_path, runner_inventory_dir)
+
+    if copy_files or not os.path.isfile(absolute_inventory_path):
         shutil.copytree(
-            os.path.abspath(inventory),
+            inventory_src_basedir,
             runner_inventory_dir,
             dirs_exist_ok=True,
         )
-    else:
-        raise InventoryNotFound(f"Inventory {inventory} not found")
+    return os.path.join(runner_inventory_dir, inventory_dest_path)
 
 
 def _builtin_filter_path(name: str) -> Tuple[bool, str]:

@@ -234,7 +234,6 @@ async def test_start_source_with_args(
 
 @pytest.mark.asyncio
 async def test_run_rulesets():
-
     ruleset_queues, event_log = load_rulebook("rules/test_rules.yml")
 
     queue = ruleset_queues[0][1]
@@ -495,33 +494,36 @@ async def test_run_assert_facts():
     inventory = dict(
         all=dict(hosts=dict(localhost=dict(ansible_connection="local")))
     )
-    with tempfile.NamedTemporaryFile(mode="w+") as temp:
-        temp.write(yaml.dump(inventory))
-        temp.flush()
-        queue = ruleset_queues[0][1]
-        queue.put_nowait(dict())
-        queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
-        queue.put_nowait(Shutdown())
-        await run_rulesets(
-            event_log,
-            ruleset_queues,
-            dict(Naboo="naboo"),
-            temp.name,
-        )
+    with tempfile.TemporaryDirectory() as tempdir:
+        with tempfile.NamedTemporaryFile(mode="w+", dir=tempdir) as temp:
+            temp.write(yaml.dump(inventory))
+            temp.flush()
+            queue = ruleset_queues[0][1]
+            queue.put_nowait(dict())
+            queue.put_nowait(dict(i=1, meta=dict(hosts="localhost")))
+            queue.put_nowait(Shutdown())
+            await run_rulesets(
+                event_log,
+                ruleset_queues,
+                dict(Naboo="naboo"),
+                temp.name,
+            )
 
-        assert event_log.get_nowait()["type"] == "EmptyEvent", "0"
-        assert event_log.get_nowait()["type"] == "Action", "0.1"
-        assert event_log.get_nowait()["type"] == "Job", "1.0"
-        for i in range(47):
-            assert event_log.get_nowait()["type"] == "AnsibleEvent", f"1.{i}"
+            assert event_log.get_nowait()["type"] == "EmptyEvent", "0"
+            assert event_log.get_nowait()["type"] == "Action", "0.1"
+            assert event_log.get_nowait()["type"] == "Job", "1.0"
+            for i in range(47):
+                assert (
+                    event_log.get_nowait()["type"] == "AnsibleEvent"
+                ), f"1.{i}"
 
-        event = event_log.get_nowait()
-        assert event["type"] == "Action", "2.1"
-        assert event["action"] == "run_playbook", "2.2"
-        assert event["rc"] == 0, "2.3"
-        assert event["status"] == "successful", "2.4"
-        assert event_log.get_nowait()["type"] == "Shutdown", "4"
-        assert event_log.empty()
+            event = event_log.get_nowait()
+            assert event["type"] == "Action", "2.1"
+            assert event["action"] == "run_playbook", "2.2"
+            assert event["rc"] == 0, "2.3"
+            assert event["status"] == "successful", "2.4"
+            assert event_log.get_nowait()["type"] == "Shutdown", "4"
+            assert event_log.empty()
 
 
 @pytest.mark.asyncio
