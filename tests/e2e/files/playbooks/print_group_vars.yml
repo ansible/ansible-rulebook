@@ -1,0 +1,8 @@
+- hosts: customgroup
+  gather_facts: false
+  tasks:
+    - name: Show vars
+      ansible.builtin.debug:
+        msg:
+          - "groupvar: {{ groupvar }}"
+          - "hostvar: {{ hostvar }}"
