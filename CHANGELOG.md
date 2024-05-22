@@ -3,6 +3,7 @@
 
 ## [Unreleased]
 ### Changed
+- Fixed documentation on matching events in multi condition
 ### Added
 ### Fixed
 

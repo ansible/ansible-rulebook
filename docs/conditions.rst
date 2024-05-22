@@ -51,7 +51,7 @@ The data type is of great importance for the rules engine. The following types a
 Navigate structured data
 ************************
 
-You can navigate strutured event, fact, var data objects using either dot notation or bracket notation:
+You can navigate structured event, fact, var data objects using either dot notation or bracket notation:
 
     .. code-block:: yaml
 
@@ -79,7 +79,7 @@ or other special characters:
 
 You can find more information about dot notation and bracket notation also in the Ansible playbook `manual <https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#referencing-key-value-dictionary-variables>`_.
 
-You can access list in strutured event, fact, var data objects using bracket notation too.
+You can access list in structured event, fact, var data objects using bracket notation too.
 The first item in a list is item 0, the second item is item 1.
 Like Python, you can access the `n`-to-last item in the list by supplying a negative index.
 For example:
@@ -483,6 +483,8 @@ Multiple conditions with assignment
 
 When a condition is evaluated if the condition passes the matching event
 it is stored in well known attribute(s) called **m_0**, **m_1**, **m_2**.....
+The first condition will be stored in **m_0** and the second condition in **m_1** ...
+Its based on the position of the condition in the list so you can predictably use it in other conditions.
 You can optionally alias these attribute(s) using the **<<** operator. For example:
 
     .. code-block:: yaml
@@ -534,7 +536,7 @@ Multiple condition with default assignments
           all:
             - event.i == 1
             - event.i == 2
-            - event.i == events.m.i + 3
+            - event.i == events.m_0.i + 3
         action:
           debug:
             msg:
@@ -542,7 +544,7 @@ Multiple condition with default assignments
               - "second: {{ events.m_1 }}"
               - "third: {{ events.m_2 }}"
 
-The first match is stored as **m**, and the subsequent ones are stored as **m_1**, **m_2** ...
+The first match is stored as **m_0**, and the subsequent ones are stored as **m_1**, **m_2** ...
 
 Single condition assignment (Not supported)
 -------------------------------------------
@@ -989,7 +991,7 @@ Example:
 
 | **Ans:** During the rulebook parsing you would see this error message:
 | ERROR - Terminating mapping values are not allowed here.
-| To resove this eror you would have to quote the whole condition string or use the > or | and
+| To resolve this error you would have to quote the whole condition string or use the > or | and
 | move the entire condition to a separate line.
 
 Example:
