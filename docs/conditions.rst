@@ -97,7 +97,7 @@ For example:
             debug:
 
 You can find more information the bracket notation for list also in the Ansible playbook 
-documentatino for `Referencing list variables <https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#referencing-list-variables>`_.
+documentation for `Referencing list variables <https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#referencing-list-variables>`_.
 
 Supported Operators
 *******************
