@@ -5,6 +5,19 @@ Installation
 These instructions will guide you though installing the ansible-rulebook CLI on your local system.
 Please ensure you have installed all components listed in the **Requirements** section before starting the installation process.
 
+
+Container Image
+------------
+
+The ansible-rulebook CLI is also available as a container image.
+You can pull the latest image from the `quay.io <https://quay.io/repository/ansible/ansible-rulebook>`_ registry:
+
+.. code-block:: shell
+
+    podman pull quay.io/ansible/ansible-rulebook:latest
+
+
+
 Requirements
 ------------
 
@@ -29,6 +42,13 @@ Installation via pip
 2. Install `ansible-rulebook` and dependencies via `pip`::
 
     pip install ansible-rulebook ansible ansible-runner
+
+.. note::
+
+    ansible-rulebook installs by default the package psycopg2-binary which is a PostgreSQL database adapter precompiled for the most common platforms.
+    For production environments, it is recommended to install the psycopg2 package instead, which requires the PostgreSQL development headers to be installed on the system.
+    Look at the `psycopg2 installation instructions <https://www.psycopg.org/psycopg3/docs/basic/install.html#local-installation>`_ for more information.
+        pip install ansible-rulebook[production]
 
 .. note::
 
