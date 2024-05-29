@@ -21,6 +21,7 @@ from types import MappingProxyType
 from typing import Dict, List, Optional, Union, cast
 
 import dpath
+import jinja2.exceptions as jinja2_exceptions
 from drools import ruleset as lang
 from drools.exceptions import (
     MessageNotHandledException,
@@ -485,6 +486,17 @@ class RuleSetRunner:
             except asyncio.CancelledError:
                 logger.debug("Action task caught Cancelled error")
                 raise
+            except jinja2_exceptions.UndefinedError as e:
+                error = e
+                undefined_variable = str(e).split("has no attribute")
+                if len(undefined_variable) > 1:
+                    logger.error(
+                        "Undefined jinja variable %s in action %s",
+                        undefined_variable[-1],
+                        action,
+                    )
+                else:
+                    raise
             except Exception as e:
                 logger.error("Error calling action %s, err %s", action, str(e))
                 error = e
