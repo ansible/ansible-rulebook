@@ -2,14 +2,16 @@
 Installation
 ============
 
-These instructions will guide you though installing the ansible-rulebook CLI on your local system.
-Please ensure you have installed all components listed in the **Requirements** section before starting the installation process.
+These instructions guide you through installing the ``ansible-rulebook`` CLI on your local system.
+Ensure you have installed all components listed in the :ref:`requirements` section before starting the installation process.
+
+.. _requirements:
 
 
 Container Image
-------------
+---------------
 
-The ansible-rulebook CLI is also available as a container image.
+The ``ansible-rulebook`` CLI is also available as a container image.
 You can pull the latest image from the `quay.io <https://quay.io/repository/ansible/ansible-rulebook>`_ registry:
 
 .. code-block:: shell
@@ -30,8 +32,8 @@ Requirements
   * Ubuntu: openjdk-17-jdk
 
 
-Installation via pip
---------------------
+Installation with pip
+---------------------
 
 
 1. Ensure the `JAVA_HOME` environment variable is set if you have multiple Java installations. On Fedora-like systems it should be::
@@ -39,25 +41,30 @@ Installation via pip
     JAVA_HOME=/usr/lib/jvm/jre-17-openjdk
 
 
-2. Install `ansible-rulebook` and dependencies via `pip`::
+2. Install ``ansible-rulebook`` and dependencies via ``pip``::
 
     pip install ansible-rulebook ansible ansible-runner
 
 .. note::
 
-    ansible-rulebook installs by default the package psycopg-binary which is a PostgreSQL database adapter precompiled for the most common platforms.
-    For production environments, it is recommended to install the psycopg package instead, which requires the PostgreSQL development headers to be installed on the system.
-    Look at the `psycopg installation instructions <https://www.psycopg.org/psycopg3/docs/basic/install.html#local-installation>`_ for more information.
+    By default, ``ansible-rulebook`` installs the `psycopg-binary` package, which is a PostgreSQL database adapter precompiled for the most common platforms.
+    For production environments, we recommend that you install the `psycopg` package instead, which requires the PostgreSQL development headers to be installed on the system::
+
         pip install ansible-rulebook[production]
+
+    See `psycopg installation instructions <https://www.psycopg.org/psycopg3/docs/basic/install.html#local-installation>`_ for more information.
+
 
 .. note::
 
-    ansible-rulebook relies on the `jpy` Python package to communicate with the Java runtime. This package provide wheels for the most common platforms,
+    ``ansible-rulebook`` relies on the `jpy` Python package to communicate with the Java runtime. This package provide wheels for the most common platforms,
     `but not for all <https://github.com/jpy-consortium/jpy#automated-builds>`_. If you are using a platform that is not supported by `jpy` wheels, you will need to compile it by yourself.
+    ``ansible-rulebook`` relies on the `jpy` Python package to communicate with the Java runtime. This package provide wheels for the most common platforms,
+    `but not for all <https://github.com/jpy-consortium/jpy#automated-builds>`_. If you are using a platform that is not supported by `jpy` wheels, you will need to compile it yourself.
     Refer to the `Compiling jpy section <#compiling-jpy>`_ for more information.
 
 
-3. Install the ansible.eda collection which comes with various event source plugins and filters to get you started. Please refer to the instructions in the
+3. Install the ``ansible.eda`` collection which comes with various event source plugins and filters to get you started. See the instructions in the
 `collection repository <https://github.com/ansible/event-driven-ansible#install>`_.
 
 
@@ -85,7 +92,7 @@ On Ubuntu systems:
 Compiling jpy
 ---------------------
 
-To compile `jpy` from source at installation time, you will need to install the additional dependencies:
+To compile `jpy` from source at installation time, you will need to install the following additional dependencies:
 
 * maven
 * gcc
@@ -101,4 +108,4 @@ Then, you can run:
     pip install ansible-rulebook --no-binary jpy
 
 
-Refer to the `jpy project <https://github.com/jpy-consortium/jpy>`_ for more information.
+See the `jpy project <https://github.com/jpy-consortium/jpy>`_ for more information.
