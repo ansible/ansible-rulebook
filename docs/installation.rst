@@ -45,9 +45,9 @@ Installation via pip
 
 .. note::
 
-    ansible-rulebook installs by default the package psycopg2-binary which is a PostgreSQL database adapter precompiled for the most common platforms.
-    For production environments, it is recommended to install the psycopg2 package instead, which requires the PostgreSQL development headers to be installed on the system.
-    Look at the `psycopg2 installation instructions <https://www.psycopg.org/psycopg3/docs/basic/install.html#local-installation>`_ for more information.
+    ansible-rulebook installs by default the package psycopg-binary which is a PostgreSQL database adapter precompiled for the most common platforms.
+    For production environments, it is recommended to install the psycopg package instead, which requires the PostgreSQL development headers to be installed on the system.
+    Look at the `psycopg installation instructions <https://www.psycopg.org/psycopg3/docs/basic/install.html#local-installation>`_ for more information.
         pip install ansible-rulebook[production]
 
 .. note::
