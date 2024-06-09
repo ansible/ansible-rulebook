@@ -5,6 +5,7 @@
 ### Changed
 ### Added
 ### Fixed
+- Fix log level for websocket
 
 ## [1.1.0] - 2024-05-15
 ### Added
