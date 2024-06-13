@@ -2,23 +2,33 @@
 Installation
 ============
 
-These instructions guide you through installing the ``ansible-rulebook`` CLI on your local system.
-Ensure you have installed all components listed in the :ref:`requirements` section before starting the installation process.
+You can install ``ansible-rulebook`` CLI through:
 
-.. _requirements:
+* :ref:`container_image`
+* :ref:`pip_install`
 
 
-Container Image
----------------
+.. _container_image:
 
-The ``ansible-rulebook`` CLI is also available as a container image.
+Pulling the container image
+===========================
+
+The ``ansible-rulebook`` CLI is available as a container image.
 You can pull the latest image from the `quay.io <https://quay.io/repository/ansible/ansible-rulebook>`_ registry:
 
 .. code-block:: shell
 
     podman pull quay.io/ansible/ansible-rulebook:latest
 
+.. _pip_install:
 
+Installing with ``pip``
+=======================
+
+These instructions guide you through installing the ``ansible-rulebook`` CLI on your local system.
+Ensure you have installed all components listed in the :ref:`requirements` section before starting the installation process.
+
+.. _requirements:
 
 Requirements
 ------------
