@@ -2,13 +2,9 @@
 Getting started
 ===============
 
-If ``ansible-rulebook`` is not already installed, follow the `installation guide <installation.html>`_ to install it.
+If ansible-rulebook is not already installed, please follow the `installation guide <installation.html>`_ to install it.
 
-Hello world!
-============
-
-Now let's get started with a simple hello world example to familiarize ourselves with the concepts. Save the
-following to a ``simple-rulebook.yml`` file:
+Now let's get started with a simple hello world example to familiarize ourselves with the concepts:
 
 .. code-block:: yaml
 
@@ -26,35 +22,15 @@ following to a ``simple-rulebook.yml`` file:
               name: ansible.eda.hello
 
 
-Events come from an **event source** and are then checked against **rules** to determine if an **action** should
-be taken. If the **condition** of a rule matches the event, it will run the action for that rule.
 
-In this example, the event source (``ansible.eda.range``) is the Python range function.  It produces events that count from
+Events come from a **event source** and then are checked against **rules** to determine if an **action** should
+be taken.  If the **condition** of a rule matches the event it will run the action for that rule.
+
+In this example the event source is the Python range function.  It produces events that count from
 :code:`i=0` to :code:`i=<limit>`.
 
-When :code:`i` is equal to 1 the condition for the the :code:`Say Hello` rule matches and it runs a simple 
-``hello`` playbook available in the ``ansible.eda`` collection.
+When :code:`i` is equal to 1 the condition for the the :code:`Say Hello` rule matches and it runs a playbook.
 
-
-And now you can run the rulebook to see the results:
-
-.. code-block:: shell
-
-  $ ansible-rulebook -i inventory.yml -r simple-rule-book.yml 
-
-  PLAY [hello] *******************************************************************
-
-  TASK [debug] *******************************************************************
-  ok: [localhost] => {
-      "msg": "hello"
-  }
-
-  PLAY RECAP *********************************************************************
-  localhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
-
-
-A webhook example
-=================
 
 Normally events would come from monitoring and alerting systems or other software. The following
 is a more complete example that accepts alerts from Alertmanager:
@@ -86,7 +62,7 @@ remediate the issue.
 
 Let's build an example rulebook that will trigger an action from a
 webhook. We will be looking for a specific payload from the webhook, and
-if that condition is met from the webhook event, then ``ansible-rulebook``
+if that condition is met from the webhook event, then ansible-rulebook
 will trigger the desired action. Below is our example rulebook:
 
 .. code-block:: yaml
@@ -131,15 +107,15 @@ message payload from our webhook that contains “Ansible is super cool”.
 Once this condition has been met, our defined action will trigger which
 in this case is to trigger a playbook.
 
-One important thing to take note of ``ansible-rulebook`` is that it is not
-like ``ansible-playbook`` which runs a playbook and once the playbook has
+One important thing to take note of ansible-rulebook is that it is not
+like ansible-playbook which runs a playbook and once the playbook has
 been completed it will exit. With ansible-rulebook, it will continue to
 run waiting for events and matching those events, it will only exit upon
 a shutdown action or if there is an issue with the event source itself,
-for example if a website you are watching with the ``ansible.eda.url-check`` plugin
+for example if a website you are watching with the url-check plugin
 stops working.
 
-With our rulebook built, we will simply tell ``ansible-rulebook`` to use it
+With our rulebook built, we will simply tell ansible-rulebook to use it
 as a ruleset and wait for events:
 
 .. code-block:: shell
@@ -156,9 +132,9 @@ as a ruleset and wait for events:
    INFO:root:load source filters
    INFO:root:Calling main in ansible.eda.webhook
 
-Now, ``ansible-rulebook`` is ready and it's waiting for an event to match.
+Now, ansible-rulebook is ready and it's waiting for an event to match.
 If a webhook is triggered but the payload does not match our condition
-in our rule, we can see it in the ``ansible-rulebook`` verbose output:
+in our rule, we can see it in the ansible-rulebook verbose output:
 
 .. code-block:: shell
 
@@ -197,8 +173,8 @@ magic happens, so we will simulate a webhook with the correct payload:
    INFO:root:Waiting for event
 
 We can see from the output above, that the condition was met from the
-webhook and ``ansible-rulebook`` then triggered our action which was to
-``run_playbook``. The playbook we defined is then triggered and once it
+webhook and ansible-rulebook then triggered our action which was to
+run_playbook. The playbook we defined is then triggered and once it
 completes we can see we revert back to “Waiting for event”.
 
 Event-Driven Ansible opens up the possibilities of faster resolution and
