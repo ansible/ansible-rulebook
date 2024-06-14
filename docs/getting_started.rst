@@ -40,7 +40,7 @@ And now you can run the rulebook to see the results:
 
 .. code-block:: shell
 
-  $ ansible-rulebook -i inventory.yml -r simple-rule-book.yml 
+  $ ansible-rulebook -i inventory.yml -r simple-rulebook.yml 
 
   PLAY [hello] *******************************************************************
 
