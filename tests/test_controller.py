@@ -241,15 +241,15 @@ async def test_run_workflow_template_fail(mocked_job_template_runner):
         ("https://example.com/", "https://example.com/api/v2/config/"),
         (
             "https://example.com/custom/awx",
-            "https://example.com/custom/awx/api/v2/config/",
+            "https://example.com/custom/awx/v2/config/",
         ),
         (
-            "https://example.com/awx/",
+            "https://example.com/awx/api",
             "https://example.com/awx/api/v2/config/",
         ),
         (
             "https://example.com/custom/awx/",
-            "https://example.com/custom/awx/api/v2/config/",
+            "https://example.com/custom/awx/v2/config/",
         ),
     ],
 )
