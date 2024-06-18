@@ -125,6 +125,7 @@ class RunJobTemplate:
             a_log["reason"] = {"error": self.controller_job["error"]}
         else:
             logger.info(f"job results url: {a_log['url']}")
+            logger.info(f"job id: {a_log['job_id']}")
 
         await self.helper.send_status(a_log)
         set_facts = self.action_args.get("set_facts", False)
