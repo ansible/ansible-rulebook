@@ -34,6 +34,7 @@ from ansible_rulebook.token import renew_token
 from ansible_rulebook.vault import Vault, has_vaulted_str
 
 logger = logging.getLogger(__name__)
+logging.getLogger("websockets").setLevel(logging.ERROR)
 
 
 BACKOFF_MIN = 1.92
