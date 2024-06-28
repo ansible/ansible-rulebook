@@ -125,12 +125,14 @@ class RunWorkflowTemplate:
             "run_at": self.controller_job["created"],
             "url": self._controller_job_url(),
             "matching_events": self.helper.get_events(),
+            "controller_job_id": self.controller_job.get("id", ""),
         }
         if "error" in self.controller_job:
             a_log["message"] = self.controller_job["error"]
             a_log["reason"] = {"error": self.controller_job["error"]}
         else:
             logger.info(f"job results url: {a_log['url']}")
+            logger.info(f"controller job id: {a_log['controller_job_id']}")
 
         await self.helper.send_status(a_log)
         set_facts = self.action_args.get("set_facts", False)
