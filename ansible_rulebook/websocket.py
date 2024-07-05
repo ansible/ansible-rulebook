@@ -180,6 +180,8 @@ async def _handle_request_workload(
 
     project_data_fh = None
     response = StartupArgs()
+    non_fq_key = False
+    file_template_vars = {}
     while True:
         msg = await websocket.recv()
         data = json.loads(msg)
@@ -199,6 +201,21 @@ async def _handle_request_workload(
             if not data.get("data") and not data.get("more"):
                 os.close(project_data_fh)
                 logger.debug("wrote %s", response.project_data_file)
+        if data.get("type") == "FileContents":
+            template_key = data.get("template_key")
+            raw_data = base64.b64decode(data.get("data"))
+            keys = template_key.split(".")
+            if len(keys) == 1 and template_key == "template":
+                key = "filename"
+                non_fq_key = True
+            else:
+                key = keys[1]
+            filename = tempfile.NamedTemporaryFile().name
+            with open(filename, "wb") as f:
+                f.write(raw_data)
+            file_template_vars[key] = filename
+            os.chmod(filename, 0o400)
+            logger.debug(f"File Content eda.filename.{key} : {filename}")
         if data.get("type") == "Rulebook":
             raw_data = base64.b64decode(data.get("data"))
             response.check_vault = has_vaulted_str(raw_data)
@@ -209,12 +226,26 @@ async def _handle_request_workload(
             response.variables = yaml.safe_load(
                 base64.b64decode(data.get("data"))
             )
+        if data.get("type") == "EnvVars":
+            response.env_vars = yaml.safe_load(
+                base64.b64decode(data.get("data"))
+            )
         if data.get("type") == "ControllerInfo":
             response.controller_url = data.get("url")
             response.controller_token = data.get("token")
             response.controller_ssl_verify = data.get("ssl_verify")
             response.controller_username = data.get("username", "")
             response.controller_password = data.get("password", "")
+
+    if non_fq_key and "filename" in file_template_vars:
+        response.variables["eda"] = {
+            "filename": file_template_vars["filename"]
+        }
+    else:
+        response.variables["eda"] = {"filename": file_template_vars}
+
+    for key, value in response.env_vars.items():
+        response.variables[key] = value
     return response
 
 
