@@ -41,6 +41,9 @@ A ruleset has the following properties:
      - Action execution, sequential or parallel (default: sequential). For sequential
        strategy we wait for the each action to finish before firing of the next action.
      - No
+   * - match_multiple_rules
+     - Whether the rules engine should continue processing additional rules even after the initial match.
+     - No
 
 | A ruleset **should** have a unique name within the rulebook, each ruleset runs
 | as a separate session in the Rules engine. The events and facts are kept separate
