@@ -149,9 +149,8 @@ class RunPlaybook:
         os.mkdir(inventory_dir)
 
         if self.helper.control.inventory:
-            create_inventory(inventory_dir, self.helper.control.inventory)
-            self.inventory = os.path.join(
-                inventory_dir, os.path.basename(self.helper.control.inventory)
+            self.inventory = create_inventory(
+                inventory_dir, self.helper.control.inventory
             )
         os.mkdir(project_dir)
 
@@ -270,7 +269,6 @@ class RunPlaybook:
         return files[0]
 
     async def _untar_project(self, output_dir, project_data_file):
-
         cmd = [tar, "zxvf", project_data_file]
         proc = await asyncio.create_subprocess_exec(
             *cmd,
