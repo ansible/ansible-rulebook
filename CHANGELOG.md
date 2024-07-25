@@ -3,6 +3,7 @@
 
 ## [Unreleased]
 ### Changed
+- Fixed documentation on matching events in multi condition
 ### Added
 - Support for switching slugs to connect to controller via gateway
 - Support passing in controller job id to server so it can build Job URL
