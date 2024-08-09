@@ -72,4 +72,47 @@ Examples:
 | The meta key is used to store metadata about the event and its needed to
 | correctly report about the events in the aap-server.
 
+
+=======================
+Authoring Event Filters
+=======================
+
+
+Event filters are functions in a python module that perform transformations on
+the event data.  They can remove, add, change, or move any data in the event
+data structure.  Event filters take the event as the first argument and
+additional keyword arguments are provided by the configuration in the rulebook.
+
+
+The basic structure follows:
+
+.. code-block:: python
+
+    # my_namespace.my_collection/extensions/eda/plugins/event_filter/my_filter.py
+
+    def main(event: dict, arg1, arg2):
+
+        # Process event data here
+
+        return event
+
+
+This filter can be used in a rulebook by adding it to the filters list in an event source:
+
+
+.. code-block:: yaml
+
+  sources:
+    - name: azure_service_bus
+      ansible.eda.azure_service_bus:
+        conn_str: "{{connection_str}}"
+        queue_name: "{{queue_name}}"
+      filters:
+        - my_namespace.my_collection.my_filter:
+            arg1: hello
+            arg2: world
+
+
+See the event filter plugins in ansible.eda collection for more examples of how to author them.
+
 .. _collection: https://github.com/ansible/event-driven-ansible/tree/main/extensions/eda/plugins/event_filter
