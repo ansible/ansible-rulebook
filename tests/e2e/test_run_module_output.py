@@ -65,8 +65,8 @@ async def test_run_module_output():
         },
         "r2": {
             "action": "print_event",
-            "event_key": "m/message",
-            "event_value": "FRED FLINTSTONE",
+            "event_key": "m/msg",
+            "event_value": "I am Malenia, blade of Miquella",
         },
     }
     while not queue.empty():
@@ -101,7 +101,7 @@ async def test_run_module_output():
             assert data["activation_instance_id"] == proc_id
 
     assert stats["rulesTriggered"] == 2
-    assert stats["eventsProcessed"] == 6
+    assert stats["eventsProcessed"] == 4
     assert stats["eventsMatched"] == 2
 
     assert session_stats_counter >= 2

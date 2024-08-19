@@ -93,8 +93,8 @@ async def test_run_module():
         project_data_file="",
     )
     action_args = {
-        "module_args": {"name": "Fred Flintstone"},
-        "name": "ansible.eda.upcase",
+        "module_args": {"msg": "I am Malenia"},
+        "name": "ansible.builtin.debug",
     }
 
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
