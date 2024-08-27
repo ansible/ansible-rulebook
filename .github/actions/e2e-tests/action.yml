@@ -4,6 +4,20 @@ description: run e2e tests for ansible-rulebook
 runs:
   using: composite
   steps:
+    - name: Setup jUnit reporter
+      run: |
+        echo "GIT_SHA=$(git rev-parse "$GITHUB_SHA")" >> "$GITHUB_ENV"
+
     - name: Run e2e tests
       shell: bash
-      run: pytest -m "e2e" -n auto --cov=./ --cov-report=xml --cov-append
+      run: pytest -m "e2e" -n auto --cov=./ --cov-report=xml --cov-append --junit-xml=e2e-test-results.xml
+
+    - name: Upload jUnit test results (APDE CI)
+      run: >-
+        http --check-status --ignore-stdin
+        --auth "${{ vars.TEST_RESULTS_AGGREGATOR_USERNAME }}:${{ secrets.TEST_RESULTS_AGGREGATOR_PASSWORD }}"
+        -f POST "${{ vars.TEST_RESULTS_AGGREGATOR_URL }}/api/results/upload/"
+        xunit_xml@e2e-test-results.xml
+        component_name=eda
+        git_commit_sha=${{ env.GIT_SHA }}
+        git_repository_url="https://github.com/${{ github.repository }}"

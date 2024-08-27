@@ -4,12 +4,26 @@ description: run all tests for ansible-rulebook (unit, integration, e2e)
 runs:
   using: composite
   steps:
+    - name: Setup jUnit reporter
+      run: |
+        echo "GIT_SHA=$(git rev-parse "$GITHUB_SHA")" >> "$GITHUB_ENV"
+
     - name: Common tests
       uses: ./.github/actions/common-tests
 
     - name: Long-running tests
       shell: bash
-      run: pytest -m "long_run" -vv -n auto --cov=./ --cov-report=xml --cov-append
+      run: pytest -m "long_run" -vv -n auto --cov=./ --cov-report=xml --cov-append --junit-xml=long-running-test-results.xml
+
+    - name: Upload jUnit test results (APDE CI)
+      run: >-
+        http --check-status --ignore-stdin
+        --auth "${{ vars.TEST_RESULTS_AGGREGATOR_USERNAME }}:${{ secrets.TEST_RESULTS_AGGREGATOR_PASSWORD }}"
+        -f POST "${{ vars.TEST_RESULTS_AGGREGATOR_URL }}/api/results/upload/"
+        xunit_xml@long-running-test-results.xml
+        component_name=eda
+        git_commit_sha=${{ env.GIT_SHA }}
+        git_repository_url="https://github.com/${{ github.repository }}"
 
     - name: e2e tests
       uses: ./.github/actions/e2e-tests
