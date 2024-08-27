@@ -68,6 +68,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: All tests
+        env:
+          TEST_RESULTS_AGGREGATOR_USERNAME: ${{ vars.TEST_RESULTS_AGGREGATOR_USERNAME }}
+          TEST_RESULTS_AGGREGATOR_PASSWORD: ${{ secrets.TEST_RESULTS_AGGREGATOR_PASSWORD }}
+          TEST_RESULTS_AGGREGATOR_URL: ${{ vars.TEST_RESULTS_AGGREGATOR_URL }}
         uses: ./.github/actions/all-tests
 
       - name: Upload coverage to Codecov

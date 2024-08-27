@@ -17,8 +17,8 @@ runs:
       shell: bash
       run: >-
         http --check-status --ignore-stdin
-        --auth "${{ vars.TEST_RESULTS_AGGREGATOR_USERNAME }}:${{ secrets.TEST_RESULTS_AGGREGATOR_PASSWORD }}"
-        -f POST "${{ vars.TEST_RESULTS_AGGREGATOR_URL }}/api/results/upload/"
+        --auth "${{ env.TEST_RESULTS_AGGREGATOR_USERNAME }}:${{ env.TEST_RESULTS_AGGREGATOR_PASSWORD }}"
+        -f POST "${{ env.TEST_RESULTS_AGGREGATOR_URL }}/api/results/upload/"
         xunit_xml@e2e-test-results.xml
         component_name=eda
         git_commit_sha=${{ env.GIT_SHA }}
