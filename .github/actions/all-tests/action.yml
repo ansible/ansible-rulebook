@@ -11,9 +11,9 @@ runs:
 
     - name: Common tests
       env:
-        TEST_RESULTS_AGGREGATOR_USERNAME: ${{ env.TEST_RESULTS_AGGREGATOR_USERNAME }}
-        TEST_RESULTS_AGGREGATOR_PASSWORD: ${{ env.TEST_RESULTS_AGGREGATOR_PASSWORD }}
-        TEST_RESULTS_AGGREGATOR_URL: ${{ env.TEST_RESULTS_AGGREGATOR_URL }}
+        PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_USER: ${{ env.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_USER }}
+        PDE_ORG_RESULTS_UPLOAD_PASSWORD: ${{ env.PDE_ORG_RESULTS_UPLOAD_PASSWORD }}
+        PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_URL: ${{ env.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_URL }}
       uses: ./.github/actions/common-tests
 
     - name: Long-running tests
@@ -24,8 +24,8 @@ runs:
       shell: bash
       run: >-
         http --check-status --ignore-stdin
-        --auth "${{ env.TEST_RESULTS_AGGREGATOR_USERNAME }}:${{ env.TEST_RESULTS_AGGREGATOR_PASSWORD }}"
-        -f POST "${{ env.TEST_RESULTS_AGGREGATOR_URL }}/api/results/upload/"
+        --auth "${{ env.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_USER }}:${{ env.PDE_ORG_RESULTS_UPLOAD_PASSWORD }}"
+        -f POST "${{ env.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_URL }}/api/results/upload/"
         xunit_xml@long-running-test-results.xml
         component_name=eda
         git_commit_sha=${{ env.GIT_SHA }}
@@ -33,7 +33,7 @@ runs:
 
     - name: e2e tests
       env:
-        TEST_RESULTS_AGGREGATOR_USERNAME: ${{ env.TEST_RESULTS_AGGREGATOR_USERNAME }}
-        TEST_RESULTS_AGGREGATOR_PASSWORD: ${{ env.TEST_RESULTS_AGGREGATOR_PASSWORD }}
-        TEST_RESULTS_AGGREGATOR_URL: ${{ env.TEST_RESULTS_AGGREGATOR_URL }}
+        PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_USER: ${{ env.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_USER }}
+        PDE_ORG_RESULTS_UPLOAD_PASSWORD: ${{ env.PDE_ORG_RESULTS_UPLOAD_PASSWORD }}
+        PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_URL: ${{ env.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_URL }}
       uses: ./.github/actions/e2e-tests
