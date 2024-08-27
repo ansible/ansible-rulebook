@@ -5,6 +5,7 @@ runs:
   using: composite
   steps:
     - name: Setup jUnit reporter
+      shell: bash
       run: |
         echo "GIT_SHA=$(git rev-parse "$GITHUB_SHA")" >> "$GITHUB_ENV"
 
@@ -13,6 +14,7 @@ runs:
       run: pytest -m "not e2e and not long_run" -vv -n auto --cov=./ --cov-report=xml --junit-xml=common-test-results.xml
 
     - name: Upload jUnit test results (APDE CI)
+      shell: bash
       run: >-
         http --check-status --ignore-stdin
         --auth "${{ vars.TEST_RESULTS_AGGREGATOR_USERNAME }}:${{ secrets.TEST_RESULTS_AGGREGATOR_PASSWORD }}"
