@@ -15,7 +15,7 @@ runs:
 
     - name: Upload jUnit test results (APDE CI)
       shell: bash
-      if: github.repository == 'ansible/ansible-rulebook'
+      if: ${{ env.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_URL != '' }}
       run: >-
         http --check-status --ignore-stdin
         --auth "${{ env.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_USER }}:${{ env.PDE_ORG_RESULTS_UPLOAD_PASSWORD }}"
