@@ -4,6 +4,23 @@ description: run common tests for ansible-rulebook (unit and integration)
 runs:
   using: composite
   steps:
+    - name: Setup jUnit reporter
+      shell: bash
+      run: |
+        echo "GIT_SHA=$(git rev-parse "$GITHUB_SHA")" >> "$GITHUB_ENV"
+
     - name: Run common tests
       shell: bash
-      run: pytest -m "not e2e and not long_run" -vv -n auto --cov=./ --cov-report=xml
+      run: pytest -m "not e2e and not long_run" -vv -n auto --cov=./ --cov-report=xml --junit-xml=common-test-results.xml
+
+    - name: Upload jUnit test results (APDE CI)
+      shell: bash
+      if: ${{ env.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_URL != '' }}
+      run: >-
+        http --check-status --ignore-stdin
+        --auth "${{ env.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_USER }}:${{ env.PDE_ORG_RESULTS_UPLOAD_PASSWORD }}"
+        -f POST "${{ env.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_URL }}/api/results/upload/"
+        xunit_xml@common-test-results.xml
+        component_name=eda
+        git_commit_sha=${{ env.GIT_SHA }}
+        git_repository_url="https://github.com/${{ github.repository }}"
