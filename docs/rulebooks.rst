@@ -29,7 +29,7 @@ A ruleset has the following properties:
      - The list of one or more rule. See :doc:`rules`
      - Yes
    * - hosts
-     - Similar to hosts in an Ansible playbook
+     - Similar to hosts in an Ansible playbook.  This value is used for actions that require an inventory (eg: run_playbook, or run_module).  It is not used for controller actions (eg: run_job_template, run_workflow_template)
      - Yes
    * - gather_facts
      - Collect artifacts from hosts at startup to be used in rules (default: false)
