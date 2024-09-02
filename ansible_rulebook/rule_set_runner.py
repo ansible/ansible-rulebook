@@ -291,7 +291,11 @@ class RuleSetRunner:
                 queue_item = await self.ruleset_queue_plan.plan.queue.get()
                 rule_run_at = run_at()
                 action_item = cast(ActionContext, queue_item)
-                if self.parsed_args and self.parsed_args.heartbeat > 0:
+                if (
+                    self.parsed_args
+                    and self.parsed_args.heartbeat > 0
+                    and not settings.skip_audit_events
+                ):
                     await send_session_stats(
                         self.event_log,
                         session_stats(self.ruleset_queue_plan.ruleset.name),

@@ -56,6 +56,7 @@ def _validate(queue, success, reason=None):
         "url",
         "organization",
         "job_id",
+        "controller_job_id",
     }
 
     if not success:
@@ -233,8 +234,8 @@ async def test_run_workflow_template_retries():
 
 
 URL_PARAMETERS = [
-    (None,),
-    (10,),
+    None,
+    10,
 ]
 
 
