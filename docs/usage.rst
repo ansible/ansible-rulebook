@@ -9,7 +9,7 @@ The `ansible-rulebook` CLI supports the following options:
     usage: ansible-rulebook [-h] [-r RULEBOOK] [-e VARS] [-E ENV_VARS] [-v] [--version] [-S SOURCE_DIR] [-i INVENTORY] [-W WEBSOCKET_URL] [--websocket-ssl-verify WEBSOCKET_SSL_VERIFY]
                             [--websocket-token-url WEBSOCKET_TOKEN_URL] [--websocket-access-token WEBSOCKET_ACCESS_TOKEN] [--websocket-refresh-token WEBSOCKET_REFRESH_TOKEN]
                             [--id ID] [-w] [-T PROJECT_TARBALL] [--controller-url CONTROLLER_URL] [--controller-token CONTROLLER_TOKEN] [--controller-ssl-verify CONTROLLER_SSL_VERIFY]
-                            [--print-events] [--heartbeat n] [--execution-strategy sequential|parallel] [--skip-audit-events]
+                            [--print-events] [--heartbeat n] [--execution-strategy sequential|parallel] [--skip-audit-events] [--vault-password-file] [--vault-id] [--ask-vault-pass]
 
     optional arguments:
     -h, --help            show this help message and exit
@@ -52,6 +52,9 @@ The `ansible-rulebook` CLI supports the following options:
 
     --execution-strategy sequential|parallel. The default execution strategy is sequential.
     --skip-audit-events  Skip sending audit events to the EDA server, default is false
+    --vault-password-file A file containing one password to decrypt all vaulted strings. The file can be passed in via env var EDA_VAULT_PASSWORD_FILE
+    --vault-id            [label@]path. The path points to file containing one vault password. Repeat --vault-id for multiple passwords. label is optional for hinting which string is encrypted by this password.
+    --ask-vault-pass      Allow user to type a vault password from the console. 
 
 To get help from `ansible-rulebook` run the following:
 

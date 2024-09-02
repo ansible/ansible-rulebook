@@ -21,6 +21,7 @@ from types import MappingProxyType
 from typing import Dict, List, Optional, Union, cast
 
 import dpath
+import jinja2.exceptions as jinja2_exceptions
 from drools import ruleset as lang
 from drools.exceptions import (
     MessageNotHandledException,
@@ -57,6 +58,7 @@ from ansible_rulebook.rule_types import (
 )
 from ansible_rulebook.rules_parser import parse_hosts
 from ansible_rulebook.util import (
+    decrypted_context,
     run_at,
     send_session_stats,
     substitute_variables,
@@ -155,9 +157,15 @@ class RuleSetRunner:
                 timeout=self.shutdown.delay,
             )
 
-        for task in self.active_actions:
-            logger.debug("Cancelling active task %s", task.get_name())
-            task.cancel()
+        if self.active_actions:
+            logger.info(
+                "Cancelling %d active tasks, ruleset %s cleanup",
+                len(self.active_actions),
+                self.name,
+            )
+            for task in self.active_actions:
+                logger.debug("Cancelling active task %s", task.get_name())
+                task.cancel()
         if self.shutdown:
             await self.event_log.put(
                 dict(
@@ -283,7 +291,11 @@ class RuleSetRunner:
                 queue_item = await self.ruleset_queue_plan.plan.queue.get()
                 rule_run_at = run_at()
                 action_item = cast(ActionContext, queue_item)
-                if self.parsed_args and self.parsed_args.heartbeat > 0:
+                if (
+                    self.parsed_args
+                    and self.parsed_args.heartbeat > 0
+                    and not settings.skip_audit_events
+                ):
                     await send_session_stats(
                         self.event_log,
                         session_stats(self.ruleset_queue_plan.ruleset.name),
@@ -429,8 +441,9 @@ class RuleSetRunner:
                     action_args,
                     variables_copy,
                 )
+                context = decrypted_context(variables_copy)
                 action_args = {
-                    k: substitute_variables(v, variables_copy)
+                    k: substitute_variables(v, context)
                     for k, v in action_args.items()
                 }
                 logger.debug("action args: %s", action_args)
@@ -477,6 +490,17 @@ class RuleSetRunner:
             except asyncio.CancelledError:
                 logger.debug("Action task caught Cancelled error")
                 raise
+            except jinja2_exceptions.UndefinedError as e:
+                error = e
+                undefined_variable = str(e).split("has no attribute")
+                if len(undefined_variable) > 1:
+                    logger.error(
+                        "Undefined jinja variable %s in action %s",
+                        undefined_variable[-1],
+                        action,
+                    )
+                else:
+                    raise
             except Exception as e:
                 logger.error("Error calling action %s, err %s", action, str(e))
                 error = e

@@ -43,6 +43,8 @@ class Command:
     execution_strategy: Optional[str] = None
     hot_reload: bool = False
     skip_audit_events: bool = False
+    vault_ids: Optional[list] = None
+    vault_password_file: Optional[Path] = None
 
     def __post_init__(self):
         # verbosity overrides verbose and debug
@@ -99,6 +101,19 @@ class Command:
             result.append("--hot-reload")
         if self.skip_audit_events:
             result.append("--skip-audit-events")
+        if self.vault_ids:
+            for label, file in self.vault_ids:
+                if label:
+                    result.extend(["--vault-id", f"{label}@{file.absolute()}"])
+                else:
+                    result.extend(["--vault-id", str(file.absolute())])
+        if self.vault_password_file:
+            result.extend(
+                [
+                    "--vault-password-file",
+                    str(self.vault_password_file.absolute()),
+                ]
+            )
 
         return result
 

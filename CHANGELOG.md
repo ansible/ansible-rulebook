@@ -2,6 +2,20 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+### Added
+- Support for switching slugs to connect to controller via gateway
+- Support passing in controller job id to server so it can build Job URL
+### Fixed
+- Fix log level for websocket
+
+## [1.1.0] - 2024-05-15
+### Added
+- Support for vaulted variables
+- Support for string interpolation from encrypted variables
+- Added aiobotocore package needed for our SQS plugin
+
+## [1.0.5] - 2024-02-07
 
 ### Changed
 - Job template, workflow template, module and playbook output facts/events
@@ -15,7 +29,6 @@
 - skip-audit-events to disable sending audit events to server
 - Add generic error message for unknown source errors
 - restrict drools async connection to localhost
-
 
 ### Changed
 - Generic print as well as printing of events use new banner style

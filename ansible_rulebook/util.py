@@ -37,6 +37,7 @@ from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import (
     InvalidFilterNameException,
     InventoryNotFound,
+    VaultDecryptException,
 )
 
 logger = logging.getLogger(__name__)
@@ -45,12 +46,45 @@ logger = logging.getLogger(__name__)
 EDA_BUILTIN_FILTER_PREFIX = "eda.builtin."
 
 
+def decrypted_context(
+    obj: Union[Dict, List, str, bool, int]
+) -> Union[Dict, List, str, bool, int]:
+    if isinstance(obj, dict):
+        return {k: decrypted_context(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [decrypted_context(item) for item in obj]
+    elif isinstance(obj, str):
+        if settings.vault.is_encrypted(obj):
+            return settings.vault.decrypt(obj)
+        else:
+            return obj
+    return obj
+
+
+def decryptable(obj: Union[Dict, List, str, bool, int]) -> None:
+    if isinstance(obj, dict):
+        for _, v in obj.items():
+            decryptable(v)
+    elif isinstance(obj, list):
+        for item in obj:
+            decryptable(item)
+    elif isinstance(obj, str):
+        if settings.vault.is_encrypted(obj):
+            try:
+                settings.vault.decrypt(obj)
+            except VaultDecryptException as e:
+                logger.error(f"{obj} cannot be decrypted {e}")
+                raise
+
+
 def render_string(value: str, context: Dict) -> str:
     if "{{" in value and "}}" in value:
-        return NativeTemplate(value, undefined=jinja2.StrictUndefined).render(
+        value = NativeTemplate(value, undefined=jinja2.StrictUndefined).render(
             context
         )
 
+    if isinstance(value, str) and settings.vault.is_encrypted(value):
+        value = settings.vault.decrypt(value)
     return value
 
 

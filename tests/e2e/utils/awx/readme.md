@@ -17,6 +17,12 @@ if you are not using the ansible-rulebook dev environment.
 
 # Steps
 
+0. When using Podman
+
+```
+export KIND_EXPERIMENTAL_PROVIDER=podman
+```
+
 1. Create the cluster
 
 ```

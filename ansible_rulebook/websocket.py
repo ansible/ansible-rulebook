@@ -31,8 +31,10 @@ from ansible_rulebook import rules_parser as rules_parser
 from ansible_rulebook.common import StartupArgs
 from ansible_rulebook.conf import settings
 from ansible_rulebook.token import renew_token
+from ansible_rulebook.vault import Vault, has_vaulted_str
 
 logger = logging.getLogger(__name__)
+logging.getLogger("websockets").setLevel(logging.ERROR)
 
 
 BACKOFF_MIN = 1.92
@@ -78,7 +80,7 @@ async def _connect_websocket(
     retry_on_close: bool,
     **kwargs: list,
 ) -> tp.Any:
-    logger.info("websocket %s connecting", settings.websocket_url)
+    logger.info("websocket %s", settings.websocket_url)
     if settings.websocket_access_token:
         extra_headers = {
             "Authorization": f"Bearer {settings.websocket_access_token}"
@@ -91,6 +93,7 @@ async def _connect_websocket(
     backoff_delay = BACKOFF_MIN
     while True:
         try:
+            logger.info("attempt websocket connection")
             async with websockets.connect(
                 settings.websocket_url,
                 ssl=_sslcontext(),
@@ -100,7 +103,8 @@ async def _connect_websocket(
                 backoff_delay = BACKOFF_MIN
                 refresh_token = True
                 return await handler(websocket, **kwargs)
-        except asyncio.CancelledError:  # pragma: no cover
+        except asyncio.CancelledError as e:  # pragma: no cover
+            logger.info(f"websocket aborted by CancelledError: {e}")
             raise
         except websockets.exceptions.InvalidStatusCode as e:
             if refresh_token and e.status_code == 403:
@@ -109,28 +113,46 @@ async def _connect_websocket(
                 # establish the connection, something else must have caused 403
                 refresh_token = False
             else:
+                logger.info(f"websocket aborted by InvalidStatusCode: {e}")
                 raise  # abort
         except websockets.exceptions.InvalidStatus as e:
             if refresh_token and e.response.status_code == 403:
                 await _update_authorization_header(extra_headers)
                 refresh_token = False
             else:
+                logger.info(f"websocket aborted by InvalidStatus: {e}")
                 raise  # abort
         except OSError as e:
             if "[Errno 61]" in str(e):
                 # if connection cannot be established, retry later
                 backoff_delay = await _wait_before_retry(backoff_delay)
             else:
+                logger.info(f"websocket aborted by OSError {e}")
                 raise  # abort
         except websockets.exceptions.ConnectionClosedError as e:
-            if e.code == 1011:
-                # unexpected error raised from server
-                raise  # abort
+            if retry_on_close and e.code != 1011:  # unexpected error
+                backoff_delay = await _wait_before_retry(backoff_delay)
+            else:
+                logger.info(f"websocket aborted by ConnectionClosedError: {e}")
+                raise
+        except websockets.exceptions.ConnectionClosedOK as e:
             if retry_on_close:
                 backoff_delay = await _wait_before_retry(backoff_delay)
-        except websockets.exceptions.ConnectionClosedOK:
+            else:
+                logger.info(f"websocket closed by ConnectionClosedOK: {e}")
+                raise
+        except (
+            websockets.exceptions.InvalidMessage,
+            asyncio.exceptions.TimeoutError,
+        ) as e:
             if retry_on_close:
                 backoff_delay = await _wait_before_retry(backoff_delay)
+            else:
+                logger.info(f"websocket aborted by {type(e)}: {e}")
+                raise
+        except Exception as e:
+            logger.exception(f"websocket general error {type(e)}: {e}")
+            raise
 
 
 async def request_workload(activation_instance_id: str) -> StartupArgs:
@@ -163,6 +185,8 @@ async def _handle_request_workload(
         data = json.loads(msg)
         if data.get("type") == "EndOfResponse":
             break
+        if data.get("type") == "VaultCollection":
+            settings.vault = Vault(passwords=data.get("data"))
         if data.get("type") == "ProjectData":
             if not project_data_fh:
                 (
@@ -176,8 +200,10 @@ async def _handle_request_workload(
                 os.close(project_data_fh)
                 logger.debug("wrote %s", response.project_data_file)
         if data.get("type") == "Rulebook":
+            raw_data = base64.b64decode(data.get("data"))
+            response.check_vault = has_vaulted_str(raw_data)
             response.rulesets = rules_parser.parse_rule_sets(
-                yaml.safe_load(base64.b64decode(data.get("data")))
+                yaml.safe_load(raw_data)
             )
         if data.get("type") == "ExtraVars":
             response.variables = yaml.safe_load(
@@ -187,6 +213,8 @@ async def _handle_request_workload(
             response.controller_url = data.get("url")
             response.controller_token = data.get("token")
             response.controller_ssl_verify = data.get("ssl_verify")
+            response.controller_username = data.get("username", "")
+            response.controller_password = data.get("password", "")
     return response
 
 

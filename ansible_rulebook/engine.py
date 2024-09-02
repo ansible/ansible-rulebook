@@ -42,6 +42,7 @@ from ansible_rulebook.rule_types import (
 )
 from ansible_rulebook.util import (
     collect_ansible_facts,
+    decrypted_context,
     find_builtin_filter,
     has_builtin_filter,
     send_session_stats,
@@ -160,8 +161,9 @@ async def start_source(
                 (source_filter_module["main"], source_filter.filter_args)
             )
 
+        context = decrypted_context(variables)
         args = {
-            k: substitute_variables(v, variables)
+            k: substitute_variables(v, context)
             for k, v in source.source_args.items()
         }
         fqueue = FilteredQueue(source_filters, queue)

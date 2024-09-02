@@ -128,6 +128,11 @@ Run a job template.
 .. note::
     You can define the environment variable ``EDA_CONTROLLER_CONNECTION_LIMIT`` to limit the number of concurrent connections to the controller. The default is 30.
 
+.. note::
+    The controller URL is the API end point, that ansible-rulebook will try to reach.
+    If you have a path specified in your URL it should have the api embedded in it.
+    If you have just provided a host and port but no path we will append api to the URL$
+    for backward compatibility.
 
 .. list-table::
    :widths: 25 150 10
@@ -178,6 +183,12 @@ Run a workflow template.
 .. note::
     You can define the environment variable ``EDA_CONTROLLER_CONNECTION_LIMIT`` to limit the number of concurrent connections to the controller. The default is 30.
 
+
+.. note::
+    The controller URL is the api end point, that ansible-rulebook will try to reach.
+    If you have a path specified in your URL it should have the api embedded in it.
+    If you have just provided a host and port but no path we will append api to the URL$
+    for backward compatibility.
 
 .. list-table::
    :widths: 25 150 10

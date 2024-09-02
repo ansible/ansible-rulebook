@@ -23,6 +23,7 @@ from ansible_rulebook.collection import (
     load_rulebook,
     split_collection_name,
 )
+from ansible_rulebook.exception import RulebookNotFoundException
 
 
 def test_find_collection():
@@ -50,9 +51,8 @@ def test_load_rulebook():
 
 
 def test_load_rulebook_missing():
-    assert not load_rulebook(
-        *split_collection_name("missing.eda.hello_events")
-    )
+    with pytest.raises(RulebookNotFoundException):
+        load_rulebook(*split_collection_name("missing.eda.hello_events"))
 
 
 def test_has_rulebook():

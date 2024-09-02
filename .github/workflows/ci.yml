@@ -68,6 +68,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: All tests
+        env:
+          PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_USER: ${{ vars.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_USER }}
+          PDE_ORG_RESULTS_UPLOAD_PASSWORD: ${{ secrets.PDE_ORG_RESULTS_UPLOAD_PASSWORD }}
+          PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_URL: ${{ vars.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_URL }}
         uses: ./.github/actions/all-tests
 
       - name: Upload coverage to Codecov

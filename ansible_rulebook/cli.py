@@ -23,6 +23,7 @@ from typing import List
 
 import ansible_rulebook.util as util
 from ansible_rulebook.messages import DEFAULT_SHUTDOWN_DELAY
+from ansible_rulebook.vault import Vault
 
 # ensure a valid JVM is available and configures JAVA_HOME if necessary
 # must be done before importing any other modules
@@ -140,7 +141,9 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--controller-url",
         help="Controller API base url, e.g. https://host1:8080 can also be "
-        "passed via the env var EDA_CONTROLLER_URL",
+        "passed via the env var EDA_CONTROLLER_URL, if your URL has a path "
+        "it should include api in it. api would only be appended if the URL "
+        "only contains host, port.",
         default=os.environ.get("EDA_CONTROLLER_URL", ""),
     )
     parser.add_argument(
@@ -219,6 +222,23 @@ def get_parser() -> argparse.ArgumentParser:
         default=settings.skip_audit_events,
         help="Don't send audit events to the server",
     )
+    parser.add_argument(
+        "--vault-password-file",
+        help="The file containing one ansible vault password",
+        default=os.environ.get("EDA_VAULT_PASSWORD_FILE", ""),
+    )
+    parser.add_argument(
+        "--vault-id",
+        help="label@filename pointing to an ansible vault password file",
+        action="append",
+        default=[],
+    )
+    parser.add_argument(
+        "--ask-vault-pass",
+        help="Ask vault password interactively",
+        action="store_true",
+        default=False,
+    )
     return parser
 
 
@@ -281,6 +301,29 @@ def update_settings(args: argparse.Namespace) -> None:
     settings.websocket_access_token = args.websocket_access_token
     settings.websocket_refresh_token = args.websocket_refresh_token
     settings.skip_audit_events = args.skip_audit_events
+    parse_vault_passwords(args)
+
+
+def parse_vault_passwords(args: argparse.Namespace) -> None:
+    if (
+        not args.vault_password_file
+        and not args.vault_id
+        and not args.ask_vault_pass
+    ):
+        return
+
+    secret_files = []
+
+    if args.vault_password_file:
+        secret_files.append(args.vault_password_file)
+
+    secret_files += args.vault_id
+
+    settings.vault = Vault(
+        password_file=args.vault_password_file,
+        vault_ids=args.vault_id,
+        ask_pass=args.ask_vault_pass,
+    )
 
 
 def main(args: List[str] = None) -> int:
@@ -318,6 +361,8 @@ def main(args: List[str] = None) -> int:
     except Exception as err:
         logger.error("Terminating %s", str(err))
         return 1
+    finally:
+        settings.vault.close()
     return 0
 
 

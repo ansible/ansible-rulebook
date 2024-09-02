@@ -9,7 +9,7 @@
       condition: event.i == 1
       action:
         run_module:
-          name: ansible.eda.upcase
+          name: ansible.builtin.fail
           module_args:
-              name: fail
+            msg: expected failure
           retry: True
