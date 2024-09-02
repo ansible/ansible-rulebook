@@ -77,7 +77,7 @@ or other special characters:
       action:
         debug:
 
-You can find more information about dot notation and bracket notation also in the Ansible playbook `manual <https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#referencing-key-value-dictionary-variables>`_.
+You can find more information about dot notation and bracket notation also in the Ansible playbook documentation for `Referencing key:value dictionary variables <https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#referencing-key-value-dictionary-variables>`_.
 
 You can access list in structured event, fact, var data objects using bracket notation too.
 The first item in a list is item 0, the second item is item 1.
@@ -96,7 +96,8 @@ For example:
           action:
             debug:
 
-You can find more information the bracket notation for list also in the Ansible playbook `manual <https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#referencing-list-variables>`_.
+You can find more information the bracket notation for list also in the Ansible playbook 
+documentation for `Referencing list variables <https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#referencing-list-variables>`_.
 
 Supported Operators
 *******************
@@ -865,7 +866,8 @@ Check if an item does not exist in a list based on a test
 | The value is based on the operator used, if the operator is regex then the value is a pattern.
 | If the operator is one of >,>=,<,<= then the value is either an integer or a float
 
-You can find more information for the *select* condition also in the Ansible playbook `manual <https://docs.ansible.com/ansible/latest/playbook_guide/complex_data_manipulation.html#loops-and-list-comprehensions>`_.
+You can find more information for the *select* condition also in the Ansible playbook 
+documentation for `Loops and list comprehensions <https://docs.ansible.com/ansible/latest/playbook_guide/complex_data_manipulation.html#loops-and-list-comprehensions>`_.
 
 Checking if an object exists in a list based on a test
 ------------------------------------------------------
@@ -905,7 +907,7 @@ Checking if an object does not exist in a list based on a test
 | If the operator is one of >, >=, <, <= then the value is either an integer or a float.
 | If the operator is in or not in then the value is list of integer, float or string.
 
-You can find more information for the *selectattr* condition also in the Ansible playbook `manual <https://docs.ansible.com/ansible/latest/playbook_guide/complex_data_manipulation.html#loops-and-list-comprehensions>`_.
+You can find more information for the *selectattr* condition also in the Ansible playbook documentation for `Loops and list comprehensions <https://docs.ansible.com/ansible/latest/playbook_guide/complex_data_manipulation.html#loops-and-list-comprehensions>`_.
 
 
 FAQ

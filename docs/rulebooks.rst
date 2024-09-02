@@ -41,6 +41,11 @@ A ruleset has the following properties:
      - Action execution, sequential or parallel (default: sequential). For sequential
        strategy we wait for the each action to finish before firing of the next action.
      - No
+   * - match_multiple_rules
+     - Whether the rules engine should continue processing additional rules even after the initial match.
+       This option will cache events in the rules engine for a period of **default_events_ttl**. Which by
+       default is 2 hours, this will cause memory bloat till the events are ejected.
+     - No
 
 | A ruleset **should** have a unique name within the rulebook, each ruleset runs
 | as a separate session in the Rules engine. The events and facts are kept separate
@@ -142,9 +147,9 @@ Using vaulted strings
 --------------------------
 
 Sensitive data referenced by a rulebook must be encrypted by `ansible-vault <https://docs.ansible.com/ansible/latest/vault_guide/vault_encrypting_content.html#encrypting-content-with-ansible-vault>`_
-cli. The vaulted strings can be directly embeded in the rulebook, or placed in a variables file and 
+cli. The vaulted strings can be directly embedded in the rulebook, or placed in a variables file and
 referenced in the rulebook via extra vars. Only arguments to source plugins or actions can be vaulted.
-Example for a rulebook that has embeded vaulted strings:
+Example for a rulebook that has embedded vaulted strings:
 
 .. code-block:: yaml
 
@@ -198,7 +203,7 @@ Example to receive multiple passwords:
 
 Refer to the `Usage <usage.html>`_ page for more information.
 
-Please note vaulted strings in a rulebook or varialbles file are not supported if the ansible-rulebook cli version
+Please note vaulted strings in a rulebook or variables file are not supported if the ansible-rulebook cli version
 is 1.0.4 or older. You will see an error like `ERROR - Terminating could not determine a constructor for the tag '!vault'`
 
 Distributing rulebooks

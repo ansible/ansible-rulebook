@@ -56,6 +56,7 @@ def _validate(queue, success, reason=None):
         "url",
         "organization",
         "job_id",
+        "controller_job_id",
     }
 
     if not success:

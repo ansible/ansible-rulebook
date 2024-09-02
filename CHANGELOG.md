@@ -5,7 +5,10 @@
 ### Changed
 - Fixed documentation on matching events in multi condition
 ### Added
+- Support for switching slugs to connect to controller via gateway
+- Support passing in controller job id to server so it can build Job URL
 ### Fixed
+- Fix log level for websocket
 
 ## [1.1.0] - 2024-05-15
 ### Added
