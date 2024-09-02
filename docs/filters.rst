@@ -61,7 +61,7 @@ Examples:
 | The uuid stores the unique id for the event.
 | The event payload would be modified to include the following  data
 
-.. code-block:: yaml
+.. code-block:: python
 
    event = { ..., 'meta': {'source': {'name': 'azure_service_bus',
                                       'type': 'ansible.eda.azure_service_bus'},

@@ -141,7 +141,9 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--controller-url",
         help="Controller API base url, e.g. https://host1:8080 can also be "
-        "passed via the env var EDA_CONTROLLER_URL",
+        "passed via the env var EDA_CONTROLLER_URL, if your URL has a path "
+        "it should include api in it. api would only be appended if the URL "
+        "only contains host, port.",
         default=os.environ.get("EDA_CONTROLLER_URL", ""),
     )
     parser.add_argument(

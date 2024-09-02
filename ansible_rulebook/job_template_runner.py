@@ -19,7 +19,7 @@ import os
 import ssl
 from functools import cached_property
 from typing import Union
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import aiohttp
 import dpath
@@ -35,8 +35,10 @@ logger = logging.getLogger(__name__)
 
 
 class JobTemplateRunner:
-    UNIFIED_TEMPLATE_SLUG = "api/v2/unified_job_templates/"
-    CONFIG_SLUG = "api/v2/config/"
+    LEGACY_UNIFIED_TEMPLATE_SLUG = "api/v2/unified_job_templates/"
+    LEGACY_CONFIG_SLUG = "api/v2/config/"
+    GATEWAY_UNIFIED_TEMPLATE_SLUG = "v2/unified_job_templates/"
+    GATEWAY_CONFIG_SLUG = "v2/config/"
     JOB_COMPLETION_STATUSES = ["successful", "failed", "error", "canceled"]
 
     def __init__(
@@ -57,6 +59,8 @@ class JobTemplateRunner:
             os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10.0)
         )
         self._session = None
+        self._config_slug = self.LEGACY_CONFIG_SLUG
+        self._unified_job_template_slug = self.LEGACY_UNIFIED_TEMPLATE_SLUG
 
     @property
     def host(self):
@@ -65,6 +69,7 @@ class JobTemplateRunner:
     @host.setter
     def host(self, value: str):
         self._host = util.ensure_trailing_slash(value)
+        self._set_slugs(value)
 
     async def close_session(self):
         if self._session and not self._session.closed:
@@ -78,6 +83,18 @@ class JobTemplateRunner:
                 headers=self._auth_headers(),
                 auth=self._basic_auth(),
                 raise_for_status=True,
+            )
+
+    def _set_slugs(self, url):
+        urlparts = urlparse(url)
+        if urlparts.path and urlparts.path != "/":
+            self._config_slug = self.GATEWAY_CONFIG_SLUG
+            self._unified_job_template_slug = (
+                self.GATEWAY_UNIFIED_TEMPLATE_SLUG
+            )
+            logger.debug(f"Switched config slug {self._config_slug}")
+            logger.debug(
+                f"Switched job template slug {self._unified_job_template_slug}"
             )
 
     async def _get_page(self, href_slug: str, params: dict) -> dict:
@@ -94,7 +111,7 @@ class JobTemplateRunner:
 
     async def get_config(self) -> dict:
         logger.info("Attempting to connect to Controller %s", self.host)
-        return await self._get_page(self.CONFIG_SLUG, {})
+        return await self._get_page(self._config_slug, {})
 
     def _auth_headers(self) -> dict:
         if self.token:
@@ -122,7 +139,7 @@ class JobTemplateRunner:
 
         while True:
             json_body = await self._get_page(
-                self.UNIFIED_TEMPLATE_SLUG, params
+                self._unified_job_template_slug, params
             )
             for jt in json_body["results"]:
                 if (
