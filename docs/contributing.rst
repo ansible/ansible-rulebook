@@ -20,9 +20,6 @@ Search by categories and tags to find interesting topics or start a new one; sub
 
 See `Navigating the Ansible forum <https://forum.ansible.com/t/navigating-the-ansible-forum-tags-categories-and-concepts/39>`_ for some practical advice on finding your way around.
 
-You can also check the `Matrix chat <https://matrix.to/#/#eda:ansible.com>`__, or via the
-event-driven-automation@redhat.com email.
-
 Types of Contributions
 ----------------------
 
