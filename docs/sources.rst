@@ -185,6 +185,9 @@ immediately after the ``put`` method.
     The rulebook can contain it's own logic to finish the process through the ``shutdown`` action.
     If your plugin needs to perform some cleanup before the process is terminated, you must catch the ``asyncio.CancelledError`` exception.
 
+.. note::
+    Please, pay attention when handling errors in your plugin and ensure to raise an exception with a meaningful message so that ansible-rulebook
+    can log it correctly. Ansible-rulebook will not log the exception itself or print stack traces; it will only log the message you provide.
 
 Distributing plugins
 ^^^^^^^^^^^^^^^^^^^^

@@ -201,9 +201,22 @@ async def start_source(
         )
         logger.debug("Task cancelled " + shutdown_msg)
     except BaseException as e:
-        logger.error("Source error %s", str(e))
+        error_msg = str(e)
+        # Get the name of the exception class
+        error_type = str(type(e)).split(".")[-1].replace("'>", "")
+        if not error_msg:
+            user_msg = (
+                f"Unknown error {error_type}: "
+                "source plugin failed with no error message."
+            )
+        else:
+            user_msg = (
+                f"{error_type}: Source plugin failed with error message: "
+                f"'{error_msg}'"
+            )
+        logger.error("Source error: %s", user_msg)
         shutdown_msg = (
-            f"Shutting down source: {source.source_name} error : {e}"
+            f"Shutting down source: {source.source_name} error: {user_msg}"
         )
         logger.error(shutdown_msg)
         raise
