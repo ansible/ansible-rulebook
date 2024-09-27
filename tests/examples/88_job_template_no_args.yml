@@ -1,0 +1,16 @@
+---
+- name: Test run job templates with no args
+  hosts: all
+  sources:
+    - ansible.eda.generic:
+        payload:
+          - age: 55
+            name: Fred
+            zip: 12345
+  rules:
+    - name: "Run job template"
+      condition: event.name == "Fred"
+      action:
+        run_job_template:
+          name: Demo Job Template
+          organization: Default
