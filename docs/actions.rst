@@ -147,6 +147,9 @@ Run a job template.
    * - organization
      - The name of the organization
      - Yes
+   * - include_events
+     - Should we include the matching events in the payload sent to controller. Default is true
+     - No
    * - set_facts
      - The artifacts from the job template execution are inserted back into the rule set as facts
      - No
@@ -203,6 +206,9 @@ Run a workflow template.
    * - organization
      - The name of the organization
      - Yes
+   * - include_events
+     - Should we include the matching events in the payload sent to controller. Default is true. If your workflow template does not have Prompt on Launch for Extra Variables or a Survey spec, you will have to set this to false.
+     - No
    * - set_facts
      - The artifacts from the workflow template execution are inserted back into the rule set as facts
      - No
