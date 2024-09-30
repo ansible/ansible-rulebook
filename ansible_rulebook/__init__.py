@@ -16,7 +16,7 @@
 
 import yaml
 
-__version__ = "1.1.1"
+__version__ = "1.1.2"
 
 
 def construct_vault_encrypted_unicode(loader, node):
