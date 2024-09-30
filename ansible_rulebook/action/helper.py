@@ -125,15 +125,23 @@ class Helper:
     def set_action(self, action) -> None:
         self.action = action
 
-    def collect_extra_vars(self, user_extra_vars: Dict) -> Dict:
+    def collect_extra_vars(
+        self, user_extra_vars: Dict, include_events: bool = True
+    ) -> Dict:
         """When we send information to ansible-playbook or job template
-        on AWX, we need the rule and event specific information to
+        on AWX, we need the rule and optionally event specific information to
         be sent to this external process
 
         the caller passes in the user_extra_vars from the action args
         and then we append eda specific vars and return that as a
         the updated dictionary that is sent to the external process
+
+        if the caller doesn't want to include events data return the
+        user_extra_vars.
         """
+        if not include_events:
+            return user_extra_vars
+
         extra_vars = user_extra_vars.copy() if user_extra_vars else {}
 
         eda_vars = {

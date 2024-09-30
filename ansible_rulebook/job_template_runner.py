@@ -209,13 +209,6 @@ class JobTemplateRunner:
                 "Workflow template %s does not accept limit, removing it", name
             )
             job_params.pop("limit")
-        if not obj["ask_variables_on_launch"] and "extra_vars" in job_params:
-            logger.warning(
-                "Workflow template %s does not accept extra vars, "
-                "removing it",
-                name,
-            )
-            job_params.pop("extra_vars")
         job = await self._launch(job_params, url)
         return await self._monitor_job(job["url"])
 

@@ -2434,3 +2434,97 @@ async def test_83_boolean_true():
             ],
         }
         await validate_events(event_log, **checks)
+
+
+INCLUDE_EVENTS_RUN = [
+    (
+        (
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.run_job_template"
+        ),
+        "examples/84_job_template_exclude_events.yml",
+        "run_job_template",
+        "https://examples.com/#/jobs/945/details",
+        ["name"],
+    ),
+    (
+        (
+            "ansible_rulebook.action.run_workflow_template."
+            "job_template_runner.run_workflow_job_template"
+        ),
+        "examples/85_workflow_template_exclude_events.yml",
+        "run_workflow_template",
+        "https://examples.com/#/jobs/workflow/945/details",
+        ["name"],
+    ),
+    (
+        (
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.run_job_template"
+        ),
+        "examples/86_job_template_include_events.yml",
+        "run_job_template",
+        "https://examples.com/#/jobs/945/details",
+        ["name", "ansible_eda"],
+    ),
+    (
+        (
+            "ansible_rulebook.action.run_workflow_template."
+            "job_template_runner.run_workflow_job_template"
+        ),
+        "examples/87_workflow_template_include_events.yml",
+        "run_workflow_template",
+        "https://examples.com/#/jobs/workflow/945/details",
+        ["name", "ansible_eda"],
+    ),
+    (
+        (
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.run_job_template"
+        ),
+        "examples/88_job_template_no_args.yml",
+        "run_job_template",
+        "https://examples.com/#/jobs/945/details",
+        ["ansible_eda"],
+    ),
+]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "location,rulebook,action_type,job_url,expected_keys", INCLUDE_EVENTS_RUN
+)
+async def test_include_events(
+    location, rulebook, action_type, job_url, expected_keys
+):
+    ruleset_queues, event_log = load_rulebook(rulebook)
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    response_obj = dict(
+        status="successful", id=945, created="dummy", artifacts=dict(a=1)
+    )
+    job_template_runner.host = "https://examples.com"
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        with patch(
+            location,
+            return_value=response_obj,
+        ) as mocked_obj:
+            await run_rulesets(
+                event_log,
+                ruleset_queues,
+                dict(),
+                "playbooks/inventory.yml",
+            )
+
+            while not event_log.empty():
+                event = event_log.get_nowait()
+                if event["type"] == "Action":
+                    action = event
+
+            assert action["url"] == job_url
+            assert action["action"] == action_type
+            assert (
+                list(mocked_obj.call_args.args[2]["extra_vars"].keys())
+                == expected_keys
+            )
