@@ -1,0 +1,14 @@
+- name: Test inventory as dir
+  hosts: all
+  sources:
+    - ansible.eda.generic:
+        shutdown_after: 2
+        payload:
+          motto: winter is coming
+  rules:
+    - name: Test rule
+      condition: event.motto == "winter is coming"
+      action:
+        run_playbook:
+          name: ./playbooks/print_group_vars.yml
+          copy_files: true
