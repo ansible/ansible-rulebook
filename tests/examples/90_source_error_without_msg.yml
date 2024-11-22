@@ -1,0 +1,12 @@
+---
+- name: "90 source error without msg"
+  hosts: all
+  sources:
+    - name: range_fail_without_msg
+      source_with_exception:
+        error_msg: ""
+  rules:
+    - name: r1
+      condition: true
+      action:
+        print_event:
