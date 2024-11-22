@@ -6,6 +6,7 @@
 ### Added
 ### Fixed
 - Allow user to optionally include matching events
+- Allow for fetching env and file contents from EDA server
 
 
 ## [1.1.1] - 2024-09-19
