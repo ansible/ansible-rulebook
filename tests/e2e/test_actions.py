@@ -384,3 +384,36 @@ def test_shutdown_action_now(update_environment):
         assert (
             "This condition should not fire" not in result.stdout
         ), "a post-shutdown condition fired when it should not have"
+
+
+@pytest.mark.e2e
+def test_inventory_as_dir():
+    """
+    Execute a rulebook that contains a run_playbook action with an inventory
+    directory instead of a file.
+    """
+
+    rulebook = utils.BASE_DATA_PATH / "rulebooks/test_inventory_as_dir.yml"
+    inventory = utils.BASE_DATA_PATH / "inventories/inventory_as_dir"
+    cmd = utils.Command(
+        rulebook=rulebook,
+        inventory=inventory,
+    )
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_CMD_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert not result.stderr
+    assert (
+        "hostvar_value" in result.stdout
+    ), "hostvar_value not found in stdout"
+    assert (
+        "groupvar_value" in result.stdout
+    ), "groupvar_value not found in stdout"
