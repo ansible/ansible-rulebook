@@ -32,7 +32,11 @@ from ansible_rulebook.conf import settings
 from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.rule_types import RuleSet, RuleSetQueue
-from ansible_rulebook.util import decryptable
+from ansible_rulebook.util import (
+    decryptable,
+    decrypted_context,
+    substitute_variables,
+)
 from ansible_rulebook.validators import Validate
 from ansible_rulebook.vault import has_vaulted_str
 from ansible_rulebook.websocket import (
@@ -74,6 +78,12 @@ async def run(parsed_args: argparse.Namespace) -> None:
             raise WebSocketExchangeException(
                 "Error communicating with web socket server"
             )
+        context = decrypted_context(startup_args.variables)
+        startup_args.env_vars = substitute_variables(
+            startup_args.env_vars, context
+        )
+        for k, v in startup_args.env_vars.items():
+            os.environ[k] = str(v)
     else:
         startup_args = StartupArgs()
         startup_args.variables = load_vars(parsed_args)

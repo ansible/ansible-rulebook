@@ -7,6 +7,7 @@
 - Add generic error message for unknown source errors
 ### Fixed
 - Allow user to optionally include matching events
+- Allow for fetching env and file contents from EDA server
 
 
 ## [1.1.1] - 2024-09-19

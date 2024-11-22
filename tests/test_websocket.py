@@ -3,7 +3,7 @@ import base64
 import hashlib
 import json
 import os
-from typing import Dict, List
+from typing import Dict, List, Optional
 from unittest import mock
 from unittest.mock import AsyncMock, patch
 
@@ -42,17 +42,17 @@ def load_file(
     data_list: List,
     whole_file=False,
     block_size: int = 1024,
+    additional_attributes: Optional[dict] = None,
 ) -> None:
     with open(filename, "rb") as f:
         if whole_file:
-            data_list.append(
-                json.dumps(
-                    {
-                        "type": data_type,
-                        "data": base64.b64encode(f.read()).decode("ascii"),
-                    }
-                ).encode("utf-8")
-            )
+            payload = {
+                "type": data_type,
+                "data": base64.b64encode(f.read()).decode("ascii"),
+            }
+            if additional_attributes:
+                payload.update(additional_attributes)
+            data_list.append(json.dumps(payload).encode("utf-8"))
         else:
             while filedata := f.read(block_size):
                 data_list.append(
@@ -70,8 +70,29 @@ def load_file(
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
+@pytest.mark.parametrize(
+    ("file_contents", "checks", "single"),
+    [
+        (
+            [
+                ("./data/test_cert.pem", "template.cert_file"),
+                ("./data/test_key.pem", "template.key_file"),
+            ],
+            [
+                ("cert_file", "./data/test_cert.pem"),
+                ("key_file", "./data/test_key.pem"),
+            ],
+            False,
+        ),
+        (
+            [("./data/test_cert.pem", "template")],
+            [("filename", "./data/test_cert.pem")],
+            True,
+        ),
+    ],
+)
 @pytest.mark.asyncio
-async def test_request_workload():
+async def test_request_workload(file_contents, checks, single):
     prepare_settings()
     os.chdir(HERE)
     controller_url = "https://www.example.com"
@@ -94,6 +115,16 @@ async def test_request_workload():
     load_file("./rules/rules.yml", "Rulebook", test_data, True)
     load_file("./playbooks/inventory.yml", "Inventory", test_data, True)
     load_file("./data/test_vars.yml", "ExtraVars", test_data, True)
+    load_file("./data/test_env.yml", "EnvVars", test_data, True)
+    for file_name, var_name in file_contents:
+        load_file(
+            file_name,
+            "FileContents",
+            test_data,
+            True,
+            1024,
+            {"template_key": var_name},
+        )
     test_data.append(dict2json({"type": "EndOfResponse"}))
 
     with patch("ansible_rulebook.websocket.websockets.connect") as mo:
@@ -108,6 +139,21 @@ async def test_request_workload():
         assert response.controller_ssl_verify == controller_ssl_verify
         assert response.rulesets[0].name == "Demo rules"
         assert len(response.rulesets[0].rules) == 6
+        assert response.env_vars["ENV1"] == "abc"
+        assert response.env_vars["ENV2"] == "xyz"
+        assert response.variables["ENV1"] == "abc"
+        assert response.variables["ENV2"] == "xyz"
+        for key, filename in checks:
+            if single:
+                with open(response.variables["eda"][key]) as f:
+                    data = f.read()
+            else:
+                with open(response.variables["eda"]["filename"][key]) as f:
+                    data = f.read()
+
+            with open(filename) as f:
+                original_data = f.read()
+            assert data == original_data
 
 
 @pytest.mark.asyncio
