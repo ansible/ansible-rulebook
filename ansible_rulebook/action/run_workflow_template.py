@@ -70,10 +70,11 @@ class RunWorkflowTemplate:
             self.helper.metadata.rule_set,
             self.helper.metadata.rule,
         )
-
         self.job_args["extra_vars"] = self.helper.collect_extra_vars(
-            self.job_args.get("extra_vars", {})
+            self.job_args.get("extra_vars", {}),
+            self.action_args.get("include_events", True),
         )
+
         await self._job_start_event()
         await self._run()
 

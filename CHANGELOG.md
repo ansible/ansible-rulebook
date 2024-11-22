@@ -3,6 +3,13 @@
 
 ## [Unreleased]
 ### Changed
+### Added
+### Fixed
+- Allow user to optionally include matching events
+
+
+## [1.1.1] - 2024-09-19
+### Changed
 - Fixed documentation on matching events in multi condition
 ### Added
 - Support for switching slugs to connect to controller via gateway
