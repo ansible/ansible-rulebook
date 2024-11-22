@@ -26,9 +26,10 @@ Ready to contribute? Here's how to set up `ansible_rulebook` for local developme
     cd ansible_rulebook/
     python3.9 -m venv venv
     source venv/bin/activate
-    pip install -e .
+    pip install -e .[development]
     pip install -r requirements_dev.txt
     ansible-galaxy collection install ansible.eda
+    npm install commitlint
 
 5. Create a branch for local development:
 
@@ -50,11 +51,20 @@ Now you can make your changes locally.
 To get flake8 and tox, just pip install them into your virtualenv.
 
 7. Commit your changes and push your branch to GitHub:
+   We follow the conventionalcommit_ standards for commit message
+   During the pre-commit phase we will validate the commit message
+   You have to install the hook with the following command:
+
+.. code-block:: console
+
+    pre-commit install --hook-type commit-msg
+
+.. _conventionalcommit : https://www.conventionalcommits.org/en/v1.0.0/
 
 .. code-block:: console
 
     git add .
-    git commit -m "Your detailed description of your changes."
+    git commit -m "fix: title about the bug fix"
     git push origin name-of-your-bugfix-or-feature
 
 8. Submit a pull request through the GitHub website.
@@ -74,33 +84,16 @@ The dockerfile points to the required collection_ of ansible which provides sour
 
 
 
-Git pre-commit hooks (optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Git pre-commit hooks
+~~~~~~~~~~~~~~~~~~~~
 
-To automatically run linters and code formatter you may use
+To automatically run linters and code formatter we use
 `git pre-commit hooks <https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks>`_.
 This project provides a configuration for `pre-commit <https://pre-commit.com/>`_
-framework to automatically setup hooks for you.
+framework to automatically setup hooks for you. Using the pre-commit is recommended
+to conform to the PR guidelines.
 
-1. First install the ``pre-commit`` tool:
-
-  a. Into your virtual environment:
-
-     .. code-block:: console
-
-         pip install pre-commit
-
-  b. Into your user directory:
-
-     .. code-block:: console
-
-         pip install --user pre-commit
-
-  c. Via ``pipx`` tool:
-
-     .. code-block:: console
-
-         pipx install pre-commit
+1. The pre-commit package is installed when you create the dev env (Step 4 above)
 
 2. Then generate git pre-commit hooks:
 

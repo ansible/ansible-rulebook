@@ -1,6 +1,8 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "https://raw.githubusercontent.com/ansible/ansible-rulebook/main/ansible_rulebook/schema/ruleset_schema.json",
+    "title": "Ansible Rulebook",
+    "description": "See https://ansible.readthedocs.io/projects/rulebook/en/stable/rulebooks.html",
     "type": "array",
     "items": {
         "$ref": "#/$defs/ruleset"
@@ -22,6 +24,10 @@
                     "type": "string"
                 },
                 "gather_facts": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "match_multiple_rules": {
                     "type": "boolean",
                     "default": false
                 },
@@ -50,6 +56,7 @@
                 }
             },
             "required": [
+                "name",
                 "hosts",
                 "sources",
                 "rules"
@@ -150,6 +157,9 @@
                             "type": "string"
                         },
                         {
+                            "type": "boolean"
+                        },
+                        {
                             "$ref": "#/$defs/all-condition"
                         },
                         {
@@ -174,6 +184,9 @@
                                 "$ref": "#/$defs/run-job-template-action"
                             },
                             {
+                                "$ref": "#/$defs/run-workflow-template-action"
+                            },
+                            {
                                 "$ref": "#/$defs/post-event-action"
                             },
                             {
@@ -193,6 +206,9 @@
                             },
                             {
                                 "$ref": "#/$defs/shutdown-action"
+                            },
+                            {
+                                "$ref": "#/$defs/pg-notify-action"
                             }
                         ]
                     }
@@ -207,6 +223,9 @@
                         },
                         {
                             "$ref": "#/$defs/run-job-template-action"
+                        },
+                        {
+                            "$ref": "#/$defs/run-workflow-template-action"
                         },
                         {
                             "$ref": "#/$defs/post-event-action"
@@ -228,6 +247,9 @@
                         },
                         {
                             "$ref": "#/$defs/shutdown-action"
+                        },
+                        {
+                            "$ref": "#/$defs/pg-notify-action"
                         }
                     ]
                 }
@@ -345,9 +367,6 @@
                 "run_module": {
                     "type": "object",
                     "properties": {
-                        "copy_files": {
-                            "type": "boolean"
-                        },
                         "name": {
                             "type": "string"
                         },
@@ -379,7 +398,10 @@
                             "type": "number"
                         },
                         "module_args": {
-                            "type": "object"
+                            "type": [
+                                "object",
+                                "string"
+                            ]
                         },
                         "extra_vars": {
                             "type": "object"
@@ -431,6 +453,10 @@
                         },
                         "delay": {
                             "type": "integer"
+                        },
+                        "include_events": {
+                            "type": "boolean",
+                            "default": true
                         }
                     },
                     "required": [
@@ -442,6 +468,95 @@
             },
             "required": [
                 "run_job_template"
+            ],
+            "additionalProperties": false
+        },
+        "run-workflow-template-action": {
+            "type": "object",
+            "properties": {
+                "run_workflow_template": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        },
+                        "organization": {
+                            "type": "string"
+                        },
+                        "job_args": {
+                            "type": "object"
+                        },
+                        "post_events": {
+                            "type": "boolean"
+                        },
+                        "set_facts": {
+                            "type": "boolean"
+                        },
+                        "ruleset": {
+                            "type": "string"
+                        },
+                        "var_root": {
+                            "type": "string"
+                        },
+                        "retry": {
+                            "type": "boolean"
+                        },
+                        "retries": {
+                            "type": "integer"
+                        },
+                        "delay": {
+                            "type": "integer"
+                        },
+                        "include_events": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    },
+                    "required": [
+                        "name",
+                        "organization"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "run_workflow_template"
+            ],
+            "additionalProperties": false
+        },
+        "pg-notify-action": {
+            "type": "object",
+            "properties": {
+                "pg_notify": {
+                    "type": "object",
+                    "properties": {
+                        "dsn": {
+                            "type": "string"
+                        },
+                        "channel": {
+                            "type": "string"
+                        },
+                        "event": {
+                            "type": [
+                                "string",
+                                "object"
+                            ]
+                        },
+                        "remove_meta": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    "required": [
+                        "dsn",
+                        "channel",
+                        "event"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "pg_notify"
             ],
             "additionalProperties": false
         },

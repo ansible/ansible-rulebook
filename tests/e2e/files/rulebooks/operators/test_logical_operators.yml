@@ -136,6 +136,15 @@
           - id: "Testcase #11"
             left_hand: 5
             right_hand: 5
+          - id: "Testcase #12"
+            asd:
+              x:
+              - 0
+              -
+                - 0
+                - 0
+                - a:
+                    b: 3.1415
 
 
 
@@ -222,4 +231,10 @@
       action:
         debug:
           msg: "Testcase #11 passes"
+
+    - name: "Testcase #12"
+      condition: event.asd["x"][1][2].a["b"] == 3.1415
+      action:
+        debug:
+          msg: "Testcase #12 passes"
 

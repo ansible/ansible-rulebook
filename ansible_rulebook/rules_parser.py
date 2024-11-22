@@ -20,7 +20,7 @@ from ansible_rulebook.condition_parser import (
     parse_condition as parse_condition_value,
 )
 from ansible_rulebook.conf import settings
-from ansible_rulebook.util import substitute_variables
+from ansible_rulebook.util import decrypted_context, substitute_variables
 
 from .exception import (
     RulenameDuplicateException,
@@ -83,6 +83,9 @@ def parse_rule_sets(
                 gather_facts=rule_set.get("gather_facts", False),
                 uuid=str(uuid.uuid4()),
                 default_events_ttl=rule_set.get("default_events_ttl", None),
+                match_multiple_rules=rule_set.get(
+                    "match_multiple_rules", False
+                ),
             )
         )
     return rule_set_list
@@ -130,7 +133,8 @@ def parse_rules(rules: Dict, variables: Dict) -> List[rt.Rule]:
         if name is None:
             raise RulenameEmptyException("Rule name not provided")
 
-        name = substitute_variables(name, variables)
+        context = decrypted_context(variables)
+        name = substitute_variables(name, context)
         if name == "":
             raise RulenameEmptyException("Rule name cannot be an empty string")
 
@@ -186,6 +190,8 @@ def parse_action(action: Dict) -> rt.Action:
 def parse_condition(condition: Any) -> rt.Condition:
     if isinstance(condition, str):
         return rt.Condition("all", [parse_condition_value(condition)])
+    elif isinstance(condition, bool):
+        return rt.Condition("all", [parse_condition_value(str(condition))])
     elif isinstance(condition, dict):
         timeout = condition.pop("timeout", None)
         keys = list(condition.keys())
@@ -193,7 +199,7 @@ def parse_condition(condition: Any) -> rt.Condition:
             when = keys[0]
             return rt.Condition(
                 when,
-                [parse_condition_value(c) for c in condition[when]],
+                [parse_condition_value(str(c)) for c in condition[when]],
                 timeout,
             )
         else:

@@ -10,6 +10,15 @@ on:
   workflow_dispatch:
 
 jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: run commitlint
+        uses: wagoid/commitlint-github-action@v5
+
   flake8:
     runs-on: ubuntu-latest
     steps:
@@ -39,7 +48,7 @@ jobs:
         with:
           version: "22.12.0"
 
-  common-tests:
+  all-tests:
     runs-on: ubuntu-latest
 
     strategy:
@@ -48,6 +57,7 @@ jobs:
           - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
 
     steps:
       - name: Checkout
@@ -58,8 +68,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Common tests
-        uses: ./.github/actions/common-tests
+      - name: All tests
+        env:
+          PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_USER: ${{ vars.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_USER }}
+          PDE_ORG_RESULTS_UPLOAD_PASSWORD: ${{ secrets.PDE_ORG_RESULTS_UPLOAD_PASSWORD }}
+          PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_URL: ${{ vars.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_URL }}
+        uses: ./.github/actions/all-tests
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -70,3 +84,13 @@ jobs:
           flags: "unittests-${{ matrix.python-version }}"
           name: codecov-umbrella
           verbose: true
+
+  build-and-test-image:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Build and test the container image
+      uses: ./.github/actions/image-test

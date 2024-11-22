@@ -2,21 +2,21 @@
 - name: 29 run module
   hosts: all
   sources:
-    - range:
-        limit: 5
+    - ansible.eda.generic:
+        payload:
+          - i: 1
+          - i: 2
+          - i: 3
   rules:
     - name: r1
       condition: event.i == 1
       action:
         run_module:
-          name: ansible.eda.upcase
+          post_events: True
+          name: ansible.builtin.debug
           module_args:
-              name: Fred Flintstone
-
-
-
-
-
-
-
-
+              msg: "I am Malenia, blade of Miquella"
+    - name: r2
+      condition: event.msg == "I am Malenia, blade of Miquella"
+      action:
+        print_event:

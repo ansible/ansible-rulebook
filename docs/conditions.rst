@@ -48,6 +48,57 @@ The data type is of great importance for the rules engine. The following types a
 * floats (dot notation and scientific notation)
 * null
 
+Navigate structured data
+************************
+
+You can navigate structured event, fact, var data objects using either dot notation or bracket notation:
+
+    .. code-block:: yaml
+
+      rules:
+        - name: Using dot notation
+          condition: event.something.nested == true
+          action:
+            debug:
+        - name: Analogous, but using bracket notation
+          condition: event.something["nested"] == true
+          action:
+            debug:
+
+Both of the above examples checks for the same value (attribute "nested" inside of "something") to be equal to `true`.
+
+Bracket notation might be preferable to dot notation when the structured data contains a key using symbols
+or other special characters:
+
+    .. code-block:: yaml
+
+      name: Looking for specific metadata
+      condition: event.resource.metadata.labels["app.kubernetes.io/name"] == "hello-pvdf"
+      action:
+        debug:
+
+You can find more information about dot notation and bracket notation also in the Ansible playbook documentation for `Referencing key:value dictionary variables <https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#referencing-key-value-dictionary-variables>`_.
+
+You can access list in structured event, fact, var data objects using bracket notation too.
+The first item in a list is item 0, the second item is item 1.
+Like Python, you can access the `n`-to-last item in the list by supplying a negative index.
+For example:
+
+    .. code-block:: yaml
+
+      rules:
+        - name: Looking for the first item in the list
+          condition: event.letters[0] == "a"
+          action:
+            debug:
+        - name: Looking for the last item in the list
+          condition: event.letters[-1] == "z"
+          action:
+            debug:
+
+You can find more information the bracket notation for list also in the Ansible playbook 
+documentation for `Referencing list variables <https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#referencing-list-variables>`_.
+
 Supported Operators
 *******************
 
@@ -135,6 +186,22 @@ Single condition
 
 When an event comes with ``outage`` attribute as true, the specified playbook is executed.
 
+Single boolean
+--------------
+
+    .. code-block:: yaml
+
+        name: An automatic remediation rule
+        condition: event.outage
+        action:
+          run_playbook:
+            name: remediate_outage.yml
+
+If the ``outage`` attribute is a boolean, you can use it
+by itself in the condition. This is a shorter version of
+the previous example. If the value is true the condition
+passes and the action is triggered.
+
 Multiple conditions where **all** of them have to match
 -------------------------------------------------------
 
@@ -186,7 +253,7 @@ Multiple conditions where **all** of them have to match with internal references
       - name: Delayed comparison
         hosts: all
         sources:
-        - generic:
+        - ansible.eda.generic:
             payload:
               - friend_list:
                   names:
@@ -227,7 +294,7 @@ Multiple conditions where **all** of them have to match with internal references
       - name: multiple conditions caching
         hosts: all
         sources:
-          - generic:
+          - ansible.eda.generic:
               payload:
                 - request:
                     type: Delete
@@ -417,6 +484,8 @@ Multiple conditions with assignment
 
 When a condition is evaluated if the condition passes the matching event
 it is stored in well known attribute(s) called **m_0**, **m_1**, **m_2**.....
+The first condition will be stored in **m_0** and the second condition in **m_1** ...
+Its based on the position of the condition in the list so you can predictably use it in other conditions.
 You can optionally alias these attribute(s) using the **<<** operator. For example:
 
     .. code-block:: yaml
@@ -468,7 +537,7 @@ Multiple condition with default assignments
           all:
             - event.i == 1
             - event.i == 2
-            - event.i == events.m.i + 3
+            - event.i == events.m_0.i + 3
         action:
           debug:
             msg:
@@ -476,7 +545,7 @@ Multiple condition with default assignments
               - "second: {{ events.m_1 }}"
               - "third: {{ events.m_2 }}"
 
-The first match is stored as **m**, and the subsequent ones are stored as **m_1**, **m_2** ...
+The first match is stored as **m_0**, and the subsequent ones are stored as **m_1**, **m_2** ...
 
 Single condition assignment (Not supported)
 -------------------------------------------
@@ -719,6 +788,7 @@ Check if an item exists in a list
 | The following examples show how to use `in` `not in` `contains` and `not contains` operators to check if an item exists in a list
 
     .. code-block:: yaml
+
         # variables file
         expected_levels:
           - "WARNING"
@@ -796,6 +866,9 @@ Check if an item does not exist in a list based on a test
 | The value is based on the operator used, if the operator is regex then the value is a pattern.
 | If the operator is one of >,>=,<,<= then the value is either an integer or a float
 
+You can find more information for the *select* condition also in the Ansible playbook 
+documentation for `Loops and list comprehensions <https://docs.ansible.com/ansible/latest/playbook_guide/complex_data_manipulation.html#loops-and-list-comprehensions>`_.
+
 Checking if an object exists in a list based on a test
 ------------------------------------------------------
 
@@ -833,6 +906,8 @@ Checking if an object does not exist in a list based on a test
 | The value is based on the operator used, if the operator is regex then the value is a pattern.
 | If the operator is one of >, >=, <, <= then the value is either an integer or a float.
 | If the operator is in or not in then the value is list of integer, float or string.
+
+You can find more information for the *selectattr* condition also in the Ansible playbook documentation for `Loops and list comprehensions <https://docs.ansible.com/ansible/latest/playbook_guide/complex_data_manipulation.html#loops-and-list-comprehensions>`_.
 
 
 FAQ
@@ -907,8 +982,35 @@ Example:
 | placement of this rule is important. If the rule is defined
 | first in the rulebook it will get executed all the time till
 | the variable gets defined this might lead to misleading results and
-| skipping of other rules. You should typically combine the 
+| skipping of other rules. You should typically combine the
 | is not defined with another comparison. It's not important to check
 | if an attribute exists before you use it in a condition. The rule engine
 | will check for the existence and only then compare it. If its missing, the
 | comparison fails.
+
+
+| **Q:** If a condition string has an embedded colon followed by a space in it how do I escape it?
+
+| **Ans:** During the rulebook parsing you would see this error message:
+| ERROR - Terminating mapping values are not allowed here.
+| To resolve this error you would have to quote the whole condition string or use the > or | and
+| move the entire condition to a separate line.
+
+Example:
+    .. code-block:: yaml
+
+      name: rule1
+      condition: 'event.abc == "test: 1"'
+
+
+    .. code-block:: yaml
+
+      name: rule1
+      condition: >
+        event.abc == "test: 1"
+
+    .. code-block:: yaml
+
+      name: rule1
+      condition: |
+        event.abc == "test: 1"

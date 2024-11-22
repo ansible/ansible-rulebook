@@ -1,3 +1,4 @@
 # Docs
 sphinx
 sphinx-ansible-theme == 0.10.1
+pyyaml

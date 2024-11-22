@@ -49,6 +49,9 @@ def test_parse_condition():
         "EqualsExpression": {"lhs": {"Fact": "range.i"}, "rhs": {"Integer": 1}}
     } == visit_condition(parse_condition("fact.range.i == 1"), {})
     assert {
+        "EqualsExpression": {"lhs": {"Fact": "['i']"}, "rhs": {"Integer": 1}}
+    } == visit_condition(parse_condition("fact['i'] == 1"), {})
+    assert {
         "EqualsExpression": {
             "lhs": {"Fact": "range.pi"},
             "rhs": {"Float": 3.1415},
@@ -60,6 +63,60 @@ def test_parse_condition():
             "rhs": {"Integer": 1},
         }
     } == visit_condition(parse_condition("fact.range.i > 1"), {})
+
+    assert {
+        "EqualsExpression": {
+            "lhs": {"Fact": "range['pi']"},
+            "rhs": {"Float": 3.1415},
+        }
+    } == visit_condition(parse_condition("fact.range['pi'] == 3.1415"), {})
+    assert {
+        "EqualsExpression": {
+            "lhs": {"Fact": 'range["pi"]'},
+            "rhs": {"Float": 3.1415},
+        }
+    } == visit_condition(parse_condition('fact.range["pi"] == 3.1415'), {})
+    # `Should start with event., events.,fact., facts. or vars.` semantic check
+    # `Should start with event[...], fact[...], ` semantic check
+    with pytest.raises(ConditionParsingException):
+        visit_condition(
+            parse_condition("xyz.range.pi == 3.1415"),
+            {},
+        )
+    assert {
+        "EqualsExpression": {
+            "lhs": {"Fact": 'range["pi"].value'},
+            "rhs": {"Float": 3.1415},
+        }
+    } == visit_condition(
+        parse_condition('fact.range["pi"].value == 3.1415'), {}
+    )
+    assert {
+        "EqualsExpression": {
+            "lhs": {"Fact": "range[0]"},
+            "rhs": {"Float": 3.1415},
+        }
+    } == visit_condition(parse_condition("fact.range[0] == 3.1415"), {})
+    assert {
+        "EqualsExpression": {
+            "lhs": {"Fact": "range[-1]"},
+            "rhs": {"Float": 3.1415},
+        }
+    } == visit_condition(parse_condition("fact.range[-1] == 3.1415"), {})
+    # invalid index must be signed int, not a floating point
+    with pytest.raises(ConditionParsingException):
+        visit_condition(
+            parse_condition("fact.range[-1.23] == 3.1415"),
+            {},
+        )
+    assert {
+        "EqualsExpression": {
+            "lhs": {"Fact": 'range["x"][1][2].a["b"]'},
+            "rhs": {"Float": 3.1415},
+        }
+    } == visit_condition(
+        parse_condition('fact.range["x"][1][2].a["b"] == 3.1415'), {}
+    )
 
     assert {
         "NegateExpression": {
@@ -313,6 +370,32 @@ def test_parse_condition():
         parse_condition("fact.friends not contains 'fred'"), {}
     )
 
+    assert {
+        "SearchMatchesExpression": {
+            "lhs": {"Event": "['url']"},
+            "rhs": {
+                "SearchType": {
+                    "kind": {"String": "match"},
+                    "pattern": {
+                        "String": "https://example.com/users/.*/resources"
+                    },
+                    "options": [
+                        {
+                            "name": {"String": "ignorecase"},
+                            "value": {"Boolean": True},
+                        }
+                    ],
+                }
+            },
+        }
+    } == visit_condition(
+        parse_condition(
+            "event['url'] is "
+            + 'match("https://example.com/users/.*/resources", '
+            + "ignorecase=true)"
+        ),
+        {},
+    )
     assert {
         "SearchMatchesExpression": {
             "lhs": {"Event": "url"},

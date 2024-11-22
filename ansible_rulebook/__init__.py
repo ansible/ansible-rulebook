@@ -14,4 +14,13 @@
 
 """Top-level package for Ansible Events."""
 
-__version__ = "__version__ = '1.0.0'"
+import yaml
+
+__version__ = "1.1.1"
+
+
+def construct_vault_encrypted_unicode(loader, node):
+    return loader.construct_scalar(node)
+
+
+yaml.SafeLoader.add_constructor("!vault", construct_vault_encrypted_unicode)

@@ -1,0 +1,19 @@
+---
+- name: Test run workflow templates
+  hosts: all
+  sources:
+    - range:
+        limit: 5
+  rules:
+    - name: "Run workflow template"
+      condition: event.i == 1
+      action:
+        run_workflow_template:
+          name: Demo Workflow Template
+          job_args:
+            extra_vars:
+              hello: Fred
+          retries: 1
+          delay: 10
+          set_facts: True
+          organization: Default

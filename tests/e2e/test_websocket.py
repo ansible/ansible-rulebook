@@ -16,20 +16,21 @@ DEFAULT_TIMEOUT = 15
 
 @pytest.mark.e2e
 @pytest.mark.asyncio
-async def test_websocket_messages():
+@pytest.mark.parametrize("expect_failure", [True, False])
+async def test_websocket_messages(expect_failure):
     """
     Verify that ansible-rulebook can correctly
     send event messages to a websocket server
     """
     # variables
-    host = "localhost"
+    host = "127.0.0.1"
     endpoint = "/api/ws2"
     proc_id = "42"
-    port = 31415
+    port = 31415 if expect_failure else 31414
     rulebook = (
         utils.BASE_DATA_PATH / "rulebooks/websockets/test_websocket_range.yml"
     )
-    websocket_address = f"ws://localhost:{port}{endpoint}"
+    websocket_address = f"ws://127.0.0.1:{port}{endpoint}"
     cmd = utils.Command(
         rulebook=rulebook,
         websocket=websocket_address,
@@ -39,7 +40,7 @@ async def test_websocket_messages():
 
     # run server and ansible-rulebook
     queue = asyncio.Queue()
-    handler = partial(utils.msg_handler, queue=queue)
+    handler = partial(utils.msg_handler, queue=queue, failed=expect_failure)
     async with ws_server.serve(handler, host, port):
         LOGGER.info(f"Running command: {cmd}")
         proc = await asyncio.create_subprocess_shell(
@@ -50,7 +51,12 @@ async def test_websocket_messages():
         )
 
         await asyncio.wait_for(proc.wait(), timeout=DEFAULT_TIMEOUT)
-        assert proc.returncode == 0
+        if expect_failure:
+            assert proc.returncode == 1
+            assert queue.qsize() == 2
+            return
+        else:
+            assert proc.returncode == 0
 
     # Verify data
     assert not queue.empty()
@@ -60,7 +66,7 @@ async def test_websocket_messages():
     job_counter = 0
     action_counter = 0
     session_stats_counter = 0
-
+    stats = None
     while not queue.empty():
         data = await queue.get()
         assert data["path"] == endpoint
@@ -101,11 +107,11 @@ async def test_websocket_messages():
             assert stats["numberOfRules"] == 1
             assert stats["numberOfDisabledRules"] == 0
             assert data["activation_id"] == proc_id
-            if session_stats_counter == 2:
-                assert stats["rulesTriggered"] == 1
-                assert stats["eventsProcessed"] == 2000
-                assert stats["eventsMatched"] == 1
-                assert stats["eventsSuppressed"] == 1999
+
+    assert stats["rulesTriggered"] == 1
+    assert stats["eventsProcessed"] == 2000
+    assert stats["eventsMatched"] == 1
+    assert stats["eventsSuppressed"] == 1999
 
     assert ansible_event_counter == 9
     assert session_stats_counter >= 2

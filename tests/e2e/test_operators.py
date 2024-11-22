@@ -7,6 +7,8 @@ import subprocess
 import pytest
 from pytest_check import check
 
+from ansible_rulebook import terminal
+
 from . import utils
 from .settings import SETTINGS
 
@@ -227,12 +229,16 @@ def test_relational_operators(update_environment):
         ), "testcase #22 failed"
 
     with check:
-        assert (
-            "Ruleset: Test relational operators rule: Finish"
-            " - test shutdown msg has initiated shutdown" in result.stdout
-        ), "Shutdown message failed"
+        banners = terminal.Display.get_banners("ruleset", result.stdout)
+        banners = [
+            banner
+            for banner in banners
+            if "Test relational operators rule: Finish"
+            " - test shutdown msg has initiated shutdown" in banner
+        ]
+        assert banners, "Shutdown message failed"
 
-    assert len(result.stdout.splitlines()) == 25, "Unexpected output"
+    assert len(result.stdout.splitlines()) == 100, "Unexpected output"
 
 
 @pytest.mark.e2e
@@ -359,7 +365,7 @@ def test_membership_operators(update_environment):
             "Output for Testcase #12" in result.stdout
         ), "Testcase #12 failed"
 
-    assert len(result.stdout.splitlines()) == 19, "Unexpected output"
+    assert len(result.stdout.splitlines()) == 76, "Unexpected output"
 
 
 @pytest.mark.e2e
@@ -493,6 +499,9 @@ def test_logical_operators(update_environment):
 
     with check:
         assert "Testcase #11 passes" in result.stdout, "Testcase #11 failed"
+
+    with check:
+        assert "Testcase #12 passes" in result.stdout, "Testcase #12 failed"
 
 
 @pytest.mark.e2e
@@ -785,3 +794,15 @@ def test_selectattr_operator():
             )
             == 1
         ), "testcase #11 failed"
+
+    with check:
+        assert (
+            len(
+                [
+                    line
+                    for line in result.stdout.splitlines()
+                    if "Output for testcase #12" in line
+                ]
+            )
+            == 1
+        ), "testcase #12 failed"

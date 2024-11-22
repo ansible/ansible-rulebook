@@ -2,7 +2,7 @@
 - name: 75 all conditions
   hosts: all
   sources:
-     - generic:
+     - ansible.eda.generic:
           payload:
              - friend_list:
                  names:

@@ -6,3 +6,6 @@ venv
 .tox
 .vscode/
 .idea/
+.ansible/
+*.egg-info/
+.pytest_cache/

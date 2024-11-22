@@ -2,7 +2,7 @@
 - name: 57 once after multiple
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         loop_count: 3
         loop_delay: 18
         shutdown_after: 60

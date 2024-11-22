@@ -2,7 +2,7 @@
 - name: 65 selectattr 3
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         payload:
              - person:
                  name: Fred

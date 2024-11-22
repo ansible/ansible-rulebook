@@ -16,3 +16,4 @@
               hello: Fred
           retries: 1
           delay: 10
+          set_facts: True

@@ -1,0 +1,12 @@
+---
+- name: "89 source error with msg"
+  hosts: all
+  sources:
+    - name: range_fail_with_msg
+      source_with_exception:
+        error_msg: "range fail with msg"
+  rules:
+    - name: r1
+      condition: true
+      action:
+        print_event:

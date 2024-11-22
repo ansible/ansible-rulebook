@@ -16,7 +16,6 @@ repos:
         additional_dependencies:
           - flake8-bugbear
   - repo: local
-    language: javascript
     hooks:
       - id: ajv
         name: ajv
@@ -33,3 +32,9 @@ repos:
       - id: pretty-format-json
         language_version: python3
         args: ['--autofix', '--no-sort-keys', '--indent', '4']
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: v9.5.0
+    hooks:
+      - id: commitlint
+        additional_dependencies: ['@commitlint/config-conventional']
+        stages: [commit-msg]

@@ -24,125 +24,128 @@ class ShutdownException(Exception):
 
 
 class RulenameEmptyException(Exception):
-
     pass
 
 
 class RulesetNameDuplicateException(Exception):
-
     pass
 
 
 class RulesetNameEmptyException(Exception):
-
     pass
 
 
 class RulenameDuplicateException(Exception):
-
     pass
 
 
 class ControllerApiException(Exception):
-
     pass
 
 
 class VarsKeyMissingException(Exception):
-
     pass
 
 
 class InvalidAssignmentException(Exception):
-
     pass
 
 
 class SelectattrOperatorException(Exception):
-
     pass
 
 
 class InvalidIdentifierException(Exception):
-
     pass
 
 
 class SelectOperatorException(Exception):
-
     pass
 
 
 class ConditionParsingException(Exception):
-
     pass
 
 
 class InvalidTypeException(Exception):
-
     pass
 
 
 class PlaybookStatusNotFoundException(Exception):
-
     pass
 
 
 class PlaybookNotFoundException(Exception):
-
     pass
 
 
 class InventoryNeededException(Exception):
-
     pass
 
 
 class RulebookNotFoundException(Exception):
-
     pass
 
 
 class SourcePluginNotFoundException(Exception):
-
     pass
 
 
 class SourceFilterNotFoundException(Exception):
-
     pass
 
 
 class SourcePluginMainMissingException(Exception):
-
     pass
 
 
 class SourcePluginNotAsyncioCompatibleException(Exception):
-
     pass
 
 
 class ControllerNeededException(Exception):
-
     pass
 
 
 class InvalidFilterNameException(Exception):
-
     pass
 
 
 class JobTemplateNotFoundException(Exception):
+    pass
 
+
+class WorkflowJobTemplateNotFoundException(Exception):
     pass
 
 
 class WebSocketExchangeException(Exception):
-
     pass
 
 
 class UnsupportedActionException(Exception):
+    pass
 
+
+class HotReloadException(Exception):
+    pass
+
+
+class InventoryNotFound(Exception):
+    pass
+
+
+class MissingArtifactKeyException(Exception):
+    pass
+
+
+class TokenNotFound(Exception):
+    pass
+
+
+class VaultDecryptException(Exception):
+    pass
+
+
+class AnsibleVaultNotFound(Exception):
     pass

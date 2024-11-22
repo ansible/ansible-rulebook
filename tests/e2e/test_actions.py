@@ -2,12 +2,13 @@
 Module with tests for operators
 """
 import logging
-import pprint
 import re
 import subprocess
 
 import pytest
 from pytest_check import check
+
+from ansible_rulebook import terminal
 
 from . import utils
 from .settings import SETTINGS
@@ -55,9 +56,6 @@ def test_actions_sanity(update_environment):
         "DEFAULT_STARTUP_DELAY",
     )
 
-    with open(inventory) as f:
-        inventory_data = pprint.pformat(f.read())
-
     LOGGER.info(f"Running command: {cmd}")
     result = subprocess.run(
         cmd,
@@ -100,10 +98,10 @@ def test_actions_sanity(update_environment):
     with check:
         expected_debug_lines = [
             "'hosts': ['all']",
-            f"'inventory': {inventory_data}",
+            f"'inventory': '{inventory}'",
             "'project_data_file': None,",
-            "'ruleset': 'Test actions sanity'",
-            "'source_rule_name': 'debug',",
+            "'rule_set': 'Test actions sanity'",
+            "'rule': 'debug',",
             f"'variables': {{'DEFAULT_EVENT_DELAY': '{DEFAULT_EVENT_DELAY}'",
             f"'DEFAULT_SHUTDOWN_AFTER': '{DEFAULT_SHUTDOWN_AFTER}',",
             f"'DEFAULT_STARTUP_DELAY': '{DEFAULT_STARTUP_DELAY}'",
@@ -123,8 +121,8 @@ def test_actions_sanity(update_environment):
             r"[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}"
         )
         expected_debug_regexs = [
-            r"'source_rule_uuid':" + f" '{uuid_regex}'",
-            r"'source_ruleset_uuid':" + f" '{uuid_regex}'",
+            r"'rule_uuid':" + f" '{uuid_regex}'",
+            r"'rule_set_uuid':" + f" '{uuid_regex}'",
             r"'uuid': " + f"'{uuid_regex}'" + r"}}}}",
         ]
 
@@ -159,25 +157,37 @@ def test_actions_sanity(update_environment):
             not in result.stdout
         ), "retract_fact action failed"
 
-    multiple_actions_expected_output = (
-        "Ruleset: Test actions sanity rule: Test multiple actions in "
-        "sequential order has initiated shutdown of type: graceful. "
-        "Delay: 0.000 seconds, Message: Sequential action #2: shutdown\n"
-        "Sequential action #3: debug"
-    )
-
-    with check:
-        assert (
-            multiple_actions_expected_output in result.stdout
-        ), "multiple sequential actions failed"
-
     with check:
         assert (
             "'action': 'multiple_actions'" in result.stdout
         ), "multiple_action action failed"
 
+    multiple_actions_expected_output = (
+        "Test actions sanity rule: Test multiple actions in "
+        "sequential order has initiated shutdown of type: graceful. "
+        "Delay: 0.000 seconds, Message: Sequential action #2: shutdown"
+    )
+
+    with check:
+        banners = terminal.Display.get_banners("ruleset", result.stdout)
+        banners = [
+            banner
+            for banner in banners
+            if multiple_actions_expected_output in banner
+        ]
+        assert banners, "multiple sequential actions ruleset failed"
+
+    with check:
+        banners = terminal.Display.get_banners("debug", result.stdout)
+        banners = [
+            banner
+            for banner in banners
+            if "Sequential action #3: debug" in banner
+        ]
+        assert banners, "multiple sequential actions debug failed"
+
     assert (
-        len(result.stdout.splitlines()) == 56
+        len(result.stdout.splitlines()) == 121
     ), "unexpected output from the rulebook"
 
 
@@ -374,3 +384,36 @@ def test_shutdown_action_now(update_environment):
         assert (
             "This condition should not fire" not in result.stdout
         ), "a post-shutdown condition fired when it should not have"
+
+
+@pytest.mark.e2e
+def test_inventory_as_dir():
+    """
+    Execute a rulebook that contains a run_playbook action with an inventory
+    directory instead of a file.
+    """
+
+    rulebook = utils.BASE_DATA_PATH / "rulebooks/test_inventory_as_dir.yml"
+    inventory = utils.BASE_DATA_PATH / "inventories/inventory_as_dir"
+    cmd = utils.Command(
+        rulebook=rulebook,
+        inventory=inventory,
+    )
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_CMD_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert not result.stderr
+    assert (
+        "hostvar_value" in result.stdout
+    ), "hostvar_value not found in stdout"
+    assert (
+        "groupvar_value" in result.stdout
+    ), "groupvar_value not found in stdout"

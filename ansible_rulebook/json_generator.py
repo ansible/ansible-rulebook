@@ -48,7 +48,7 @@ from ansible_rulebook.rule_types import (
     RuleSet,
     Throttle,
 )
-from ansible_rulebook.util import substitute_variables
+from ansible_rulebook.util import decrypted_context, substitute_variables
 
 OPERATOR_MNEMONIC = {
     "!=": "NotEqualsExpression",
@@ -84,25 +84,19 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
     elif isinstance(parsed_condition, Identifier):
         if parsed_condition.value.startswith("fact."):
             return {"Fact": parsed_condition.value[5:]}
+        elif parsed_condition.value.startswith("fact["):
+            return {"Fact": parsed_condition.value[4:]}
         elif parsed_condition.value.startswith("event."):
             return {"Event": parsed_condition.value[6:]}
+        elif parsed_condition.value.startswith("event["):
+            return {"Event": parsed_condition.value[5:]}
         elif parsed_condition.value.startswith("events."):
             return {"Events": parsed_condition.value[7:]}
         elif parsed_condition.value.startswith("facts."):
             return {"Facts": parsed_condition.value[6:]}
         elif parsed_condition.value.startswith("vars."):
             key = parsed_condition.value[5:]
-            try:
-                return visit_condition(
-                    to_condition_type(
-                        dpath.get(variables, key, separator=".")
-                    ),
-                    variables,
-                )
-            except KeyError:
-                raise VarsKeyMissingException(
-                    f"vars does not contain key: {key}"
-                )
+            return process_vars(variables, key)
         else:
             msg = (
                 f"Invalid identifier : {parsed_condition.value} "
@@ -279,7 +273,8 @@ def visit_source_filter(parsed_source: EventSourceFilter, variables: Dict):
 
 def generate_condition(ansible_condition: RuleCondition, variables: Dict):
     """Generate the condition AST."""
-    condition = visit_condition(ansible_condition.value, variables)
+    context = decrypted_context(variables)
+    condition = visit_condition(ansible_condition.value, context)
     if ansible_condition.when == "any":
         data = {"AnyCondition": condition}
     elif ansible_condition.when == "all":
@@ -309,6 +304,9 @@ def visit_ruleset(ruleset: RuleSet, variables: Dict):
     if ruleset.default_events_ttl:
         data["default_events_ttl"] = ruleset.default_events_ttl
 
+    if ruleset.match_multiple_rules:
+        data["match_multiple_rules"] = ruleset.match_multiple_rules
+
     return {"RuleSet": data}
 
 
@@ -334,3 +332,13 @@ def validate_assignment_expression(value):
             + f"{value} is invalid."
         )
         raise InvalidAssignmentException(msg)
+
+
+def process_vars(variables, key):
+    try:
+        return visit_condition(
+            to_condition_type(dpath.get(variables, key, separator=".")),
+            variables,
+        )
+    except KeyError:
+        raise VarsKeyMissingException(f"vars does not contain key: {key}")

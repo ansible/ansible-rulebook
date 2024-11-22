@@ -22,6 +22,8 @@ from typing import Any, Dict, List, Optional
 
 from drools.dispatch import establish_async_channel, handle_async_messages
 from drools.ruleset import session_stats
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 import ansible_rulebook.rule_generator as rule_generator
 from ansible_rulebook.collection import (
@@ -40,6 +42,7 @@ from ansible_rulebook.rule_types import (
 )
 from ansible_rulebook.util import (
     collect_ansible_facts,
+    decrypted_context,
     find_builtin_filter,
     has_builtin_filter,
     send_session_stats,
@@ -47,6 +50,7 @@ from ansible_rulebook.util import (
 )
 
 from .exception import (
+    HotReloadException,
     SourceFilterNotFoundException,
     SourcePluginMainMissingException,
     SourcePluginNotAsyncioCompatibleException,
@@ -69,8 +73,8 @@ async def heartbeat_task(
 
 
 async def broadcast(shutdown: Shutdown):
-    logger.info(f"Broadcast to queues: {all_source_queues}")
-    logger.info(f"Broadcasting shutdown: {shutdown}")
+    logger.debug(f"Broadcast to queues: {all_source_queues}")
+    logger.debug(f"Broadcasting shutdown: {shutdown}")
     for queue in all_source_queues:
         await queue.put(shutdown)
 
@@ -102,7 +106,7 @@ async def start_source(
 ) -> None:
     all_source_queues.append(queue)
     try:
-        logger.info("load source")
+        logger.info("load source %s", source.source_name)
         if (
             source_dirs
             and source_dirs[0]
@@ -124,12 +128,10 @@ async def start_source(
 
         source_filters = []
 
-        logger.info("load source filters")
-
         source.source_filters.append(meta_info_filter(source))
 
         for source_filter in source.source_filters:
-            logger.info("loading %s", source_filter.filter_name)
+            logger.info("loading source filter %s", source_filter.filter_name)
             if os.path.exists(
                 os.path.join("event_filter", source_filter.filter_name + ".py")
             ):
@@ -159,12 +161,13 @@ async def start_source(
                 (source_filter_module["main"], source_filter.filter_args)
             )
 
+        context = decrypted_context(variables)
         args = {
-            k: substitute_variables(v, variables)
+            k: substitute_variables(v, context)
             for k, v in source.source_args.items()
         }
         fqueue = FilteredQueue(source_filters, queue)
-        logger.info("Calling main in %s", source.source_name)
+        logger.debug("Calling main in %s", source.source_name)
 
         try:
             entrypoint = module["main"]
@@ -196,16 +199,29 @@ async def start_source(
             f"Source {source.source_name} task cancelled, "
             + f"initiated shutdown at {str(datetime.now())}"
         )
-        logger.info("Task cancelled " + shutdown_msg)
+        logger.debug("Task cancelled " + shutdown_msg)
     except BaseException as e:
-        logger.error("Source error %s", str(e))
+        error_msg = str(e)
+        # Get the name of the exception class
+        error_type = str(type(e)).split(".")[-1].replace("'>", "")
+        if not error_msg:
+            user_msg = (
+                f"Unknown error {error_type}: "
+                "source plugin failed with no error message."
+            )
+        else:
+            user_msg = (
+                f"{error_type}: Source plugin failed with error message: "
+                f"'{error_msg}'"
+            )
+        logger.error("Source error: %s", user_msg)
         shutdown_msg = (
-            f"Shutting down source: {source.source_name} error : {e}"
+            f"Shutting down source: {source.source_name} error: {user_msg}"
         )
         logger.error(shutdown_msg)
         raise
     finally:
-        logger.info("Broadcast shutdown to all source plugins")
+        logger.debug("Broadcast shutdown to all source plugins")
         asyncio.create_task(
             broadcast(
                 Shutdown(
@@ -217,15 +233,51 @@ async def start_source(
         )
 
 
+class RulebookFileChangeHandler(FileSystemEventHandler):
+    modified = False
+
+    def on_modified(self, event):
+        logger.debug(f"Rulebook file {event.src_path} has been modified")
+        self.modified = True
+
+    def is_modified(self):
+        return self.modified
+
+
+async def monitor_rulebook(rulebook_file):
+    event_handler = RulebookFileChangeHandler()
+    to_observe = os.path.abspath(rulebook_file)
+    observer = Observer()
+    observer.schedule(event_handler, to_observe, recursive=True)
+    observer.start()
+    try:
+        while not event_handler.is_modified():
+            await asyncio.sleep(1)
+    finally:
+        observer.stop()
+        observer.join()
+        # we need to check if the try-clause completed because
+        # while-loop terminated successfully, in such case we
+        # follow on the hot-reload use case, or if we got into
+        # this finally-clause because of other errors.
+        if event_handler.is_modified():
+            raise HotReloadException(
+                "Rulebook file changed, "
+                + "raising exception so to asyncio.FIRST_EXCEPTION "
+                + "in order to reload"
+            )
+
+
 async def run_rulesets(
     event_log: asyncio.Queue,
     ruleset_queues: List[RuleSetQueue],
     variables: Dict,
     inventory: str = "",
-    parsed_args: argparse.ArgumentParser = None,
+    parsed_args: argparse.Namespace = None,
     project_data_file: Optional[str] = None,
-):
-    logger.info("run_ruleset")
+    file_monitor: str = None,
+) -> bool:
+    logger.debug("run_ruleset")
     rulesets_queue_plans = rule_generator.generate_rulesets(
         ruleset_queues, variables, inventory
     )
@@ -234,7 +286,7 @@ async def run_rulesets(
         return
 
     for ruleset_queue_plan in rulesets_queue_plans:
-        logger.info("ruleset define: %s", ruleset_queue_plan.ruleset.define())
+        logger.debug("ruleset define: %s", ruleset_queue_plan.ruleset.define())
 
     hosts_facts = []
     ruleset_names = []
@@ -275,6 +327,11 @@ async def run_rulesets(
         )
         ruleset_tasks.append(ruleset_task)
 
+    monitor_task = None
+    if file_monitor:
+        monitor_task = asyncio.create_task(monitor_rulebook(file_monitor))
+        ruleset_tasks.append(monitor_task)
+
     logger.info("Waiting for all ruleset tasks to end")
     await asyncio.wait(ruleset_tasks, return_when=asyncio.FIRST_EXCEPTION)
     async_task.cancel()
@@ -284,11 +341,20 @@ async def run_rulesets(
             logger.info("Cancelling " + task.get_name())
             task.cancel()
 
-    logger.info("Waiting on gather")
-    asyncio.gather(*ruleset_tasks)
-    logger.info("Returning from run_rulesets")
+    should_reload = False
+    if monitor_task and isinstance(
+        monitor_task.exception(), HotReloadException
+    ):
+        logger.debug("Hot-reload, setting should_reload")
+        should_reload = True
+
+    logger.debug("Waiting on gather")
+    asyncio.gather(*ruleset_tasks, return_exceptions=True)
+    logger.debug("Returning from run_rulesets")
     if send_heartbeat_task:
         send_heartbeat_task.cancel()
+
+    return should_reload
 
 
 def meta_info_filter(source: EventSource) -> EventSourceFilter:

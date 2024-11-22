@@ -16,18 +16,34 @@ import asyncio
 import gc
 import logging
 import uuid
-from pprint import PrettyPrinter, pformat
+from pprint import pformat
 from types import MappingProxyType
 from typing import Dict, List, Optional, Union, cast
 
 import dpath
+import jinja2.exceptions as jinja2_exceptions
 from drools import ruleset as lang
 from drools.exceptions import (
     MessageNotHandledException,
     MessageObservedException,
 )
+from drools.ruleset import session_stats
 
-from ansible_rulebook.builtin import actions as builtin_actions
+from ansible_rulebook import terminal
+from ansible_rulebook.action.control import Control
+from ansible_rulebook.action.debug import Debug
+from ansible_rulebook.action.metadata import Metadata
+from ansible_rulebook.action.noop import Noop
+from ansible_rulebook.action.pg_notify import PGNotify
+from ansible_rulebook.action.post_event import PostEvent
+from ansible_rulebook.action.print_event import PrintEvent
+from ansible_rulebook.action.retract_fact import RetractFact
+from ansible_rulebook.action.run_job_template import RunJobTemplate
+from ansible_rulebook.action.run_module import RunModule
+from ansible_rulebook.action.run_playbook import RunPlaybook
+from ansible_rulebook.action.run_workflow_template import RunWorkflowTemplate
+from ansible_rulebook.action.set_fact import SetFact
+from ansible_rulebook.action.shutdown import Shutdown as ShutdownAction
 from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import (
     ShutdownException,
@@ -42,12 +58,28 @@ from ansible_rulebook.rule_types import (
 )
 from ansible_rulebook.rules_parser import parse_hosts
 from ansible_rulebook.util import (
+    decrypted_context,
     run_at,
     send_session_stats,
     substitute_variables,
 )
 
 logger = logging.getLogger(__name__)
+
+ACTION_CLASSES = {
+    "debug": Debug,
+    "print_event": PrintEvent,
+    "none": Noop,
+    "set_fact": SetFact,
+    "post_event": PostEvent,
+    "retract_fact": RetractFact,
+    "shutdown": ShutdownAction,
+    "run_playbook": RunPlaybook,
+    "run_module": RunModule,
+    "run_job_template": RunJobTemplate,
+    "run_workflow_template": RunWorkflowTemplate,
+    "pg_notify": PGNotify,
+}
 
 
 class RuleSetRunner:
@@ -75,6 +107,7 @@ class RuleSetRunner:
         self.active_actions = set()
         self.broadcast_method = broadcast_method
         self.event_counter = 0
+        self.display = terminal.Display()
 
     async def run_ruleset(self):
         tasks = []
@@ -108,7 +141,7 @@ class RuleSetRunner:
             raise
 
     async def _cleanup(self):
-        logger.info("Cleaning up ruleset %s", self.name)
+        logger.debug("Cleaning up ruleset %s", self.name)
         if not self.source_loop_task.done():
             self.source_loop_task.cancel()
 
@@ -117,16 +150,22 @@ class RuleSetRunner:
             and self.shutdown
             and self.shutdown.kind == "graceful"
         ):
-            logger.info("Waiting for active actions to end")
+            logger.debug("Waiting for active actions to end")
             await asyncio.wait(
                 self.active_actions,
                 return_when=asyncio.FIRST_EXCEPTION,
                 timeout=self.shutdown.delay,
             )
 
-        for task in self.active_actions:
-            logger.debug("Cancelling active task %s", task.get_name())
-            task.cancel()
+        if self.active_actions:
+            logger.info(
+                "Cancelling %d active tasks, ruleset %s cleanup",
+                len(self.active_actions),
+                self.name,
+            )
+            for task in self.active_actions:
+                logger.debug("Cancelling active task %s", task.get_name())
+                task.cancel()
         if self.shutdown:
             await self.event_log.put(
                 dict(
@@ -149,7 +188,7 @@ class RuleSetRunner:
             str(self.shutdown),
         )
         if self.shutdown.kind == "now":
-            logger.info(
+            logger.debug(
                 "ruleset: %s has issued an immediate shutdown", self.name
             )
             self.action_loop_task.cancel()
@@ -157,10 +196,10 @@ class RuleSetRunner:
             self.ruleset_queue_plan.plan.queue.empty()
             and not self.active_actions
         ):
-            logger.info("ruleset: %s shutdown no pending work", self.name)
+            logger.debug("ruleset: %s shutdown no pending work", self.name)
             self.action_loop_task.cancel()
         else:
-            logger.info(
+            logger.debug(
                 "ruleset: %s waiting %f for shutdown",
                 self.name,
                 self.shutdown.delay,
@@ -176,12 +215,20 @@ class RuleSetRunner:
         try:
             while True:
                 data = await self.ruleset_queue_plan.source_queue.get()
-                if self.parsed_args and self.parsed_args.print_events:
-                    PrettyPrinter(indent=4).pprint(data)
+                # Default to output events at debug level.
+                level = logging.DEBUG
 
-                logger.debug(
-                    "Ruleset: %s, received event: %s ", self.name, str(data)
-                )
+                # If we are printing events adjust the level to the display's
+                # current level to guarantee output.
+                if settings.print_events:
+                    level = self.display.level
+
+                self.display.banner("received event", level=level)
+                self.display.output(f"Ruleset: {self.name}", level=level)
+                self.display.output("Event:", level=level)
+                self.display.output(data, pretty=True, level=level)
+                self.display.banner(level=level)
+
                 if isinstance(data, Shutdown):
                     self.shutdown = data
                     return await self._handle_shutdown()
@@ -223,7 +270,7 @@ class RuleSetRunner:
 
     def _handle_action_completion(self, task):
         self.active_actions.discard(task)
-        logger.info(
+        logger.debug(
             "Task %s finished, active actions %d",
             task.get_name(),
             len(self.active_actions),
@@ -233,7 +280,7 @@ class RuleSetRunner:
             and self.shutdown
             and len(self.active_actions) == 0
         ):
-            logger.info("All actions done")
+            logger.debug("All actions done")
             if not self.action_loop_task.done():
                 self.action_loop_task.cancel()
 
@@ -244,6 +291,15 @@ class RuleSetRunner:
                 queue_item = await self.ruleset_queue_plan.plan.queue.get()
                 rule_run_at = run_at()
                 action_item = cast(ActionContext, queue_item)
+                if (
+                    self.parsed_args
+                    and self.parsed_args.heartbeat > 0
+                    and not settings.skip_audit_events
+                ):
+                    await send_session_stats(
+                        self.event_log,
+                        session_stats(self.ruleset_queue_plan.ruleset.name),
+                    )
                 if len(action_item.actions) > 1:
                     task = asyncio.create_task(
                         self._run_multiple_actions(action_item, rule_run_at)
@@ -286,13 +342,17 @@ class RuleSetRunner:
             f"{action_item.rule}"
         )
         logger.debug("Creating action task %s", task_name)
+        metadata = Metadata(
+            rule_set=action_item.ruleset,
+            rule_set_uuid=action_item.ruleset_uuid,
+            rule=action_item.rule,
+            rule_uuid=action_item.rule_uuid,
+            rule_run_at=rule_run_at,
+        )
+
         task = asyncio.create_task(
             self._call_action(
-                action_item.ruleset,
-                action_item.ruleset_uuid,
-                action_item.rule,
-                action_item.rule_uuid,
-                rule_run_at,
+                metadata,
                 action.action,
                 MappingProxyType(action.action_args),
                 action_item.variables,
@@ -308,11 +368,7 @@ class RuleSetRunner:
 
     async def _call_action(
         self,
-        ruleset: str,
-        ruleset_uuid: str,
-        rule: str,
-        rule_uuid: str,
-        rule_run_at: str,
+        metadata: Metadata,
         action: str,
         immutable_action_args: MappingProxyType,
         variables: Dict,
@@ -320,13 +376,16 @@ class RuleSetRunner:
         hosts: List,
         rules_engine_result,
     ) -> None:
-        logger.info("call_action %s", action)
+        logger.debug("call_action %s", action)
         action_args = immutable_action_args.copy()
 
         error = None
-        if action in builtin_actions:
+        if action in ACTION_CLASSES:
             try:
-                if action == "run_job_template":
+                if (
+                    action == "run_job_template"
+                    or action == "run_workflow_template"
+                ):
                     limit = dpath.get(
                         action_args,
                         "job_args.limit",
@@ -370,40 +429,42 @@ class RuleSetRunner:
 
                 if "var_root" in action_args:
                     var_root = action_args.pop("var_root")
-                    logger.info(
+                    logger.debug(
                         "Update variables [%s] with new root [%s]",
                         variables_copy,
                         var_root,
                     )
                     _update_variables(variables_copy, var_root)
 
-                logger.info(
+                logger.debug(
                     "substitute_variables [%s] [%s]",
                     action_args,
                     variables_copy,
                 )
+                context = decrypted_context(variables_copy)
                 action_args = {
-                    k: substitute_variables(v, variables_copy)
+                    k: substitute_variables(v, context)
                     for k, v in action_args.items()
                 }
-                logger.info("action args: %s", action_args)
+                logger.debug("action args: %s", action_args)
 
                 if "ruleset" not in action_args:
-                    action_args["ruleset"] = ruleset
+                    action_args["ruleset"] = metadata.rule_set
 
-                await builtin_actions[action](
-                    event_log=self.event_log,
+                control = Control(
+                    queue=self.event_log,
                     inventory=inventory,
                     hosts=hosts,
                     variables=variables_copy,
                     project_data_file=self.project_data_file,
-                    source_ruleset_name=ruleset,
-                    source_ruleset_uuid=ruleset_uuid,
-                    source_rule_name=rule,
-                    source_rule_uuid=rule_uuid,
-                    rule_run_at=rule_run_at,
-                    **action_args,
                 )
+
+                await ACTION_CLASSES[action](
+                    metadata,
+                    control,
+                    **action_args,
+                )()
+
             except KeyError as e:
                 logger.error(
                     "KeyError %s with variables %s",
@@ -417,11 +478,11 @@ class RuleSetRunner:
                 )
                 error = e
             except MessageObservedException as e:
-                logger.info("MessageObservedException: %s", action_args)
+                logger.debug("MessageObservedException: %s", action_args)
                 error = e
             except ShutdownException as e:
                 if self.shutdown:
-                    logger.info(
+                    logger.debug(
                         "A shutdown is already in progress, ignoring this one"
                     )
                 else:
@@ -429,6 +490,17 @@ class RuleSetRunner:
             except asyncio.CancelledError:
                 logger.debug("Action task caught Cancelled error")
                 raise
+            except jinja2_exceptions.UndefinedError as e:
+                error = e
+                undefined_variable = str(e).split("has no attribute")
+                if len(undefined_variable) > 1:
+                    logger.error(
+                        "Undefined jinja variable %s in action %s",
+                        undefined_variable[-1],
+                        action,
+                    )
+                else:
+                    raise
             except Exception as e:
                 logger.error("Error calling action %s, err %s", action, str(e))
                 error = e
@@ -448,15 +520,16 @@ class RuleSetRunner:
                     action=action,
                     action_uuid=str(uuid.uuid4()),
                     activation_id=settings.identifier,
+                    activation_instance_id=settings.identifier,
                     playbook_name=action_args.get("name"),
                     status="failed",
                     run_at=run_at(),
-                    rule_run_at=rule_run_at,
+                    rule_run_at=metadata.rule_run_at,
                     message=str(error),
-                    rule=rule,
-                    ruleset=ruleset,
-                    rule_uuid=rule_uuid,
-                    ruleset_uuid=ruleset_uuid,
+                    rule=metadata.rule,
+                    ruleset=metadata.rule_set,
+                    rule_uuid=metadata.rule_uuid,
+                    ruleset_uuid=metadata.rule_set_uuid,
                 )
             )
 

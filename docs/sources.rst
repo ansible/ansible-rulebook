@@ -59,7 +59,7 @@ There are 3 basic patterns that you'll be developing against when considering a 
 
 #. Event Bus Plugins
     These are plugins that listen to a stream of events from a source where the connection
-    is established by the plugin itself. Examples of this are the ``kafka`` and ``mqtt`` plugins.
+    is established by the plugin itself. Examples of this are the ``kafka`` and ``aws_sqs_queue`` plugins.
 
     This is the most ideal and reliable pattern to follow. Durability and Reliability of the data
     is the responsibility of the event source and availability of the data can follow the patterns
@@ -174,7 +174,7 @@ string or a list of host names.
 As the plugin have full access to an unbounded queue that is consumed by ansible-rulebbok
 we carefully recommend to use always the method ``asyncio.Queue.put`` to put events as it's a non-blocking call.
 To give free cpu cycles to the event loop to process the events, we recommend to use ``asyncio.sleep(0)``
-inmediately after the ``put`` method.
+immediately after the ``put`` method.
 
 .. note::
     ansible-rulebook is intended to be a long running process and react to events over the time.
@@ -185,6 +185,9 @@ inmediately after the ``put`` method.
     The rulebook can contain it's own logic to finish the process through the ``shutdown`` action.
     If your plugin needs to perform some cleanup before the process is terminated, you must catch the ``asyncio.CancelledError`` exception.
 
+.. note::
+    Please, pay attention when handling errors in your plugin and ensure to raise an exception with a meaningful message so that ansible-rulebook
+    can log it correctly. Ansible-rulebook will not log the exception itself or print stack traces; it will only log the message you provide.
 
 Distributing plugins
 ^^^^^^^^^^^^^^^^^^^^
@@ -192,7 +195,7 @@ Distributing plugins
 For local tests the plugin source file can be saved under a folder specified by
 the ``-S`` argument in the ansible-rulebook CLI. The recommended method for
 distributing and installing the plugin is through a collection. In this case
-the plugin source file should be placed under ``plugins/event_source`` folder
+the plugin source file should be placed under ``extensions/eda/plugins/event_source`` folder
 and referred to by FQCN. The following rulebook example illustrates how to
 refer to the range plugin provided by ``ansible.eda`` collection:
 

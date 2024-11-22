@@ -2,13 +2,95 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+### Added
+- Add generic error message for unknown source errors
+### Fixed
+- Allow user to optionally include matching events
+- Allow for fetching env and file contents from EDA server
+
+
+## [1.1.1] - 2024-09-19
+### Changed
+- Fixed documentation on matching events in multi condition
+### Added
+- Support for switching slugs to connect to controller via gateway
+- Support passing in controller job id to server so it can build Job URL
+### Fixed
+- Fix log level for websocket
+
+## [1.1.0] - 2024-05-15
+### Added
+- Support for vaulted variables
+- Support for string interpolation from encrypted variables
+- Added aiobotocore package needed for our SQS plugin
+
+## [1.0.5] - 2024-02-07
+
+### Changed
+- Job template, workflow template, module and playbook output facts/events
+  using banner style
+
+### Added
+- ssl_verify option now also supports "true" or "false" values
+- Support for standalone boolean in conditions
+- Add basic auth to controller
+- Use token for websocket authentication
+- skip-audit-events to disable sending audit events to server
+- restrict drools async connection to localhost
+
+### Changed
+- Generic print as well as printing of events use new banner style
+
+### Fixed
+- Support a base path for the controller url
+
+## [1.0.4] - 2023-10-30
 
 ### Added
 
 ### Fixed
+- Job_template and workflow_template actions honor custom hosts limit
+- Upgraded to 0.3.8 of drools_jpy
+- Add missing watchdog dependency
+
+### Removed
+
+## [1.0.3] - 2023-10-17
+
+### Added
+- support for firing multiple rules
+
+### Fixed
+- bug fix in run_workflow_template
+
+
+### Removed
+## [1.0.2] - 2023-08-14
+
+### Added
+- rulebook and Drools bracket notation syntax
+- new action called run_workflow_template
+
+### Fixed
+
+### Removed
+## [1.0.1] - 2023-07-24
+
+### Added
+- Add source plugins best practices to the documentation
+
+### Fixed
+- Minor documentation fixes
+- Fix an issue where rule_run_at field is not send to the websocket
+- Don't try to connect with AWX when no run_job_template action is used
+- Limits the number of simultaneously open connections to controller to 30
+- Fixes a wrong 401 response from AWX when 443 port is present in CONTROLLER_URL (<https://github.com/ansible/ansible-rulebook/issues/554>)
+
 
 ### Removed
 - Remove official support for Python 3.8
+
 
 ## [1.0.0] - 2023-06-13
 
@@ -25,7 +107,6 @@
 - rule_uuid and ruleset_uuid provided even when an action fails
 - Drools intermittently misses firing of rules
 - Resend events lost during websocket disconnect
-- limits the number of simultaneously open connection to controller to 30
 
 ### Removed
 
@@ -84,7 +165,7 @@
 
 ### Removed
 
-- Redis and durability 
+- Redis and durability
 - envvar for rules_engine
 
 
@@ -94,12 +175,12 @@
 
 - Support for vars namespace
 - Support for negation
-- Support for Floats 
-- Log format and set the log stream for debug/verbose 
-- A builtin action : echo 
-- Cmdline option --print_events 
-- New action: run_job_template 
-- Support for in and contains in condition 
+- Support for Floats
+- Log format and set the log stream for debug/verbose
+- A builtin action : echo
+- Cmdline option --print_events
+- New action: run_job_template
+- Support for in and contains in condition
 - Add more info to --version flag
 - Add EDA prefix to environment variables
 - Enable drools for python 3.11
@@ -114,9 +195,9 @@
 
 ### Changed
 
-- Configure controller API access 
-- Switch the default rules engine back to drools 
-- Print help if run without arguments 
+- Configure controller API access
+- Switch the default rules engine back to drools
+- Print help if run without arguments
 
 ### Removed
 
@@ -130,7 +211,7 @@
 
 ### Changed
 
-Update minimal python version 
+Update minimal python version
 Improves error messages for unhandled events
 
 ### Removed
@@ -143,7 +224,7 @@ Improves error messages for unhandled events
 
 ### Added
 
-- Job details for eda-server usage 
+- Job details for eda-server usage
 - add arg to install devel collection
 
 ### Fixed
@@ -203,7 +284,7 @@ Improves error messages for unhandled events
 
 ### Fixed
 
-- An error msg 
+- An error msg
 
 ## [0.6.0] - 2022-08-24
 

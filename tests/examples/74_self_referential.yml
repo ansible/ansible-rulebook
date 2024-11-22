@@ -2,7 +2,7 @@
 - name: 74 Self referential
   hosts: all
   sources:
-    - generic:
+    - ansible.eda.generic:
         payload:
           - x: Fred
             y: Fred

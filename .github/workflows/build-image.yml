@@ -13,7 +13,20 @@ env:
   QUAY_USER: ansible+eda_gha
 
 jobs:
+  build-and-test-image:
+    if: github.repository == 'ansible/ansible-rulebook'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Build and test the container image
+      uses: ./.github/actions/image-test
+
   build-and-push-image:
+    needs: build-and-test-image
+    if: github.repository == 'ansible/ansible-rulebook'
     runs-on: ubuntu-latest
     permissions:
       contents: read

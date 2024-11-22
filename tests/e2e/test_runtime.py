@@ -30,7 +30,7 @@ DISABLED_RULES_EVENT_DELAY = SETTINGS["disabled_rules_event_delay"]
             id="successful_rc",
         ),
         pytest.param(
-            "hello_events_with_var.yml",
+            "actions/test_run_playbook.yml",
             Path("nonexistent.yml"),
             "0.1",
             1,
@@ -224,3 +224,59 @@ def test_terminate_process_sigint():
             process.kill()
 
     assert process.returncode == 130
+
+
+@pytest.mark.e2e
+def test_hot_reload():
+    """
+    Execute a rulebook with hot-reload option,
+    check for first action being triggered,
+    then modify the content of the rulebook,
+    check for the other action being triggered.
+    """
+
+    rulebook = utils.BASE_DATA_PATH / "rulebooks/test_hot_reload.yml"
+    cmd = utils.Command(rulebook=rulebook, hot_reload=True)
+
+    LOGGER.info(f"Running command: {cmd}")
+
+    process = subprocess.Popen(
+        cmd,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+        stdout=subprocess.PIPE,
+    )
+
+    with open(rulebook, "rt") as file:
+        original_data = file.read()
+    found_rule_1_in_out = False
+    found_rule_2_in_out = False
+
+    start = time.time()
+    while line := process.stdout.readline():
+        if "Rule 1: I matched for value_a" in line:
+            found_rule_1_in_out = True
+            break
+        time.sleep(0.1)
+        if time.time() - start > DEFAULT_CMD_TIMEOUT:
+            process.kill()
+
+    assert found_rule_1_in_out
+
+    data = original_data.replace('- action: "value_a"', '- action: "value_b"')
+    with open(rulebook, "wt") as file:
+        file.write(data)
+
+    start = time.time()
+    while line := process.stdout.readline():
+        if "Rule 2: I have now matched for value_b" in line:
+            found_rule_2_in_out = True
+            break
+        time.sleep(0.1)
+        if time.time() - start > DEFAULT_CMD_TIMEOUT:
+            process.kill()
+
+    with open(rulebook, "wt") as file:
+        file.write(original_data)
+
+    assert found_rule_2_in_out

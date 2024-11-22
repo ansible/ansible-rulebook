@@ -129,3 +129,9 @@ Example playbook that uses the extra_vars:
         - name: Print variable event set by rulebook engine
           ansible.builtin.debug:
             msg: '{{ ansible_eda.event }}'
+
+
+Using vaulted strings for variables
+------------------------------------
+
+The variables file can contain vaulted strings. Refer to the `Rulebooks <rulebooks.html>`_ page for more information.

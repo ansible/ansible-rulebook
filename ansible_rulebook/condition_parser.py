@@ -31,6 +31,7 @@ from pyparsing import (
     delimitedList,
     infix_notation,
     one_of,
+    originalTextFor,
     pyparsing_common,
 )
 
@@ -101,7 +102,21 @@ valid_prefix = (
     | Keyword("fact")
 )
 varname = (
-    Combine(valid_prefix + ZeroOrMore("." + ident))
+    Combine(
+        valid_prefix
+        + ZeroOrMore(
+            ("." + ident)
+            | (
+                ("[")
+                + (
+                    originalTextFor(QuotedString('"'))
+                    | originalTextFor(QuotedString("'"))
+                    | pyparsing_common.signed_integer
+                )
+                + ("]")
+            )
+        )
+    )
     .copy()
     .add_parse_action(lambda toks: Identifier(toks[0]))
 )

@@ -19,34 +19,57 @@ import os
 import ssl
 from functools import cached_property
 from typing import Union
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import aiohttp
 import dpath
 
+from ansible_rulebook import util
 from ansible_rulebook.exception import (
     ControllerApiException,
     JobTemplateNotFoundException,
+    WorkflowJobTemplateNotFoundException,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class JobTemplateRunner:
-    JOB_TEMPLATE_SLUG = "/api/v2/job_templates"
-    CONFIG_SLUG = "/api/v2/config"
+    LEGACY_UNIFIED_TEMPLATE_SLUG = "api/v2/unified_job_templates/"
+    LEGACY_CONFIG_SLUG = "api/v2/config/"
+    GATEWAY_UNIFIED_TEMPLATE_SLUG = "v2/unified_job_templates/"
+    GATEWAY_CONFIG_SLUG = "v2/config/"
     JOB_COMPLETION_STATUSES = ["successful", "failed", "error", "canceled"]
 
     def __init__(
-        self, host: str = "", token: str = "", verify_ssl: str = "yes"
+        self,
+        host: str = "",
+        token: str = "",
+        username: str = "",
+        password: str = "",
+        verify_ssl: str = "yes",
     ):
         self.token = token
+        self._host = ""
         self.host = host
+        self.username = username
+        self.password = password
         self.verify_ssl = verify_ssl
-        self.refresh_delay = int(
-            os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10)
+        self.refresh_delay = float(
+            os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10.0)
         )
         self._session = None
+        self._config_slug = self.LEGACY_CONFIG_SLUG
+        self._unified_job_template_slug = self.LEGACY_UNIFIED_TEMPLATE_SLUG
+
+    @property
+    def host(self):
+        return self._host
+
+    @host.setter
+    def host(self, value: str):
+        self._host = util.ensure_trailing_slash(value)
+        self._set_slugs(value)
 
     async def close_session(self):
         if self._session and not self._session.closed:
@@ -58,7 +81,20 @@ class JobTemplateRunner:
             self._session = aiohttp.ClientSession(
                 connector=aiohttp.TCPConnector(limit=limit),
                 headers=self._auth_headers(),
+                auth=self._basic_auth(),
                 raise_for_status=True,
+            )
+
+    def _set_slugs(self, url):
+        urlparts = urlparse(url)
+        if urlparts.path and urlparts.path != "/":
+            self._config_slug = self.GATEWAY_CONFIG_SLUG
+            self._unified_job_template_slug = (
+                self.GATEWAY_UNIFIED_TEMPLATE_SLUG
+            )
+            logger.debug(f"Switched config slug {self._config_slug}")
+            logger.debug(
+                f"Switched job template slug {self._unified_job_template_slug}"
             )
 
     async def _get_page(self, href_slug: str, params: dict) -> dict:
@@ -75,45 +111,63 @@ class JobTemplateRunner:
 
     async def get_config(self) -> dict:
         logger.info("Attempting to connect to Controller %s", self.host)
-        return await self._get_page(self.CONFIG_SLUG, {})
+        return await self._get_page(self._config_slug, {})
 
     def _auth_headers(self) -> dict:
-        return dict(Authorization=f"Bearer {self.token}")
+        if self.token:
+            return dict(Authorization=f"Bearer {self.token}")
+
+    def _basic_auth(self) -> aiohttp.BasicAuth:
+        if self.username and self.password:
+            return aiohttp.BasicAuth(
+                login=self.username, password=self.password
+            )
 
     @cached_property
     def _sslcontext(self) -> Union[bool, ssl.SSLContext]:
         if self.host.startswith("https"):
-            if self.verify_ssl.lower() == "yes":
+            if self.verify_ssl.lower() in ["yes", "true"]:
                 return True
-            elif not self.verify_ssl.lower() == "no":
+            if self.verify_ssl.lower() not in ["no", "false"]:
                 return ssl.create_default_context(cafile=self.verify_ssl)
         return False
 
-    async def _get_job_template_id(self, name: str, organization: str) -> int:
-        slug = f"{self.JOB_TEMPLATE_SLUG}/"
+    async def _get_template_obj(
+        self, name: str, organization: str, unified_type: str
+    ) -> dict:
         params = {"name": name}
 
         while True:
-            json_body = await self._get_page(slug, params)
+            json_body = await self._get_page(
+                self._unified_job_template_slug, params
+            )
             for jt in json_body["results"]:
                 if (
-                    jt["name"] == name
-                    and dpath.get(jt, "summary_fields.organization.name", ".")
+                    jt["type"] == unified_type
+                    and jt["name"] == name
+                    and dpath.get(
+                        jt,
+                        "summary_fields.organization.name",
+                        ".",
+                        organization,
+                    )
                     == organization
                 ):
-                    return jt["id"]
+                    return {
+                        "launch": dpath.get(jt, "related.launch", ".", None),
+                        "ask_limit_on_launch": jt["ask_limit_on_launch"],
+                        "ask_inventory_on_launch": jt[
+                            "ask_inventory_on_launch"
+                        ],
+                        "ask_variables_on_launch": jt[
+                            "ask_variables_on_launch"
+                        ],
+                    }
 
             if json_body.get("next", None):
                 params["page"] = params.get("page", 1) + 1
             else:
                 break
-
-        raise JobTemplateNotFoundException(
-            (
-                f"Job template {name} in organization "
-                f"{organization} does not exist"
-            )
-        )
 
     async def run_job_template(
         self,
@@ -121,33 +175,68 @@ class JobTemplateRunner:
         organization: str,
         job_params: dict,
     ) -> dict:
-        job = await self.launch(name, organization, job_params)
+        obj = await self._get_template_obj(name, organization, "job_template")
+        if not obj:
+            raise JobTemplateNotFoundException(
+                (
+                    f"Job template {name} in organization "
+                    f"{organization} does not exist"
+                )
+            )
+        url = urljoin(self.host, obj["launch"])
+        job = await self._launch(job_params, url)
+        return await self._monitor_job(job["url"])
 
-        url = job["url"]
-        params = {}
+    async def run_workflow_job_template(
+        self,
+        name: str,
+        organization: str,
+        job_params: dict,
+    ) -> dict:
+        obj = await self._get_template_obj(
+            name, organization, "workflow_job_template"
+        )
+        if not obj:
+            raise WorkflowJobTemplateNotFoundException(
+                (
+                    f"Workflow template {name} in organization "
+                    f"{organization} does not exist"
+                )
+            )
+        url = urljoin(self.host, obj["launch"])
+        if not obj["ask_limit_on_launch"] and "limit" in job_params:
+            logger.warning(
+                "Workflow template %s does not accept limit, removing it", name
+            )
+            job_params.pop("limit")
+        job = await self._launch(job_params, url)
+        return await self._monitor_job(job["url"])
 
+    async def _monitor_job(self, url) -> dict:
         while True:
             # fetch and process job status
-            json_body = await self._get_page(url, params)
-            job_status = json_body["status"]
-            if job_status in self.JOB_COMPLETION_STATUSES:
+            json_body = await self._get_page(url, {})
+            if json_body["status"] in self.JOB_COMPLETION_STATUSES:
                 return json_body
 
             await asyncio.sleep(self.refresh_delay)
 
-    async def launch(
-        self, name: str, organization: str, job_params: dict
-    ) -> dict:
-        jt_id = await self._get_job_template_id(name, organization)
-        url = urljoin(self.host, f"{self.JOB_TEMPLATE_SLUG}/{jt_id}/launch/")
-
+    async def _launch(self, job_params: dict, url: str) -> dict:
+        body = None
         try:
             async with self._session.post(
-                url, json=job_params, ssl=self._sslcontext
+                url,
+                json=job_params,
+                ssl=self._sslcontext,
+                raise_for_status=False,
             ) as post_response:
-                return json.loads(await post_response.text())
+                body = json.loads(await post_response.text())
+                post_response.raise_for_status()
+                return body
         except aiohttp.ClientError as e:
             logger.error("Error connecting to controller %s", str(e))
+            if body:
+                logger.error("Error %s", body)
             raise ControllerApiException(str(e))
 
 
