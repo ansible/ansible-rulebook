@@ -1,7 +1,12 @@
 
 # Changelog
 
-## [Unreleased]
+## [1.1.3]
+### Changed
+### Added
+### Fixed
+
+## [1.1.2] - 2024-12-09
 ### Changed
 ### Added
 - Add generic error message for unknown source errors
