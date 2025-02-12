@@ -4,6 +4,7 @@
 ## [Unreleased]
 ### Changed
 ### Added
+- Add support for eda.builtin.event_splitter filter
 ### Fixed
 
 

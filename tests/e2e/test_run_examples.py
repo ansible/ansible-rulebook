@@ -1,5 +1,5 @@
 """
-Module with tests for websockets
+Run tests from examples rulebook
 """
 
 import asyncio
@@ -15,20 +15,72 @@ from . import utils
 LOGGER = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 15
 
+TEST_DATA = [
+    (
+        {
+            "rules_triggered": 2,
+            "events_processed": 4,
+            "events_matched": 2,
+            "number_of_actions": 2,
+            "number_of_session_stats": 2,
+            "number_of_rules": 2,
+            "number_of_disabled_rules": 0,
+        },
+        utils.EXAMPLES_PATH / "29_run_module.yml",
+        {
+            "r1": {
+                "action": "run_module",
+                "event_key": "m/i",
+                "event_value": 1,
+            },
+            "r2": {
+                "action": "print_event",
+                "event_key": "m/msg",
+                "event_value": "I am Malenia, blade of Miquella",
+            },
+        },
+        "29 run module",
+    ),
+    (
+        {
+            "rules_triggered": 1,
+            "events_processed": 2,
+            "events_matched": 1,
+            "number_of_actions": 1,
+            "number_of_session_stats": 2,
+            "number_of_rules": 1,
+            "number_of_disabled_rules": 0,
+        },
+        utils.EXAMPLES_PATH / "93_event_splitter.yml",
+        {
+            "r1": {
+                "action": "debug",
+                "event_key": "m/city",
+                "event_value": "Bedrock",
+            }
+        },
+        "93 event splitter",
+    ),
+]
+
 
 @pytest.mark.e2e
 @pytest.mark.asyncio
-async def test_run_module_output():
+@pytest.mark.parametrize(
+    "counts, rulebook, rule_matches, rule_set_name", TEST_DATA
+)
+async def test_run_example_rulebook(
+    counts, rulebook, rule_matches, rule_set_name
+):
     """
-    Verify that ansible-rulebook can handle output of
-    run_module and then used in a condition
+    Verify that we can run an example rulebook
+    and compare the action and stats
     """
     # variables
     host = "127.0.0.1"
     endpoint = "/api/ws2"
     proc_id = "42"
     port = utils.get_safe_port()
-    rulebook = utils.EXAMPLES_PATH / "29_run_module.yml"
     websocket_address = f"ws://127.0.0.1:{port}{endpoint}"
     cmd = utils.Command(
         rulebook=rulebook,
@@ -58,18 +110,6 @@ async def test_run_module_output():
     action_counter = 0
     session_stats_counter = 0
     stats = None
-    rule_matches = {
-        "r1": {
-            "action": "run_module",
-            "event_key": "m/i",
-            "event_value": 1,
-        },
-        "r2": {
-            "action": "print_event",
-            "event_key": "m/msg",
-            "event_value": "I am Malenia, blade of Miquella",
-        },
-    }
     while not queue.empty():
         data = await queue.get()
         assert data["path"] == endpoint
@@ -96,14 +136,17 @@ async def test_run_module_output():
         if data["type"] == "SessionStats":
             session_stats_counter += 1
             stats = data["stats"]
-            assert stats["ruleSetName"] == "29 run module"
-            assert stats["numberOfRules"] == 2
-            assert stats["numberOfDisabledRules"] == 0
+            assert stats["ruleSetName"] == rule_set_name
+            assert stats["numberOfRules"] == counts["number_of_rules"]
+            assert (
+                stats["numberOfDisabledRules"]
+                == counts["number_of_disabled_rules"]
+            )
             assert data["activation_instance_id"] == proc_id
 
-    assert stats["rulesTriggered"] == 2
-    assert stats["eventsProcessed"] == 4
-    assert stats["eventsMatched"] == 2
+    assert stats["rulesTriggered"] == counts["rules_triggered"]
+    assert stats["eventsProcessed"] == counts["events_processed"]
+    assert stats["eventsMatched"] == counts["events_matched"]
 
-    assert session_stats_counter >= 2
-    assert action_counter == 2
+    assert session_stats_counter >= counts["number_of_session_stats"]
+    assert action_counter == counts["number_of_actions"]
