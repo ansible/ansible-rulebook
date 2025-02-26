@@ -78,12 +78,6 @@ async def run(parsed_args: argparse.Namespace) -> None:
             raise WebSocketExchangeException(
                 "Error communicating with web socket server"
             )
-        context = decrypted_context(startup_args.variables)
-        startup_args.env_vars = substitute_variables(
-            startup_args.env_vars, context
-        )
-        for k, v in startup_args.env_vars.items():
-            os.environ[k] = str(v)
     else:
         startup_args = StartupArgs()
         startup_args.variables = load_vars(parsed_args)
@@ -107,6 +101,12 @@ async def run(parsed_args: argparse.Namespace) -> None:
 
     validate_actions(startup_args)
     validate_variables(startup_args)
+    startup_args.variables = decrypted_context(startup_args.variables)
+    startup_args.env_vars = substitute_variables(
+        startup_args.env_vars, startup_args.variables
+    )
+    for k, v in startup_args.env_vars.items():
+        os.environ[k] = str(v)
 
     if startup_args.check_controller_connection:
         await validate_controller_params(startup_args)
