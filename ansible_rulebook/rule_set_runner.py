@@ -58,7 +58,6 @@ from ansible_rulebook.rule_types import (
 )
 from ansible_rulebook.rules_parser import parse_hosts
 from ansible_rulebook.util import (
-    decrypted_context,
     run_at,
     send_session_stats,
     substitute_variables,
@@ -429,24 +428,12 @@ class RuleSetRunner:
 
                 if "var_root" in action_args:
                     var_root = action_args.pop("var_root")
-                    logger.debug(
-                        "Update variables [%s] with new root [%s]",
-                        variables_copy,
-                        var_root,
-                    )
                     _update_variables(variables_copy, var_root)
 
-                logger.debug(
-                    "substitute_variables [%s] [%s]",
-                    action_args,
-                    variables_copy,
-                )
-                context = decrypted_context(variables_copy)
                 action_args = {
-                    k: substitute_variables(v, context)
+                    k: substitute_variables(v, variables_copy)
                     for k, v in action_args.items()
                 }
-                logger.debug("action args: %s", action_args)
 
                 if "ruleset" not in action_args:
                     action_args["ruleset"] = metadata.rule_set

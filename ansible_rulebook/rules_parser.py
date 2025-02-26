@@ -20,7 +20,7 @@ from ansible_rulebook.condition_parser import (
     parse_condition as parse_condition_value,
 )
 from ansible_rulebook.conf import settings
-from ansible_rulebook.util import decrypted_context, substitute_variables
+from ansible_rulebook.util import substitute_variables
 
 from .exception import (
     RulenameDuplicateException,
@@ -133,8 +133,7 @@ def parse_rules(rules: Dict, variables: Dict) -> List[rt.Rule]:
         if name is None:
             raise RulenameEmptyException("Rule name not provided")
 
-        context = decrypted_context(variables)
-        name = substitute_variables(name, context)
+        name = substitute_variables(name, variables)
         if name == "":
             raise RulenameEmptyException("Rule name cannot be an empty string")
 
