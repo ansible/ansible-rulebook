@@ -93,36 +93,42 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-i",
         "--inventory",
-        help="Inventory",
+        help="Path to an inventory file, "
+        "can also be passed via the env var ANSIBLE_INVENTORY",
         default=os.environ.get("ANSIBLE_INVENTORY", ""),
     )
     parser.add_argument(
         "-W",
         "--websocket-url",
         "--websocket-address",
-        help="Connect the event log to a websocket",
+        help="Connect the event log to a websocket, "
+        "can also be passed via the env var EDA_WEBSOCKET_URL.",
         default=os.environ.get("EDA_WEBSOCKET_URL", ""),
     )
     parser.add_argument(
         "--websocket-ssl-verify",
         help="How to verify SSL when connecting to the "
         "websocket: (yes|true) | (no|false) | <path to a CA bundle>, "
-        "default to yes for wss connection.",
+        "default to yes for wss connection, "
+        "can also be passed via the env var EDA_WEBSOCKET_SSL_VERIFY.",
         default=os.environ.get("EDA_WEBSOCKET_SSL_VERIFY", "yes"),
     )
     parser.add_argument(
         "--websocket-access-token",
-        help="Token used to autheticate the websocket connection.",
+        help="Token used to autheticate the websocket connection, "
+        "can also be passed via the env var EDA_WEBSOCKET_ACCESS_TOKEN",
         default=os.environ.get("EDA_WEBSOCKET_ACCESS_TOKEN", ""),
     )
     parser.add_argument(
         "--websocket-refresh-token",
-        help="Token used to renew a websocket access token.",
+        help="Token used to renew a websocket access token, "
+        "can also be passed via the env var EDA_WEBSOCKET_REFRESH_TOKEN",
         default=os.environ.get("EDA_WEBSOCKET_REFRESH_TOKEN", ""),
     )
     parser.add_argument(
         "--websocket-token-url",
-        help="Url to renew websocket access token.",
+        help="Url to renew websocket access token, "
+        "can also be passed via the env var EDA_WEBSOCKET_TOKEN_URL",
         default=os.environ.get("EDA_WEBSOCKET_TOKEN_URL", ""),
     )
     parser.add_argument("--id", help="Identifier")
@@ -168,7 +174,7 @@ def get_parser() -> argparse.ArgumentParser:
         "--controller-ssl-verify",
         help="How to verify SSL when connecting to the "
         "controller: (yes|true) | (no|false) | <path to a CA bundle>, "
-        "default to yes for https connection."
+        "default to yes for https connection, "
         "can also be passed via env var EDA_CONTROLLER_SSL_VERIFY",
         default=os.environ.get("EDA_CONTROLLER_SSL_VERIFY", "yes"),
     )
@@ -184,7 +190,8 @@ def get_parser() -> argparse.ArgumentParser:
         type=float,
         help="Maximum number of seconds to wait after issuing a "
         "graceful shutdown, default: 60. The process will shutdown if "
-        "all actions complete before this time period",
+        "all actions complete before this time period. "
+        "Can also be passed via the env var EDA_SHUTDOWN_DELAY",
     )
     parser.add_argument(
         "--gc-after",
@@ -224,7 +231,8 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--vault-password-file",
-        help="The file containing one ansible vault password",
+        help="The file containing one ansible vault password, "
+        "can also be passed via the env var EDA_VAULT_PASSWORD_FILE.",
         default=os.environ.get("EDA_VAULT_PASSWORD_FILE", ""),
     )
     parser.add_argument(
