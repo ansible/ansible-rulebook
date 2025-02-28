@@ -2,26 +2,38 @@
 # Changelog
 
 ## [Unreleased]
+
 ### Changed
+
 ### Added
+
 - Add generic error message for unknown source errors
+
 ### Fixed
+
 - Allow user to optionally include matching events
 - Allow for fetching env and file contents from EDA server
 - Overhead of running decryption before every usage
 
-
 ## [1.1.1] - 2024-09-19
+
 ### Changed
+
 - Fixed documentation on matching events in multi condition
+
 ### Added
+
 - Support for switching slugs to connect to controller via gateway
 - Support passing in controller job id to server so it can build Job URL
+
 ### Fixed
+
 - Fix log level for websocket
 
 ## [1.1.0] - 2024-05-15
+
 ### Added
+
 - Support for vaulted variables
 - Support for string interpolation from encrypted variables
 - Added aiobotocore package needed for our SQS plugin
@@ -29,10 +41,12 @@
 ## [1.0.5] - 2024-02-07
 
 ### Changed
+
 - Job template, workflow template, module and playbook output facts/events
   using banner style
 
 ### Added
+
 - ssl_verify option now also supports "true" or "false" values
 - Support for standalone boolean in conditions
 - Add basic auth to controller
@@ -41,9 +55,11 @@
 - restrict drools async connection to localhost
 
 ### Changed
+
 - Generic print as well as printing of events use new banner style
 
 ### Fixed
+
 - Support a base path for the controller url
 
 ## [1.0.4] - 2023-10-30
@@ -51,6 +67,7 @@
 ### Added
 
 ### Fixed
+
 - Job_template and workflow_template actions honor custom hosts limit
 - Upgraded to 0.3.8 of drools_jpy
 - Add missing watchdog dependency
@@ -60,47 +77,54 @@
 ## [1.0.3] - 2023-10-17
 
 ### Added
+
 - support for firing multiple rules
 
 ### Fixed
+
 - bug fix in run_workflow_template
 
-
 ### Removed
+
 ## [1.0.2] - 2023-08-14
 
 ### Added
+
 - rulebook and Drools bracket notation syntax
 - new action called run_workflow_template
 
 ### Fixed
 
 ### Removed
+
 ## [1.0.1] - 2023-07-24
 
 ### Added
+
 - Add source plugins best practices to the documentation
 
 ### Fixed
+
 - Minor documentation fixes
 - Fix an issue where rule_run_at field is not send to the websocket
 - Don't try to connect with AWX when no run_job_template action is used
 - Limits the number of simultaneously open connections to controller to 30
 - Fixes a wrong 401 response from AWX when 443 port is present in CONTROLLER_URL (<https://github.com/ansible/ansible-rulebook/issues/554>)
 
-
 ### Removed
-- Remove official support for Python 3.8
 
+- Remove official support for Python 3.8
 
 ## [1.0.0] - 2023-06-13
 
 ### Added
+
 - Sending heartbeat to the server with the session stats
 - Added command line option --execution-strategy
 - Rulesets in rulebook can have execution_strategy attribute
 
 ### Fixed
+
 - In a collection look for playbook in playbooks directory
 - Support .yaml and .yml extension for playbooks
 - Retract fact for partial and complete matches
@@ -111,19 +135,22 @@
 
 ### Removed
 
-##  [0.13.0] - 2023-04-25
+## [0.13.0] - 2023-04-25
 
 ### Added
+
 - Support for default_events_ttl at ruleset level and globally
 - Added --websocket-ssl-verify
 
 ### Fixed
+
 - Support singular event_source and event_filter in collections
 - Find job template by name
 
-##  [0.12.0] - 2023-04-12
+## [0.12.0] - 2023-04-12
 
 ### Added
+
 - Support all file formats for static inventories as ansible does.
 - Support for controller url via env var EDA_CONTROLLER_URL
 - Support for controller token via env var EDA_CONTROLLER_TOKEN
@@ -131,12 +158,13 @@
 - Support for bulitin filter eda.builtin.insert_meta_info added to every source
 
 ### Fixed
+
 - actions in different rules to run in parallel
 - actions within a single rule to execute sequentially
 - comparing 2 different attributes in the same event
 - select with search option on delayed evaluation
 
-##  [0.11.0] - 2023-03-08
+## [0.11.0] - 2023-03-08
 
 ### Added
 
@@ -168,7 +196,6 @@
 
 - Redis and durability
 - envvar for rules_engine
-
 
 ## [0.10.1] - 2023-01-25
 
@@ -314,14 +341,13 @@ Improves error messages for unhandled events
 
 ### Fixed
 
--  a bug in non string type in facts
+- a bug in non string type in facts
 
 ### Removed
 
 - event\_filters folder under ansible\_events
 
 ## [0.5.0] - 2022-07-28
-
 
 ### Added
 
@@ -349,7 +375,6 @@ Improves error messages for unhandled events
 
 - Converts actions to async functions
 
-
 ## [0.3.0] - 2022-05-06
 
 ### Added
@@ -357,7 +382,6 @@ Improves error messages for unhandled events
 - Error message for missing rules
 - Collection support
 - Schema for the ruleset files
-
 
 ## [0.2.0] - 2022-05-02
 

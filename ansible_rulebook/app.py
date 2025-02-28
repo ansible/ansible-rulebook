@@ -78,6 +78,12 @@ async def run(parsed_args: argparse.Namespace) -> None:
             raise WebSocketExchangeException(
                 "Error communicating with web socket server"
             )
+        context = decrypted_context(startup_args.variables)
+        startup_args.env_vars = substitute_variables(
+            startup_args.env_vars, context
+        )
+        for k, v in startup_args.env_vars.items():
+            os.environ[k] = str(v)
     else:
         startup_args = StartupArgs()
         startup_args.variables = load_vars(parsed_args)
