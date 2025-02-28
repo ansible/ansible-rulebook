@@ -87,7 +87,7 @@ remediate the issue.
 Let's build an example rulebook that will trigger an action from a
 webhook. We will be looking for a specific payload from the webhook, and
 if that condition is met from the webhook event, then ``ansible-rulebook``
-will trigger the desired action. Below is our example rulebook:
+will trigger the desired action. Below is our example rulebook ``webhook-example.yml``:
 
 .. code-block:: yaml
 
