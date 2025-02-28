@@ -20,6 +20,7 @@ import logging
 import os
 import sys
 from typing import List
+from urllib.parse import urlparse
 
 import ansible_rulebook.util as util
 from ansible_rulebook.messages import DEFAULT_SHUTDOWN_DELAY
@@ -326,6 +327,11 @@ def parse_vault_passwords(args: argparse.Namespace) -> None:
     )
 
 
+def validate_controller_url(url: str) -> bool:
+    res = urlparse(url)
+    return bool(res.scheme) and bool(res.netloc)
+
+
 def main(args: List[str] = None) -> int:
     parser = get_parser()
     if len(sys.argv) == 1:
@@ -338,6 +344,10 @@ def main(args: List[str] = None) -> int:
     setup_logging_and_display(args)
 
     if args.controller_url:
+        if not validate_controller_url(args.controller_url):
+            print("Error: invalid controller url.")
+            return 1
+
         job_template_runner.host = args.controller_url
         if args.controller_ssl_verify:
             job_template_runner.verify_ssl = args.controller_ssl_verify

@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from ansible_rulebook.cli import get_version, main
+from ansible_rulebook.cli import get_version, main, validate_controller_url
 from ansible_rulebook.util import check_jvm
 
 
@@ -120,3 +120,17 @@ def test_main_invalid_args(args):
     with patch.object(sys, "argv", args):
         with pytest.raises(ValueError):
             main(args)
+
+
+@pytest.mark.parametrize(
+    "url, expected_bool",
+    [
+        ("http:///example.com", False),
+        ("example.com:8080", False),
+        ("https://example.com", True),
+        ("https://example.com:8080", True),
+    ],
+)
+def test_validate_controller_url(url, expected_bool):
+    res = validate_controller_url(url)
+    assert res == expected_bool
