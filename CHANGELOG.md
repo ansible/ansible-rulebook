@@ -5,11 +5,13 @@
 ### Changed
 ### Added
 - Add generic error message for unknown source errors
+- Decrypt once at startup and keep the decrypted values in memory and reuse them during
+  substitution.
+- Update docker references
 ### Fixed
 - Allow user to optionally include matching events
 - Allow for fetching env and file contents from EDA server
 - Overhead of running decryption before every usage
-
 
 ## [1.1.1] - 2024-09-19
 ### Changed
