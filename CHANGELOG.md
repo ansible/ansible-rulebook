@@ -4,6 +4,12 @@
 ## [Unreleased]
 ### Changed
 ### Added
+### Fixed
+
+
+## [1.1.3] - 2025-03-04
+### Changed
+### Added
 - Add generic error message for unknown source errors
 ### Fixed
 - Allow user to optionally include matching events
