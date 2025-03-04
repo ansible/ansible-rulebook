@@ -254,7 +254,7 @@ def get_version() -> str:
     java_home = util.get_java_home()
     java_version = util.get_java_version()
     result = [
-        f"{ansible_rulebook.__version__}",
+        f"ansible-rulebook [{ansible_rulebook.__version__}]",
         f"  Executable location = {sys.argv[0]}",
         f"  Drools_jpy version = {importlib.metadata.version('drools_jpy')}",
         f"  Java home = {java_home}",
