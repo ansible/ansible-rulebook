@@ -6,10 +6,17 @@ The `ansible-rulebook` CLI supports the following options:
 
 .. code-block:: console
 
-    usage: ansible-rulebook [-h] [-r RULEBOOK] [-e VARS] [-E ENV_VARS] [-v] [--version] [-S SOURCE_DIR] [-i INVENTORY] [-W WEBSOCKET_URL] [--websocket-ssl-verify WEBSOCKET_SSL_VERIFY]
-                            [--websocket-token-url WEBSOCKET_TOKEN_URL] [--websocket-access-token WEBSOCKET_ACCESS_TOKEN] [--websocket-refresh-token WEBSOCKET_REFRESH_TOKEN]
-                            [--id ID] [-w] [-T PROJECT_TARBALL] [--controller-url CONTROLLER_URL] [--controller-token CONTROLLER_TOKEN] [--controller-ssl-verify CONTROLLER_SSL_VERIFY]
-                            [--print-events] [--heartbeat n] [--execution-strategy sequential|parallel] [--skip-audit-events] [--vault-password-file] [--vault-id] [--ask-vault-pass]
+    usage: ansible-rulebook [-h] [-r RULEBOOK] [-e VARS] [-E ENV_VARS] [-v] [--version] [-S SOURCE_DIR] [-i INVENTORY]
+                        [-W WEBSOCKET_URL] [--websocket-ssl-verify WEBSOCKET_SSL_VERIFY]
+                        [--websocket-access-token WEBSOCKET_ACCESS_TOKEN]
+                        [--websocket-refresh-token WEBSOCKET_REFRESH_TOKEN]
+                        [--websocket-token-url WEBSOCKET_TOKEN_URL] [--id ID] [-w] [-T PROJECT_TARBALL]
+                        [--controller-url CONTROLLER_URL] [--controller-token CONTROLLER_TOKEN]
+                        [--controller-username CONTROLLER_USERNAME] [--controller-password CONTROLLER_PASSWORD]
+                        [--controller-ssl-verify CONTROLLER_SSL_VERIFY] [--print-events]
+                        [--shutdown-delay SHUTDOWN_DELAY] [--gc-after GC_AFTER] [--heartbeat HEARTBEAT]
+                        [--execution-strategy {sequential,parallel}] [--hot-reload] [--skip-audit-events]
+                        [--vault-password-file VAULT_PASSWORD_FILE] [--vault-id VAULT_ID] [--ask-vault-pass]
 
     optional arguments:
     -h, --help            show this help message and exit
@@ -23,38 +30,45 @@ The `ansible-rulebook` CLI supports the following options:
     -S SOURCE_DIR, --source-dir SOURCE_DIR
                             Source dir
     -i INVENTORY, --inventory INVENTORY
-                            Inventory can be a file or a directory
-    -W WEBSOCKET_URL, --websocket-url WEBSOCKET_URL
-                            Connect the event log to a websocket
+                            Path to an inventory file, can also be passed via the env var ANSIBLE_INVENTORY
+    -W WEBSOCKET_URL, --websocket-url WEBSOCKET_URL, --websocket-address WEBSOCKET_URL
+                            Connect the event log to a websocket, can also be passed via the env var EDA_WEBSOCKET_URL.
     --websocket-ssl-verify WEBSOCKET_SSL_VERIFY
-                            How to verify SSL when connecting to the websocket api. yes|no|<path to a CA bundle>, default to yes for wss connection.
-                            Connect the event log to a websocket
-    --websocket-token-url WEBSOCKET_TOKEN_URL
-                            Fetch a renewed token to authenticate websocket connection
+                            How to verify SSL when connecting to the websocket: (yes|true) | (no|false) | <path to a CA bundle>, default to yes for wss connection, can also be passed via the env var EDA_WEBSOCKET_SSL_VERIFY.
     --websocket-access-token WEBSOCKET_ACCESS_TOKEN
-                            Initial token used to authenticate websocket connection
+                            Token used to autheticate the websocket connection, can also be passed via the env var EDA_WEBSOCKET_ACCESS_TOKEN
     --websocket-refresh-token WEBSOCKET_REFRESH_TOKEN
-                            A token needed to renew an authentication token
+                            Token used to renew a websocket access token, can also be passed via the env var EDA_WEBSOCKET_REFRESH_TOKEN
+    --websocket-token-url WEBSOCKET_TOKEN_URL
+                            Url to renew websocket access token, can also be passed via the env var EDA_WEBSOCKET_TOKEN_URL
     --id ID               Identifier
     -w, --worker          Enable worker mode
     -T PROJECT_TARBALL, --project-tarball PROJECT_TARBALL
                             A tarball of the project
     --controller-url CONTROLLER_URL
-                            Controller API base url, e.g. https://host1:8080, can also be passed in via env var EDA_CONTROLLER_URL
+                            Controller API base url, e.g. https://host1:8080 can also be passed via the env var EDA_CONTROLLER_URL, if your URL has a path it should include api in it. api would only be appended if the URL only contains host, port.
     --controller-token CONTROLLER_TOKEN
-                            Controller API authentication token, can also be passed in via env var EDA_CONTROLLER_TOKEN
+                            Controller API authentication token, can also be passed via env var EDA_CONTROLLER_TOKEN
+    --controller-username CONTROLLER_USERNAME
+                            Controller API authentication username, can also be passed via env var EDA_CONTROLLER_USERNAME
+    --controller-password CONTROLLER_PASSWORD
+                            Controller API authentication password, can also be passed via env var EDA_CONTROLLER_PASSWORD
     --controller-ssl-verify CONTROLLER_SSL_VERIFY
-                            How to verify SSL when connecting to the controller, yes|no|<path to a CA bundle>, default to yes for https connection. Can also be passed via env var EDA_CONTROLLER_SSL_VERIFY
+                            How to verify SSL when connecting to the controller: (yes|true) | (no|false) | <path to a CA bundle>, default to yes for https connection, can also be passed via env var EDA_CONTROLLER_SSL_VERIFY
     --print-events        Print events to stdout, redundant and disabled with -vv
-    --shutdown-delay      Maximum number of seconds to wait after a graceful shutdown is issued, default is 60. Can also be set via an env var called EDA_SHUTDOWN_DELAY. The process will shutdown if all actions complete before this time period
-
-    --heartbeat <n> Send heartbeat to the server after every n seconds. Default is 0, no heartbeat is sent
-
-    --execution-strategy sequential|parallel. The default execution strategy is sequential.
-    --skip-audit-events  Skip sending audit events to the EDA server, default is false
-    --vault-password-file A file containing one password to decrypt all vaulted strings. The file can be passed in via env var EDA_VAULT_PASSWORD_FILE
-    --vault-id            [label@]path. The path points to file containing one vault password. Repeat --vault-id for multiple passwords. label is optional for hinting which string is encrypted by this password.
-    --ask-vault-pass      Allow user to type a vault password from the console. 
+    --shutdown-delay SHUTDOWN_DELAY
+                            Maximum number of seconds to wait after issuing a graceful shutdown, default: 60. The process will shutdown if all actions complete before this time period. Can also be passed via the env var EDA_SHUTDOWN_DELAY
+    --gc-after GC_AFTER   Run the garbage collector after this number of events. It can be configured with the environment variable EDA_GC_AFTER
+    --heartbeat HEARTBEAT
+                            Send heartbeat to the server after every n secondsDefault is 0, no heartbeat is sent
+    --execution-strategy {sequential,parallel}
+                            Actions can be executed in sequential order or in parallel.Default is sequential, actions will be run only after the previous one ends
+    --hot-reload          Will perform hot-reload on rulebook file changes (when running in non-worker mode).This option is ignored in worker mode.
+    --skip-audit-events   Don't send audit events to the server
+    --vault-password-file VAULT_PASSWORD_FILE
+                            The file containing one ansible vault password, can also be passed via the env var EDA_VAULT_PASSWORD_FILE.
+    --vault-id VAULT_ID   label@filename pointing to an ansible vault password file
+    --ask-vault-pass      Ask vault password interactively 
 
 To get help from `ansible-rulebook` run the following:
 
