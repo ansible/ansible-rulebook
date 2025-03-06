@@ -154,7 +154,7 @@ async def test_run_with_websocket(create_ruleset):
             ) as mock_request_workload:
                 mock_request_workload.return_value = StartupArgs(
                     rulesets=rulesets,
-                    controller_url="abc",
+                    controller_url="https://aap.controller.com:8080",
                     controller_token="token",
                     controller_ssl_verify="no",
                     check_controller_connection=True,
