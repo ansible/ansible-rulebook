@@ -98,6 +98,19 @@ On Ubuntu systems:
     export PATH=$PATH:~/.local/bin
     pip3 install ansible ansible-rulebook ansible-runner
 
+On macOS systems:
+
+.. code-block:: shell
+    
+    # Install Homebrew (optional）
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    
+    # Install OpenJDK 17 and python with Homebrew (recommended)
+    brew install openjdk@17
+    echo 'export PATH="/usr/local/opt/openjdk@17/bin:$PATH"' >> ~/.bash_profile
+    brew install python@3.11
+    pip3.11 install ansible ansible-rulebook ansible-runner
+
 
 Compiling jpy
 ---------------------
