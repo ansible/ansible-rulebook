@@ -76,7 +76,6 @@ async def run(parsed_args: argparse.Namespace) -> None:
         logger.info("Starting worker mode")
         startup_args = await request_workload(parsed_args.id)
         if not startup_args:
-            logger.error("Error communicating with web socket server")
             raise WebSocketExchangeException(
                 "Error communicating with web socket server"
             )
