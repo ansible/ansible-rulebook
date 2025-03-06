@@ -36,6 +36,7 @@ from ansible_rulebook.util import (
     decryptable,
     decrypted_context,
     substitute_variables,
+    validate_url,
 )
 from ansible_rulebook.validators import Validate
 from ansible_rulebook.vault import has_vaulted_str
@@ -46,6 +47,7 @@ from ansible_rulebook.websocket import (
 
 from .exception import (
     ControllerNeededException,
+    InvalidUrlException,
     InventoryNeededException,
     InventoryNotFound,
     RulebookNotFoundException,
@@ -292,6 +294,9 @@ def validate_actions(startup_args: StartupArgs) -> None:
 
 async def validate_controller_params(startup_args: StartupArgs) -> None:
     if startup_args.controller_url:
+        if not validate_url(startup_args.controller_url, "controller"):
+            raise InvalidUrlException("Invalid controller url.")
+
         job_template_runner.host = startup_args.controller_url
         job_template_runner.token = startup_args.controller_token
         if startup_args.controller_ssl_verify:

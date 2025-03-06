@@ -149,3 +149,7 @@ class VaultDecryptException(Exception):
 
 class AnsibleVaultNotFound(Exception):
     pass
+
+
+class InvalidUrlException(Exception):
+    pass
