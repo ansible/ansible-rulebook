@@ -1,0 +1,13 @@
+---
+- name: Raise exception midst processing
+  hosts: localhost
+  sources:
+    - name: Raise Exception
+      fail_after:
+        limit: "{{ LIMIT | default(10) }}"
+        after: "{{ FAIL_AFTER | default(4) }}"
+  rules:
+    - name: Simple Rule
+      condition: true
+      action:
+        debug:
