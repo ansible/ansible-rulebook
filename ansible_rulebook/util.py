@@ -25,6 +25,7 @@ import tempfile
 import typing
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple, Union
+from urllib.parse import urlparse
 
 import ansible_runner
 import jinja2
@@ -318,3 +319,11 @@ def ensure_trailing_slash(url: str) -> str:
     if not url.endswith("/"):
         return url + "/"
     return url
+
+
+def validate_url(url: str, url_type: str) -> bool:
+    """Check controller or websocket url"""
+    res = urlparse(url)
+    if url_type == "controller":
+        return res.scheme in ["http", "https"] and bool(res.netloc)
+    return res.scheme in ["ws", "wss"] and bool(res.netloc)

@@ -31,7 +31,10 @@ from ansible_rulebook import rules_parser as rules_parser
 from ansible_rulebook.common import StartupArgs
 from ansible_rulebook.conf import settings
 from ansible_rulebook.token import renew_token
+from ansible_rulebook.util import validate_url
 from ansible_rulebook.vault import Vault, has_vaulted_str
+
+from .exception import InvalidUrlException
 
 logger = logging.getLogger(__name__)
 logging.getLogger("websockets").setLevel(logging.ERROR)
@@ -81,6 +84,9 @@ async def _connect_websocket(
     **kwargs: list,
 ) -> tp.Any:
     logger.info("websocket %s", settings.websocket_url)
+    if not validate_url(settings.websocket_url, "websocket"):
+        raise InvalidUrlException("Invalid websocket url.")
+
     if settings.websocket_access_token:
         extra_headers = {
             "Authorization": f"Bearer {settings.websocket_access_token}"
