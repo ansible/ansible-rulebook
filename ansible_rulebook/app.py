@@ -16,6 +16,8 @@ import argparse
 import asyncio
 import logging
 import os
+import sys
+import traceback
 from asyncio.exceptions import CancelledError
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -66,6 +68,18 @@ class NullQueue:
 logger = logging.getLogger(__name__)
 INVENTORY_ACTIONS = ("run_playbook", "run_module")
 CONTROLLER_ACTIONS = ("run_job_template", "run_workflow_template")
+
+
+def log_exception_without_data(exc_type, exc_value, exc_traceback):
+    logger.error(exc_type.__name__ + ": " + str(exc_value))
+    if exc_traceback is not None:
+        for frame in traceback.extract_tb(exc_traceback)[::-1]:
+            logger.error(
+                frame.filename + ":" + str(frame.lineno) + " " + frame.name
+            )
+
+
+sys.excepthook = log_exception_without_data
 
 
 # FIXME(cutwater): Replace parsed_args with clear interface
@@ -160,7 +174,9 @@ async def run(parsed_args: argparse.Namespace) -> None:
         if isinstance(result, Exception) and not isinstance(
             result, CancelledError
         ):
-            logger.error(result)
+            log_exception_without_data(
+                type(result), result, result.__traceback__
+            )
             error_found = True
 
     logger.info("Main complete")
