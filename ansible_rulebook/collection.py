@@ -14,34 +14,22 @@
 
 import logging
 import os
-import shutil
 import subprocess
 from functools import lru_cache
 
 import yaml
 
 from ansible_rulebook import terminal
+from ansible_rulebook.constants import (
+    ANSIBLE_GALAXY,
+    EDA_FILTER_PATHS,
+    EDA_PATH_PREFIX,
+    EDA_PLAYBOOKS_PATHS,
+    EDA_SOURCE_PATHS,
+    EDA_YAML_EXTENSIONS,
+)
 from ansible_rulebook.exception import RulebookNotFoundException
 from ansible_rulebook.vault import has_vaulted_str
-
-ANSIBLE_GALAXY = shutil.which("ansible-galaxy")
-EDA_PATH_PREFIX = "extensions/eda"
-
-EDA_FILTER_PATHS = [
-    f"{EDA_PATH_PREFIX}/plugins/event_filter",
-    f"{EDA_PATH_PREFIX}/plugins/event_filters",
-    "plugins/event_filter",
-]
-
-EDA_SOURCE_PATHS = [
-    f"{EDA_PATH_PREFIX}/plugins/event_source",
-    f"{EDA_PATH_PREFIX}/plugins/event_sources",
-    "plugins/event_source",
-]
-
-EDA_PLAYBOOKS_PATHS = [".", "playbooks"]
-
-EDA_YAML_EXTENSIONS = [".yml", ".yaml"]
 
 logger = logging.getLogger(__name__)
 

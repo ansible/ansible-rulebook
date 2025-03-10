@@ -57,35 +57,11 @@ from ansible_rulebook.condition_types import (  # noqa: E402
     String,
     to_condition_type,
 )
-
-VALID_SELECT_ATTR_OPERATORS = [
-    "==",
-    "!=",
-    ">",
-    ">=",
-    "<",
-    "<=",
-    "regex",
-    "search",
-    "match",
-    "in",
-    "not in",
-    "contains",
-    "not contains",
-]
-
-VALID_SELECT_OPERATORS = [
-    "==",
-    "!=",
-    ">",
-    ">=",
-    "<",
-    "<=",
-    "regex",
-    "search",
-    "match",
-]
-SUPPORTED_SEARCH_KINDS = ("match", "regex", "search")
+from ansible_rulebook.constants import (  # noqa: E402
+    SUPPORTED_SEARCH_KINDS,
+    VALID_SELECT_ATTR_OPERATORS,
+    VALID_SELECT_OPERATORS,
+)
 
 logger = logging.getLogger(__name__)
 

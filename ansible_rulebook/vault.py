@@ -18,13 +18,14 @@ import tempfile
 
 import pexpect
 
+from ansible_rulebook.constants import (
+    VAULT_HEADER,
+    b_VAULT_HEADER,
+)
 from ansible_rulebook.exception import (
     AnsibleVaultNotFound,
     VaultDecryptException,
 )
-
-VAULT_HEADER = "$ANSIBLE_VAULT"
-b_VAULT_HEADER = b"$ANSIBLE_VAULT"
 
 
 class Vault:
