@@ -20,7 +20,7 @@ from functools import lru_cache
 import yaml
 
 from ansible_rulebook import terminal
-from ansible_rulebook.conf import (
+from ansible_rulebook.constants import (
     ANSIBLE_GALAXY,
     EDA_FILTER_PATHS,
     EDA_PATH_PREFIX,

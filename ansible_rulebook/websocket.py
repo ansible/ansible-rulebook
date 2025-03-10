@@ -29,12 +29,12 @@ from websockets.client import WebSocketClientProtocol
 
 from ansible_rulebook import rules_parser as rules_parser
 from ansible_rulebook.common import StartupArgs
-from ansible_rulebook.conf import (
+from ansible_rulebook.conf import settings
+from ansible_rulebook.constants import (
     BACKOFF_FACTOR,
     BACKOFF_INITIAL,
     BACKOFF_MAX,
     BACKOFF_MIN,
-    settings,
 )
 from ansible_rulebook.token import renew_token
 from ansible_rulebook.util import validate_url

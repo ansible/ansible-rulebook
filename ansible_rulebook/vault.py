@@ -18,7 +18,7 @@ import tempfile
 
 import pexpect
 
-from ansible_rulebook.conf import (
+from ansible_rulebook.constants import (
     VAULT_HEADER,
     b_VAULT_HEADER,
 )

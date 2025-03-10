@@ -34,7 +34,8 @@ from packaging import version
 from packaging.version import InvalidVersion
 
 from ansible_rulebook import terminal
-from ansible_rulebook.conf import EDA_BUILTIN_FILTER_PREFIX, settings
+from ansible_rulebook.conf import settings
+from ansible_rulebook.constants import EDA_BUILTIN_FILTER_PREFIX
 from ansible_rulebook.exception import (
     InvalidFilterNameException,
     InventoryNotFound,

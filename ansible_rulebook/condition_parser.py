@@ -57,7 +57,7 @@ from ansible_rulebook.condition_types import (  # noqa: E402
     String,
     to_condition_type,
 )
-from ansible_rulebook.conf import (  # noqa: E402
+from ansible_rulebook.constants import (  # noqa: E402
     SUPPORTED_SEARCH_KINDS,
     VALID_SELECT_ATTR_OPERATORS,
     VALID_SELECT_OPERATORS,

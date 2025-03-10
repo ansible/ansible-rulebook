@@ -11,7 +11,7 @@ else:
 import jsonschema
 from jsonschema.exceptions import SchemaError, ValidationError
 
-from ansible_rulebook.conf import DEFAULT_RULEBOOK_SCHEMA
+from ansible_rulebook.constants import DEFAULT_RULEBOOK_SCHEMA
 
 logger = logging.getLogger(__name__)
 

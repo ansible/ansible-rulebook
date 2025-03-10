@@ -34,7 +34,7 @@ from ansible_rulebook.condition_types import (
     String,
     to_condition_type,
 )
-from ansible_rulebook.conf import OPERATOR_MNEMONIC
+from ansible_rulebook.constants import OPERATOR_MNEMONIC
 from ansible_rulebook.exception import (
     InvalidAssignmentException,
     InvalidIdentifierException,
