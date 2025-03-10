@@ -62,6 +62,9 @@ Run an Ansible playbook.
    * - json_mode
      - Boolean, sends the playbook events data to the stdout as json strings as they are processed by ansible-runner
      - No
+   * - copy_files
+     - Boolean, copy the local playbook file to the ansible-runner project directory, this is not needed if you are running a playbook from an ansible collection.
+     - No
 
 
 run_module
@@ -96,6 +99,21 @@ Run an Ansible module
    * - extra_vars
      - Additional vars to be passed into the playbook as extra vars.
      - No
+   * - json_mode
+     - Boolean, sends the playbook events data to the stdout as json strings as they are processed by ansible-runner
+     - No
+   * - set_facts
+     - Boolean, the artifacts from the module execution are inserted back into the rule set as facts
+     - No
+   * - post_events
+     - Boolean, the artifacts from the module execution are inserted back into the rule set as events
+     - No
+   * - ruleset
+     - The name of the ruleset to post the event or assert the fact to, default is current rule set.
+     - No
+   * - var_root
+     - If the event is a deeply nested dictionary, the var_root can specify the key name whose value should replace the matching event value. The var_root can take a dictionary to account for data when we have multiple matching events.
+     - No
 
 run_job_template
 ****************
@@ -103,10 +121,18 @@ run_job_template
 Run a job template.
 
 .. note::
-    ``--controller-url`` and ``--controller-token`` cmd options must be provided to use this action
-    
+    ``--controller-url`` and either ``--controller-token`` or ``--controller-username`` and ``--controller-password`` cmd options must be provided to use this action
+
     In order to access event information under the ``ansible_eda`` namespace, be sure to check the box for "Prompt on launch" for the Variables field within the job template. Alternatively, a survey can be created that includes the variable ``ansible_eda``. Similarly, if you plan to limit host execution based on event information, enable "Prompt on launch" for the Limit field within the job template.
 
+.. note::
+    You can define the environment variable ``EDA_CONTROLLER_CONNECTION_LIMIT`` to limit the number of concurrent connections to the controller. The default is 30.
+
+.. note::
+    The controller URL is the API end point, that ansible-rulebook will try to reach.
+    If you have a path specified in your URL it should have the api embedded in it.
+    If you have just provided a host and port but no path we will append api to the URL$
+    for backward compatibility.
 
 .. list-table::
    :widths: 25 150 10
@@ -121,6 +147,9 @@ Run a job template.
    * - organization
      - The name of the organization
      - Yes
+   * - include_events
+     - Should we include the matching events in the payload sent to controller. Default is true
+     - No
    * - set_facts
      - The artifacts from the job template execution are inserted back into the rule set as facts
      - No
@@ -152,7 +181,17 @@ run_workflow_template
 Run a workflow template.
 
 .. note::
-    ``--controller-url`` and ``--controller-token`` cmd options must be provided to use this action
+    ``--controller-url`` and either ``--controller-token`` or ``--controller-username`` and ``--controller-password`` cmd options must be provided to use this action
+
+.. note::
+    You can define the environment variable ``EDA_CONTROLLER_CONNECTION_LIMIT`` to limit the number of concurrent connections to the controller. The default is 30.
+
+
+.. note::
+    The controller URL is the api end point, that ansible-rulebook will try to reach.
+    If you have a path specified in your URL it should have the api embedded in it.
+    If you have just provided a host and port but no path we will append api to the URL$
+    for backward compatibility.
 
 .. list-table::
    :widths: 25 150 10
@@ -167,6 +206,9 @@ Run a workflow template.
    * - organization
      - The name of the organization
      - Yes
+   * - include_events
+     - Should we include the matching events in the payload sent to controller. Default is true. If your workflow template does not have Prompt on Launch for Extra Variables or a Survey spec, you will have to set this to false.
+     - No
    * - set_facts
      - The artifacts from the workflow template execution are inserted back into the rule set as facts
      - No
@@ -312,6 +354,9 @@ retract_fact
    * - ruleset
      - The name of the rule set to retract the fact, default is the current rule set name
      - No
+   * - partial
+     - The fact being requested to retracted is partial and doesn't have all the keys. Default is true
+     - No
 
 Example:
 
@@ -377,7 +422,7 @@ shutdown
      - A numeric value about how long to wait in seconds before shutting down, default 60.0
      - No
    * - message
-     - A message to be associated with this shutdown 
+     - A message to be associated with this shutdown
      - No
    * - kind
      - Kind of shutdown can be either **graceful** or **now**. default is graceful.
@@ -450,7 +495,7 @@ Example:
        condition: event.i >= 5
        action:
           debug:
-            msg: 
+            msg:
                - "Message 1 {{ event }}"
                - Second Message
 

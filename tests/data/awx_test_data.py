@@ -1,8 +1,8 @@
 UNIFIED_JOB_TEMPLATE_COUNT = 2
 ORGANIZATION_NAME = "Default"
 JOB_TEMPLATE_NAME_1 = "JT1"
-JOB_TEMPLATE_1_LAUNCH_SLUG = "/api/v2/job_templates/255/launch/"
-JOB_TEMPLATE_2_LAUNCH_SLUG = "/api/v2/workflow_job_templates/300/launch/"
+JOB_TEMPLATE_1_LAUNCH_SLUG = "api/v2/job_templates/255/launch/"
+JOB_TEMPLATE_2_LAUNCH_SLUG = "api/v2/workflow_job_templates/300/launch/"
 
 JOB_TEMPLATE_1 = dict(
     type="job_template",
@@ -24,10 +24,10 @@ JOB_TEMPLATE_2 = dict(
 )
 
 UNIFIED_JOB_TEMPLATE_PAGE1_SLUG = (
-    f"/api/v2/unified_job_templates/?name={JOB_TEMPLATE_NAME_1}"
+    f"api/v2/unified_job_templates/?name={JOB_TEMPLATE_NAME_1}"
 )
 UNIFIED_JOB_TEMPLATE_PAGE2_SLUG = (
-    f"/api/v2/unified_job_templates/?name={JOB_TEMPLATE_NAME_1}&page=2"
+    f"api/v2/unified_job_templates/?name={JOB_TEMPLATE_NAME_1}&page=2"
 )
 UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE = dict(
     count=UNIFIED_JOB_TEMPLATE_COUNT,
@@ -58,7 +58,7 @@ JOB_ARTIFACTS = {
     "barney": 90,
 }
 JOB_ID_1 = 909
-JOB_1_SLUG = f"/api/v2/jobs/{JOB_ID_1}/"
+JOB_1_SLUG = f"api/v2/jobs/{JOB_ID_1}/"
 JOB_TEMPLATE_POST_RESPONSE = dict(
     job=JOB_ID_1,
     url=JOB_1_SLUG,

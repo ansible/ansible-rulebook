@@ -23,11 +23,6 @@
             - "Hello World {{ event }}"
             - "Hello Java"
             - "Hello Java again {{ event }}"
-    - name: r4
-      condition: event.i == 3
-      action:
-        debug:
-          var: event.does_not_exist
     - name: r5
       condition: event.i == 4
       action:

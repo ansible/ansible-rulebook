@@ -2103,7 +2103,8 @@ async def test_46_job_template():
     job_url = "https://examples.com/#/jobs/945/details"
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.builtin.job_template_runner.run_job_template",
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.run_job_template",
             return_value=response_obj,
         ):
             await run_rulesets(
@@ -2138,7 +2139,8 @@ async def test_46_job_template_exception(err_msg, err):
     rs = ruleset_queues[0][0]
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.builtin.job_template_runner.run_job_template",
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.run_job_template",
             side_effect=err,
         ):
             await run_rulesets(
@@ -2158,7 +2160,7 @@ async def test_46_job_template_exception(err_msg, err):
             required_keys = {
                 "action",
                 "action_uuid",
-                "activation_id",
+                "activation_instance_id",
                 "message",
                 "rule_run_at",
                 "run_at",
@@ -2245,6 +2247,7 @@ WORKFLOW_TEMPLATE_ERRORS = [
 ]
 
 
+@pytest.mark.jira("AAP-9829")
 @pytest.mark.parametrize("err_msg,err", WORKFLOW_TEMPLATE_ERRORS)
 @pytest.mark.asyncio
 async def test_79_workflow_job_template_exception(err_msg, err):
@@ -2256,8 +2259,8 @@ async def test_79_workflow_job_template_exception(err_msg, err):
     rs = ruleset_queues[0][0]
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.builtin.job_template_runner."
-            "run_workflow_job_template",
+            "ansible_rulebook.action.run_workflow_template."
+            "job_template_runner.run_workflow_job_template",
             side_effect=err,
         ):
             await run_rulesets(
@@ -2291,6 +2294,7 @@ async def test_79_workflow_job_template_exception(err_msg, err):
             assert set(action.keys()).issuperset(required_keys)
 
 
+@pytest.mark.jira("AAP-9829")
 @pytest.mark.asyncio
 async def test_79_workflow_job_template():
     ruleset_queues, event_log = load_rulebook(
@@ -2306,8 +2310,8 @@ async def test_79_workflow_job_template():
     job_url = "https://examples.com/#/jobs/workflow/945/details"
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
-            "ansible_rulebook.builtin.job_template_runner."
-            "run_workflow_job_template",
+            "ansible_rulebook.action.run_workflow_template."
+            "job_template_runner.run_workflow_job_template",
             return_value=response_obj,
         ):
             await run_rulesets(
@@ -2377,3 +2381,194 @@ async def test_81_match_single_rule():
             ],
         }
         await validate_events(event_log, **checks)
+
+
+@pytest.mark.jira("AAP-16038")
+@pytest.mark.asyncio
+async def test_82_non_alpha_keys():
+    ruleset_queues, event_log = load_rulebook("examples/82_non_alpha_keys.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+
+        checks = {
+            "max_events": 4,
+            "shutdown_events": 1,
+            "actions": [
+                "82 non alpha keys::r1::debug",
+                "82 non alpha keys::r2::debug",
+                "82 non alpha keys::r3::print_event",
+            ],
+        }
+        await validate_events(event_log, **checks)
+
+
+@pytest.mark.asyncio
+async def test_83_boolean_true():
+    ruleset_queues, event_log = load_rulebook("examples/83_boolean_true.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+
+        checks = {
+            "max_events": 4,
+            "shutdown_events": 1,
+            "actions": [
+                "83 boolean true::r1::print_event",
+                "83 boolean true::r1::print_event",
+                "83 boolean true::r1::print_event",
+            ],
+        }
+        await validate_events(event_log, **checks)
+
+
+INCLUDE_EVENTS_RUN = [
+    (
+        (
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.run_job_template"
+        ),
+        "examples/84_job_template_exclude_events.yml",
+        "run_job_template",
+        "https://examples.com/#/jobs/945/details",
+        ["name"],
+    ),
+    (
+        (
+            "ansible_rulebook.action.run_workflow_template."
+            "job_template_runner.run_workflow_job_template"
+        ),
+        "examples/85_workflow_template_exclude_events.yml",
+        "run_workflow_template",
+        "https://examples.com/#/jobs/workflow/945/details",
+        ["name"],
+    ),
+    (
+        (
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.run_job_template"
+        ),
+        "examples/86_job_template_include_events.yml",
+        "run_job_template",
+        "https://examples.com/#/jobs/945/details",
+        ["name", "ansible_eda"],
+    ),
+    (
+        (
+            "ansible_rulebook.action.run_workflow_template."
+            "job_template_runner.run_workflow_job_template"
+        ),
+        "examples/87_workflow_template_include_events.yml",
+        "run_workflow_template",
+        "https://examples.com/#/jobs/workflow/945/details",
+        ["name", "ansible_eda"],
+    ),
+    (
+        (
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.run_job_template"
+        ),
+        "examples/88_job_template_no_args.yml",
+        "run_job_template",
+        "https://examples.com/#/jobs/945/details",
+        ["ansible_eda"],
+    ),
+]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "location,rulebook,action_type,job_url,expected_keys", INCLUDE_EVENTS_RUN
+)
+async def test_include_events(
+    location, rulebook, action_type, job_url, expected_keys
+):
+    ruleset_queues, event_log = load_rulebook(rulebook)
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    response_obj = dict(
+        status="successful", id=945, created="dummy", artifacts=dict(a=1)
+    )
+    job_template_runner.host = "https://examples.com"
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        with patch(
+            location,
+            return_value=response_obj,
+        ) as mocked_obj:
+            await run_rulesets(
+                event_log,
+                ruleset_queues,
+                dict(),
+                "playbooks/inventory.yml",
+            )
+
+            while not event_log.empty():
+                event = event_log.get_nowait()
+                if event["type"] == "Action":
+                    action = event
+
+            assert action["url"] == job_url
+            assert action["action"] == action_type
+            assert (
+                list(mocked_obj.call_args.args[2]["extra_vars"].keys())
+                == expected_keys
+            )
+
+
+@pytest.mark.asyncio
+async def test_89_source_error_with_msg(caplog):
+    ruleset_queues, event_log = load_rulebook(
+        "examples/89_source_error_with_msg.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+    expected_msg = (
+        "ERROR Source error: TestException: "
+        "Source plugin failed with error message: 'range fail with msg'"
+    )
+    assert expected_msg in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_90_source_error_without_msg(caplog):
+    ruleset_queues, event_log = load_rulebook(
+        "examples/90_source_error_without_msg.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+    expected_msg = (
+        "ERROR Source error: Unknown error "
+        "TestException: source plugin failed with no error message."
+    )
+    assert expected_msg in caplog.text

@@ -56,6 +56,7 @@
                 }
             },
             "required": [
+                "name",
                 "hosts",
                 "sources",
                 "rules"
@@ -156,6 +157,9 @@
                             "type": "string"
                         },
                         {
+                            "type": "boolean"
+                        },
+                        {
                             "$ref": "#/$defs/all-condition"
                         },
                         {
@@ -202,6 +206,9 @@
                             },
                             {
                                 "$ref": "#/$defs/shutdown-action"
+                            },
+                            {
+                                "$ref": "#/$defs/pg-notify-action"
                             }
                         ]
                     }
@@ -240,6 +247,9 @@
                         },
                         {
                             "$ref": "#/$defs/shutdown-action"
+                        },
+                        {
+                            "$ref": "#/$defs/pg-notify-action"
                         }
                     ]
                 }
@@ -443,6 +453,10 @@
                         },
                         "delay": {
                             "type": "integer"
+                        },
+                        "include_events": {
+                            "type": "boolean",
+                            "default": true
                         }
                     },
                     "required": [
@@ -492,6 +506,10 @@
                         },
                         "delay": {
                             "type": "integer"
+                        },
+                        "include_events": {
+                            "type": "boolean",
+                            "default": true
                         }
                     },
                     "required": [
@@ -503,6 +521,42 @@
             },
             "required": [
                 "run_workflow_template"
+            ],
+            "additionalProperties": false
+        },
+        "pg-notify-action": {
+            "type": "object",
+            "properties": {
+                "pg_notify": {
+                    "type": "object",
+                    "properties": {
+                        "dsn": {
+                            "type": "string"
+                        },
+                        "channel": {
+                            "type": "string"
+                        },
+                        "event": {
+                            "type": [
+                                "string",
+                                "object"
+                            ]
+                        },
+                        "remove_meta": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    "required": [
+                        "dsn",
+                        "channel",
+                        "event"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "pg_notify"
             ],
             "additionalProperties": false
         },

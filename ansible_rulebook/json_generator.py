@@ -84,25 +84,19 @@ def visit_condition(parsed_condition: ConditionTypes, variables: Dict):
     elif isinstance(parsed_condition, Identifier):
         if parsed_condition.value.startswith("fact."):
             return {"Fact": parsed_condition.value[5:]}
+        elif parsed_condition.value.startswith("fact["):
+            return {"Fact": parsed_condition.value[4:]}
         elif parsed_condition.value.startswith("event."):
             return {"Event": parsed_condition.value[6:]}
+        elif parsed_condition.value.startswith("event["):
+            return {"Event": parsed_condition.value[5:]}
         elif parsed_condition.value.startswith("events."):
             return {"Events": parsed_condition.value[7:]}
         elif parsed_condition.value.startswith("facts."):
             return {"Facts": parsed_condition.value[6:]}
         elif parsed_condition.value.startswith("vars."):
             key = parsed_condition.value[5:]
-            try:
-                return visit_condition(
-                    to_condition_type(
-                        dpath.get(variables, key, separator=".")
-                    ),
-                    variables,
-                )
-            except KeyError:
-                raise VarsKeyMissingException(
-                    f"vars does not contain key: {key}"
-                )
+            return process_vars(variables, key)
         else:
             msg = (
                 f"Invalid identifier : {parsed_condition.value} "
@@ -337,3 +331,13 @@ def validate_assignment_expression(value):
             + f"{value} is invalid."
         )
         raise InvalidAssignmentException(msg)
+
+
+def process_vars(variables, key):
+    try:
+        return visit_condition(
+            to_condition_type(dpath.get(variables, key, separator=".")),
+            variables,
+        )
+    except KeyError:
+        raise VarsKeyMissingException(f"vars does not contain key: {key}")

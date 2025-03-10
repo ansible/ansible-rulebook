@@ -1,0 +1,20 @@
+---
+- name: Test run workflow templates without event payload
+  hosts: all
+  sources:
+    - ansible.eda.generic:
+        payload:
+          - age: 55
+            name: Fred
+            zip: "12345"
+  rules:
+    - name: "Run workflow template"
+      condition: event.name == "Fred"
+      action:
+        run_workflow_template:
+          name: Demo Workflow Template
+          organization: Default
+          include_events: false
+          job_args:
+            extra_vars:
+              name: "{{ event.name }}"

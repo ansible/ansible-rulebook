@@ -2,6 +2,7 @@
 Module with tests for general CLI runtime
 """
 import logging
+import signal
 import subprocess
 import time
 from pathlib import Path
@@ -216,7 +217,7 @@ def test_terminate_process_sigint():
     start = time.time()
     while line := process.stdout.readline():
         if "'action': 'long_loop'" in line:
-            process.send_signal(subprocess.signal.SIGINT)
+            process.send_signal(signal.SIGINT)
             process.wait()
             break
         time.sleep(0.1)

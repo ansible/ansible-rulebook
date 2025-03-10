@@ -5,6 +5,7 @@
     - generic:
         payload:
           - action: "value_a"
+        shutdown_after: 2
   rules:
     - name: Matching for value_a
       condition: event.action == "value_a"

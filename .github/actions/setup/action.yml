@@ -22,7 +22,7 @@ runs:
 
     - name: Install package
       shell: bash
-      run: python -m pip install .
+      run: python -m pip install .[production]
 
     - name: Install test dependencies
       shell: bash

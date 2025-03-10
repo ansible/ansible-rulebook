@@ -1,0 +1,23 @@
+name: build-and-test-image
+description: Build and test the container image
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build container image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        platforms: linux/amd64
+        tags: localhost/ansible-rulebook:test
+        load: true
+
+    - name: Run tests
+      shell: bash
+      run: >
+        docker run --rm localhost/ansible-rulebook:test bash -c '
+        pip install -r requirements_test.txt &&
+        pytest -m "e2e" -n auto'

@@ -16,7 +16,6 @@ repos:
         additional_dependencies:
           - flake8-bugbear
   - repo: local
-    language: javascript
     hooks:
       - id: ajv
         name: ajv
@@ -37,4 +36,5 @@ repos:
     rev: v9.5.0
     hooks:
       - id: commitlint
+        additional_dependencies: ['@commitlint/config-conventional']
         stages: [commit-msg]

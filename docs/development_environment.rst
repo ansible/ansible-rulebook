@@ -26,7 +26,7 @@ Ready to contribute? Here's how to set up `ansible_rulebook` for local developme
     cd ansible_rulebook/
     python3.9 -m venv venv
     source venv/bin/activate
-    pip install -e .
+    pip install -e .[development]
     pip install -r requirements_dev.txt
     ansible-galaxy collection install ansible.eda
     npm install commitlint
@@ -53,8 +53,13 @@ To get flake8 and tox, just pip install them into your virtualenv.
 7. Commit your changes and push your branch to GitHub:
    We follow the conventionalcommit_ standards for commit message
    During the pre-commit phase we will validate the commit message
+   You have to install the hook with the following command:
 
-.. _conventionalcommit : https://www.conventionalcommits.org/en/v1.0.0/  
+.. code-block:: console
+
+    pre-commit install --hook-type commit-msg
+
+.. _conventionalcommit : https://www.conventionalcommits.org/en/v1.0.0/
 
 .. code-block:: console
 

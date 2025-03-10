@@ -16,6 +16,8 @@ import argparse
 import asyncio
 import logging
 import os
+import sys
+import traceback
 from asyncio.exceptions import CancelledError
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -32,7 +34,14 @@ from ansible_rulebook.conf import settings
 from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.rule_types import RuleSet, RuleSetQueue
+from ansible_rulebook.util import (
+    decryptable,
+    decrypted_context,
+    substitute_variables,
+    validate_url,
+)
 from ansible_rulebook.validators import Validate
+from ansible_rulebook.vault import has_vaulted_str
 from ansible_rulebook.websocket import (
     request_workload,
     send_event_log_to_websocket,
@@ -40,6 +49,7 @@ from ansible_rulebook.websocket import (
 
 from .exception import (
     ControllerNeededException,
+    InvalidUrlException,
     InventoryNeededException,
     InventoryNotFound,
     RulebookNotFoundException,
@@ -60,28 +70,33 @@ INVENTORY_ACTIONS = ("run_playbook", "run_module")
 CONTROLLER_ACTIONS = ("run_job_template", "run_workflow_template")
 
 
+def log_exception_without_data(exc_type, exc_value, exc_traceback):
+    logger.error(exc_type.__name__ + ": " + str(exc_value))
+    if exc_traceback is not None:
+        for frame in traceback.extract_tb(exc_traceback)[::-1]:
+            logger.error(
+                frame.filename + ":" + str(frame.lineno) + " " + frame.name
+            )
+
+
+sys.excepthook = log_exception_without_data
+
+
 # FIXME(cutwater): Replace parsed_args with clear interface
-async def run(parsed_args: argparse.ArgumentParser) -> None:
+async def run(parsed_args: argparse.Namespace) -> None:
     file_monitor = None
 
-    if parsed_args.worker and parsed_args.websocket_address and parsed_args.id:
+    if parsed_args.worker and parsed_args.websocket_url and parsed_args.id:
         logger.info("Starting worker mode")
-        startup_args = await request_workload(
-            parsed_args.id,
-            parsed_args.websocket_address,
-            parsed_args.websocket_ssl_verify,
-        )
+        startup_args = await request_workload(parsed_args.id)
         if not startup_args:
-            logger.error("Error communicating with web socket server")
             raise WebSocketExchangeException(
                 "Error communicating with web socket server"
             )
     else:
         startup_args = StartupArgs()
         startup_args.variables = load_vars(parsed_args)
-        startup_args.rulesets = load_rulebook(
-            parsed_args, startup_args.variables
-        )
+        startup_args.rulesets = load_rulebook(parsed_args, startup_args)
         if parsed_args.hot_reload is True and os.path.exists(
             parsed_args.rulebook
         ):
@@ -96,13 +111,22 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
         startup_args.controller_url = parsed_args.controller_url
         startup_args.controller_token = parsed_args.controller_token
         startup_args.controller_ssl_verify = parsed_args.controller_ssl_verify
+        startup_args.controller_username = parsed_args.controller_username
+        startup_args.controller_password = parsed_args.controller_password
 
     validate_actions(startup_args)
+    validate_variables(startup_args)
+    startup_args.variables = decrypted_context(startup_args.variables)
+    startup_args.env_vars = substitute_variables(
+        startup_args.env_vars, startup_args.variables
+    )
+    for k, v in startup_args.env_vars.items():
+        os.environ[k] = str(v)
 
     if startup_args.check_controller_connection:
         await validate_controller_params(startup_args)
 
-    if parsed_args.websocket_address:
+    if parsed_args.websocket_url:
         event_log = asyncio.Queue()
     else:
         event_log = NullQueue()
@@ -118,13 +142,9 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
     logger.info("Starting rules")
 
     feedback_task = None
-    if parsed_args.websocket_address:
+    if parsed_args.websocket_url:
         feedback_task = asyncio.create_task(
-            send_event_log_to_websocket(
-                event_log,
-                parsed_args.websocket_address,
-                parsed_args.websocket_ssl_verify,
-            )
+            send_event_log_to_websocket(event_log=event_log)
         )
         tasks.append(feedback_task)
 
@@ -154,7 +174,9 @@ async def run(parsed_args: argparse.ArgumentParser) -> None:
         if isinstance(result, Exception) and not isinstance(
             result, CancelledError
         ):
-            logger.error(result)
+            log_exception_without_data(
+                type(result), result, result.__traceback__
+            )
             error_found = True
 
     logger.info("Main complete")
@@ -187,7 +209,8 @@ def load_vars(parsed_args) -> Dict[str, str]:
 
 # TODO(cutwater): Maybe move to util.py
 def load_rulebook(
-    parsed_args: argparse.ArgumentParser, variables: Optional[Dict] = None
+    parsed_args: argparse.Namespace,
+    startup_args: Optional[StartupArgs] = None,
 ) -> List[RuleSet]:
     if not parsed_args.rulebook:
         logger.debug("Loading no rules")
@@ -196,21 +219,24 @@ def load_rulebook(
         logger.debug(
             "Loading rules from the file system %s", parsed_args.rulebook
         )
-        with open(parsed_args.rulebook) as f:
-            data = yaml.safe_load(f.read())
+        with open(parsed_args.rulebook, "rb") as f:
+            raw_data = f.read()
+            if startup_args:
+                startup_args.check_vault = has_vaulted_str(raw_data)
+            data = yaml.safe_load(raw_data)
             Validate.rulebook(data)
-            if variables is None:
-                variables = {}
+            variables = startup_args.variables if startup_args else {}
             rulesets = rules_parser.parse_rule_sets(data, variables)
     elif has_rulebook(*split_collection_name(parsed_args.rulebook)):
         logger.debug(
             "Loading rules from a collection %s", parsed_args.rulebook
         )
-        rulesets = rules_parser.parse_rule_sets(
-            collection_load_rulebook(
-                *split_collection_name(parsed_args.rulebook)
-            )
+        vaulted, rulesets = collection_load_rulebook(
+            *split_collection_name(parsed_args.rulebook)
         )
+        rulesets = rules_parser.parse_rule_sets(rulesets)
+        if startup_args:
+            startup_args.check_vault = vaulted
     else:
         raise RulebookNotFoundException(
             f"Could not find rulebook {parsed_args.rulebook}"
@@ -244,6 +270,10 @@ def spawn_sources(
     return tasks, ruleset_queues
 
 
+def validate_variables(startup_args: StartupArgs) -> None:
+    decryptable(startup_args.variables)
+
+
 def validate_actions(startup_args: StartupArgs) -> None:
     for ruleset in startup_args.rulesets:
         for rule in ruleset.rules:
@@ -274,14 +304,26 @@ def validate_actions(startup_args: StartupArgs) -> None:
                         f"Rule {rule.name} has an action {action.action} "
                         "which needs controller url and token to be defined"
                     )
+                if startup_args.check_vault:
+                    decryptable(action.action_args)
 
 
 async def validate_controller_params(startup_args: StartupArgs) -> None:
     if startup_args.controller_url:
+        if not validate_url(startup_args.controller_url, "controller"):
+            raise InvalidUrlException("Invalid controller url.")
+
         job_template_runner.host = startup_args.controller_url
         job_template_runner.token = startup_args.controller_token
         if startup_args.controller_ssl_verify:
             job_template_runner.verify_ssl = startup_args.controller_ssl_verify
+
+        if (
+            startup_args.controller_username
+            and startup_args.controller_password
+        ):
+            job_template_runner.username = startup_args.controller_username
+            job_template_runner.password = startup_args.controller_password
 
         data = await job_template_runner.get_config()
         logger.info("AAP Version %s", data["version"])

@@ -8,13 +8,13 @@ services:
       - "5080:5080"
 
   zookeeper:
-    image: docker.io/confluentinc/cp-zookeeper:7.0.1
+    image: mirror.gcr.io/confluentinc/cp-zookeeper:7.0.1
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   broker:
-    image: docker.io/confluentinc/cp-kafka:7.0.1
+    image: mirror.gcr.io/confluentinc/cp-kafka:7.0.1
     ports:
       - "9092:9092"
     depends_on:
@@ -34,7 +34,7 @@ services:
       retries: 20
 
   sensu-backend:
-    image: docker.io/sensu/sensu:latest
+    image: mirror.gcr.io/sensu/sensu:latest
     command: sensu-backend start
     ports:
       - "3000:3000"
@@ -53,7 +53,7 @@ services:
         condition: service_healthy
 
   sensu-agent:
-    image: docker.io/sensu/sensu:latest
+    image: mirror.gcr.io/sensu/sensu:latest
     command: >-
       sensu-agent start
     environment:

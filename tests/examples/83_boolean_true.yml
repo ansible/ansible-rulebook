@@ -1,0 +1,12 @@
+---
+- name: "83 boolean true"
+  hosts: all
+  sources:
+    - name: range
+      range:
+        limit: 3
+  rules:
+    - name: r1
+      condition: true
+      action:
+        print_event:

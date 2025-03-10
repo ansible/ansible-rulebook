@@ -20,6 +20,10 @@ from functools import lru_cache
 
 import yaml
 
+from ansible_rulebook import terminal
+from ansible_rulebook.exception import RulebookNotFoundException
+from ansible_rulebook.vault import has_vaulted_str
+
 ANSIBLE_GALAXY = shutil.which("ansible-galaxy")
 EDA_PATH_PREFIX = "extensions/eda"
 
@@ -128,10 +132,15 @@ def load_rulebook(collection, rulebook):
         ".yml",
     )
     if not location:
-        return False
-    with open(location) as f:
-        print(f"Loading rulebook from {location}")
-        return yaml.safe_load(f.read())
+        raise RulebookNotFoundException(f"Cannot find collection {collection}")
+
+    with open(location, "rb") as f:
+        terminal.Display.instance().banner(
+            "collection", f"Loading rulebook from {location}"
+        )
+        raw_data = f.read()
+        vaulted = has_vaulted_str(raw_data)
+        return vaulted, yaml.safe_load(raw_data)
 
 
 def has_source(collection, source):
