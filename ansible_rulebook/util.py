@@ -34,7 +34,7 @@ from packaging import version
 from packaging.version import InvalidVersion
 
 from ansible_rulebook import terminal
-from ansible_rulebook.conf import settings
+from ansible_rulebook.conf import EDA_BUILTIN_FILTER_PREFIX, settings
 from ansible_rulebook.exception import (
     InvalidFilterNameException,
     InventoryNotFound,
@@ -42,9 +42,6 @@ from ansible_rulebook.exception import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-EDA_BUILTIN_FILTER_PREFIX = "eda.builtin."
 
 
 def decrypted_context(
