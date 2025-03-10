@@ -48,7 +48,13 @@ Now you can make your changes locally.
     pytest
     tox
 
-To get flake8 and tox, just pip install them into your virtualenv.
+To get flake8_, pytest_ and tox_, just pip install them into your virtualenv.
+
+.. _flake8: https://github.com/PyCQA/flake8
+
+.. _pytest: https://github.com/pytest-dev/pytest
+
+.. _tox: https://github.com/tox-dev/tox
 
 7. Commit your changes and push your branch to GitHub:
    We follow the conventionalcommit_ standards for commit message
