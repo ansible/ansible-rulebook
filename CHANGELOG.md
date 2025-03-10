@@ -12,6 +12,7 @@
 ## [1.1.3] - 2025-03-04
 ### Changed
 ### Added
+- Log stacktrace with source filename, function and line number
 ### Fixed
 
 
