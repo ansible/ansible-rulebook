@@ -19,6 +19,7 @@ import importlib.metadata
 import logging
 import os
 import sys
+from importlib.metadata import version as pkg_version
 from typing import List
 
 import ansible_rulebook.util as util
@@ -31,8 +32,6 @@ util.check_jvm()
 if not os.environ.get("JAVA_HOME"):
     os.environ["JAVA_HOME"] = util.get_java_home()
 
-
-import ansible_rulebook  # noqa: E402
 from ansible_rulebook import app  # noqa: E402
 from ansible_rulebook import terminal  # noqa: E402
 from ansible_rulebook.conf import settings  # noqa: E402
@@ -254,7 +253,7 @@ def get_version() -> str:
     java_home = util.get_java_home()
     java_version = util.get_java_version()
     result = [
-        f"ansible-rulebook [{ansible_rulebook.__version__}]",
+        f"ansible-rulebook [{pkg_version('ansible-rulebook')}]",
         f"  Executable location = {sys.argv[0]}",
         f"  Drools_jpy version = {importlib.metadata.version('drools_jpy')}",
         f"  Java home = {java_home}",
