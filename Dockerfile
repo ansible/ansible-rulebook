@@ -24,7 +24,7 @@ RUN for dir in \
     do mkdir -p $dir ; chown -R "${USER_ID}:0" $dir ; chmod 0775 $dir ; done \
     && useradd --uid "$USER_ID" --gid 0 --home-dir "$APP_DIR" appuser
 
-RUN dnf install -y java-17-openjdk-devel python3-pip postgresql-devel gcc python3-devel git
+RUN dnf install -y java-17-openjdk-devel python3-pip postgresql-devel gcc python3-devel git krb5-libs krb5-devel
 
 USER $USER_ID
 WORKDIR $APP_DIR
@@ -35,7 +35,7 @@ RUN pip install -U pip \
     ansible-runner \
     jmespath \
     aiohttp \
-    aiokafka \
+    aiokafka[gssapi] \
     watchdog \
     azure-servicebus \
     aiobotocore \
