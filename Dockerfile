@@ -2,6 +2,7 @@ FROM quay.io/centos/centos:stream9
 
 ARG USER_ID=${USER_ID:-1001}
 ARG APP_DIR=${APP_DIR:-/app}
+ARG SETUPTOOLS_SCM_PRETEND_VERSION
 ARG DEVEL_COLLECTION_LIBRARY=0
 ARG DEVEL_COLLECTION_REPO=git+https://github.com/ansible/event-driven-ansible.git
 

@@ -149,17 +149,22 @@ Building
 .. code-block:: console
 
     python -m build
-    twine upload dist/*
+
+.. note::
+
+    The package version is automatically determined by setuptools_scm.
+    If you are not building from the git repository or it does not contain the tags, you can specify the version manually by
+    setting the ``SETUPTOOLS_SCM_PRETEND_VERSION`` environment variable.
+
 
 Releasing
 ---------
 
+Create a new release on GitHub plus upload the package to PyPI:
 
 .. code-block:: console
 
-    bump2version patch # possible: major / minor / patch
-    git push
-    git push --tags
+    twine upload dist/*
 
 
 
