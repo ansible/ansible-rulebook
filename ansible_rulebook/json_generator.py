@@ -34,6 +34,7 @@ from ansible_rulebook.condition_types import (
     String,
     to_condition_type,
 )
+from ansible_rulebook.constants import OPERATOR_MNEMONIC
 from ansible_rulebook.exception import (
     InvalidAssignmentException,
     InvalidIdentifierException,
@@ -49,24 +50,6 @@ from ansible_rulebook.rule_types import (
     Throttle,
 )
 from ansible_rulebook.util import substitute_variables
-
-OPERATOR_MNEMONIC = {
-    "!=": "NotEqualsExpression",
-    "==": "EqualsExpression",
-    "and": "AndExpression",
-    "or": "OrExpression",
-    ">": "GreaterThanExpression",
-    "<": "LessThanExpression",
-    ">=": "GreaterThanOrEqualToExpression",
-    "<=": "LessThanOrEqualToExpression",
-    "+": "AdditionExpression",
-    "-": "SubtractionExpression",
-    "<<": "AssignmentExpression",
-    "in": "ItemInListExpression",
-    "not in": "ItemNotInListExpression",
-    "contains": "ListContainsItemExpression",
-    "not contains": "ListNotContainsItemExpression",
-}
 
 
 def visit_condition(parsed_condition: ConditionTypes, variables: Dict):

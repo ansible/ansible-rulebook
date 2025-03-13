@@ -30,6 +30,12 @@ from websockets.client import WebSocketClientProtocol
 from ansible_rulebook import rules_parser as rules_parser
 from ansible_rulebook.common import StartupArgs
 from ansible_rulebook.conf import settings
+from ansible_rulebook.constants import (
+    BACKOFF_FACTOR,
+    BACKOFF_INITIAL,
+    BACKOFF_MAX,
+    BACKOFF_MIN,
+)
 from ansible_rulebook.token import renew_token
 from ansible_rulebook.util import validate_url
 from ansible_rulebook.vault import Vault, has_vaulted_str
@@ -38,12 +44,6 @@ from .exception import InvalidUrlException
 
 logger = logging.getLogger(__name__)
 logging.getLogger("websockets").setLevel(logging.ERROR)
-
-
-BACKOFF_MIN = 1.92
-BACKOFF_MAX = 60.0
-BACKOFF_FACTOR = 1.618
-BACKOFF_INITIAL = 5
 
 
 async def _wait_before_retry(backoff_delay: float) -> float:

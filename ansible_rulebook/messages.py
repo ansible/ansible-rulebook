@@ -14,7 +14,7 @@
 
 from dataclasses import dataclass
 
-DEFAULT_SHUTDOWN_DELAY = 60.0
+from ansible_rulebook.constants import DEFAULT_SHUTDOWN_DELAY
 
 
 @dataclass(frozen=True)
