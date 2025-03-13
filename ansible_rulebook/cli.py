@@ -87,7 +87,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-S",
         "--source-dir",
-        help="Source dir",
+        help="Local event source plugins dir for development.",
     )
     parser.add_argument(
         "-i",
@@ -130,7 +130,11 @@ def get_parser() -> argparse.ArgumentParser:
         "can also be passed via the env var EDA_WEBSOCKET_TOKEN_URL",
         default=os.environ.get("EDA_WEBSOCKET_TOKEN_URL", ""),
     )
-    parser.add_argument("--id", help="Identifier")
+    parser.add_argument(
+        "--id",
+        help="Identifier, the activation_instance id which allows "
+        "the results to be communicated back to the websocket.",
+    )
     parser.add_argument(
         "-w",
         "--worker",
