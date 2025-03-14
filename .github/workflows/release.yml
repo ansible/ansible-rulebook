@@ -5,29 +5,10 @@ on:
     types: [published]
 
 jobs:
-  check_permissions:
-    runs-on: ubuntu-latest
-    if: github.repository == 'ansible/ansible-rulebook'
-    steps:
-      - name: Check if user is a maintainer
-        env:
-          ACTOR: ${{ github.actor }}
-          REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ROLE=$(gh api \
-          "/repos/$REPO/collaborators/$ACTOR/permission" --jq '.role_name')
-
-          if [[ "$ROLE" != "admin" && "$ROLE" != "maintain" ]]; then
-            echo "🚨 User $ACTOR is not authorized."
-            exit 1
-          fi
-          echo "✅ User $ACTOR is authorized."
-
   build-and-publish:
-    needs: check_permissions
     runs-on: ubuntu-latest
-    if: github.repository == 'ansible/ansible-rulebook'
+    # Restrict this action only to protected tags
+    if: github.repository == 'ansible/ansible-rulebook' && startsWith(github.event.release.tag_name, 'v')
     permissions:
       contents: write
     steps:
