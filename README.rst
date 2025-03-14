@@ -60,12 +60,12 @@ Features
 ===============
 Installation
 ===============
-Please follow the `Installation guide <https://ansible-rulebook.readthedocs.io/en/stable/installation.html>`_ to install ``ansible-rulebook``.
+Please follow the `Installation guide <https://ansible.readthedocs.io/projects/rulebook/en/latest/installation.html>`_ to install ``ansible-rulebook``.
 
 ===============
 Documentation
 ===============
-Please refer to the `Getting Started guide <https://ansible-rulebook.readthedocs.io/en/stable/getting_started.html>`_ to get started with ``ansible-rulebook``.
+Please refer to the `Getting Started guide <https://ansible.readthedocs.io/projects/rulebook/en/latest/getting_started.html>`_ to get started with ``ansible-rulebook``.
 
 ===============
 Contributing
@@ -73,9 +73,9 @@ Contributing
 We ask all of our community members and contributors to adhere to the `Ansible code of conduct <https://docs.ansible.com/ansible/latest/community/code_of_conduct.html>`_.
 If you have questions or need assistance, please reach out to our community team at codeofconduct@ansible.com
 
-Refer to the `Contributing guide <https://ansible.readthedocs.io/projects/rulebook/en/stable/contributing.html>`_ to get started developing, reporting bugs or providing feedback.
+Refer to the `Contributing guide <https://ansible.readthedocs.io/projects/rulebook/en/latest/contributing.html>`_ to get started developing, reporting bugs or providing feedback.
 
-To find out how to join the community and get in touch, see the `Community <https://ansible.readthedocs.io/projects/rulebook/en/stable/contributing.html#community>`_ section of our docs.
+To find out how to join the community and get in touch, see the `Getting in touch <https://ansible.readthedocs.io/projects/rulebook/en/latest/contributing.html#getting-in-touch>`_ section of our docs.
 You can also find more information in the `Ansible communication guide <https://docs.ansible.com/ansible/devel/community/communication.html>`_.
 
 Credits
