@@ -1,8 +1,11 @@
 """
 Module with tests for websockets
 """
+
 import asyncio
 import logging
+import subprocess
+import time
 from functools import partial
 
 import pytest
@@ -117,3 +120,71 @@ async def test_websocket_messages(expect_failure):
     assert session_stats_counter >= 2
     assert job_counter == 1
     assert action_counter == 1
+
+
+@pytest.mark.e2e
+@pytest.mark.asyncio
+@pytest.mark.parametrize("verbosity", [1, 2])
+async def test_worker_startup_output(verbosity):
+    """
+    Verify that ansible-rulebook produces the expected log messages
+    when starting in worker mode
+    """
+    # variables
+    timeout = 5
+    host = "127.0.0.1"
+    endpoint = "/api/ws2"
+    proc_id = "42"
+    port = 31420
+    websocket_address = f"ws://127.0.0.1:{port}{endpoint}"
+    cmd = utils.Command(
+        rulebook=None,
+        inventory=None,
+        worker_mode=True,
+        verbosity=verbosity,
+        websocket=websocket_address,
+        proc_id=proc_id,
+        sources=None,
+    )
+    # run server and ansible-rulebook
+    queue = asyncio.Queue()
+    handler = partial(utils.msg_handler, queue=queue)
+    async with ws_server.serve(handler, host, port):
+        LOGGER.info(f"Running command: {cmd}")
+        process = subprocess.Popen(
+            cmd,
+            cwd=utils.BASE_DATA_PATH,
+            text=True,
+            stdout=subprocess.PIPE,
+        )
+        lines = []
+        start = time.time()
+        while line := process.stdout.readline():
+            lines.append(line)
+            if "Starting worker mode" in line:
+                break
+            if time.time() - start > timeout:
+                break
+            time.sleep(0.1)
+
+        process.kill()
+
+    assert lines, "No output from ansible-rulebook"
+    info_messages = [
+        "ansible-rulebook",
+        "Python version",
+    ]
+
+    for expected in info_messages:
+        assert any(
+            expected in line for line in lines
+        ), f"Missing expected output: {expected}"
+
+    if verbosity == 1:
+        assert not any(
+            "Installed collections" in line for line in lines
+        ), "Unexpected output"
+    elif verbosity == 2:
+        assert any(
+            "Installed collections" in line for line in lines
+        ), "Missing expected output"

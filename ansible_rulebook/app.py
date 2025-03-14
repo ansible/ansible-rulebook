@@ -37,6 +37,7 @@ from ansible_rulebook.rule_types import RuleSet, RuleSetQueue
 from ansible_rulebook.util import (
     decryptable,
     decrypted_context,
+    startup_logging,
     substitute_variables,
     validate_url,
 )
@@ -87,6 +88,7 @@ async def run(parsed_args: argparse.Namespace) -> None:
     file_monitor = None
 
     if parsed_args.worker and parsed_args.websocket_url and parsed_args.id:
+        startup_logging(logger)
         logger.info("Starting worker mode")
         startup_args = await request_workload(parsed_args.id)
         if not startup_args:

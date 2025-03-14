@@ -14,17 +14,16 @@
 
 import logging
 import os
-import shutil
 import subprocess
 from functools import lru_cache
 
 import yaml
 
 from ansible_rulebook import terminal
+from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import RulebookNotFoundException
 from ansible_rulebook.vault import has_vaulted_str
 
-ANSIBLE_GALAXY = shutil.which("ansible-galaxy")
 EDA_PATH_PREFIX = "extensions/eda"
 
 EDA_FILTER_PATHS = [
@@ -53,13 +52,13 @@ def split_collection_name(collection_resource):
 
 @lru_cache
 def find_collection(name):
-    if ANSIBLE_GALAXY is None:
+    if settings.ansible_galaxy_path is None:
         raise Exception("ansible-galaxy is not installed")
     try:
         env = os.environ.copy()
         env["ANSIBLE_LOCAL_TEMP"] = "/tmp"
         output = subprocess.check_output(
-            [ANSIBLE_GALAXY, "collection", "list", name],
+            [settings.ansible_galaxy_path, "collection", "list", name],
             stderr=subprocess.STDOUT,
             env=env,
         )
