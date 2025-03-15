@@ -19,6 +19,7 @@ import logging
 import os
 import re
 import shutil
+import ssl
 import subprocess
 import sys
 import tempfile
@@ -327,3 +328,16 @@ def validate_url(url: str, url_type: str) -> bool:
     if url_type == "controller":
         return res.scheme in ["http", "https"] and bool(res.netloc)
     return res.scheme in ["ws", "wss"] and bool(res.netloc)
+
+
+def create_context(
+    settings_url: str, protocol_prefix: str
+) -> typing.Optional[ssl.SSLContext]:
+    if settings_url.startswith(protocol_prefix):
+        ssl_verify = settings.websocket_ssl_verify.lower()
+        if ssl_verify in ["yes", "true"]:
+            return ssl.create_default_context()
+        if ssl_verify in ["no", "false"]:
+            return ssl._create_unverified_context()
+        return ssl.create_default_context(cafile=ssl_verify)
+    return None
