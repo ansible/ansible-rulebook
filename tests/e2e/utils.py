@@ -2,6 +2,8 @@
 
 import asyncio
 import json
+import random
+import socket
 from dataclasses import dataclass
 from pathlib import Path
 from subprocess import CompletedProcess
@@ -167,3 +169,18 @@ async def msg_handler(
             else:
                 await websocket.close()  # should be auto reconnected
         i += 1
+
+
+def get_safe_port() -> int:
+    """
+    Returns a port number that is safe to use for testing
+    """
+    for _ in range(100):
+        port = random.randint(20000, 40000)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("localhost", port))
+                return port
+            except OSError:
+                continue
+    raise RuntimeError("No available port found")
