@@ -4,7 +4,6 @@
 ## [Unreleased]
 ### Changed
 ### Added
-- Log stacktrace with source filename, function and line number
 ### Fixed
 
 
