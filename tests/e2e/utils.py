@@ -22,10 +22,10 @@ class Command:
     provides methods to render it for cmd runners
     """
 
-    rulebook: Path
+    rulebook: Optional[Path]
     program_name: str = "ansible-rulebook"
     cwd: Path = BASE_DATA_PATH
-    inventory: Path = DEFAULT_INVENTORY
+    inventory: Optional[Path] = DEFAULT_INVENTORY
     sources: Optional[Path] = DEFAULT_SOURCES
     vars_file: Optional[Path] = None
     envvars: Optional[str] = None
@@ -61,7 +61,8 @@ class Command:
     def to_list(self) -> List:
         result = [self.program_name]
 
-        result.extend(["-i", str(self.inventory.absolute())])
+        if self.inventory:
+            result.extend(["-i", str(self.inventory.absolute())])
 
         if self.sources:
             result.extend(["-S", str(self.sources.absolute())])
