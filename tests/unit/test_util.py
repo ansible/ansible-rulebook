@@ -11,6 +11,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import importlib.metadata
+import logging
+import subprocess
+from unittest.mock import patch
+
 import pytest
 
 from ansible_rulebook.conf import settings
@@ -21,8 +26,12 @@ from ansible_rulebook.exception import (
 from ansible_rulebook.util import (
     MASKED_STRING,
     decryptable,
+    get_installed_collections,
+    get_package_version,
+    get_version,
     has_builtin_filter,
     mask_sensitive_variable_values,
+    startup_logging,
 )
 from ansible_rulebook.vault import Vault
 
@@ -123,6 +132,107 @@ def test_decryptable_with_errors(obj):
     with pytest.raises(VaultDecryptException):
         decryptable(obj)
 
+
+def test_get_package_version(caplog):
+    assert get_package_version("aiohttp") == importlib.metadata.version(
+        "aiohttp"
+    )
+
+    # assert outcome when package is not found
+    with patch(
+        "importlib.metadata.version",
+        side_effect=importlib.metadata.PackageNotFoundError,
+    ):
+        assert get_package_version("idonotexist") == "unknown"
+        assert "Cannot read version" in caplog.text
+
+
+@patch("ansible_rulebook.conf.settings.ansible_galaxy_path", None)
+def test_get_installed_collections_no_ansible_galaxy_path():
+    assert get_installed_collections() is None
+
+
+@patch(
+    "ansible_rulebook.conf.settings.ansible_galaxy_path",
+    "/path/to/ansible-galaxy",
+)
+def test_get_installed_collections_success():
+    subprocess_output = "collection1\ncollection2\n"
+    subprocess_mock = subprocess.CompletedProcess(
+        args=["/path/to/ansible-galaxy", "collection", "list"],
+        returncode=0,
+        stdout=subprocess_output,
+        stderr="",
+    )
+    subprocess_run_mock = subprocess_mock
+    subprocess_run_mock.stdout = subprocess_output
+    subprocess_run_mock.stderr = ""
+    subprocess_run_mock.check_returncode = lambda: None
+
+    with patch("subprocess.run", return_value=subprocess_run_mock) as run_mock:
+        assert get_installed_collections() == subprocess_output
+
+    run_mock.assert_called_once_with(
+        ["/path/to/ansible-galaxy", "collection", "list"],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+
+
+@patch(
+    "ansible_rulebook.conf.settings.ansible_galaxy_path",
+    "/path/to/ansible-galaxy",
+)
+def test_get_installed_collections_error():
+    subprocess_error = subprocess.CalledProcessError(
+        returncode=1, cmd=["ansible-galaxy"]
+    )
+    subprocess_run_mock = subprocess_error
+    subprocess_run_mock.check_returncode = lambda: None
+
+    with patch("subprocess.run", side_effect=subprocess_run_mock) as run_mock:
+        assert get_installed_collections() is None
+
+    run_mock.assert_called_once_with(
+        [settings.ansible_galaxy_path, "collection", "list"],
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+
+
+def test_startup_logging(caplog):
+    logger = logging.getLogger("test_logger")
+    version_output = get_version()
+
+    with patch(
+        "ansible_rulebook.util.get_installed_collections",
+        return_value="collection1\ncollection2\n",
+    ):
+        startup_logging(logger)
+    assert version_output in caplog.text
+    assert "collection1\ncollection2" not in caplog.text
+    logger.setLevel(logging.DEBUG)
+    with patch(
+        "ansible_rulebook.util.get_installed_collections",
+        return_value="collection1\ncollection2\n",
+    ):
+        startup_logging(logger)
+    assert "collection1\ncollection2" in caplog.text
+
+
+def test_startup_logging_no_collections(caplog):
+    logger = logging.getLogger("test_logger")
+    logger.setLevel(logging.DEBUG)
+    version_output = get_version()
+    with patch(
+        "ansible_rulebook.util.get_installed_collections",
+        return_value=None,
+    ):
+        startup_logging(logger)
+    assert version_output in caplog.text
+    assert "No collections found" in caplog.text
 
 @pytest.mark.parametrize(
     "extra_vars, expected",
