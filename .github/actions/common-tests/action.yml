@@ -11,7 +11,7 @@ runs:
 
     - name: Run common tests
       shell: bash
-      run: pytest -m "not e2e and not long_run" -vv -n auto --cov=./ --cov-report=xml --junit-xml=common-test-results.xml
+      run: pytest -vv -s -m "not e2e and not long_run" -vv -n auto --cov=./ --cov-report=xml --junit-xml=common-test-results.xml
 
     - name: Upload jUnit test results (APDE CI)
       shell: bash

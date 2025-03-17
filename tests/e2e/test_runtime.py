@@ -1,6 +1,7 @@
 """
 Module with tests for general CLI runtime
 """
+
 import logging
 import signal
 import subprocess
