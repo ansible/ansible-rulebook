@@ -4,19 +4,22 @@ from unittest.mock import patch
 
 import pytest
 
-from ansible_rulebook.cli import get_version, main
-from ansible_rulebook.util import check_jvm
+from ansible_rulebook.cli import main
+from ansible_rulebook.util import check_jvm, get_version, validate_url
 
 
 def test_get_version():
     output = get_version()
     pattern = re.compile(
-        r"""ansible-rulebook \[\d+\.\d+\.\d+\]
+        r"""ansible-rulebook \[\d+\.\d+\.\d+(?:\..*)?\]
   Executable location = (.+)
   Drools_jpy version = \d+\.\d+\.\d+
   Java home = (.+)
   Java version = \d+(\.\d+)?(\.\d+)?(\.\d+)?
-  Python version = \d+\.\d+\.\d+ (.+)$"""
+  Ansible core version = \d+\.\d+\.\d+([a-zA-Z0-9\+\-\.]*)?
+  Python version = \d+\.\d+\.\d+([a-zA-Z0-9\+\-\.]*)?
+  Python executable = (\S+)
+  Platform = (.+)$"""
     )
     assert pattern.match(output)
 
@@ -120,3 +123,19 @@ def test_main_invalid_args(args):
     with patch.object(sys, "argv", args):
         with pytest.raises(ValueError):
             main(args)
+
+
+@pytest.mark.parametrize(
+    "url, url_type, expected_bool",
+    [
+        ("http:///example.com", "controller", False),
+        ("example.com:8080", "controller", False),
+        ("https://example.com", "controller", True),
+        ("https://example.com:8080", "controller", True),
+        ("wss://example.com:443", "websocket", True),
+        ("wss:///example.com:443", "websocket", False),
+    ],
+)
+def test_validate_url(url, url_type, expected_bool):
+    res = validate_url(url, url_type)
+    assert res == expected_bool

@@ -1,6 +1,7 @@
 """
 Module with tests for websockets
 """
+
 import asyncio
 import logging
 from functools import partial
@@ -27,7 +28,7 @@ async def test_non_alpha_numeric_keys():
     host = "127.0.0.1"
     endpoint = "/api/ws2"
     proc_id = "42"
-    port = 31415
+    port = utils.get_safe_port()
     rulebook = utils.EXAMPLES_PATH / "82_non_alpha_keys.yml"
     websocket_address = f"ws://127.0.0.1:{port}{endpoint}"
     cmd = utils.Command(

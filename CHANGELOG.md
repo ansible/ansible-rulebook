@@ -4,6 +4,8 @@
 ## [1.1.4 - Unreleased]
 ### Changed
 ### Added
+- Log stacktrace with source filename, function and line number
+- Log relevant version information at startup of worker
 ### Fixed
 
 

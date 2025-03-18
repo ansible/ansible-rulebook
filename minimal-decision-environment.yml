@@ -13,6 +13,7 @@ dependencies:
     - aiobotocore
     - aiohttp
     - aiokafka
+    - gssapi
     - watchdog
     - systemd-python
     - dpath

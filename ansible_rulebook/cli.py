@@ -15,7 +15,6 @@
 
 import argparse
 import asyncio
-import importlib.metadata
 import logging
 import os
 import sys
@@ -31,8 +30,6 @@ util.check_jvm()
 if not os.environ.get("JAVA_HOME"):
     os.environ["JAVA_HOME"] = util.get_java_home()
 
-
-import ansible_rulebook  # noqa: E402
 from ansible_rulebook import app  # noqa: E402
 from ansible_rulebook import terminal  # noqa: E402
 from ansible_rulebook.conf import settings  # noqa: E402
@@ -83,7 +80,7 @@ def get_parser() -> argparse.ArgumentParser:
         "--version",
         action="version",
         help="Show the version and exit",
-        version=get_version(),
+        version=util.get_version(),
     )
     parser.add_argument(
         "-S",
@@ -248,20 +245,6 @@ def get_parser() -> argparse.ArgumentParser:
         default=False,
     )
     return parser
-
-
-def get_version() -> str:
-    java_home = util.get_java_home()
-    java_version = util.get_java_version()
-    result = [
-        f"ansible-rulebook [{ansible_rulebook.__version__}]",
-        f"  Executable location = {sys.argv[0]}",
-        f"  Drools_jpy version = {importlib.metadata.version('drools_jpy')}",
-        f"  Java home = {java_home}",
-        f"  Java version = {java_version}",
-        f"  Python version = {''.join(sys.version.splitlines())}",
-    ]
-    return "\n".join(result)
 
 
 def validate_args(args: argparse.Namespace) -> None:
