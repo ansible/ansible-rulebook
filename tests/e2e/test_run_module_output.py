@@ -1,6 +1,7 @@
 """
 Module with tests for websockets
 """
+
 import asyncio
 import logging
 from functools import partial
@@ -26,7 +27,7 @@ async def test_run_module_output():
     host = "127.0.0.1"
     endpoint = "/api/ws2"
     proc_id = "42"
-    port = 31416
+    port = utils.get_safe_port()
     rulebook = utils.EXAMPLES_PATH / "29_run_module.yml"
     websocket_address = f"ws://127.0.0.1:{port}{endpoint}"
     cmd = utils.Command(

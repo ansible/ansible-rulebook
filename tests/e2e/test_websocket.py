@@ -29,7 +29,7 @@ async def test_websocket_messages(expect_failure):
     host = "127.0.0.1"
     endpoint = "/api/ws2"
     proc_id = "42"
-    port = 31415 if expect_failure else 31414
+    port = utils.get_safe_port()
     rulebook = (
         utils.BASE_DATA_PATH / "rulebooks/websockets/test_websocket_range.yml"
     )
@@ -135,7 +135,7 @@ async def test_worker_startup_output(verbosity):
     host = "127.0.0.1"
     endpoint = "/api/ws2"
     proc_id = "42"
-    port = 31420
+    port = utils.get_safe_port()
     websocket_address = f"ws://127.0.0.1:{port}{endpoint}"
     cmd = utils.Command(
         rulebook=None,
