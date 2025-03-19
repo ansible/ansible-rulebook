@@ -15,11 +15,9 @@
 
 import argparse
 import asyncio
-import importlib.metadata
 import logging
 import os
 import sys
-from importlib.metadata import version as pkg_version
 from typing import List
 
 import ansible_rulebook.util as util
@@ -82,12 +80,12 @@ def get_parser() -> argparse.ArgumentParser:
         "--version",
         action="version",
         help="Show the version and exit",
-        version=get_version(),
+        version=util.get_version(),
     )
     parser.add_argument(
         "-S",
         "--source-dir",
-        help="Source dir",
+        help="Local event source plugins dir for development.",
     )
     parser.add_argument(
         "-i",
@@ -130,7 +128,11 @@ def get_parser() -> argparse.ArgumentParser:
         "can also be passed via the env var EDA_WEBSOCKET_TOKEN_URL",
         default=os.environ.get("EDA_WEBSOCKET_TOKEN_URL", ""),
     )
-    parser.add_argument("--id", help="Identifier")
+    parser.add_argument(
+        "--id",
+        help="Identifier, the activation_instance id which allows "
+        "the results to be communicated back to the websocket.",
+    )
     parser.add_argument(
         "-w",
         "--worker",
@@ -247,20 +249,6 @@ def get_parser() -> argparse.ArgumentParser:
         default=False,
     )
     return parser
-
-
-def get_version() -> str:
-    java_home = util.get_java_home()
-    java_version = util.get_java_version()
-    result = [
-        f"ansible-rulebook [{pkg_version('ansible-rulebook')}]",
-        f"  Executable location = {sys.argv[0]}",
-        f"  Drools_jpy version = {importlib.metadata.version('drools_jpy')}",
-        f"  Java home = {java_home}",
-        f"  Java version = {java_version}",
-        f"  Python version = {''.join(sys.version.splitlines())}",
-    ]
-    return "\n".join(result)
 
 
 def validate_args(args: argparse.Namespace) -> None:

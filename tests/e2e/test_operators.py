@@ -1,6 +1,7 @@
 """
 Module with tests for operators
 """
+
 import logging
 import subprocess
 

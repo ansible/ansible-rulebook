@@ -19,6 +19,12 @@ when-changed . -c "make clean && make html"
 # spin up a basic http server
 cd _build/html
 python -m http.server 3000
+
+# or install sphinx-autobuild
+pip install sphinx-autobuild
+
+# monitor it and auto-rebuild with every change
+sphinx-autobuild docs _build/html --port 3000
 ```
 
 - nice RST extension for vscode:

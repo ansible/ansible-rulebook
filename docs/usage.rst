@@ -28,7 +28,7 @@ The `ansible-rulebook` CLI supports the following options:
     -v, --verbose         Causes ansible-rulebook to print more debug messages. Adding multiple -v will increase the verbosity, the default value is 0. The maximum value is 2. Events debugging might require -vv.
     --version             Show the version and exit
     -S SOURCE_DIR, --source-dir SOURCE_DIR
-                            Source dir
+                            Local event source plugins dir for development.
     -i INVENTORY, --inventory INVENTORY
                             Path to an inventory file, can also be passed via the env var ANSIBLE_INVENTORY
     -W WEBSOCKET_URL, --websocket-url WEBSOCKET_URL, --websocket-address WEBSOCKET_URL
@@ -41,7 +41,7 @@ The `ansible-rulebook` CLI supports the following options:
                             Token used to renew a websocket access token, can also be passed via the env var EDA_WEBSOCKET_REFRESH_TOKEN
     --websocket-token-url WEBSOCKET_TOKEN_URL
                             Url to renew websocket access token, can also be passed via the env var EDA_WEBSOCKET_TOKEN_URL
-    --id ID               Identifier
+    --id ID               Identifier, the activation_instance id which allows the results to be communicated back to the websocket.
     -w, --worker          Enable worker mode
     -T PROJECT_TARBALL, --project-tarball PROJECT_TARBALL
                             A tarball of the project
