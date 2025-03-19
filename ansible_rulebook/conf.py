@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import shutil
 import uuid
 
 from ansible_rulebook.vault import Vault
@@ -31,6 +32,7 @@ class _Settings:
         self.websocket_refresh_token = None
         self.skip_audit_events = False
         self.vault = Vault()
+        self.ansible_galaxy_path = shutil.which("ansible-galaxy")
 
 
 settings = _Settings()

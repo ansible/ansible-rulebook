@@ -14,9 +14,11 @@
 
 import asyncio
 import glob
+import importlib.metadata
 import json
 import logging
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -242,6 +244,57 @@ def check_jvm():
             file=sys.stderr,
         )
         sys.exit(1)
+
+
+def get_package_version(package_name: str) -> str:
+    """Return version of the given package."""
+    try:
+        return importlib.metadata.version(package_name)
+    except importlib.metadata.PackageNotFoundError:
+        logger.error("Cannot read version from %s package", package_name)
+        return "unknown"
+
+
+def get_version() -> str:
+    java_home = get_java_home()
+    java_version = get_java_version()
+    result = [
+        f"ansible-rulebook [{get_package_version('ansible-rulebook')}]",
+        f"  Executable location = {sys.argv[0]}",
+        f"  Drools_jpy version = {get_package_version('drools_jpy')}",
+        f"  Java home = {java_home}",
+        f"  Java version = {java_version}",
+        f"  Ansible core version = {get_package_version('ansible-core')}",
+        f"  Python version = {platform.python_version()}",
+        f"  Python executable = {sys.executable}",
+        f"  Platform = {platform.platform()}",
+    ]
+    return "\n".join(result)
+
+
+def get_installed_collections() -> Optional[str]:
+    if not settings.ansible_galaxy_path:
+        return None
+    try:
+        result = subprocess.run(
+            [settings.ansible_galaxy_path, "collection", "list"],
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+    except subprocess.CalledProcessError as e:
+        logger.error("Cannot list installed collections %s", e)
+        return None
+    return result.stdout
+
+
+def startup_logging(logger: logging.Logger):
+    logger.info(get_version())
+    collections = get_installed_collections()
+    if collections:
+        logger.debug("Installed collections:\n%s", collections)
+    else:
+        logger.debug("No collections found")
 
 
 def has_builtin_filter(name: str) -> bool:
