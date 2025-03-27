@@ -58,6 +58,7 @@ from ansible_rulebook.rule_types import (
 )
 from ansible_rulebook.rules_parser import parse_hosts
 from ansible_rulebook.util import (
+    mask_sensitive_variable_values,
     run_at,
     send_session_stats,
     substitute_variables,
@@ -408,6 +409,10 @@ class RuleSetRunner:
                 else:
                     multi_match = rules_engine_result.data
                 variables_copy = variables.copy()
+                if action == "debug":
+                    variables_copy = mask_sensitive_variable_values(
+                        variables_copy
+                    )
                 if single_match is not None:
                     variables_copy["event"] = single_match
                     event = single_match
@@ -456,7 +461,7 @@ class RuleSetRunner:
                 logger.error(
                     "KeyError %s with variables %s",
                     str(e),
-                    pformat(variables_copy),
+                    pformat(mask_sensitive_variable_values(variables_copy)),
                 )
                 error = e
             except MessageNotHandledException as e:
