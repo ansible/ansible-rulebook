@@ -234,6 +234,7 @@ def test_startup_logging_no_collections(caplog):
     assert version_output in caplog.text
     assert "No collections found" in caplog.text
 
+
 @pytest.mark.parametrize(
     "extra_vars, expected",
     [
