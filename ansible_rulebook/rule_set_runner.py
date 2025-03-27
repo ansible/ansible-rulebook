@@ -58,6 +58,7 @@ from ansible_rulebook.rule_types import (
 )
 from ansible_rulebook.rules_parser import parse_hosts
 from ansible_rulebook.util import (
+    remove_sensitive_variable_values,
     run_at,
     send_session_stats,
     substitute_variables,
@@ -430,10 +431,18 @@ class RuleSetRunner:
                     var_root = action_args.pop("var_root")
                     _update_variables(variables_copy, var_root)
 
-                action_args = {
-                    k: substitute_variables(v, variables_copy)
-                    for k, v in action_args.items()
-                }
+                if action == "debug":
+                    action_args = {
+                        k: substitute_variables(
+                            v, remove_sensitive_variable_values(variables_copy)
+                        )
+                        for k, v in action_args.items()
+                    }
+                else:
+                    action_args = {
+                        k: substitute_variables(v, variables_copy)
+                        for k, v in action_args.items()
+                    }
 
                 if "ruleset" not in action_args:
                     action_args["ruleset"] = metadata.rule_set
@@ -456,7 +465,7 @@ class RuleSetRunner:
                 logger.error(
                     "KeyError %s with variables %s",
                     str(e),
-                    pformat(variables_copy),
+                    pformat(remove_sensitive_variable_values(variables_copy)),
                 )
                 error = e
             except MessageNotHandledException as e:

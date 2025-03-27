@@ -50,7 +50,7 @@ EDA_BUILTIN_FILTER_PREFIX = "eda.builtin."
 
 
 def decrypted_context(
-    obj: Union[Dict, List, str, bool, int]
+    obj: Union[Dict, List, str, bool, int],
 ) -> Union[Dict, List, str, bool, int]:
     if isinstance(obj, dict):
         return {k: decrypted_context(v) for k, v in obj.items()}
@@ -380,3 +380,33 @@ def validate_url(url: str, url_type: str) -> bool:
     if url_type == "controller":
         return res.scheme in ["http", "https"] and bool(res.netloc)
     return res.scheme in ["ws", "wss"] and bool(res.netloc)
+
+
+KEYS_TO_FILTER = [
+    "CONTROLLER_PASSWORD",
+    "TOWER_PASSWORD",
+    "AAP_PASSWORD",
+    "CONTROLLER_OAUTH_TOKEN",
+    "TOWER_OAUTH_TOKEN",
+    "AAP_OAUTH_TOKEN",
+    "postgres_db_password",
+]
+MASKED_VARIABLE = "******"
+
+
+def mask_sensitive_variable(key: str, val: str):
+    if any(
+        filtered_key.casefold() == str(key).casefold()
+        for filtered_key in KEYS_TO_FILTER
+    ):
+        return MASKED_VARIABLE
+    else:
+        return val
+
+
+def remove_sensitive_variable_values(variables):
+    _ret = {}
+    for key, val in variables.items():
+        _ret[key] = mask_sensitive_variable(key, val)
+
+    return _ret

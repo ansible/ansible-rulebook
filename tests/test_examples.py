@@ -13,6 +13,7 @@
 #  limitations under the License.
 import asyncio
 import json
+import logging
 from unittest.mock import patch
 
 import pytest
@@ -27,6 +28,7 @@ from ansible_rulebook.exception import (
 )
 from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.messages import Shutdown
+from ansible_rulebook.util import MASKED_VARIABLE
 
 from .test_engine import get_queue_item, load_rulebook, validate_events
 
@@ -2572,3 +2574,36 @@ async def test_90_source_error_without_msg(caplog):
         "TestException: source plugin failed with no error message."
     )
     assert expected_msg in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_91_debug_mask_sensitive_variables(caplog):
+    caplog.set_level(logging.DEBUG)
+    ruleset_queues, event_log = load_rulebook(
+        "examples/91_mask_senstive_variables.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    job_template_runner.host = "https://examples.com"
+
+    variables_dict = dict(
+        controller_username="admin",
+        controller_password="dummy",
+        tower_password="dummy",
+        aap_password="dummy",
+        postgres_db_password="dummy",
+    )
+
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            variables_dict,
+            "playbooks/inventory.yml",
+        )
+        assert "'controller_username': 'admin'" in caplog.text
+        assert f"'controller_password': '{MASKED_VARIABLE}'" in caplog.text
+        assert f"'tower_password': '{MASKED_VARIABLE}'" in caplog.text
+        assert f"'aap_password': '{MASKED_VARIABLE}'" in caplog.text
+        assert f"'postgres_db_password': '{MASKED_VARIABLE}'" in caplog.text

@@ -1,0 +1,12 @@
+---
+- name: Validate debug action does not output secrets with no params
+  hosts: all
+  sources:
+    - generic:
+        payload:
+          - action: "all"
+  rules:
+    - name: Validate all variables are masked in debug
+      condition: event.action == "all"
+      actions:
+        - debug:

@@ -24,11 +24,14 @@ from ansible_rulebook.exception import (
     VaultDecryptException,
 )
 from ansible_rulebook.util import (
+    KEYS_TO_FILTER,
+    MASKED_VARIABLE,
     decryptable,
     get_installed_collections,
     get_package_version,
     get_version,
     has_builtin_filter,
+    remove_sensitive_variable_values,
     startup_logging,
 )
 from ansible_rulebook.vault import Vault
@@ -231,3 +234,49 @@ def test_startup_logging_no_collections(caplog):
         startup_logging(logger)
     assert version_output in caplog.text
     assert "No collections found" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "variables",
+    [
+        {
+            "CONTROLLER_HOST": "https://ansible.com",
+            "CONTROLLER_OAUTH_TOKEN": "dummy-token",
+            "CONTROLLER_USERNAME": "admin",
+            "CONTROLLER_PASSWORD": "dummy-password",
+        },
+        {
+            "CONTROLLER_HOST": "https://ansible.com",
+            "CONTROLLER_OAUTH_TOKEN": "dummy-token",
+            "CONTROLLER_USERNAME": "admin",
+            "CONTROLLER_PASSWORD": "dummy-password",
+        },
+        {
+            "TOWER_HOST": "https://ansible.com",
+            "TOWER_OAUTH_TOKEN": "dummy-token",
+            "TOWER_USERNAME": "admin",
+            "TOWER_PASSWORD": "dummy-password",
+        },
+        {
+            "AAP_HOST": "https://ansible.com",
+            "AAP_OAUTH_TOKEN": "dummy-token",
+            "AAP_USERNAME": "admin",
+            "AAP_PASSWORD": "dummy-password",
+        },
+        {
+            "postgres_db_host": "https://ansible.com",
+            "postgres_db_name": "dummy",
+            "postgres_db_port": 5432,
+            "postgres_db_password": "dummy-password",
+            "postgres_db_user": "dummy",
+        },
+    ],
+)
+def test_remove_sensitive_variable_values(variables):
+    _formatted_vars = remove_sensitive_variable_values(variables=variables)
+    for key, val in _formatted_vars.items():
+        if any(
+            filtered_key.casefold() in str(key).casefold()
+            for filtered_key in KEYS_TO_FILTER
+        ):  # noqa: E501
+            assert val is MASKED_VARIABLE

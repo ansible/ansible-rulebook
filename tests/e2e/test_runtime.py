@@ -11,6 +11,8 @@ from pathlib import Path
 import pytest
 from pytest_check import check
 
+from ansible_rulebook.util import MASKED_VARIABLE
+
 from . import utils
 from .settings import SETTINGS
 
@@ -282,3 +284,70 @@ def test_hot_reload():
         file.write(original_data)
 
     assert found_rule_2_in_out
+
+
+@pytest.mark.e2e
+def test_mask_variables_debug_no_params():
+    """
+    Validate that when a global debug action is used, that the necessary
+    variables are masked
+    """
+
+    rulebook = utils.BASE_DATA_PATH / "rulebooks/test_debug_no_params.yml"
+    vars_file = utils.BASE_DATA_PATH / "extra_vars/test_debug.yml"
+    inventory = utils.BASE_DATA_PATH / "inventories/default_inventory.ini"
+    cmd = utils.Command(
+        rulebook=rulebook,
+        inventory=inventory,
+        vars_file=vars_file,
+    )
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_CMD_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+    )
+    assert result.returncode == 0
+    assert not result.stderr
+    assert f"'postgres_db_password': '{MASKED_VARIABLE}'" in result.stdout
+    assert f"'tower_password': '{MASKED_VARIABLE}'" in result.stdout
+    assert f"'aap_password': '{MASKED_VARIABLE}'" in result.stdout
+    assert f"'controller_password': '{MASKED_VARIABLE}'" in result.stdout
+
+
+@pytest.mark.e2e
+def test_mask_variables_debug_var_and_message():
+    """
+    Validate that when a global debug action is used, that the necessary
+    variables are masked
+    """
+
+    rulebook = (
+        utils.BASE_DATA_PATH / "rulebooks/test_debug_var_and_message.yml"
+    )
+    vars_file = utils.BASE_DATA_PATH / "extra_vars/test_debug.yml"
+    inventory = utils.BASE_DATA_PATH / "inventories/default_inventory.ini"
+    cmd = utils.Command(
+        rulebook=rulebook,
+        inventory=inventory,
+        vars_file=vars_file,
+    )
+
+    LOGGER.info(f"Running command: {cmd}")
+    result = subprocess.run(
+        cmd,
+        timeout=DEFAULT_CMD_TIMEOUT,
+        capture_output=True,
+        cwd=utils.BASE_DATA_PATH,
+        text=True,
+    )
+    assert result.returncode == 0
+    assert not result.stderr
+    assert f"postgres_db_password: {MASKED_VARIABLE}" in result.stdout
+    assert f"controller_password: {MASKED_VARIABLE}" in result.stdout
+    assert f"tower_password: {MASKED_VARIABLE}" in result.stdout
+    assert "controller_username: admin" in result.stdout
+    assert f"Test message override {MASKED_VARIABLE}" in result.stdout

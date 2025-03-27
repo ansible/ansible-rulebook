@@ -20,6 +20,10 @@ import dpath
 from drools import ruleset as lang
 
 from ansible_rulebook import terminal
+from ansible_rulebook.util import (
+    mask_sensitive_variable,
+    remove_sensitive_variable_values,
+)
 
 from .control import Control
 from .helper import Helper
@@ -60,7 +64,9 @@ class Debug:
                 value = dpath.get(
                     self.helper.control.variables, key, separator="."
                 )
-                self.display.banner("debug", f"{key}: {value}")
+                self.display.banner(
+                    "debug", f"{key}: {mask_sensitive_variable(key, value)}"
+                )
             except KeyError:
                 logger.error("Key %s not found in variable pool", key)
                 raise
@@ -71,7 +77,9 @@ class Debug:
                 {
                     "inventory": self.helper.control.inventory,
                     "hosts": self.helper.control.hosts,
-                    "variables": self.helper.control.variables,
+                    "variables": remove_sensitive_variable_values(
+                        self.helper.control.variables
+                    ),
                     "project_data_file": project_data_file,
                 }
             )

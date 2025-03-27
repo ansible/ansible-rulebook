@@ -1,0 +1,6 @@
+controller_password: dummy
+tower_password: dummy
+aap_password: dummy
+postgres_db_password: dummy
+postgres_db_username: admin
+controller_username: admin

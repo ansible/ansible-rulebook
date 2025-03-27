@@ -1,0 +1,37 @@
+---
+- name: Validate debug action does not output secrets with no params
+  hosts: all
+  sources:
+    - generic:
+        payload:
+          - action: "postgres"
+          - action: "controller"
+          - action: "tower"
+          - action: "msg"
+          - action: "username"
+  rules:
+    - name: Validate variable "postgres" is masked in debug
+      condition: event.action == "postgres"
+      actions:
+        - debug:
+            var: postgres_db_password
+    - name: Validate variable "controller" is masked directly in debug
+      condition: event.action == "controller"
+      actions:
+        - debug:
+            var: controller_password
+    - name: Validate variable "tower" is masked directly in debug
+      condition: event.action == "tower"
+      actions:
+        - debug:
+            var: tower_password
+    - name: Validate variable is masked when specified in msg
+      condition: event.action == "msg"
+      actions:
+        - debug:
+            msg: "Test message override {{ postgres_db_password }}"
+    - name: Validate variable is unmasked
+      condition: event.action == "username"
+      actions:
+        - debug:
+            var: controller_username
