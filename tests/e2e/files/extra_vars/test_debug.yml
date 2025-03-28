@@ -1,0 +1,14 @@
+controller_password: dummy
+tower_password: dummy
+aap_password: dummy
+postgres_db_password: dummy
+postgres_db_username: admin
+controller_username: admin
+private_key: dummy
+aap_passphrase: dummy
+service_nested_list:
+- service1_username: admin
+  service1_password: dummy
+service_dict:
+  service2_username: admin
+  service2_token: dummy
