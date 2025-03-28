@@ -1,0 +1,13 @@
+---
+- name: Test sensitive variable is masked with missing key
+  hosts: all
+  sources:
+    - ansible.eda.generic:
+        payload:
+          - name: Fred
+  rules:
+  - name: "Run job template"
+    condition: event.name == 'Fred'
+    actions:
+      - debug:
+          var: organization

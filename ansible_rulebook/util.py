@@ -279,3 +279,49 @@ def ensure_trailing_slash(url: str) -> str:
     if not url.endswith("/"):
         return url + "/"
     return url
+
+
+# If the following values exist in a key,
+# replace the value of the key with the MASKED_STRING
+# If the following values exist in a key,
+# replace the value of the key with the MASKED_STRING
+KEYS_TO_FILTER = ["token", "password", "key", "passphrase"]
+MASKED_STRING = "******"
+
+
+def _mask_sensitive_variable(key: str, val: str):
+    """
+    Takes in a key and value, if they key contains a
+    substring in the KEYS_TO_FILTER, mask the value.
+    Otherwise return the value.
+    """
+    if any(
+        filtered_key.casefold() in str(key).casefold()
+        for filtered_key in KEYS_TO_FILTER
+    ):
+        return MASKED_STRING
+    else:
+        return val
+
+
+def mask_sensitive_variable_values(
+    obj: Union[Dict[str, Any], List, str, bool, int],
+) -> Union[Dict[str, Any], List, str, bool, int]:
+    """
+    Takes in a dictionary, list, or primitive of variables
+    and masks the sensitive variable values if necessary
+    """
+    if isinstance(obj, dict):
+        new_dict = {}
+        for key, val in obj.items():
+            if isinstance(val, (dict, list)):
+                new_dict[key] = mask_sensitive_variable_values(val)
+            elif isinstance(val, str):
+                new_dict[key] = _mask_sensitive_variable(key, val)
+            else:
+                new_dict[key] = val
+        return new_dict
+    elif isinstance(obj, list):
+        return [mask_sensitive_variable_values(item) for item in obj]
+    else:
+        return obj
