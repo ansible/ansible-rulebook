@@ -1,16 +1,12 @@
 
 # Changelog
 
-## [1.1.4 - Unreleased]
+## [1.1.4] - 2025-04-01
 ### Changed
+- Update tests
 ### Added
 ### Fixed
-
-
-## [1.1.3] - 2025-03-04
-### Changed
-### Added
-### Fixed
+- Bug fixes
 
 
 ## [1.1.3] - 2025-03-04
