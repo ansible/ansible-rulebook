@@ -6,6 +6,12 @@
 ### Added
 ### Fixed
 
+## [1.0.8] - 2025-04-01
+### Changed
+- Update tests
+### Fixed
+- Bug fixes
+
 ## [1.0.7] - 2024-05-08
 No user-facing changes
 
