@@ -1,7 +1,7 @@
 
 # Changelog
 
-## [Unreleased]
+## [1.1.5 - Unreleased]
 ### Changed
 ### Added
 - Log stacktrace with source filename, function and line number
