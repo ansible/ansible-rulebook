@@ -33,6 +33,14 @@
 
 ## [1.1.3] - 2025-03-04
 ### Changed
+- Update tests
+### Added
+### Fixed
+- Bug fixes
+
+
+## [1.1.3] - 2025-03-04
+### Changed
 ### Added
 - Add generic error message for unknown source errors
 ### Fixed
