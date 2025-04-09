@@ -13,13 +13,12 @@
 #  limitations under the License.
 
 import logging
-import ssl
-import typing as tp
 
 import aiohttp
 
 from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import TokenNotFound
+from ansible_rulebook.util import create_context
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +43,5 @@ async def renew_token() -> str:
             return data["access"]
 
 
-def _sslcontext() -> tp.Optional[ssl.SSLContext]:
-    if settings.websocket_token_url.startswith("https"):
-        ssl_verify = settings.websocket_ssl_verify.lower()
-        if ssl_verify in ["yes", "true"]:
-            return ssl.create_default_context()
-        if ssl_verify in ["no", "false"]:
-            return ssl._create_unverified_context()
-        return ssl.create_default_context(cafile=ssl_verify)
-    return None
+def _sslcontext():
+    return create_context(settings.websocket_token_url, "https")
