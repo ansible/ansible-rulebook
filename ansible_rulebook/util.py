@@ -21,6 +21,7 @@ import os
 import platform
 import re
 import shutil
+import ssl
 import subprocess
 import sys
 import tempfile
@@ -424,3 +425,16 @@ def mask_sensitive_variable_values(
         return [mask_sensitive_variable_values(item) for item in obj]
     else:
         return obj
+
+
+def create_context(
+    settings_url: str, protocol_prefix: str
+) -> typing.Optional[ssl.SSLContext]:
+    if settings_url.startswith(protocol_prefix):
+        ssl_verify = settings.websocket_ssl_verify.lower()
+        if ssl_verify in ["yes", "true"]:
+            return ssl.create_default_context()
+        if ssl_verify in ["no", "false"]:
+            return ssl._create_unverified_context()
+        return ssl.create_default_context(cafile=ssl_verify)
+    return None
