@@ -18,7 +18,6 @@ import json
 import logging
 import os
 import random
-import ssl
 import tempfile
 import typing as tp
 from dataclasses import dataclass, field
@@ -31,7 +30,7 @@ from ansible_rulebook import rules_parser as rules_parser
 from ansible_rulebook.common import StartupArgs
 from ansible_rulebook.conf import settings
 from ansible_rulebook.token import renew_token
-from ansible_rulebook.util import validate_url
+from ansible_rulebook.util import create_context, validate_url
 from ansible_rulebook.vault import Vault, has_vaulted_str
 
 from .exception import InvalidUrlException
@@ -298,12 +297,5 @@ async def _handle_send_event_log(
         logs.event = None
 
 
-def _sslcontext() -> tp.Optional[ssl.SSLContext]:
-    if settings.websocket_url.startswith("wss"):
-        ssl_verify = settings.websocket_ssl_verify.lower()
-        if ssl_verify in ["yes", "true"]:
-            return ssl.create_default_context()
-        if ssl_verify in ["no", "false"]:
-            return ssl._create_unverified_context()
-        return ssl.create_default_context(cafile=ssl_verify)
-    return None
+def _sslcontext():
+    return create_context(settings.websocket_token_url, "wss")
