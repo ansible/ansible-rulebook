@@ -298,4 +298,4 @@ async def _handle_send_event_log(
 
 
 def _sslcontext():
-    return create_context(settings.websocket_token_url, "wss")
+    return create_context(settings.websocket_url, "wss")
