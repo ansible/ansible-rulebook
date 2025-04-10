@@ -8,7 +8,7 @@ from functools import partial
 
 import dpath
 import pytest
-import websockets.server as ws_server
+import websockets.asyncio.server as ws_server
 
 from . import utils
 
