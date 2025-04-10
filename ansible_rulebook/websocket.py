@@ -102,7 +102,7 @@ async def _connect_websocket(
             async with websockets.connect(
                 settings.websocket_url,
                 ssl=_sslcontext(),
-                extra_headers=extra_headers,
+                additional_headers=extra_headers,
             ) as websocket:
                 # Connection succeeded - reset backoff delay and refresh_token
                 backoff_delay = BACKOFF_MIN
