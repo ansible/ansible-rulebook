@@ -1,8 +1,16 @@
 
 # Changelog
 
-## [1.1.5 - Unreleased]
+## [Unreleased]
 ### Changed
+### Added
+### Fixed
+
+
+## [1.1.5] - 20205-04-11
+### Changed
+- Minor refactors
+- Docs updates
 ### Added
 - Log stacktrace with source filename, function and line number
 - Log relevant version information at startup of worker
