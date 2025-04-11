@@ -16,6 +16,8 @@ import argparse
 import asyncio
 import logging
 import os
+import sys
+import traceback
 from asyncio.exceptions import CancelledError
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -35,6 +37,7 @@ from ansible_rulebook.rule_types import RuleSet, RuleSetQueue
 from ansible_rulebook.util import (
     decryptable,
     decrypted_context,
+    startup_logging,
     substitute_variables,
     validate_url,
 )
@@ -68,15 +71,27 @@ INVENTORY_ACTIONS = ("run_playbook", "run_module")
 CONTROLLER_ACTIONS = ("run_job_template", "run_workflow_template")
 
 
+def log_exception_without_data(exc_type, exc_value, exc_traceback):
+    logger.error(exc_type.__name__ + ": " + str(exc_value))
+    if exc_traceback is not None:
+        for frame in traceback.extract_tb(exc_traceback)[::-1]:
+            logger.error(
+                frame.filename + ":" + str(frame.lineno) + " " + frame.name
+            )
+
+
+sys.excepthook = log_exception_without_data
+
+
 # FIXME(cutwater): Replace parsed_args with clear interface
 async def run(parsed_args: argparse.Namespace) -> None:
     file_monitor = None
 
     if parsed_args.worker and parsed_args.websocket_url and parsed_args.id:
+        startup_logging(logger)
         logger.info("Starting worker mode")
         startup_args = await request_workload(parsed_args.id)
         if not startup_args:
-            logger.error("Error communicating with web socket server")
             raise WebSocketExchangeException(
                 "Error communicating with web socket server"
             )
@@ -161,7 +176,9 @@ async def run(parsed_args: argparse.Namespace) -> None:
         if isinstance(result, Exception) and not isinstance(
             result, CancelledError
         ):
-            logger.error(result)
+            log_exception_without_data(
+                type(result), result, result.__traceback__
+            )
             error_found = True
 
     logger.info("Main complete")

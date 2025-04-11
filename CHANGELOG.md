@@ -1,13 +1,28 @@
 
 # Changelog
 
-## [1.1.4] - 2025-04-01
+## [Unreleased]
+### Changed
+### Added
+### Fixed
+
+
+## [1.1.5] - 20205-04-11
+### Changed
+- Minor refactors
+- Docs updates
+### Added
+- Log stacktrace with source filename, function and line number
+- Log relevant version information at startup of worker
+### Fixed
+
+
+## [1.1.4 - 2025-04-01]
 ### Changed
 - Update tests
 ### Added
 ### Fixed
 - Bug fixes
-
 
 ## [1.1.3] - 2025-03-04
 ### Changed

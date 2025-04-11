@@ -2,7 +2,7 @@
 -r requirements_lint.txt
 -r docs/requirements.txt
 
-bump2version
+setuptools_scm
 
 # Packaging / distribution
 twine

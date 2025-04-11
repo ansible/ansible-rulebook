@@ -14,11 +14,14 @@
 
 import asyncio
 import glob
+import importlib.metadata
 import json
 import logging
 import os
+import platform
 import re
 import shutil
+import ssl
 import subprocess
 import sys
 import tempfile
@@ -244,6 +247,57 @@ def check_jvm():
         sys.exit(1)
 
 
+def get_package_version(package_name: str) -> str:
+    """Return version of the given package."""
+    try:
+        return importlib.metadata.version(package_name)
+    except importlib.metadata.PackageNotFoundError:
+        logger.error("Cannot read version from %s package", package_name)
+        return "unknown"
+
+
+def get_version() -> str:
+    java_home = get_java_home()
+    java_version = get_java_version()
+    result = [
+        f"ansible-rulebook [{get_package_version('ansible-rulebook')}]",
+        f"  Executable location = {sys.argv[0]}",
+        f"  Drools_jpy version = {get_package_version('drools_jpy')}",
+        f"  Java home = {java_home}",
+        f"  Java version = {java_version}",
+        f"  Ansible core version = {get_package_version('ansible-core')}",
+        f"  Python version = {platform.python_version()}",
+        f"  Python executable = {sys.executable}",
+        f"  Platform = {platform.platform()}",
+    ]
+    return "\n".join(result)
+
+
+def get_installed_collections() -> Optional[str]:
+    if not settings.ansible_galaxy_path:
+        return None
+    try:
+        result = subprocess.run(
+            [settings.ansible_galaxy_path, "collection", "list"],
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+    except subprocess.CalledProcessError as e:
+        logger.error("Cannot list installed collections %s", e)
+        return None
+    return result.stdout
+
+
+def startup_logging(logger: logging.Logger):
+    logger.info(get_version())
+    collections = get_installed_collections()
+    if collections:
+        logger.debug("Installed collections:\n%s", collections)
+    else:
+        logger.debug("No collections found")
+
+
 def has_builtin_filter(name: str) -> bool:
     return _builtin_filter_path(name)[0]
 
@@ -371,3 +425,16 @@ def mask_sensitive_variable_values(
         return [mask_sensitive_variable_values(item) for item in obj]
     else:
         return obj
+
+
+def create_context(
+    settings_url: str, protocol_prefix: str
+) -> typing.Optional[ssl.SSLContext]:
+    if settings_url.startswith(protocol_prefix):
+        ssl_verify = settings.websocket_ssl_verify.lower()
+        if ssl_verify in ["yes", "true"]:
+            return ssl.create_default_context()
+        if ssl_verify in ["no", "false"]:
+            return ssl._create_unverified_context()
+        return ssl.create_default_context(cafile=ssl_verify)
+    return None

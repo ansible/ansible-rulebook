@@ -48,7 +48,13 @@ Now you can make your changes locally.
     pytest
     tox
 
-To get flake8 and tox, just pip install them into your virtualenv.
+To get flake8_, pytest_ and tox_, just pip install them into your virtualenv.
+
+.. _flake8: https://github.com/PyCQA/flake8
+
+.. _pytest: https://github.com/pytest-dev/pytest
+
+.. _tox: https://github.com/tox-dev/tox
 
 7. Commit your changes and push your branch to GitHub:
    We follow the conventionalcommit_ standards for commit message
@@ -143,17 +149,22 @@ Building
 .. code-block:: console
 
     python -m build
-    twine upload dist/*
+
+.. note::
+
+    The package version is automatically determined by setuptools_scm.
+    If you are not building from the git repository or it does not contain the tags, you can specify the version manually by
+    setting the ``SETUPTOOLS_SCM_PRETEND_VERSION`` environment variable.
+
 
 Releasing
 ---------
 
+Create a new release on GitHub plus upload the package to PyPI:
 
 .. code-block:: console
 
-    bump2version patch # possible: major / minor / patch
-    git push
-    git push --tags
+    twine upload dist/*
 
 
 

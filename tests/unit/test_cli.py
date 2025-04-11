@@ -4,19 +4,22 @@ from unittest.mock import patch
 
 import pytest
 
-from ansible_rulebook.cli import get_version, main
-from ansible_rulebook.util import check_jvm, validate_url
+from ansible_rulebook.cli import main
+from ansible_rulebook.util import check_jvm, get_version, validate_url
 
 
 def test_get_version():
     output = get_version()
     pattern = re.compile(
-        r"""ansible-rulebook \[\d+\.\d+\.\d+\]
+        r"""ansible-rulebook \[\d+\.\d+\.\d+(?:\..*)?\]
   Executable location = (.+)
   Drools_jpy version = \d+\.\d+\.\d+
   Java home = (.+)
   Java version = \d+(\.\d+)?(\.\d+)?(\.\d+)?
-  Python version = \d+\.\d+\.\d+ (.+)$"""
+  Ansible core version = \d+\.\d+\.\d+([a-zA-Z0-9\+\-\.]*)?
+  Python version = \d+\.\d+\.\d+([a-zA-Z0-9\+\-\.]*)?
+  Python executable = (\S+)
+  Platform = (.+)$"""
     )
     assert pattern.match(output)
 

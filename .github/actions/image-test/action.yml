@@ -4,6 +4,17 @@ description: Build and test the container image
 runs:
   using: composite
   steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+
+    - name: Get package version
+      shell: bash
+      run: |
+        python -m pip install setuptools_scm
+        echo "SETUPTOOLS_SCM_PRETEND_VERSION=$(python -m setuptools_scm)" >> $GITHUB_ENV
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
@@ -14,6 +25,8 @@ runs:
         platforms: linux/amd64
         tags: localhost/ansible-rulebook:test
         load: true
+        build-args: |
+          SETUPTOOLS_SCM_PRETEND_VERSION=${{ env.SETUPTOOLS_SCM_PRETEND_VERSION }}
 
     - name: Run tests
       shell: bash

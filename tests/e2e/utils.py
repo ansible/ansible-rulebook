@@ -2,6 +2,8 @@
 
 import asyncio
 import json
+import random
+import socket
 from dataclasses import dataclass
 from pathlib import Path
 from subprocess import CompletedProcess
@@ -22,10 +24,10 @@ class Command:
     provides methods to render it for cmd runners
     """
 
-    rulebook: Path
+    rulebook: Optional[Path]
     program_name: str = "ansible-rulebook"
     cwd: Path = BASE_DATA_PATH
-    inventory: Path = DEFAULT_INVENTORY
+    inventory: Optional[Path] = DEFAULT_INVENTORY
     sources: Optional[Path] = DEFAULT_SOURCES
     vars_file: Optional[Path] = None
     envvars: Optional[str] = None
@@ -61,7 +63,8 @@ class Command:
     def to_list(self) -> List:
         result = [self.program_name]
 
-        result.extend(["-i", str(self.inventory.absolute())])
+        if self.inventory:
+            result.extend(["-i", str(self.inventory.absolute())])
 
         if self.sources:
             result.extend(["-S", str(self.sources.absolute())])
@@ -166,3 +169,18 @@ async def msg_handler(
             else:
                 await websocket.close()  # should be auto reconnected
         i += 1
+
+
+def get_safe_port() -> int:
+    """
+    Returns a port number that is safe to use for testing
+    """
+    for _ in range(100):
+        port = random.randint(20000, 40000)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("localhost", port))
+                return port
+            except OSError:
+                continue
+    raise RuntimeError("No available port found")
