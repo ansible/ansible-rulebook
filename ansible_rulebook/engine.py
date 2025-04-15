@@ -122,7 +122,10 @@ async def start_source(
             )
         else:
             raise SourcePluginNotFoundException(
-                f"Could not find source plugin for {source.source_name}"
+                f"Could not find source plugin for {source.source_name}."
+                f"Please ensure that the appropriate Ansible collection is "
+                f"installed, or use -S to provide the path to the directory "
+                f"containing the source plugin"
             )
 
         source_filters = []
