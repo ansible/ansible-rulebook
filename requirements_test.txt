@@ -13,6 +13,7 @@ pytest-timeout
 pytest-xdist
 pytest-cov
 pytest-check
+marshmallow==3.26.1
 pytest-jira
 dynaconf==3.1.11
 freezegun
