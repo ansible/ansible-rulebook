@@ -3,7 +3,8 @@ docopt
 psutil
 requests
 ansible
-ansible-core
+ansible-core==2.16; python_version >= "3.11"
+ansible-core==2.15; python_version < "3.11"
 ansible-runner
 jmespath
 
