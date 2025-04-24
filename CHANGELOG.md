@@ -5,7 +5,6 @@
 ### Changed
 ### Added
 ### Fixed
-- Fix memory leak with new drools_jpy
 
 
 ## [1.1.5] - 20205-04-11
