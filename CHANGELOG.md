@@ -7,6 +7,10 @@
 ### Fixed
 
 
+## [1.1.6] - 20205-04-25
+- Fix memory leak with new drools_jpy
+
+
 ## [1.1.5] - 20205-04-11
 ### Changed
 - Minor refactors
