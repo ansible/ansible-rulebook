@@ -172,7 +172,7 @@ Run a job template.
      - If the event is a deeply nested dictionary, the var_root can specify the key name whose value should replace the matching event value. The var_root can take a dictionary to account for data when we have multiple matching events.
      - No
    * - job_args
-     - Additional arguments sent to the job template launch API. Any answers to the survey and other extra vars should be set in nested key extra_vars. Event(s) and fact(s) will be automatically included in extra_vars too.
+     - Additional arguments sent to the job template launch API. Any answers to the survey and other extra vars should be set in nested key extra_vars. Event(s) and fact(s) will be automatically included in extra_vars too. Optionally if the job_args includes an attribute called limit it can be used to over write the limit set from the event payload.
      - No
 
 run_workflow_template
@@ -231,7 +231,7 @@ Run a workflow template.
      - If the event is a deeply nested dictionary, the var_root can specify the key name whose value should replace the matching event value. The var_root can take a dictionary to account for data when we have multiple matching events.
      - No
    * - job_args
-     - Additional arguments sent to the workflow template launch API. Any answers to the survey and other extra vars should be set in nested key extra_vars. Event(s) and fact(s) will be automatically included in extra_vars too.
+     - Additional arguments sent to the workflow template launch API. Any answers to the survey and other extra vars should be set in nested key extra_vars. Event(s) and fact(s) will be automatically included in extra_vars too. Optionally if the job_args includes an attribute called limit it can be used to over write the limit set from the event payload.
      - No
 
 post_event
