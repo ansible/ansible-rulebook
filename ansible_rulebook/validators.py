@@ -32,7 +32,7 @@ class Validate:
             validator = jsonschema.validators.validator_for(cls.schema)
             validator.check_schema(cls.schema)
         except json.JSONDecodeError as err:
-            logger.error("Can not deserialize JSON schema: %s", str(err))
+            logger.error("Cannot deserialize JSON schema: %s", str(err))
             raise
         except SchemaError as err:
             logger.error("Incorrect JSON schema: %s", str(err))
@@ -44,5 +44,5 @@ class Validate:
         try:
             jsonschema.validate(instance=instance, schema=cls._get_schema())
         except ValidationError as err:
-            logger.error("Rulebook failed validation, err %s", str(err))
+            logger.error("Invalid rulebook: %s", str(err))
             raise

@@ -203,7 +203,7 @@ def SearchTypeFactory(kind, tokens):
 
 def OperatorExpressionFactory(tokens):
     return_value = None
-    logger.debug(tokens)
+    logger.debug("OperatorExpressionFactory tokens: %s", tokens)
     while tokens:
         if return_value is None:
             if (tokens[1] == "is" or tokens[1] == "is not") and (

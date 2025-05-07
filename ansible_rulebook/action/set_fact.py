@@ -42,7 +42,7 @@ class SetFact:
 
     async def __call__(self):
         logger.debug(
-            "set_fact %s %s",
+            "set_fact: ruleset=%s, fact=%s",
             self.action_args["ruleset"],
             self.action_args["fact"],
         )
