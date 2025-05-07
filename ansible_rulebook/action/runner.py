@@ -77,7 +77,7 @@ class Runner:
                     val["run_at"] = event_data.get("created")
                     await self.helper.send_status(val)
             except CancelledError:
-                logger.info("Ansible runner Queue task cancelled")
+                logger.debug("Ansible runner Queue task cancelled")
 
         def cancel_callback():
             return shutdown
