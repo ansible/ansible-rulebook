@@ -222,7 +222,7 @@ def test_run_playbook(update_environment):
     )
 
     assert result.returncode == 0
-    assert not result.stderr
+    assert "Previous run_playbook failed" in result.stderr
 
     retry_attempts = result.stdout.count(
         '"msg": "Remediation failed on simba"'

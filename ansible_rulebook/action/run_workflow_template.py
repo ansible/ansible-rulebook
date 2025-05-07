@@ -89,7 +89,7 @@ class RunWorkflowTemplate:
                 if i > 0:
                     if delay > 0:
                         await asyncio.sleep(delay)
-                    logger.info(
+                    logger.warning(
                         "Previous run_workflow_template failed. "
                         "Retry %d of %d",
                         i,

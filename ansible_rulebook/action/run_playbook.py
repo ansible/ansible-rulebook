@@ -113,7 +113,7 @@ class RunPlaybook:
             if i > 0:
                 if delay > 0:
                     await asyncio.sleep(delay)
-                logger.info(
+                logger.warning(
                     "Previous run_playbook failed. Retry %d of %d", i, retries
                 )
 
@@ -193,7 +193,7 @@ class RunPlaybook:
     async def _post_process(self):
         rc = int(self._get_latest_artifact("rc"))
         status = self._get_latest_artifact("status")
-        logger.info("Ansible runner rc: %d, status: %s", rc, status)
+        logger.debug("Ansible runner rc: %d, status: %s", rc, status)
         if rc != 0:
             error_message = self._get_latest_artifact("stderr")
             if not error_message:
@@ -280,6 +280,6 @@ class RunPlaybook:
         stdout, stderr = await proc.communicate()
 
         if stdout:
-            logger.debug(stdout.decode())
+            logger.debug("stdout of %s: %s", cmd, stdout.decode())
         if stderr:
-            logger.debug(stderr.decode())
+            logger.debug("stderr of %s: %s", cmd, stderr.decode())

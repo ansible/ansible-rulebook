@@ -72,8 +72,8 @@ async def heartbeat_task(
 
 
 async def broadcast(shutdown: Shutdown):
-    logger.debug(f"Broadcast to queues: {all_source_queues}")
-    logger.debug(f"Broadcasting shutdown: {shutdown}")
+    logger.info(f"Broadcast to queues: {all_source_queues}")
+    logger.info(f"Broadcasting shutdown: {shutdown}")
     for queue in all_source_queues:
         await queue.put(shutdown)
 
@@ -194,7 +194,7 @@ async def start_source(
             f"Source {source.source_name} task cancelled, "
             + f"initiated shutdown at {str(datetime.now())}"
         )
-        logger.debug("Task cancelled " + shutdown_msg)
+        logger.debug("Task cancelled: %s", shutdown_msg)
     except BaseException as e:
         error_msg = str(e)
         # Get the name of the exception class
@@ -331,7 +331,7 @@ async def run_rulesets(
     logger.info("Cancelling all ruleset tasks")
     for task in ruleset_tasks:
         if not task.done():
-            logger.info("Cancelling " + task.get_name())
+            logger.info("Cancelling %s", task.get_name())
             task.cancel()
 
     should_reload = False
