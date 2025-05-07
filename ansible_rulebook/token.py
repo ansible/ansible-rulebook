@@ -34,7 +34,7 @@ async def renew_token() -> str:
             try:
                 data = await resp.json()
             except aiohttp.client_exceptions.ContentTypeError as e:
-                logger.error(f"failed to renew token. Error: {e}")
+                logger.error(f"Failed to renew token. Error: {e}")
                 msg = "Refresh token URL does not return expected format"
                 raise TokenNotFound(msg) from e
             if "access" not in data:

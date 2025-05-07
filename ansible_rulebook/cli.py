@@ -354,7 +354,7 @@ def main(args: List[str] = None) -> int:
     except KeyboardInterrupt:
         return 0
     except Exception as err:
-        logger.error("Terminating %s", str(err))
+        logger.error("Terminating: %s", err)
         return 1
     finally:
         settings.vault.close()

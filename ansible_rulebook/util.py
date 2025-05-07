@@ -77,7 +77,7 @@ def decryptable(obj: Union[Dict, List, str, bool, int]) -> None:
             try:
                 settings.vault.decrypt(obj)
             except VaultDecryptException as e:
-                logger.error(f"{obj} cannot be decrypted {e}")
+                logger.error(f"'{obj}' cannot be decrypted: {e}")
                 raise
 
 
@@ -200,7 +200,7 @@ def get_java_version() -> str:
     try:
         result = run_java_settings(exec_path)
     except subprocess.CalledProcessError as exc:
-        logger.error("java executable failed: %s", exc)
+        logger.error("Failed to run 'java': %s", exc)
         return "Java error"
     for line in result.stderr.splitlines():
         if "java.version" in line:
@@ -252,7 +252,11 @@ def get_package_version(package_name: str) -> str:
     try:
         return importlib.metadata.version(package_name)
     except importlib.metadata.PackageNotFoundError:
-        logger.error("Cannot read version from %s package", package_name)
+        logger.error(
+            "The package '%s' is not installed; returning 'unknown' "
+            "version for it",
+            package_name,
+        )
         return "unknown"
 
 
@@ -284,7 +288,7 @@ def get_installed_collections() -> Optional[str]:
             capture_output=True,
         )
     except subprocess.CalledProcessError as e:
-        logger.error("Cannot list installed collections %s", e)
+        logger.error("Cannot list installed collections: %s", e)
         return None
     return result.stdout
 

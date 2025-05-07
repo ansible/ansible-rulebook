@@ -144,7 +144,7 @@ def test_get_package_version(caplog):
         side_effect=importlib.metadata.PackageNotFoundError,
     ):
         assert get_package_version("idonotexist") == "unknown"
-        assert "Cannot read version" in caplog.text
+        assert "returning 'unknown' version" in caplog.text
 
 
 @patch("ansible_rulebook.conf.settings.ansible_galaxy_path", None)

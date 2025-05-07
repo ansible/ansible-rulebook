@@ -106,7 +106,7 @@ class JobTemplateRunner:
             ) as response:
                 return json.loads(await response.text())
         except aiohttp.ClientError as e:
-            logger.error("Error connecting to controller %s", str(e))
+            logger.error("Error connecting to controller: %s", str(e))
             raise ControllerApiException(str(e))
 
     async def get_config(self) -> dict:
@@ -234,9 +234,9 @@ class JobTemplateRunner:
                 post_response.raise_for_status()
                 return body
         except aiohttp.ClientError as e:
-            logger.error("Error connecting to controller %s", str(e))
+            logger.error("Error connecting to controller: %s", str(e))
             if body:
-                logger.error("Error %s", body)
+                logger.error("Error: %s", body)
             raise ControllerApiException(str(e))
 
 
