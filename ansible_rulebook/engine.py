@@ -121,9 +121,7 @@ async def start_source(
                 find_source(*split_collection_name(source.source_name))
             )
         else:
-            raise SourcePluginNotFoundException(
-                f"Could not find source plugin for {source.source_name}"
-            )
+            raise SourcePluginNotFoundException(source_name=source.source_name)
 
         source_filters = []
 
@@ -153,8 +151,7 @@ async def start_source(
                 )
             else:
                 raise SourceFilterNotFoundException(
-                    f"Could not find source filter plugin "
-                    f"for {source_filter.filter_name}"
+                    source_filter_name=source_filter.filter_name
                 )
             source_filters.append(
                 (source_filter_module["main"], source_filter.filter_args)
@@ -171,13 +168,13 @@ async def start_source(
             entrypoint = module["main"]
         except KeyError:
             raise SourcePluginMainMissingException(
-                "Entrypoint missing. Source module must have function 'main'."
+                source_name=source.source_name
             )
 
         # NOTE(cutwater): This check may be unnecessary.
         if not asyncio.iscoroutinefunction(entrypoint):
             raise SourcePluginNotAsyncioCompatibleException(
-                "Entrypoint is not a coroutine function."
+                source_name=source.source_name
             )
 
         await entrypoint(fqueue, args)
@@ -213,9 +210,7 @@ async def start_source(
                 f"'{error_msg}'"
             )
         logger.error("Source error: %s", user_msg)
-        shutdown_msg = (
-            f"Shutting down source: {source.source_name} error: {user_msg}"
-        )
+        shutdown_msg = f"Shutting down source: {source.source_name}"
         logger.error(shutdown_msg)
         raise
     finally:

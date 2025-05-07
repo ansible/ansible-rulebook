@@ -21,6 +21,12 @@ import sys
 from typing import List
 
 import ansible_rulebook.util as util
+from ansible_rulebook.exception import (
+    SourceFilterNotFoundException,
+    SourcePluginMainMissingException,
+    SourcePluginNotAsyncioCompatibleException,
+    SourcePluginNotFoundException,
+)
 from ansible_rulebook.messages import DEFAULT_SHUTDOWN_DELAY
 from ansible_rulebook.vault import Vault
 
@@ -353,8 +359,16 @@ def main(args: List[str] = None) -> int:
         asyncio.run(app.run(args))
     except KeyboardInterrupt:
         return 0
+    except (
+        SourcePluginNotFoundException,
+        SourceFilterNotFoundException,
+        SourcePluginMainMissingException,
+        SourcePluginNotAsyncioCompatibleException,
+    ) as err:
+        logger.error("Terminating due to source error: %s", str(err))
+        return 1
     except Exception as err:
-        logger.error("Terminating %s", str(err))
+        logger.error("Terminating: %s", str(err))
         return 1
     finally:
         settings.vault.close()
