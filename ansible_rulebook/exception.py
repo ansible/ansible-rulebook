@@ -88,19 +88,72 @@ class RulebookNotFoundException(Exception):
 
 
 class SourcePluginNotFoundException(Exception):
-    pass
+    """Exception class for source plugin not found."""
+
+    def __init__(
+        self: "SourcePluginNotFoundException",
+        source_name: str,
+        message: str = None,
+    ) -> None:
+        """Class constructor with not found source plugin"""
+        if message is None:
+            message = (
+                f"Could not find source plugin for {source_name}. "
+                f"Please ensure that the appropriate Ansible collection is "
+                f"installed. If you're running from the CLI, you can use "
+                f"the -S option to specify additional source directories."
+            )
+        super().__init__(message)
 
 
 class SourceFilterNotFoundException(Exception):
-    pass
+    """Exception class for source filter not found."""
+
+    def __init__(
+        self: "SourceFilterNotFoundException",
+        source_filter_name: str,
+        message: str = None,
+    ) -> None:
+        """Class constructor with not found source filter"""
+        if message is None:
+            message = (
+                f"Could not find source filter plugin {source_filter_name}"
+            )
+        super().__init__(message)
 
 
 class SourcePluginMainMissingException(Exception):
-    pass
+    """Exception class for plugin main function not found."""
+
+    def __init__(
+        self: "SourcePluginMainMissingException",
+        source_name: str,
+        message: str = None,
+    ) -> None:
+        """Class constructor with not found main function in plugin"""
+        if message is None:
+            message = (
+                f"Entrypoint missing. "
+                f"Source module {source_name} must have function 'main'."
+            )
+        super().__init__(message)
 
 
 class SourcePluginNotAsyncioCompatibleException(Exception):
-    pass
+    """Exception class for plugin not compatible with asyncio functionality"""
+
+    def __init__(
+        self: "SourcePluginNotAsyncioCompatibleException",
+        source_name: str,
+        message: str = None,
+    ) -> None:
+        """Class constructor with plugin not compatible with asyncio"""
+        if message is None:
+            message = (
+                f"Entrypoint from {source_name} is not a coroutine "
+                f"function."
+            )
+        super().__init__(message)
 
 
 class ControllerNeededException(Exception):

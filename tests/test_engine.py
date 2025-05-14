@@ -165,22 +165,48 @@ async def test_start_source(source_name, filter_name, shutdown_message):
 
 
 test_data = [
-    ("missing", "noop", "sources", SourcePluginNotFoundException),
-    ("range", "missing", "sources", SourceFilterNotFoundException),
-    ("bad_source", "noop", "data", SourcePluginMainMissingException),
-    ("not_asyncio", "noop", "data", SourcePluginNotAsyncioCompatibleException),
+    (
+        "missing",
+        "noop",
+        "sources",
+        SourcePluginNotFoundException,
+        "Could not find source plugin for missing",
+    ),
+    (
+        "range",
+        "missing",
+        "sources",
+        SourceFilterNotFoundException,
+        "Could not find source filter plugin missing",
+    ),
+    (
+        "bad_source",
+        "noop",
+        "data",
+        SourcePluginMainMissingException,
+        "Source module bad_source must have function 'main'",
+    ),
+    (
+        "not_asyncio",
+        "noop",
+        "data",
+        SourcePluginNotAsyncioCompatibleException,
+        "Entrypoint from not_asyncio is not a coroutine function",
+    ),
 ]
 
 
-@pytest.mark.parametrize("source_name,filter_name,source_dir,ex", test_data)
+@pytest.mark.parametrize(
+    "source_name,filter_name,source_dir,ex,expected_message", test_data
+)
 @pytest.mark.asyncio
 async def test_start_source_exceptions(
-    source_name, filter_name, source_dir, ex
+    source_name, filter_name, source_dir, ex, expected_message
 ):
     os.chdir(HERE)
 
     queue = asyncio.Queue()
-    with pytest.raises(ex):
+    with pytest.raises(ex) as ex_info:
         await start_source(
             EventSource(
                 source_name,
@@ -192,6 +218,9 @@ async def test_start_source_exceptions(
             dict(limit=1),
             queue,
         )
+
+    ex_msg = str(ex_info.value)
+    assert expected_message in ex_msg
 
 
 source_args = dict(
