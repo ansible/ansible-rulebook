@@ -7,4 +7,4 @@
   ansible.builtin.fail:
     msg: "{{ item.key }} mismatch"
   # since jinja2 doesn't preserve the type we have to do a string comparison
-  when: expected_value != item.value|string
+  when: expected_value != item.value

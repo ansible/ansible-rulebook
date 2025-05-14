@@ -36,7 +36,11 @@ from ansible_rulebook.exception import (
     PlaybookNotFoundException,
     PlaybookStatusNotFoundException,
 )
-from ansible_rulebook.util import create_inventory, run_at
+from ansible_rulebook.util import (
+    convert_ansible_tagged_dict,
+    create_inventory,
+    run_at,
+)
 
 from .control import Control
 from .helper import Helper
@@ -234,6 +238,9 @@ class RunPlaybook:
             for host_facts in glob.glob(os.path.join(fact_folder, "*")):
                 with open(host_facts) as file_handle:
                     fact = json.loads(file_handle.read())
+                    if fact.get("__payload__"):
+                        payload = yaml.safe_load(fact["__payload__"])
+                        fact = convert_ansible_tagged_dict(payload)
                 if self.output_key:
                     if self.output_key not in fact:
                         logger.error(

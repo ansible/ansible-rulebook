@@ -25,6 +25,7 @@ from ansible_rulebook.exception import (
 )
 from ansible_rulebook.util import (
     MASKED_STRING,
+    convert_ansible_tagged_dict,
     decryptable,
     get_installed_collections,
     get_package_version,
@@ -356,3 +357,38 @@ def test_startup_logging_no_collections(caplog):
 )
 def test_mask_sensitive_variable_values(extra_vars, expected):
     assert mask_sensitive_variable_values(extra_vars) == expected
+
+
+@pytest.mark.parametrize(
+    "tagged_dict, expected",
+    [
+        # Simple primitive
+        (42, 42),
+        ("foo", "foo"),
+        (True, True),
+        # Simple dict
+        ({"value": 42}, 42),
+        ({"value": "foo"}, "foo"),
+        # Dict with tags and ansible_type
+        (
+            {"value": {"foo": 1, "tags": ["a"], "__ansible_type": "bar"}},
+            {"foo": 1},
+        ),
+        # Nested dict
+        ({"value": {"foo": {"value": 2}, "bar": 3}}, {"foo": 2, "bar": 3}),
+        # List of primitives
+        ({"value": [1, 2, 3]}, [1, 2, 3]),
+        # List of dicts
+        ({"value": [{"value": 1}, {"value": 2}]}, [1, 2]),
+        # Dict containing a list of dicts
+        ({"value": {"foo": [{"value": 1}, {"value": 2}]}}, {"foo": [1, 2]}),
+        # Already converted dict
+        ({"foo": 1, "bar": 2}, {"foo": 1, "bar": 2}),
+        # Dict with None value
+        ({"value": None}, None),
+        # List with mixed types
+        ({"value": [1, {"value": 2}, "three"]}, [1, 2, "three"]),
+    ],
+)
+def test_convert_ansible_tagged_dict(tagged_dict, expected):
+    assert convert_ansible_tagged_dict(tagged_dict) == expected

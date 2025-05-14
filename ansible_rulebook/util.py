@@ -438,3 +438,41 @@ def create_context(
             return ssl._create_unverified_context()
         return ssl.create_default_context(cafile=ssl_verify)
     return None
+
+
+def convert_ansible_tagged_dict(
+    obj: Union[Dict[str, Any], List, str, bool, int],
+) -> Union[Dict[str, Any], List, str, bool, int]:
+    primitives = (int, float, bool, str, type(None))
+    data = {}
+
+    if not isinstance(obj, dict):
+        return obj
+
+    value = obj.get("value", obj)
+
+    if isinstance(value, dict):
+        for k, v in value.items():
+            if k in ["tags", "__ansible_type"]:  # Skip metadata fields
+                continue
+            if isinstance(v, dict):
+                data[k] = convert_ansible_tagged_dict(v)
+            elif isinstance(v, list):
+                data[k] = [
+                    convert_ansible_tagged_dict(item)
+                    if isinstance(item, dict)
+                    else item
+                    for item in v
+                ]
+            else:
+                data[k] = v
+    elif isinstance(value, list):
+        items = []
+        for item in value:
+            items.append(convert_ansible_tagged_dict(item))
+
+        return items
+    elif isinstance(value, primitives):
+        return value
+
+    return data
