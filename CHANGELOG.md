@@ -4,7 +4,9 @@
 ## [Unreleased]
 ### Changed
 ### Added
+- Add support for playbook that has set_stats in it
 ### Fixed
+- Fix a bug in the processing of a playbook that has a set_fact in it
 
 
 ## [1.1.6] - 20205-04-25
