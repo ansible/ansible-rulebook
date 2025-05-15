@@ -14,7 +14,6 @@
 
 import asyncio
 import glob
-import json
 import logging
 import os
 import shutil
@@ -72,6 +71,7 @@ class RunPlaybook:
         self.output_key = None
         self.inventory = None
         self.display = terminal.Display()
+        self.artifacts_from_runner = None
 
     async def __call__(self):
         try:
@@ -117,7 +117,7 @@ class RunPlaybook:
                     "Previous run_playbook failed. Retry %d of %d", i, retries
                 )
 
-            await Runner(
+            runner = Runner(
                 self.private_data_dir,
                 self.host_limit,
                 self.verbosity,
@@ -125,7 +125,11 @@ class RunPlaybook:
                 self.json_mode,
                 self.helper,
                 self._runner_args(),
-            )()
+            )
+            await runner()
+
+            self.artifacts_from_runner = runner.get_artifacts()
+
             if self._get_latest_artifact("status") != "failed":
                 break
 
@@ -227,31 +231,30 @@ class RunPlaybook:
             run_type = self.__class__.__name__.lower()[3:]
             self.display.banner(f"{run_type}: set-facts", level=level)
 
-            fact_folder = self._get_latest_artifact("fact_cache", False)
             ruleset = self.action_args.get(
                 "ruleset", self.helper.metadata.rule_set
             )
-            for host_facts in glob.glob(os.path.join(fact_folder, "*")):
-                with open(host_facts) as file_handle:
-                    fact = json.loads(file_handle.read())
-                if self.output_key:
-                    if self.output_key not in fact:
-                        logger.error(
-                            "The artifacts from the ansible-runner "
-                            "does not have key %s",
-                            self.output_key,
-                        )
-                        raise MissingArtifactKeyException(
-                            f"Missing key: {self.output_key} in artifacts"
-                        )
-                    fact = fact[self.output_key]
-                fact = self.helper.embellish_internal_event(fact)
-                self.display.output(fact, level=level, pretty=True)
 
-                if set_facts:
-                    lang.assert_fact(ruleset, fact)
-                if post_events:
-                    lang.post(ruleset, fact)
+            fact = self.artifacts_from_runner
+            if self.output_key:
+                if self.output_key not in fact:
+                    logger.error(
+                        "The artifacts from the ansible-runner "
+                        "does not have key %s",
+                        self.output_key,
+                    )
+                    raise MissingArtifactKeyException(
+                        f"Missing key: {self.output_key} in artifacts"
+                    )
+                fact = fact[self.output_key]
+
+            fact = self.helper.embellish_internal_event(fact)
+            self.display.output(fact, level=level, pretty=True)
+
+            if set_facts:
+                lang.assert_fact(ruleset, fact)
+            if post_events:
+                lang.post(ruleset, fact)
 
             self.display.banner(level=level)
 

@@ -192,13 +192,21 @@ def test_actions_sanity(update_environment):
 
 
 @pytest.mark.e2e
-def test_run_playbook(update_environment):
+@pytest.mark.parametrize(
+    "rulebook",
+    [
+        "rulebooks/actions/test_run_playbook.yml",
+        "rulebooks/actions/test_run_playbook_with_set_stats.yml",
+        "rulebooks/actions/test_run_playbook_without_cacheable.yml",
+    ],
+)
+def test_run_playbook(update_environment, rulebook):
     """
     Execute a rulebook that contains multiple run_playbook actions
     to validate all params that are available with the action.
     """
 
-    rulebook = utils.BASE_DATA_PATH / "rulebooks/actions/test_run_playbook.yml"
+    rulebook = utils.BASE_DATA_PATH / rulebook
     env = update_environment(
         {
             "DEFAULT_SHUTDOWN_AFTER": str(DEFAULT_SHUTDOWN_AFTER),
