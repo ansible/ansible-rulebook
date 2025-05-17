@@ -1,0 +1,78 @@
+---
+- name: Ruleset 1
+  hosts: all
+  sources:
+    - generic:
+        shutdown_after: "{{ DEFAULT_SHUTDOWN_AFTER }}"
+        payload:
+          - alert:
+              message: "upgrade complete"
+            meta:
+              hostname: "nala"
+          - alert:
+              message: "upgrade failure"
+            meta: 
+              hostname: "simba"
+
+  rules:
+    - name: Run post_processing playbook and set_facts to Ruleset 2
+      condition: event.alert.message == "upgrade complete"
+      action:
+        run_playbook:
+          name: ./playbooks/run_playbook_test_playbook_without_cacheable.yml
+          set_facts: true
+          ruleset: "Ruleset 2"
+          extra_vars:
+            processed_host: "{{ event.meta.hostname }}"
+            remediation_required: false
+          json_mode: true
+
+    - name: Run post_processing playbook and post_events to same ruleset
+      condition: event.alert.message == "upgrade failure"
+      action:
+        run_playbook:
+          name: ./playbooks/run_playbook_test_playbook_without_cacheable.yml
+          post_events: true
+          extra_vars:
+            target_host: "{{ event.meta.hostname }}"
+            remediation_required: true
+          retry: true
+          retries: 1
+          delay: 1
+          json_mode: true
+
+    - name: Verify the remediation and set_facts to same ruleset
+      condition: event.results.remediation.remediation_result == "Success"
+      action:
+        run_playbook:
+          name: ./playbooks/run_playbook_test_playbook_without_cacheable.yml
+          set_facts: true
+          var_root:
+            results.remediation: results
+          extra_vars:
+            processed_host: "{{ event.remediated_host }}"
+            remediation_required: false
+          json_mode: true
+          verbosity: 4
+
+    - name: Validate set_facts from same ruleset
+      condition: >
+        event.post_processing_state == "Complete" and
+        event.post_processing_host == "simba"
+      action:
+        debug:
+          msg: "Post-processing complete on {{ event.post_processing_host }}"
+
+- name: Ruleset 2
+  hosts: all
+  sources:
+    - generic:
+        startup_delay: "{{ DEFAULT_STARTUP_DELAY }}"  # never start, only triggered by Ruleset 1
+  rules:
+    - name: Validate the set_facts from ruleset 1
+      condition: >
+        event.post_processing_state == "Complete" and
+        event.post_processing_host == "nala"
+      action:
+        debug:
+          msg: "Post-processing complete on {{ event.post_processing_host }}"

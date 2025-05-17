@@ -33,10 +33,12 @@ Run an Ansible playbook.
        | If it's a relative path, it must be relative to the current working dir where the ansible-rulebook command is executed.
      - Yes
    * - set_facts
-     - Boolean, the artifacts from the playbook execution are inserted back into the rule set as facts
+     - | Boolean, the artifacts from the playbook execution are inserted back into the rule set as facts. It is recommended
+       | that the playbook should use the ansible.builtin.set_stats task to set this data.
      - No
    * - post_events
-     - Boolean, the artifacts from the playbook execution are inserted back into the rule set as events
+     - | Boolean, the artifacts from the playbook execution are inserted back into the rule set as events. It is recommended
+       | that the playbook should use the ansible.builtin.set_stats task to set this data.
      - No
    * - ruleset
      - The name of the ruleset to post the event or assert the fact to, default is current rule set.
@@ -151,10 +153,12 @@ Run a job template.
      - Should we include the matching events in the payload sent to controller. Default is true
      - No
    * - set_facts
-     - The artifacts from the job template execution are inserted back into the rule set as facts
+     - | The artifacts from the job template execution are inserted back into the rule set as facts. It is recommended
+       | that the playbook inside the job template should use the ansible.builtin.set_stats task to set this data.
      - No
    * - post_events
-     - The artifacts from the job template execution are inserted back into the rule set as events
+     - | The artifacts from the job template execution are inserted back into the rule set as events. It is recommended
+       | that the playbook inside the job template should use the ansible.builtin.set_stats task to set this data.
      - No
    * - ruleset
      - The name of the ruleset to post the event or assert the fact to, default is current rule set.
