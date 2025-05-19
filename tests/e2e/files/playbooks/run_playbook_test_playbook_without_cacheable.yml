@@ -1,5 +1,5 @@
 ---
-- name: A playbook to run simulated post-processing tasks and emulate a first run failure
+- name: A playbook to run simulated post-processing tasks with on cacheable set_fact
   hosts: localhost
   gather_facts: false
   vars:
