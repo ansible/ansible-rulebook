@@ -14,6 +14,7 @@
 
 import asyncio
 import os
+import sys
 import tempfile
 from pprint import pprint
 from unittest.mock import patch
@@ -518,6 +519,9 @@ async def test_run_rulesets_on_hosts():
     await validate_events(event_log, **checks)
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="Not worked on Python 3.10 or older"
+)
 @pytest.mark.asyncio
 async def test_run_assert_facts():
     ruleset_queues, event_log = load_rulebook("rules/test_set_facts.yml")

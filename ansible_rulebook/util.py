@@ -13,9 +13,7 @@
 #  limitations under the License.
 
 import asyncio
-import glob
 import importlib.metadata
-import json
 import logging
 import os
 import platform
@@ -137,15 +135,16 @@ def collect_ansible_facts(inventory: str) -> List[Dict]:
                 f"rc={r.rc}, status={r.status}"
             )
 
-        host_path = os.path.join(
-            private_data_dir, "artifacts", "*", "fact_cache", "*"
-        )
-        for host_file in glob.glob(host_path):
-            hostname = os.path.basename(host_file)
-            with open(host_file) as f:
-                data = json.load(f)
-            data["meta"] = dict(hosts=hostname)
-            hosts_facts.append(data)
+        for host_event in r.events:
+            if host_event.get("event") == "runner_on_ok":
+                data = (
+                    host_event.get("event_data", {})
+                    .get("res", {})
+                    .get("ansible_facts")
+                )
+                hostname = host_event.get("event_data", {}).get("host")
+                data["meta"] = dict(hosts=hostname)
+                hosts_facts.append(data)
 
     return hosts_facts
 

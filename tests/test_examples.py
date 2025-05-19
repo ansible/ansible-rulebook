@@ -14,6 +14,7 @@
 import asyncio
 import json
 import logging
+import sys
 from unittest.mock import patch
 
 import pytest
@@ -867,6 +868,9 @@ async def test_29_run_module():
     assert event_log.empty()
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="Not worked on Python 3.10 or older"
+)
 @pytest.mark.asyncio
 async def test_30_run_module_missing():
     ruleset_queues, event_log = load_rulebook(
@@ -886,7 +890,9 @@ async def test_30_run_module_missing():
 
     event = event_log.get_nowait()
     assert event["type"] == "Job", "0"
-    for i in range(10):
+    # There is change between ansible-core 2.16 and 2.19
+    # the output from 2.19 (8) is less than 2.16 (10)
+    for i in range(8):
         assert event_log.get_nowait()["type"] == "AnsibleEvent", f"0.{i}"
 
     event = event_log.get_nowait()
