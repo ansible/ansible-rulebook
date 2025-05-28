@@ -72,8 +72,8 @@ async def heartbeat_task(
 
 
 async def broadcast(shutdown: Shutdown):
-    logger.debug(f"Broadcast to queues: {all_source_queues}")
-    logger.debug(f"Broadcasting shutdown: {shutdown}")
+    logger.info(f"Broadcast to queues: {all_source_queues}")
+    logger.info(f"Broadcasting shutdown: {shutdown}")
     for queue in all_source_queues:
         await queue.put(shutdown)
 
@@ -121,9 +121,7 @@ async def start_source(
                 find_source(*split_collection_name(source.source_name))
             )
         else:
-            raise SourcePluginNotFoundException(
-                f"Could not find source plugin for {source.source_name}"
-            )
+            raise SourcePluginNotFoundException(source_name=source.source_name)
 
         source_filters = []
 
@@ -153,8 +151,7 @@ async def start_source(
                 )
             else:
                 raise SourceFilterNotFoundException(
-                    f"Could not find source filter plugin "
-                    f"for {source_filter.filter_name}"
+                    source_filter_name=source_filter.filter_name
                 )
             source_filters.append(
                 (source_filter_module["main"], source_filter.filter_args)
@@ -171,13 +168,13 @@ async def start_source(
             entrypoint = module["main"]
         except KeyError:
             raise SourcePluginMainMissingException(
-                "Entrypoint missing. Source module must have function 'main'."
+                source_name=source.source_name
             )
 
         # NOTE(cutwater): This check may be unnecessary.
         if not asyncio.iscoroutinefunction(entrypoint):
             raise SourcePluginNotAsyncioCompatibleException(
-                "Entrypoint is not a coroutine function."
+                source_name=source.source_name
             )
 
         await entrypoint(fqueue, args)
@@ -197,7 +194,7 @@ async def start_source(
             f"Source {source.source_name} task cancelled, "
             + f"initiated shutdown at {str(datetime.now())}"
         )
-        logger.debug("Task cancelled " + shutdown_msg)
+        logger.debug("Task cancelled: %s", shutdown_msg)
     except BaseException as e:
         error_msg = str(e)
         # Get the name of the exception class
@@ -213,9 +210,7 @@ async def start_source(
                 f"'{error_msg}'"
             )
         logger.error("Source error: %s", user_msg)
-        shutdown_msg = (
-            f"Shutting down source: {source.source_name} error: {user_msg}"
-        )
+        shutdown_msg = f"Shutting down source: {source.source_name}"
         logger.error(shutdown_msg)
         raise
     finally:
@@ -336,7 +331,7 @@ async def run_rulesets(
     logger.info("Cancelling all ruleset tasks")
     for task in ruleset_tasks:
         if not task.done():
-            logger.info("Cancelling " + task.get_name())
+            logger.info("Cancelling %s", task.get_name())
             task.cancel()
 
     should_reload = False

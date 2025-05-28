@@ -25,6 +25,9 @@ from ansible_rulebook.conf import settings
 
 logger = logging.getLogger(__name__)
 
+SET_FACT_ACTIONS = ("set_fact", "ansible.builtin.set_fact")
+SET_STATS_ACTIONS = ("set_stats", "ansible.builtin.set_stats")
+
 
 class Runner:
     """calls ansible-runner to launch either playbooks/modules
@@ -48,6 +51,7 @@ class Runner:
         self.helper = helper
         self.runner_args = runner_args
         self.json_mode = json_mode
+        self.artifacts = None
 
     async def __call__(self):
         shutdown = False
@@ -63,6 +67,28 @@ class Runner:
         def event_callback(event, *_args, **_kwargs):
             event["job_id"] = self.job_id
             event["ansible_rulebook_id"] = settings.identifier
+            if event.get("event") == "runner_on_ok":
+                if (
+                    event.get("event_data", {}).get("task_action")
+                    in SET_FACT_ACTIONS
+                ):
+                    self.artifacts = (
+                        event.get("event_data", {})
+                        .get("res", {})
+                        .get("ansible_facts")
+                    )
+
+                if (
+                    event.get("event_data", {}).get("task_action")
+                    in SET_STATS_ACTIONS
+                ):
+                    self.artifacts = (
+                        event.get("event_data", {})
+                        .get("res", {})
+                        .get("ansible_stats", {})
+                        .get("data")
+                    )
+
             queue.sync_q.put({"type": "AnsibleEvent", "event": event})
 
         # Here we read the async side and push it into the event queue
@@ -77,7 +103,7 @@ class Runner:
                     val["run_at"] = event_data.get("created")
                     await self.helper.send_status(val)
             except CancelledError:
-                logger.info("Ansible runner Queue task cancelled")
+                logger.debug("Ansible runner Queue task cancelled")
 
         def cancel_callback():
             return shutdown
@@ -115,3 +141,6 @@ class Runner:
                         task.cancel()
 
                 await asyncio.gather(*tasks)
+
+    def get_artifacts(self):
+        return self.artifacts
