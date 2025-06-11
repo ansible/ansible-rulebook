@@ -9,7 +9,7 @@ from pathlib import Path
 from subprocess import CompletedProcess
 from typing import Iterable, List, Optional, Union
 
-import websockets.server as ws_server
+import websockets.asyncio.server as ws_server
 
 BASE_DATA_PATH = Path(f"{__file__}").parent / Path("files")
 DEFAULT_SOURCES = Path(f"{__file__}").parent / Path("../sources")
@@ -150,7 +150,7 @@ def assert_playbook_output(result: CompletedProcess) -> List[dict]:
 
 
 async def msg_handler(
-    websocket: ws_server.WebSocketServerProtocol,
+    websocket: ws_server.ServerConnection,
     queue: asyncio.Queue,
     failed: bool = False,
 ):
@@ -161,7 +161,7 @@ async def msg_handler(
     i = 0
     async for message in websocket:
         payload = json.loads(message)
-        data = {"path": websocket.path, "payload": payload}
+        data = {"path": websocket.request.path, "payload": payload}
         await queue.put(data)
         if i == 1:
             if failed:
