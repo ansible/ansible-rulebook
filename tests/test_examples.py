@@ -54,9 +54,16 @@ class SourceTask:
         self.task.cancel()
 
 
+RULEBOOK_NAMES = [
+    ("examples/01_noop.yml"),
+    ("examples/92_gather_facts_sans_inventory.yml"),
+]
+
+
+@pytest.mark.parametrize("rulebook", RULEBOOK_NAMES)
 @pytest.mark.asyncio
-async def test_01_noop():
-    ruleset_queues, event_log = load_rulebook("examples/01_noop.yml")
+async def test_01_noop(rulebook):
+    ruleset_queues, event_log = load_rulebook(rulebook)
 
     queue = ruleset_queues[0][1]
     queue.put_nowait(dict(i=1))

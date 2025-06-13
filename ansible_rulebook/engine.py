@@ -286,7 +286,13 @@ async def run_rulesets(
     rulesets = {}
     for ruleset, _ in ruleset_queues:
         if ruleset.gather_facts and not hosts_facts:
-            hosts_facts = collect_ansible_facts(inventory)
+            if inventory:
+                hosts_facts = collect_ansible_facts(inventory)
+            else:
+                logger.warning(
+                    "Ignoring gather_facts, since it requires inventory"
+                )
+
         ruleset_names.append(ruleset.name)
         rulesets[ruleset.name] = ruleset
 

@@ -7,6 +7,7 @@
 - Add support for playbook that has set_stats in it
 ### Fixed
 - Fix a bug in the processing of a playbook that has a set_fact in it
+- Fix a bug in gather_facts. It needs inventory, else its ignored
 
 
 ## [1.1.6] - 20205-04-25
