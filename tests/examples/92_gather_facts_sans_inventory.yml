@@ -1,0 +1,13 @@
+---
+- name: 92 gather facts sans inventory
+  hosts: all
+  gather_facts: true
+  sources:
+    - name: range
+      range:
+        limit: 5
+  rules:
+    - name: r1
+      condition: event.i == 1
+      action:
+        none:
