@@ -4,17 +4,23 @@
 ## [Unreleased]
 ### Changed
 ### Added
+### Fixed
+
+
+## [1.1.7] - 2025-06-23
+### Changed
+### Added
 - Add support for playbook that has set_stats in it
 ### Fixed
 - Fix a bug in the processing of a playbook that has a set_fact in it
 - Fix a bug in gather_facts. It needs inventory, else its ignored
 
 
-## [1.1.6] - 20205-04-25
+## [1.1.6] - 2025-04-25
 - Fix memory leak with new drools_jpy
 
 
-## [1.1.5] - 20205-04-11
+## [1.1.5] - 2025-04-11
 ### Changed
 - Minor refactors
 - Docs updates
