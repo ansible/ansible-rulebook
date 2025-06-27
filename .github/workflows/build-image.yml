@@ -51,7 +51,7 @@ jobs:
           echo "SETUPTOOLS_SCM_PRETEND_VERSION=$(python -m setuptools_scm)" >> $GITHUB_ENV
 
       - name: Log in to the Container registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ env.QUAY_USER }}
