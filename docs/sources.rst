@@ -1,49 +1,11 @@
-.. _event-source-plugins:
 
-====================
-Event Source Plugins
-====================
+| Event source plugins are responsible for generating events that trigger rule evaluation  
+| in `ansible-rulebook`. They can either receive events or interface with external systems,  
+| such as message queues, to produce event data for the rule engine.
 
-Events come from event sources. Event driven automation supports many event
-sources using a plugin system. Event source plugins can be stored locally but
-are preferably distributed via collections.
-
-`Ansible.eda <https://github.com/ansible/event-driven-ansible>`_
-is the collection that includes our initial set of event source plugins.
-These include:
-
-..
-    TODO: Add extended documentation for plugins in the collection and link to it here.
-
-* alertmanager
-    Receive events via a webhook from alertmanager
-
-* azure_service_bus
-    Receive events from an Azure service
-
-* kafka
-    Receive events via a kafka topic
-
-* url_check
-    Poll a set of URLs and send events with their statuses
-
-* watchdog
-    Watch file system and send events when a file status changes
-
-* webhook
-    Provide a webhook and receive events from it
-
-* tick
-    Generate events with an increasing index i that never ends
-    Mainly used for development and testing
-
-* file
-    Load facts from YAML files initially and reload when any file changes
-    Mainly used for development and testing
-
-* range
-    Generate events with an increasing index i within a range
-    Mainly used for development and testing
+| **To help users get started the `ansible.eda` collection provides a set of event source plugins**  
+| that cover common integration scenarios with Ansible Event Driven. You can explore the available source plugins here:  
+| https://galaxy.ansible.com/ui/repo/published/ansible/eda/content/
 
 
 
@@ -83,8 +45,16 @@ There are 3 basic patterns that you'll be developing against when considering a 
     These can also require other ingress policies and firewall rules to be available and configured properly
     to operate.
 
-It's strongly recommended to adopt one of the first two patterns and only consider callback plugins in the absence
-of any other solution.
+    It's strongly recommended to adopt one of the first two patterns and only consider callback plugins in the absence
+    of any other solution.
+
+    .. note::
+        Ansible Automation Platform provides integrated webhooks called **Event Streams**. 
+        It is recommended to use Event Streams for webhook integrations instead of custom callback plugins.
+        For more information, see the documentation:
+        https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/using_automation_decisions/simplified-event-routing 
+
+
 
 When deciding whether to build a dedicated plugin you may consider configuring the data source to send data to a
 system where a more general plugin exists already. For example, if you have a system that can send data to a kafka
