@@ -4,33 +4,21 @@
 Event Filters
 =============
 
-| Events sometimes have extra data that is unnecessary and may overwhelm the
-| rule engine.  Event filters allow us to remove that extra data so we can
-| focus on what matters to our rules. Event filters may also change the format
-| of the data so that the rule conditions can better match the data.
+| Event filters provide a flexible way to preprocess event data before it is evaluated  
+| by the rule engine. You can use them to remove unnecessary information and  
+| to modify, enrich, or transform the event's content and structure. This ensures  
+| the data is in the ideal format for your rule conditions. 
 
-| Events are defined as python code and distributed as collections. The default
-| eda collection_. has the following filters
+| Events are defined as Python code and distributed as collections.
 
-.. list-table:: Event Filters
-   :widths: 25 100
-   :header-rows: 1
+| **To help users get started quickly, we already provide the `ansible.eda` collection with a set of common filters.**  
+| You can explore the collection here: https://galaxy.ansible.com/ui/repo/published/ansible/eda/content/
 
-   * - Name
-     - Description
-   * - json_filter
-     - Include and exclude keys from the event object
-   * - dashes_to_underscores
-     - This filter changes the dashes in all keys in the payload to be underscore.
-   * - insert_hosts_to_meta
-     - This filter inserts the hosts from the event into the meta key within the event
-       based on a custom path in the event object.
-
-| Events filters can be chained one after the other, and the updated data is
+| Event filters can be chained one after the other, and the updated data is  
 | sent from one filter to the next.
 
-| Events filters are defined in the rulebook after a source is defined.
-| When the rulebook starts the Source plugin it associates the correct filters
+| Event filters are defined in the rulebook after a source is defined.  
+| When the rulebook starts the source plugin, it associates the correct filters  
 | and transforms the data before putting it into the queue.
 
 Examples:
