@@ -84,10 +84,23 @@ class FilteredQueue:
         self.queue = queue
 
     async def put(self, data):
+        if not isinstance(data, list):
+            data = [data]
+
         for f, kwargs in self.filters:
             kwargs = kwargs or {}
-            data = f(data, **kwargs)
-        await self.queue.put(data)
+            flat_list = []
+            for e in data:
+                result = f(e, **kwargs)
+                if not isinstance(result, list):
+                    result = [result]
+                for r in result:
+                    flat_list.append(r)
+
+            data = flat_list
+
+        for e in data:
+            await self.queue.put(e)
 
     def put_nowait(self, data):
         for f, kwargs in self.filters:

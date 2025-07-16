@@ -1,0 +1,29 @@
+---
+- name: 93 event splitter
+  hosts: localhost
+  sources:
+    - ansible.eda.generic:
+        payload:
+          - bundle:
+              employer: Slate Rock & Gravel Company
+              owner: George Slate
+              employees:
+                - name: Fred Flintstone
+                  age: 50
+                  profession: Crane Operator
+                - name: Barney Rubble
+                  age: 45
+      filters:
+        - eda.builtin.event_splitter:
+            splitter_key: bundle.employees 
+            attributes_key_map:
+              employer: bundle.employer
+              owner: bundle.owner
+            extras:
+              city: Bedrock
+  rules:
+    - name: r1
+      condition: event.name == "Fred Flintstone" and event.city == "Bedrock" and event.owner == "George Slate" and event.profession == "Crane Operator"
+      action:
+        debug:
+          msg: Found a crane operator
