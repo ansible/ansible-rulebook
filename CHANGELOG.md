@@ -4,6 +4,13 @@
 ## [Unreleased]
 ### Changed
 ### Added
+- Add support for eda.builtin.event_splitter filter
+### Fixed
+
+
+## [1.1.7] - 2025-06-23
+### Changed
+### Added
 - Add support for playbook that has set_stats in it
 ### Fixed
 - Fix a bug in the processing of a playbook that has a set_fact in it

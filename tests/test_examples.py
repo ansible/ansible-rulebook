@@ -2609,3 +2609,26 @@ async def test_91_debug_mask_sensitive_variables(caplog):
         assert f"'aap_password': '{MASKED_STRING}'" in caplog.text
         assert f"'postgres_db_password': '{MASKED_STRING}'" in caplog.text
         assert f"'private_key': '{MASKED_STRING}'" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_93_event_splitter():
+    ruleset_queues, event_log = load_rulebook("examples/93_event_splitter.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            {},
+        )
+
+        checks = {
+            "max_events": 2,
+            "shutdown_events": 1,
+            "actions": [
+                "93 event splitter::r1::debug",
+            ],
+        }
+        await validate_events(event_log, **checks)
