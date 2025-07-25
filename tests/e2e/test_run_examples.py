@@ -61,6 +61,26 @@ TEST_DATA = [
         },
         "93 event splitter",
     ),
+    (
+        {
+            "rules_triggered": 1,
+            "events_processed": 2,
+            "events_matched": 1,
+            "number_of_actions": 1,
+            "number_of_session_stats": 2,
+            "number_of_rules": 1,
+            "number_of_disabled_rules": 0,
+        },
+        utils.EXAMPLES_PATH / "94_local_filter.yml",
+        {
+            "r1": {
+                "action": "debug",
+                "event_key": "m/name",
+                "event_value": "FRED",
+            }
+        },
+        "94 local filter",
+    ),
 ]
 
 

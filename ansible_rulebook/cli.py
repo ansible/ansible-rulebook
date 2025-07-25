@@ -94,6 +94,11 @@ def get_parser() -> argparse.ArgumentParser:
         help="Local event source plugins dir for development.",
     )
     parser.add_argument(
+        "-F",
+        "--filter-dir",
+        help="Local event source filters dir for development.",
+    )
+    parser.add_argument(
         "-i",
         "--inventory",
         help="Path to an inventory file, "
