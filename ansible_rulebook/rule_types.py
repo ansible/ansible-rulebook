@@ -58,6 +58,8 @@ class Throttle(NamedTuple):
     group_by_attributes: List[str]
     once_within: Optional[str] = None
     once_after: Optional[str] = None
+    accumulate_within: Optional[str] = None
+    threshold: Optional[int] = None
 
 
 class Rule(NamedTuple):

@@ -709,6 +709,45 @@ Throttle actions to counter event storms: Passive
 | When evaluating a single event you can compare multiple
 | properties/attributes from the event using **and** or **or**
 
+Throttle actions till a specific number of events has been received
+-------------------------------------------------------------------
+
+    .. code-block:: yaml
+
+        name: Throttle with threshold
+        condition: event.code == "warning"
+        throttle:
+           accumulate_within: 5 minutes
+           threshold: 10
+           group_by_attributes:
+              - event.meta.hosts
+              - event.code
+        action:
+          run_playbook:
+            name: notify_outage.yml
+
+| This will collect events in a time window and as soon as threshold
+| is reached it will trigger the action. If we don't get enough events inside
+| of the time window the events are discarded. In the above example we are expecting
+| to get a minimum of 10 events within a 5 minute time window. If the 10 events arrive
+| within 2 minutes we will trigger the rule right away since the threshold has been met.
+| In the above example if we got only 7 events in the 5 minute window all the events will be
+| discarded since the threshold is 10.
+| The **group_by_attributes** in the throttle node allows you to specify an array of
+| attributes in the event payload which create unique event pairs. In the above example
+| we are using event.meta.hosts and event.code. If we get 2 separate events, one that had
+| event.code=warning and another one with event.code=error, they would be treated as distinct
+| events and would result in matching multiple events when the action is triggered.
+| Its mandatory to have group_by_attributes specified when using the accumulate_within option.
+| One of the advantages of the **accumulate_within** is that you can collect all the
+| unique events that match the condition and trigger a single action based on multiple
+| matching events.
+| The timeout units are **milliseconds**, **seconds**, **minutes**, **hours**, **days**.
+| The accumulate_within will only work with a single condition and doesn't support multiple conditions.
+
+| When evaluating a single event you can compare multiple
+| properties/attributes from the event using **and** or **or**
+
 String search
 -------------
 

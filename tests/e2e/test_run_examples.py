@@ -81,6 +81,26 @@ TEST_DATA = [
         },
         "94 local filter",
     ),
+    (
+        {
+            "rules_triggered": 1,
+            "events_processed": 6,
+            "events_matched": 1,
+            "number_of_actions": 1,
+            "number_of_session_stats": 2,
+            "number_of_rules": 1,
+            "number_of_disabled_rules": 0,
+        },
+        utils.EXAMPLES_PATH / "95_accumulate_within.yml",
+        {
+            "r1": {
+                "action": "debug",
+                "event_key": "m/level",
+                "event_value": "error",
+            }
+        },
+        "95 accumulate within",
+    ),
 ]
 
 
