@@ -2639,3 +2639,106 @@ async def test_93_event_splitter():
             ],
         }
         await validate_events(event_log, **checks)
+
+
+BASE_RESPONSE = {
+    "test1": {
+        "sleep": 5,
+        "result": {
+            "status": "successful",
+            "id": 945,
+            "created": "dummy",
+            "artifacts": {"a": 1},
+        },
+    },
+    "test2": {
+        "sleep": 0,
+        "result": {
+            "status": "successful",
+            "id": 946,
+            "created": "dummy",
+            "artifacts": {"a": 1},
+        },
+    },
+    "test3": {
+        "sleep": 0,
+        "result": {
+            "status": "successful",
+            "id": 947,
+            "created": "dummy",
+            "artifacts": {"a": 1},
+        },
+    },
+}
+
+RULEBOOK_DATA = [
+    (
+        BASE_RESPONSE,
+        {
+            "lock1": "red",
+            "lock2": "red",
+            "lock3": "green",
+            "jt1": "test1",
+            "jt2": "test2",
+            "jt3": "test3",
+        },
+        ["test1", "test3", "test2"],
+    ),
+    (
+        BASE_RESPONSE,
+        {
+            "lock1": "red",
+            "lock2": "blue",
+            "lock3": "green",
+            "jt1": "test1",
+            "jt2": "test2",
+            "jt3": "test3",
+        },
+        ["test1", "test2", "test3"],
+    ),
+]
+
+
+@pytest.mark.parametrize("response, my_vars, expected_order", RULEBOOK_DATA)
+@pytest.mark.asyncio
+async def test_96_job_template_with_lock(response, my_vars, expected_order):
+    ruleset_queues, event_log = load_rulebook(
+        "examples/96_job_template_with_lock.yml"
+    )
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+
+    order_of_templates = []
+
+    async def dummy_template_runner(arg1, arg2, arg3):
+        order_of_templates.append(arg1)
+        if arg1 in response:
+            obj = response[arg1]
+            if obj["sleep"] > 0:
+                await asyncio.sleep(obj["sleep"])
+            return obj["result"]
+
+    job_template_runner.host = "https://examples.com"
+
+    with SourceTask(rs.sources[0], "sources", my_vars, queue):
+        with patch(
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.run_job_template",
+            side_effect=dummy_template_runner,
+        ):
+            await run_rulesets(
+                event_log,
+                ruleset_queues,
+                my_vars,
+                "playbooks/inventory.yml",
+            )
+
+            while not event_log.empty():
+                event = event_log.get_nowait()
+                if event["type"] == "Action":
+                    action = event
+
+            assert action["action"] == "run_job_template"
+
+    assert order_of_templates == expected_order
