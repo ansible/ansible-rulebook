@@ -122,6 +122,9 @@ Run an Ansible module
    * - lock
      - An optional string based lock ensures sequential execution of this action when execution strategy is set to parallel. It can also be a string field from the event payload. The locks are per ruleset, if a lock is in place all actions that use the same lock will wait till the earlier action has completed.
      - No
+   * - labels
+     - Optional list of strings as labels, which can be added to the job in the controller. Requires that Prompt on launch for Labels is enabled. If its not enabled the labels are ignored. ansible-rulebook will add a default label called "Activated by Event-Driven Ansible"
+     - No
 
 run_job_template
 ****************
@@ -186,6 +189,9 @@ Run a job template.
      - No
    * - lock
      - An optional string based lock ensures sequential execution of this action when execution strategy is set to parallel. It can also be a string field from the event payload. The locks are per ruleset, if a lock is in place all actions that use the same lock will wait till the earlier action has completed.
+     - No
+   * - labels
+     - Optional list of strings as labels, which can be added to the job in the controller. Requires that Prompt on launch for Labels is enabled. If its not enabled the labels are ignored. ansible-rulebook will add a default label called "Activated by Event-Driven Ansible"
      - No
 
 run_workflow_template

@@ -206,3 +206,7 @@ class AnsibleVaultNotFound(Exception):
 
 class InvalidUrlException(Exception):
     pass
+
+
+class ControllerObjectCreateException(Exception):
+    pass

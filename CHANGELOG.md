@@ -8,6 +8,7 @@
 - Add support for -F to specify filter directory for development
 - Add support for accumulate_within and threshold
 - Optionally support lock for job_template, workflow template, playbook, module actions
+- Add support for labels in run_job_template and run_workflow_template
 ### Fixed
 
 
