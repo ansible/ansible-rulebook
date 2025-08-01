@@ -115,6 +115,7 @@ async def start_source(
     variables: Dict[str, Any],
     queue: asyncio.Queue,
     shutdown_delay: float = 60.0,
+    filter_dirs: Optional[list[str]] = None,
 ) -> None:
     all_source_queues.append(queue)
     try:
@@ -142,7 +143,21 @@ async def start_source(
 
         for source_filter in source.source_filters:
             logger.info("loading source filter %s", source_filter.filter_name)
-            if os.path.exists(
+            if (
+                filter_dirs
+                and filter_dirs[0]
+                and os.path.exists(
+                    os.path.join(
+                        filter_dirs[0], source_filter.filter_name + ".py"
+                    )
+                )
+            ):
+                source_filter_module = runpy.run_path(
+                    os.path.join(
+                        filter_dirs[0], source_filter.filter_name + ".py"
+                    )
+                )
+            elif os.path.exists(
                 os.path.join("event_filter", source_filter.filter_name + ".py")
             ):
                 source_filter_module = runpy.run_path(

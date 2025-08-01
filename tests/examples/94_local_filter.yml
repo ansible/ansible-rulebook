@@ -1,0 +1,19 @@
+---
+- name: 94 local filter
+  hosts: localhost
+  sources:
+    - ansible.eda.generic:
+        payload:
+          - name: Fred
+            age: 50
+            employed: True
+          - name: Barney
+            age: 50
+            employed: True
+      filters:
+        - upcase:
+  rules:
+    - name: r1
+      condition: event.name == "FRED" and event.age == 50 
+      action:
+        debug:

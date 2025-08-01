@@ -17,6 +17,7 @@ The `ansible-rulebook` CLI supports the following options:
                         [--shutdown-delay SHUTDOWN_DELAY] [--gc-after GC_AFTER] [--heartbeat HEARTBEAT]
                         [--execution-strategy {sequential,parallel}] [--hot-reload] [--skip-audit-events]
                         [--vault-password-file VAULT_PASSWORD_FILE] [--vault-id VAULT_ID] [--ask-vault-pass]
+                        [-F FILTER_DIR]
 
     optional arguments:
     -h, --help            show this help message and exit
@@ -29,6 +30,8 @@ The `ansible-rulebook` CLI supports the following options:
     --version             Show the version and exit
     -S SOURCE_DIR, --source-dir SOURCE_DIR
                             Local event source plugins dir for development.
+    -F FILTER_DIR, --filter-dir FILTER_DIR
+                            Local event filters dir for development.
     -i INVENTORY, --inventory INVENTORY
                             Path to an inventory file, can also be passed via the env var ANSIBLE_INVENTORY
     -W WEBSOCKET_URL, --websocket-url WEBSOCKET_URL, --websocket-address WEBSOCKET_URL
@@ -99,6 +102,14 @@ If you are using custom event source plugins use the following:
 
 .. note::
     Here `sources` is a directory containing your event source plugins.
+
+.. code-block:: console
+
+    ansible-rulebook --inventory inventory.yml --rulebook rules.yml -S sources/ -F my_filters/
+
+.. note::
+    Here `sources` is a directory containing your event source plugins.
+    `my_filters` is a directory containing your event filters.
 
 To run `ansible-rulebook` with worker mode enabled the `--worker` option can be used. The `--id`, and `--websocket-url` options can also be used to expose the event stream data::
 

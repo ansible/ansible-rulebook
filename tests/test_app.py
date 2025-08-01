@@ -112,7 +112,7 @@ def test_load_rulebook_missing():
 async def test_spawn_sources(create_ruleset):
     with mock.patch("ansible_rulebook.app.start_source") as mock_start_source:
         tasks, ruleset_queues = spawn_sources(
-            [create_ruleset()], dict(), ["."], 0.0
+            [create_ruleset()], dict(), ["."], 0.0, list()
         )
         for task in tasks:
             task.cancel()
