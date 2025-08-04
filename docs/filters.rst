@@ -41,6 +41,10 @@ Examples:
 | Keys in the event payload can only contain letters, numbers and underscores.
 | The period (.) is used to access nested keys.
 
+| When developing new filters you can specify the -F to specify the directory where
+| your filters are located. This wont work when you have a decision environment you would
+| have to distribute the filters via a collection.
+
 =====================
 Builtin Event Filters
 =====================

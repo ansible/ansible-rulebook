@@ -13,6 +13,7 @@ import websockets.asyncio.server as ws_server
 
 BASE_DATA_PATH = Path(f"{__file__}").parent / Path("files")
 DEFAULT_SOURCES = Path(f"{__file__}").parent / Path("../sources")
+DEFAULT_FILTERS = Path(f"{__file__}").parent / Path("../filters")
 EXAMPLES_PATH = Path(f"{__file__}").parent / Path("../examples")
 DEFAULT_INVENTORY = BASE_DATA_PATH / "inventories/default_inventory.yml"
 
@@ -29,6 +30,7 @@ class Command:
     cwd: Path = BASE_DATA_PATH
     inventory: Optional[Path] = DEFAULT_INVENTORY
     sources: Optional[Path] = DEFAULT_SOURCES
+    filters: Optional[Path] = DEFAULT_FILTERS
     vars_file: Optional[Path] = None
     envvars: Optional[str] = None
     proc_id: Union[str, int, None] = None
@@ -68,6 +70,8 @@ class Command:
 
         if self.sources:
             result.extend(["-S", str(self.sources.absolute())])
+        if self.filters:
+            result.extend(["-F", str(self.filters.absolute())])
         if self.vars_file:
             result.extend(["--vars", str(self.vars_file.absolute())])
         if self.envvars:
