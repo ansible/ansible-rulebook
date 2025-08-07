@@ -148,6 +148,10 @@ def parse_rules(rules: Dict, variables: Dict) -> List[rt.Rule]:
                 once_within=rule["throttle"].get("once_within", None),
                 once_after=rule["throttle"].get("once_after", None),
                 group_by_attributes=rule["throttle"]["group_by_attributes"],
+                accumulate_within=rule["throttle"].get(
+                    "accumulate_within", None
+                ),
+                threshold=rule["throttle"].get("threshold", None),
             )
         else:
             throttle = None
