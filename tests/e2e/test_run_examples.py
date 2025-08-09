@@ -175,6 +175,7 @@ async def test_run_example_rulebook(
 
         if data["type"] == "SessionStats":
             session_stats_counter += 1
+            print(data)
             stats = data["stats"]
             assert stats["ruleSetName"] == rule_set_name
             assert stats["numberOfRules"] == counts["number_of_rules"]
