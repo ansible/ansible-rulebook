@@ -42,6 +42,27 @@ EDA_PLAYBOOKS_PATHS = [".", "playbooks"]
 
 EDA_YAML_EXTENSIONS = [".yml", ".yaml"]
 
+EDA_PLAYBOOK_SUFFIX = [".py"]
+
+EDA_PATHS_AND_EXTENSIONS = {
+    "rulebook": {
+        "paths": [f"{EDA_PATH_PREFIX}/rulebooks", "rulebooks"],
+        "extensions": [".yml"],
+    },
+    "source": {
+        "paths": EDA_SOURCE_PATHS,
+        "extensions": EDA_PLAYBOOK_SUFFIX,
+    },
+    "source_filter": {
+        "paths": EDA_FILTER_PATHS,
+        "extensions": EDA_PLAYBOOK_SUFFIX,
+    },
+    "playbook": {
+        "paths": EDA_PLAYBOOKS_PATHS,
+        "extensions": EDA_YAML_EXTENSIONS,
+    },
+}
+
 logger = logging.getLogger(__name__)
 
 
@@ -114,22 +135,22 @@ def find_object(collection, name, object_types, extensions):
     )
 
 
+def has_resource(collection, name, resource_type):
+    cfg = EDA_PATHS_AND_EXTENSIONS[resource_type]
+    return has_object(collection, name, cfg["paths"], cfg["extensions"])
+
+
+def find_resource(collection, name, resource_type):
+    cfg = EDA_PATHS_AND_EXTENSIONS[resource_type]
+    return find_object(collection, name, cfg["paths"], cfg["extensions"])
+
+
 def has_rulebook(collection, rulebook):
-    return has_object(
-        collection,
-        rulebook,
-        [f"{EDA_PATH_PREFIX}/rulebooks", "rulebooks"],
-        ".yml",
-    )
+    return has_resource(collection, rulebook, "rulebook")
 
 
 def load_rulebook(collection, rulebook):
-    location = find_object(
-        collection,
-        rulebook,
-        [f"{EDA_PATH_PREFIX}/rulebooks", "rulebooks"],
-        ".yml",
-    )
+    location = find_resource(collection, rulebook, "rulebook")
     if not location:
         raise RulebookNotFoundException(f"Cannot find collection {collection}")
 
@@ -143,48 +164,24 @@ def load_rulebook(collection, rulebook):
 
 
 def has_source(collection, source):
-    return has_object(
-        collection,
-        source,
-        EDA_SOURCE_PATHS,
-        ".py",
-    )
+    return has_resource(collection, source, "source")
 
 
 def find_source(collection, source):
-    return find_object(
-        collection,
-        source,
-        EDA_SOURCE_PATHS,
-        ".py",
-    )
+    return find_resource(collection, source, "source")
 
 
 def has_source_filter(collection, source_filter):
-    return has_object(
-        collection,
-        source_filter,
-        EDA_FILTER_PATHS,
-        ".py",
-    )
+    return has_resource(collection, source_filter, "source_filter")
 
 
 def find_source_filter(collection, source_filter):
-    return find_object(
-        collection,
-        source_filter,
-        EDA_FILTER_PATHS,
-        ".py",
-    )
+    return find_resource(collection, source_filter, "source_filter")
 
 
 def has_playbook(collection, playbook):
-    return has_object(
-        collection, playbook, EDA_PLAYBOOKS_PATHS, EDA_YAML_EXTENSIONS
-    )
+    return has_resource(collection, playbook, "playbook")
 
 
 def find_playbook(collection, playbook):
-    return find_object(
-        collection, playbook, EDA_PLAYBOOKS_PATHS, EDA_YAML_EXTENSIONS
-    )
+    return find_resource(collection, playbook, "playbook")
