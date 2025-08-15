@@ -7,6 +7,7 @@
 - Add support for eda.builtin.event_splitter filter
 - Add support for -F to specify filter directory for development
 - Add support for accumulate_within and threshold
+- Optionally support lock for job_template, workflow template, playbook, module actions
 ### Fixed
 
 

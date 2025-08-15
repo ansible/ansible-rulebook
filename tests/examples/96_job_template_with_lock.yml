@@ -1,0 +1,61 @@
+---
+- name: 96 job template with lock
+  hosts: all
+  execution_strategy: parallel
+  sources:
+    - ansible.eda.generic:
+        shutdown_delay: 20
+        create_index: index
+        payload:
+          - lock_name: "{{ lock1 }}"
+            trigger: true
+            job_template_name: "{{ jt1 }}"
+            test_id: one
+          - lock_name: "{{ lock2 }}"
+            trigger: true
+            job_template_name: "{{ jt2 }}"
+            test_id: two
+          - lock_name: "{{ lock3 }}"
+            trigger: true
+            job_template_name: "{{ jt3 }}"
+            test_id: three
+  rules:
+    - name: "Run job template 1"
+      condition: event.test_id == "one"
+      action:
+        run_job_template:
+          name: "{{ event.job_template_name }}"
+          organization: Default
+          job_args:
+            extra_vars:
+              hello: Fred
+          retries: 1
+          delay: 10
+          set_facts: True
+          lock: "{{ event.lock_name }}"
+    - name: "Run job template 2"
+      condition: event.test_id == "two"
+      action:
+        run_job_template:
+          name: "{{ event.job_template_name }}"
+          organization: Default
+          job_args:
+            extra_vars:
+              hello: Fred
+          retries: 1
+          delay: 10
+          set_facts: True
+          lock: "{{ event.lock_name }}"
+    - name: "Run job template 3"
+      condition: event.test_id == "three"
+      action:
+        run_job_template:
+          name: "{{ event.job_template_name }}"
+          organization: Default
+          job_args:
+            extra_vars:
+              hello: Fred
+          retries: 1
+          delay: 10
+          set_facts: True
+          lock: "{{ event.lock_name }}"
