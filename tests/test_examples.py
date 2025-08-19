@@ -2711,7 +2711,7 @@ async def test_96_job_template_with_lock(response, my_vars, expected_order):
 
     order_of_templates = []
 
-    async def dummy_template_runner(arg1, arg2, arg3):
+    async def dummy_template_runner(arg1, arg2, arg3, arg4):
         order_of_templates.append(arg1)
         if arg1 in response:
             obj = response[arg1]

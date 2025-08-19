@@ -17,6 +17,8 @@ import uuid
 
 from ansible_rulebook.vault import Vault
 
+DEFAULT_EDA_LABEL = "Activated by Event-Driven Ansible"
+
 
 class _Settings:
     def __init__(self):
@@ -33,6 +35,7 @@ class _Settings:
         self.skip_audit_events = False
         self.vault = Vault()
         self.ansible_galaxy_path = shutil.which("ansible-galaxy")
+        self.eda_labels = [DEFAULT_EDA_LABEL]
 
 
 settings = _Settings()

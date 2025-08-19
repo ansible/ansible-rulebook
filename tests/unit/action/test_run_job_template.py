@@ -98,6 +98,7 @@ async def test_run_job_template_exception(err_msg, err):
         "retries": 0,
         "retry": True,
         "delay": 0,
+        "labels": ["Slate Rock Company"],
     }
     with patch(
         "ansible_rulebook.action.run_job_template."

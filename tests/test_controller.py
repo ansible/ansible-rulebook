@@ -25,6 +25,12 @@ from ansible_rulebook.exception import (
 )
 
 from .data.awx_test_data import (
+    CUSTOMER_LABEL,
+    CUSTOMER_LABEL_DATA,
+    CUSTOMER_LABEL_RESPONSE,
+    CUSTOMER_LABEL_SLUG,
+    DEFAULT_LABEL_RESPONSE,
+    DEFAULT_LABEL_SLUG,
     JOB_1_RUNNING,
     JOB_1_SLUG,
     JOB_1_SUCCESSFUL,
@@ -32,11 +38,18 @@ from .data.awx_test_data import (
     JOB_TEMPLATE_2_LAUNCH_SLUG,
     JOB_TEMPLATE_NAME_1,
     JOB_TEMPLATE_POST_RESPONSE,
+    LABEL_POST_SLUG,
     NO_JOB_TEMPLATE_PAGE1_RESPONSE,
+    NO_SUCH_LABEL,
+    NO_SUCH_ORGANIZATION,
     ORGANIZATION_NAME,
+    ORGANIZATION_RESPONSE,
+    ORGANIZATION_SLUG,
     UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE,
+    UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE_NO_LABELS,
     UNIFIED_JOB_TEMPLATE_PAGE1_SLUG,
     UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE,
+    UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE_NO_LABELS,
     UNIFIED_JOB_TEMPLATE_PAGE2_SLUG,
 )
 
@@ -47,10 +60,12 @@ CONFIG_SLUG = "api/v2/config/"
 def new_job_template_runner():
     from ansible_rulebook.job_template_runner import JobTemplateRunner
 
-    return JobTemplateRunner(
+    obj = JobTemplateRunner(
         host="https://example.com",
         token="DUMMY",
     )
+    obj.refresh_delay = 0.0
+    return obj
 
 
 @pytest.fixture
@@ -97,23 +112,146 @@ async def test_job_template_get_config_auth_error(mocked_job_template_runner):
             await mocked_job_template_runner.get_config()
 
 
-@pytest.mark.asyncio
-async def test_run_job_template(new_job_template_runner):
-    with aioresponses() as mocked:
+def add_mock_label_transactions(mocked, host, fail_org, fail_label):
+    if fail_org:
         mocked.get(
-            f"{new_job_template_runner.host}"
-            f"{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
+            f"{host}{ORGANIZATION_SLUG}",
             status=200,
-            body=json.dumps(UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE),
+            body=json.dumps(NO_SUCH_ORGANIZATION),
         )
+        return
+    else:
         mocked.get(
-            f"{new_job_template_runner.host}"
-            f"{UNIFIED_JOB_TEMPLATE_PAGE2_SLUG}",
+            f"{host}{ORGANIZATION_SLUG}",
             status=200,
-            body=json.dumps(UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE),
+            body=json.dumps(ORGANIZATION_RESPONSE),
         )
+
+    mocked.get(
+        f"{host}{DEFAULT_LABEL_SLUG}",
+        status=200,
+        body=json.dumps(DEFAULT_LABEL_RESPONSE),
+    )
+    mocked.get(
+        f"{host}{CUSTOMER_LABEL_SLUG}",
+        status=200,
+        body=json.dumps(NO_SUCH_LABEL),
+    )
+    if fail_label:
+        if "exception" in fail_label:
+            mocked.post(
+                f"{host}{LABEL_POST_SLUG}",
+                exception=fail_label["exception"],
+            )
+        elif "code" in fail_label:
+            mocked.post(
+                f"{host}{LABEL_POST_SLUG}",
+                status=fail_label["code"],
+                body=json.dumps(
+                    {"__all__": fail_label.get("message", "Kaboom")}
+                ),
+            )
+            mocked.get(
+                f"{host}{CUSTOMER_LABEL_SLUG}",
+                status=200,
+                body=json.dumps(CUSTOMER_LABEL_RESPONSE),
+            )
+    else:
         mocked.post(
-            f"{new_job_template_runner.host}" f"{JOB_TEMPLATE_1_LAUNCH_SLUG}",
+            f"{host}{LABEL_POST_SLUG}",
+            status=201,
+            body=json.dumps(CUSTOMER_LABEL_DATA),
+        )
+
+
+def add_job_templates_pages(mocked, host, page1, page2):
+    mocked.get(
+        f"{host}{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
+        status=200,
+        body=json.dumps(page1),
+    )
+    mocked.get(
+        f"{host}{UNIFIED_JOB_TEMPLATE_PAGE2_SLUG}",
+        status=200,
+        body=json.dumps(page2),
+    )
+
+
+@pytest.mark.parametrize(
+    ("labels", "page1", "page2", "fail_org", "fail_label"),
+    [
+        (
+            [],
+            UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE_NO_LABELS,
+            UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE_NO_LABELS,
+            False,
+            {},
+        ),
+        (
+            [CUSTOMER_LABEL],
+            UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE,
+            UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE,
+            False,
+            {},
+        ),
+        (
+            [CUSTOMER_LABEL],
+            UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE_NO_LABELS,
+            UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE_NO_LABELS,
+            False,
+            {},
+        ),
+        (
+            [CUSTOMER_LABEL],
+            UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE,
+            UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE,
+            True,
+            {},
+        ),
+        (
+            [CUSTOMER_LABEL],
+            UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE,
+            UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE,
+            False,
+            {"code": 400, "message": "Label already exists"},
+        ),
+        (
+            [CUSTOMER_LABEL],
+            UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE,
+            UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE,
+            False,
+            {"code": 400},
+        ),
+        (
+            [CUSTOMER_LABEL],
+            UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE,
+            UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE,
+            False,
+            {"code": 403},
+        ),
+        (
+            [CUSTOMER_LABEL],
+            UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE,
+            UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE,
+            False,
+            {"exception": ClientError("Kaboom")},
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_run_job_template(
+    new_job_template_runner, labels, page1, page2, fail_org, fail_label
+):
+    with aioresponses() as mocked:
+        add_job_templates_pages(
+            mocked, new_job_template_runner.host, page1, page2
+        )
+        if labels:
+            add_mock_label_transactions(
+                mocked, new_job_template_runner.host, fail_org, fail_label
+            )
+        mocked.post(
+            f"{new_job_template_runner.host}{JOB_TEMPLATE_1_LAUNCH_SLUG}",
             status=200,
             body=json.dumps(JOB_TEMPLATE_POST_RESPONSE),
         )
@@ -127,30 +265,59 @@ async def test_run_job_template(new_job_template_runner):
             status=200,
             body=json.dumps(JOB_1_SUCCESSFUL),
         )
-        data = await new_job_template_runner.run_job_template(
-            JOB_TEMPLATE_NAME_1, ORGANIZATION_NAME, {"a": 1}
-        )
-        assert data["status"] == "successful"
-        assert data["artifacts"] == {"fred": 45, "barney": 90}
+        if "exception" in fail_label:
+            with pytest.raises(ControllerApiException):
+                await new_job_template_runner.run_job_template(
+                    JOB_TEMPLATE_NAME_1, ORGANIZATION_NAME, {"a": 1}, labels
+                )
+        else:
+            data = await new_job_template_runner.run_job_template(
+                JOB_TEMPLATE_NAME_1, ORGANIZATION_NAME, {"a": 1}, labels
+            )
+            assert data["status"] == "successful"
+            assert data["artifacts"] == {"fred": 45, "barney": 90}
 
 
+@pytest.mark.parametrize(
+    ("labels", "page1", "page2", "fail_org", "fail_label"),
+    [
+        (
+            [],
+            UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE_NO_LABELS,
+            UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE_NO_LABELS,
+            False,
+            False,
+        ),
+        (
+            [CUSTOMER_LABEL],
+            UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE,
+            UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE,
+            False,
+            False,
+        ),
+        (
+            [CUSTOMER_LABEL],
+            UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE_NO_LABELS,
+            UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE_NO_LABELS,
+            False,
+            False,
+        ),
+    ],
+)
 @pytest.mark.asyncio
-async def test_run_workflow_template(new_job_template_runner):
+async def test_run_workflow_template(
+    new_job_template_runner, labels, page1, page2, fail_org, fail_label
+):
     with aioresponses() as mocked:
-        mocked.get(
-            f"{new_job_template_runner.host}"
-            f"{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
-            status=200,
-            body=json.dumps(UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE),
+        add_job_templates_pages(
+            mocked, new_job_template_runner.host, page1, page2
         )
-        mocked.get(
-            f"{new_job_template_runner.host}"
-            f"{UNIFIED_JOB_TEMPLATE_PAGE2_SLUG}",
-            status=200,
-            body=json.dumps(UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE),
-        )
+        if labels:
+            add_mock_label_transactions(
+                mocked, new_job_template_runner.host, fail_org, fail_label
+            )
         mocked.post(
-            f"{new_job_template_runner.host}" f"{JOB_TEMPLATE_2_LAUNCH_SLUG}",
+            f"{new_job_template_runner.host}{JOB_TEMPLATE_2_LAUNCH_SLUG}",
             status=200,
             body=json.dumps(JOB_TEMPLATE_POST_RESPONSE),
         )
@@ -166,7 +333,10 @@ async def test_run_workflow_template(new_job_template_runner):
         )
 
         data = await new_job_template_runner.run_workflow_job_template(
-            JOB_TEMPLATE_NAME_1, ORGANIZATION_NAME, {"a": 1, "limit": "all"}
+            JOB_TEMPLATE_NAME_1,
+            ORGANIZATION_NAME,
+            {"a": 1, "limit": "all"},
+            labels,
         )
         assert data["status"] == "successful"
         assert data["artifacts"] == {"fred": 45, "barney": 90}

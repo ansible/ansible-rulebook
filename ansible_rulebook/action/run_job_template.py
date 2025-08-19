@@ -99,6 +99,7 @@ class RunJobTemplate:
                     self.name,
                     self.organization,
                     self.job_args,
+                    self.action_args.get("labels"),
                 )
                 if controller_job["status"] != "failed":
                     break
