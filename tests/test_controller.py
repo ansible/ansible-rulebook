@@ -188,7 +188,7 @@ def add_job_templates_pages(mocked, host, page1, page2):
             {},
         ),
         (
-            [CUSTOMER_LABEL],
+            [CUSTOMER_LABEL, "", None, "", {"a": 1}, [CUSTOMER_LABEL]],
             UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE,
             UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE,
             False,
