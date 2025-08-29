@@ -191,7 +191,7 @@ Run a job template.
      - An optional string based lock ensures sequential execution of this action when execution strategy is set to parallel. It can also be a string field from the event payload. The locks are per ruleset, if a lock is in place all actions that use the same lock will wait till the earlier action has completed.
      - No
    * - labels
-     - Optional list of strings as labels, which can be added to the job in the controller. Requires that Prompt on launch for Labels is enabled. If its not enabled the labels are ignored. ansible-rulebook will add a default label called "Activated by Event-Driven Ansible"
+     - Optional list of strings as labels, which can be added to the job in the controller. Requires that Prompt on launch for Labels is enabled. If its not enabled the labels are ignored. ansible-rulebook will add a default label called "Activated by Event-Driven Ansible". If the label gets resolved as None or an empty string it will be dropped. If there are duplicate labels the duplicate ones will be removed. e.g {{ event.payload.my_label | default(None) }} if the attribute doesn't exist we will skip the label.
      - No
 
 run_workflow_template
@@ -255,7 +255,9 @@ Run a workflow template.
    * - lock
      - An optional string based lock ensures sequential execution of this action when execution strategy is set to parallel. It can also be a string field from the event payload. The locks are per ruleset, if a lock is in place all actions that use the same lock will wait till the earlier action has completed.
      - No
-
+   * - labels
+     - Optional list of strings as labels, which can be added to the job in the controller. Requires that Prompt on launch for Labels is enabled. If its not enabled the labels are ignored. ansible-rulebook will add a default label called "Activated by Event-Driven Ansible". If the label gets resolved as None or an empty string it will be dropped. If there are duplicate labels the duplicate ones will be removed. e.g {{ event.payload.my_label | default(None) }} if the attribute doesn't exist we will skip the label.
+     - No
 post_event
 **********
 .. list-table::  Post an event to a running rule set in the rules engine
