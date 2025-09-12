@@ -4,6 +4,11 @@
 ## [Unreleased]
 ### Changed
 ### Added
+### Fixed
+
+## [1.2.0]
+### Changed
+### Added
 - Add support for eda.builtin.event_splitter filter
 - Add support for -F to specify filter directory for development
 - Add support for accumulate_within and threshold
