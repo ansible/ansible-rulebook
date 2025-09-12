@@ -353,8 +353,13 @@ class JobTemplateRunner:
 
         all_labels = settings.eda_labels
         if labels:
-            all_labels = settings.eda_labels + labels
-        for label in all_labels:
+            # Drop any empty strings or non str objects
+            all_labels = settings.eda_labels + list(
+                filter(lambda s: isinstance(s, str) and s != "", labels)
+            )
+
+        # Drop duplicates if any from the label list
+        for label in set(all_labels):
             label_obj = await self._get_or_create_label(
                 label, organization_obj
             )
@@ -375,7 +380,6 @@ class JobTemplateRunner:
         ask_labels_on_launch: bool,
         labels: Optional[list[str]],
     ) -> list[int]:
-
         if ask_labels_on_launch:
             return await self._get_label_ids_from_names(organization, labels)
 
