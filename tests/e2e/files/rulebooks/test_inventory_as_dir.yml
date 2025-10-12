@@ -1,7 +1,7 @@
 - name: Test inventory as dir
   hosts: all
   sources:
-    - ansible.eda.generic:
+    - eda.builtin.generic:
         shutdown_after: 2
         payload:
           motto: winter is coming

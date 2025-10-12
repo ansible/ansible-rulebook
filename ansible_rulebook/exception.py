@@ -164,6 +164,10 @@ class InvalidFilterNameException(Exception):
     pass
 
 
+class InvalidSourceNameException(Exception):
+    pass
+
+
 class JobTemplateNotFoundException(Exception):
     pass
 

@@ -48,8 +48,18 @@ Examples:
 =====================
 Builtin Event Filters
 =====================
+
+ansible-rulebook provides the following builtin event filters:
+
 * eda.builtin.insert_meta_info
 * eda.builtin.event_splitter
+* eda.builtin.dashes_to_underscores
+* eda.builtin.json_filter
+* eda.builtin.normalize_keys
+* eda.builtin.insert_hosts_to_meta
+
+eda.builtin.insert_meta_info
+-----------------------------
 
 | Since every event should record the origin of the event we have a filter
 | eda.builtin.insert_meta_info which will be added automatically by
@@ -71,10 +81,13 @@ Builtin Event Filters
 | correctly report about the events in the aap-server.
 
 
+eda.builtin.event_splitter
+---------------------------
+
 | If the incoming event payload has multiple events wrapped inside we can
 | split the events into individual events using the eda.builtin.event_splitter
 | filter. This is prevalent with Big Panda and Prometheus alerts.
-| The filter takes in 4 parameters
+| The filter takes in 4 parameters:
 
 
 .. list-table::
@@ -132,6 +145,220 @@ Examples:
                severity: incident.severity
                status: incident.status
                environments: incident.environments
+
+
+eda.builtin.dashes_to_underscores
+----------------------------------
+
+Changes dashes in event keys to underscores. For instance, the key ``server-name`` becomes ``server_name``.
+This filter processes all dictionary keys recursively, including those nested in lists. It takes one parameter:
+
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - overwrite
+     - Overwrite values if there is a key collision when converting dashes to underscores. Default: true
+     - No
+
+Examples:
+
+.. code-block:: yaml
+
+  sources:
+    - name: my_webhook
+      ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5000
+      filters:
+        - eda.builtin.dashes_to_underscores:
+            overwrite: false
+
+.. code-block:: yaml
+
+  # Input event
+  {
+    "server-name": "web01",
+    "app-version": "1.0"
+  }
+
+  # Output event
+  {
+    "server_name": "web01",
+    "app_version": "1.0"
+  }
+
+
+eda.builtin.json_filter
+------------------------
+
+Filters keys from events based on include/exclude patterns. The ``include_keys`` parameter protects keys
+from being excluded (it doesn't act as a whitelist). Include patterns override exclude patterns.
+
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - exclude_keys
+     - List of key patterns to remove (supports wildcards like ``*`` and ``?``)
+     - No
+   * - include_keys
+     - List of key patterns to keep even if they match exclude patterns
+     - No
+
+Examples:
+
+.. code-block:: yaml
+
+  sources:
+    - name: my_source
+      ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5000
+      filters:
+        - eda.builtin.json_filter:
+            exclude_keys:
+              - 'metadata'
+              - 'internal_*'
+            include_keys:
+              - 'internal_id'
+
+.. code-block:: yaml
+
+  # Input event
+  {
+    "data": "important",
+    "metadata": "remove",
+    "internal_debug": "remove",
+    "internal_id": "keep"
+  }
+
+  # Output event (internal_id kept despite matching internal_*)
+  {
+    "data": "important",
+    "internal_id": "keep"
+  }
+
+
+eda.builtin.normalize_keys
+---------------------------
+
+Normalizes keys by replacing non-alphanumeric characters with underscores. Consecutive special characters
+are coalesced into a single underscore. For example, ``server.name`` becomes ``server_name`` and
+``server--name`` becomes ``server_name``.
+
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - overwrite
+     - Overwrite values if there is a key collision after normalization. Default: true
+     - No
+
+Examples:
+
+.. code-block:: yaml
+
+  sources:
+    - name: my_source
+      ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5000
+      filters:
+        - eda.builtin.normalize_keys:
+
+.. code-block:: yaml
+
+  # Input event
+  {
+    "server.name": "web01",
+    "app@version": "1.0",
+    "data--key": "value"
+  }
+
+  # Output event
+  {
+    "server_name": "web01",
+    "app_version": "1.0",
+    "data_key": "value"
+  }
+
+
+eda.builtin.insert_hosts_to_meta
+---------------------------------
+
+Extracts hosts from event data and inserts them into the meta dictionary. In ansible-rulebook,
+this limits actions to run only on the specified hosts in the meta dict.
+
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - host_path
+     - The JSON path inside the event data to find hosts (uses dot notation)
+     - Yes
+   * - path_separator
+     - The separator to interpret host_path. Default: "."
+     - No
+   * - host_separator
+     - Separator to split host string if it contains multiple hosts
+     - No
+   * - raise_error
+     - Raise error if host_path doesn't exist. Recommended for development. Default: false
+     - No
+   * - log_error
+     - Log error if host_path doesn't exist. Default: true
+     - No
+
+Examples:
+
+.. code-block:: yaml
+
+  sources:
+    - name: my_alertmanager
+      ansible.eda.alertmanager:
+        host: 0.0.0.0
+        port: 5050
+      filters:
+        - eda.builtin.insert_hosts_to_meta:
+            host_path: "alert.target"
+            path_separator: "."
+            raise_error: true
+
+.. code-block:: yaml
+
+  # Input event
+  {
+    "alert": {
+      "target": "server1.example.com",
+      "severity": "critical"
+    }
+  }
+
+  # Output event
+  {
+    "alert": {
+      "target": "server1.example.com",
+      "severity": "critical"
+    },
+    "meta": {
+      "hosts": ["server1.example.com"]
+    }
+  }
+
+
 
 
 .. _collection: https://github.com/ansible/event-driven-ansible/tree/main/extensions/eda/plugins/event_filter
