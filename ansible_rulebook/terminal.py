@@ -117,17 +117,21 @@ class Display(Singleton):
         if banner:
             banner = f"[{banner}]"
         formatted_banner = self._format_banner(banner)
-        if banner:
+        should_emit = level >= self.level
+        if banner and should_emit:
             formatted_banner = f"\n{formatted_banner}"
-        self.output(
-            formatted_banner,
-            level=level,
-            file=kwargs.get("file", None),
-            flush=kwargs.get("flush", False),
-        )
+        if should_emit:
+            self.output(
+                formatted_banner,
+                level=level,
+                file=kwargs.get("file", None),
+                flush=kwargs.get("flush", False),
+            )
         if content is not None:
-            self.output(content, pretty=pretty, level=level, **kwargs)
-            self.banner(level=level, **kwargs)
+            if should_emit:
+                self.output(content, pretty=pretty, level=level, **kwargs)
+                self.banner(level=level, **kwargs)
+            return
 
     def output(
         self,
