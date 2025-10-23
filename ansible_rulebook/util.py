@@ -25,7 +25,7 @@ import sys
 import tempfile
 import typing
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from urllib.parse import urlparse
 
 import ansible_runner
@@ -38,6 +38,7 @@ from ansible_rulebook import terminal
 from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import (
     InvalidFilterNameException,
+    InvalidSourceNameException,
     InventoryNotFound,
     VaultDecryptException,
 )
@@ -46,6 +47,7 @@ logger = logging.getLogger(__name__)
 
 
 EDA_BUILTIN_FILTER_PREFIX = "eda.builtin."
+EDA_BUILTIN_SOURCE_PREFIX = "eda.builtin."
 
 
 def decrypted_context(
@@ -312,6 +314,17 @@ def find_builtin_filter(name: str) -> Optional[str]:
     return None
 
 
+def has_builtin_source(name: str) -> bool:
+    return _builtin_source_path(name)[0]
+
+
+def find_builtin_source(name: str) -> Optional[str]:
+    found, path = _builtin_source_path(name)
+    if found:
+        return path
+    return None
+
+
 def run_at() -> str:
     return f"{datetime.now(timezone.utc).isoformat()}".replace("+00:00", "Z")
 
@@ -348,15 +361,35 @@ def create_inventory(runner_inventory_dir: str, inventory: str) -> str:
 
 
 def _builtin_filter_path(name: str) -> Tuple[bool, str]:
-    if not name.startswith(EDA_BUILTIN_FILTER_PREFIX):
-        return False, ""
-    filter_name = name.split(".")[-1]
+    return _builtin_path(
+        name,
+        EDA_BUILTIN_FILTER_PREFIX,
+        InvalidFilterNameException,
+        "event_filter",
+    )
 
-    if not filter_name:
-        raise InvalidFilterNameException(name)
+
+def _builtin_source_path(name: str) -> Tuple[bool, str]:
+    return _builtin_path(
+        name,
+        EDA_BUILTIN_SOURCE_PREFIX,
+        InvalidSourceNameException,
+        "event_source",
+    )
+
+
+def _builtin_path(
+    name: str, prefix: str, exception_class: Type[Exception], builtin_dir: str
+) -> Tuple[bool, str]:
+    if not name.startswith(prefix):
+        return False, ""
+    builtin_name = name.split(".")[-1]
+
+    if not builtin_name:
+        raise exception_class(builtin_name)
 
     dirname = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.join(dirname, "event_filter", filter_name + ".py")
+    path = os.path.join(dirname, builtin_dir, builtin_name + ".py")
     return os.path.exists(path), path
 
 
