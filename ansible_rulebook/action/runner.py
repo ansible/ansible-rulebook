@@ -104,6 +104,7 @@ class Runner:
                     await self.helper.send_status(val)
             except CancelledError:
                 logger.debug("Ansible runner Queue task cancelled")
+                raise
 
         def cancel_callback():
             return shutdown
