@@ -5,6 +5,14 @@ ansible-rulebook
 .. maintainenance status
 .. image:: https://img.shields.io/badge/Maintained%3F-yes-green.svg
 
+.. SonarCloud
+.. image:: https://sonarcloud.io/api/project_badges/measure?project=ansible_ansible-rulebook&metric=alert_status
+        :target: https://sonarcloud.io/summary/new_code?id=ansible_ansible-rulebook
+
+.. Coverage
+.. image:: https://sonarcloud.io/api/project_badges/measure?project=ansible_ansible-rulebook&metric=coverage
+        :target: https://sonarcloud.io/summary/overall?id=ansible_ansible-rulebook
+
 .. codecov
 .. image:: https://codecov.io/gh/ansible/ansible-rulebook/branch/main/graph/badge.svg?token=U1mIB6PI9I
         :target: https://codecov.io/gh/ansible/ansible-rulebook
