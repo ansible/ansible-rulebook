@@ -79,6 +79,21 @@ jobs:
           PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_URL: ${{ vars.PDE_ORG_RESULTS_AGGREGATOR_UPLOAD_URL }}
         uses: ./.github/actions/all-tests
 
+        # Add PR number to coverage file for SonarCloud analysis
+      - name: Inject PR number into coverage file
+        if: github.event_name == 'pull_request'
+        run: |
+          sed -i '2i <!-- PR ${{ github.event.number }} -->' coverage.xml
+          echo "PR Number: ${{ github.event.number }} injected into coverage file"
+
+        # Upload coverage artifact to Github for SonarCloud (only from Python 3.11)
+      - name: Upload coverage as artifact
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: ./coverage.xml
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
