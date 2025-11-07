@@ -11,7 +11,7 @@
 #
 # What files are scanned:
 # - Only changed Python files (.py) in the PR
-# - Excludes: tests, migrations, dev environments, external collections (per sonar-project.properties)
+# - Excludes: tests, dev environments, external collections (per sonar-project.properties)
 # - Quality gate focuses on code quality and coverage
 
 # With much help from:
