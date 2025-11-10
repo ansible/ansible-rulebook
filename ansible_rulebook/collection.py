@@ -188,3 +188,36 @@ def find_playbook(collection, playbook):
     return find_object(
         collection, playbook, EDA_PLAYBOOKS_PATHS, EDA_YAML_EXTENSIONS
     )
+
+
+# This is a test function intentionally not covered by tests.
+def uncovered_test_function_1():
+    """Add this function intentionally not covered by tests."""
+    result = 0
+    for i in range(10):
+        result += i
+        if result > 5:
+            logger.info("Result is greater than 5")
+    return result
+
+
+# This is a test function intentionally not covered by tests.
+def uncovered_test_function_2():
+    """Add this function intentionally not covered by tests."""
+    result = 0
+    for i in range(10):
+        result += i
+        if result > 5:
+            logger.info("Result is greater than 5")
+    return result
+
+
+# This is a test function intentionally not covered by tests.
+def uncovered_test_function_3():
+    """Add this function intentionally not covered by tests."""
+    result = 0
+    for i in range(10):
+        result += i
+        if result > 5:
+            logger.info("Result is greater than 5")
+    return result
