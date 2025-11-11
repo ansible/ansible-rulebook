@@ -1,11 +1,11 @@
 blank_issues_enabled: true
 contact_links:
   - name: For debugging help or technical support
-    url: https://ansible-rulebook.readthedocs.io/en/latest/contributing.html
+    url: https://docs.ansible.com/projects/rulebook/en/latest/contributing.html
     about: For general debugging or technical support please see the linked section of our docs.
 
   - name: 📝 Ansible Code of Conduct
-    url: https://docs.ansible.com/ansible/latest/community/code_of_conduct.html?utm_medium=github&utm_source=issue_template_chooser
+    url: https://docs.ansible.com/projects/ansible/latest/community/code_of_conduct.html?utm_medium=github&utm_source=issue_template_chooser
     about: EDA-Controlles uses the Ansible Code of Conduct; ❤ Be nice to other members of the community. ☮ Behave.
 
   - name: 💼 For Enterprise
