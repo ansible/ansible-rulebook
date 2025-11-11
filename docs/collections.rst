@@ -6,7 +6,7 @@ Rulebook and Collections
 
 It's entirely possible to build and track simple Rulebooks and Playbooks in source repos. If you find yourself building more complex
 and repeatable rulebooks that depends on other content, capabilities, or modules then you may want to consider packaging them into 
-a `Collection <https://docs.ansible.com/ansible/latest/collections_guide/index.html>`_ 
+a `Collection <https://docs.ansible.com/projects/ansible/latest/collections_guide/index.html>`_ 
 
 Collections are an existing Ansible packaging concept that have been extended to support Ansible Rulebook Content. Rulebook Collections
 also work particularly well with :ref:`Decision Environments <decision-environment>`
@@ -14,7 +14,7 @@ also work particularly well with :ref:`Decision Environments <decision-environme
 The structure of a Collection with Rulebook content
 ---------------------------------------------------
 
-Collections already have an `existing structure <https://docs.ansible.com/ansible/latest/dev_guide/developing_collections_structure.html>`_
+Collections already have an `existing structure <https://docs.ansible.com/projects/ansible/latest/dev_guide/developing_collections_structure.html>`_
 supporting Ansible Roles, Modules, Plugins, and Documentation. Lets look at what we can add to that structure to support ansible-rulebook content::
 
     collection/
@@ -49,4 +49,4 @@ the environment then you can refer to it by its fully qualified name::
 
 .. note::
     For more details on how to build, and publish collections see
-    the `Developing Ansible Collections <https://docs.ansible.com/ansible/latest/dev_guide/developing_collections.html>`_ documentation.
+    the `Developing Ansible Collections <https://docs.ansible.com/projects/ansible/latest/dev_guide/developing_collections.html>`_ documentation.
