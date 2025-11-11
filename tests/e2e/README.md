@@ -2,7 +2,7 @@
 
 ## Install
 
-*Requirements*: A working installation of ansible-rulebook see [official documentation for more details](https://ansible-rulebook.readthedocs.io/en/latest/installation.html).
+*Requirements*: A working installation of ansible-rulebook see [official documentation for more details](https://docs.ansible.com/projects/rulebook/en/latest/installation.html).
 
 ```sh
 git clone git@github.com:ansible/ansible-rulebook.git
