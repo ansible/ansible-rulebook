@@ -1,0 +1,48 @@
+---
+# Test runtime.yml file for is_deprecated tests
+requires_ansible: ">=2.15.0"
+plugin_routing:
+  extensions.eda.plugins.event_filter:
+    ansible.eda.json_filter:
+      redirect: eda.builtin.json_filter
+      deprecation:
+        removal_version: 3.1.1
+        warning_text: >-
+          The ansible.eda.json_filter has moved to a builtin
+          Please update to eda.builtin.json_filter
+    ansible.eda.normalize_keys:
+      redirect: eda.builtin.normalize_keys
+      deprecation:
+        removal_version: 3.1.1
+        warning_text: >-
+          The ansible.eda.normalize_keys filter has moved to a builtin
+          Please update to eda.builtin.normalize_keys
+    ansible.eda.dashes_to_underscores:
+      redirect: eda.builtin.dashes_to_underscores
+      deprecation:
+        removal_version: 3.1.1
+        warning_text: >-
+          The ansible.eda.dashes_to_underscores filter has moved to a builtin
+          Please update to eda.builtin.dashes_to_underscores
+  extensions.eda.plugins.event_source:
+    ansible.eda.pg_listener:
+      redirect: eda.builtin.pg_listener
+      deprecation:
+        removal_version: 3.1.1
+        warning_text: >-
+          The ansible.eda.pg_listener has moved to a builtin
+          Please update to eda.builtin.pg_listener
+    ansible.eda.generic:
+      redirect: eda.builtin.generic
+      deprecation:
+        removal_version: 3.1.1
+        warning_text: >-
+          The ansible.eda.generic has moved to a builtin
+          Please update to eda.builtin.generic
+    ansible.eda.range:
+      redirect: eda.builtin.range
+      deprecation:
+        removal_version: 3.1.1
+        warning_text: >-
+          The ansible.eda.range has moved to a builtin
+          Please update to eda.builtin.range

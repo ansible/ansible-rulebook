@@ -12,10 +12,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import logging
 import uuid
 from typing import Any, Dict, List, Optional
 
 import ansible_rulebook.rule_types as rt
+from ansible_rulebook.collection import (
+    EVENT_SOURCE_OBJ_TYPE,
+    EVENT_SOUURCE_FILTER_OBJ_TYPE,
+    is_deprecated,
+)
 from ansible_rulebook.condition_parser import (
     parse_condition as parse_condition_value,
 )
@@ -28,6 +34,8 @@ from .exception import (
     RulesetNameDuplicateException,
     RulesetNameEmptyException,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 def parse_hosts(hosts):
@@ -103,6 +111,13 @@ def parse_event_sources(sources: Dict) -> List[rt.EventSource]:
             source_args = {k: v for k, v in source[source_name].items()}
         else:
             source_args = {}
+
+        deprecated, alternate_name = is_deprecated(
+            source_name, EVENT_SOURCE_OBJ_TYPE
+        )
+        if deprecated and alternate_name:
+            source_name = alternate_name
+
         source_list.append(
             rt.EventSource(
                 name=name or source_name,
@@ -120,6 +135,11 @@ def parse_source_filter(source_filter: Dict) -> rt.EventSourceFilter:
     source_filter_name = list(source_filter.keys())[0]
     source_filter_args = source_filter[source_filter_name]
 
+    deprecated, alternate_name = is_deprecated(
+        source_filter_name, EVENT_SOUURCE_FILTER_OBJ_TYPE
+    )
+    if deprecated and alternate_name:
+        source_filter_name = alternate_name
     return rt.EventSourceFilter(source_filter_name, source_filter_args)
 
 

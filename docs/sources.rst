@@ -1,12 +1,146 @@
+=============
+Event Sources
+=============
 
-| Event source plugins are responsible for generating events that trigger rule evaluation  
-| in `ansible-rulebook`. They can either receive events or interface with external systems,  
+| Event source plugins are responsible for generating events that trigger rule evaluation
+| in `ansible-rulebook`. They can either receive events or interface with external systems,
 | such as message queues, to produce event data for the rule engine.
 
-| **To help users get started the `ansible.eda` collection provides a set of event source plugins**  
-| that cover common integration scenarios with Ansible Event Driven. You can explore the available source plugins here:  
+| **To help users get started the `ansible.eda` collection provides a set of event source plugins**
+| that cover common integration scenarios with Ansible Event Driven. You can explore the available source plugins here:
 | https://galaxy.ansible.com/ui/repo/published/ansible/eda/content/
 
+========================
+Builtin Event Sources
+========================
+
+ansible-rulebook provides the following builtin event sources for testing and development:
+
+* eda.builtin.range
+* eda.builtin.generic
+* eda.builtin.pg_listener
+
+eda.builtin.range
+-----------------
+
+Generates events with an increasing index ``i``. Useful for testing and generating sequences of events.
+
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - limit
+     - The upper limit of the range (exclusive). Events will have index from 0 to limit-1
+     - Yes
+   * - delay
+     - Number of seconds to wait between events. Default: 0
+     - No
+
+Example:
+
+.. code-block:: yaml
+
+  sources:
+    - name: range_source
+      eda.builtin.range:
+        limit: 5
+        delay: 1
+
+This will generate 5 events: ``{"i": 0}``, ``{"i": 1}``, ``{"i": 2}``, ``{"i": 3}``, ``{"i": 4}``
+
+
+eda.builtin.generic
+-------------------
+
+A generic source plugin for inserting custom test data. Useful for development, testing, and demonstrations.
+
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - payload
+     - Array of events to insert into the queue
+     - Yes (unless payload_file is used)
+   * - payload_file
+     - Path to a YAML file containing an array of events
+     - Yes (unless payload is used)
+   * - loop_count
+     - Number of times to loop through the payload. Default: 1
+     - No
+   * - randomize
+     - Randomize the order of events. Default: false
+     - No
+   * - timestamp
+     - Add a timestamp to each event. Default: false
+     - No
+   * - time_format
+     - Format of timestamp: "local", "iso8601", or "epoch". Default: "local"
+     - No
+   * - create_index
+     - Name of index field to add to each event (starts at 0)
+     - No
+   * - event_delay
+     - Seconds to wait between events. Default: 0
+     - No
+
+Example:
+
+.. code-block:: yaml
+
+  sources:
+    - name: test_data
+      eda.builtin.generic:
+        payload:
+          - name: "Event 1"
+            data: "test"
+          - name: "Event 2"
+            data: "example"
+        loop_count: 2
+        create_index: "seq"
+
+
+eda.builtin.pg_listener
+-----------------------
+
+PostgreSQL LISTEN/NOTIFY event source. Listens for notifications from a PostgreSQL database.
+
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - dsn
+     - PostgreSQL connection string (e.g., "host=localhost dbname=mydb user=myuser password=mypass")
+     - Yes
+   * - channels
+     - List of PostgreSQL channels to listen on
+     - Yes
+   * - delay
+     - Polling delay in seconds. Default: 0
+     - No
+
+Example:
+
+.. code-block:: yaml
+
+  sources:
+    - name: postgres_notifications
+      eda.builtin.pg_listener:
+        dsn: "host=localhost dbname=events user=eda password=secret"
+        channels:
+          - rulebook_events
+          - alerts
+
+.. note::
+   The ``pg_listener`` source requires the ``psycopg`` library to be installed.
 
 
 How to Develop a Custom Plugin
