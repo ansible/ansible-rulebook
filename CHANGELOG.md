@@ -4,6 +4,8 @@
 ## [Unreleased]
 ### Changed
 ### Added
+- eda.builtin filters
+- eda.builtin sources
 ### Fixed
 
 ## [1.2.0]
