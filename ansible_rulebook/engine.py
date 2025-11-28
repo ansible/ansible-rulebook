@@ -334,7 +334,12 @@ async def run_rulesets(
         should_reload = True
 
     logger.debug("Waiting on gather")
-    asyncio.gather(*ruleset_tasks, return_exceptions=True)
+    await asyncio.gather(*ruleset_tasks, return_exceptions=True)
+    # Ensure drools async task completes cleanup
+    try:
+        await async_task
+    except asyncio.CancelledError:
+        pass
     logger.debug("Returning from run_rulesets")
     if send_heartbeat_task:
         send_heartbeat_task.cancel()
