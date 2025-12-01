@@ -34,7 +34,7 @@ jobs:
       github.event.workflow_run.conclusion == 'success' && 
       github.event.workflow_run.event == 'pull_request'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # Download coverage artifact from CI workflow
       - name: Download coverage artifact
@@ -170,7 +170,7 @@ jobs:
       github.event.workflow_run.event == 'push' &&
       github.repository == 'ansible/ansible-rulebook'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # Download coverage artifact from CI workflow
       - name: Download coverage artifact
