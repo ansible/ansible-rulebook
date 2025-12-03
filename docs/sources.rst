@@ -1,12 +1,224 @@
+=============
+Event Sources
+=============
 
-| Event source plugins are responsible for generating events that trigger rule evaluation  
-| in `ansible-rulebook`. They can either receive events or interface with external systems,  
+| Event source plugins are responsible for generating events that trigger rule evaluation
+| in `ansible-rulebook`. They can either receive events or interface with external systems,
 | such as message queues, to produce event data for the rule engine.
 
-| **To help users get started the `ansible.eda` collection provides a set of event source plugins**  
-| that cover common integration scenarios with Ansible Event Driven. You can explore the available source plugins here:  
+| **To help users get started the `ansible.eda` collection provides a set of event source plugins**
+| that cover common integration scenarios with Ansible Event Driven. You can explore the available source plugins here:
 | https://galaxy.ansible.com/ui/repo/published/ansible/eda/content/
 
+========================
+Builtin Event Sources
+========================
+
+ansible-rulebook provides the following builtin event sources for testing and development:
+
+* eda.builtin.range
+* eda.builtin.generic
+* eda.builtin.webhook
+* eda.builtin.pg_listener
+
+eda.builtin.range
+-----------------
+
+Generates events with an increasing index ``i``. Useful for testing and generating sequences of events.
+
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - limit
+     - The upper limit of the range (exclusive). Events will have index from 0 to limit-1
+     - Yes
+   * - delay
+     - Number of seconds to wait between events. Default: 0
+     - No
+
+Example:
+
+.. code-block:: yaml
+
+  sources:
+    - name: range_source
+      eda.builtin.range:
+        limit: 5
+        delay: 1
+
+This will generate 5 events: ``{"i": 0}``, ``{"i": 1}``, ``{"i": 2}``, ``{"i": 3}``, ``{"i": 4}``
+
+
+eda.builtin.generic
+-------------------
+
+A generic source plugin for inserting custom test data. Useful for development, testing, and demonstrations.
+
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - payload
+     - Array of events to insert into the queue
+     - Yes (unless payload_file is used)
+   * - payload_file
+     - Path to a YAML file containing an array of events
+     - Yes (unless payload is used)
+   * - loop_count
+     - Number of times to loop through the payload. Default: 1
+     - No
+   * - randomize
+     - Randomize the order of events. Default: false
+     - No
+   * - timestamp
+     - Add a timestamp to each event. Default: false
+     - No
+   * - time_format
+     - Format of timestamp: "local", "iso8601", or "epoch". Default: "local"
+     - No
+   * - create_index
+     - Name of index field to add to each event (starts at 0)
+     - No
+   * - event_delay
+     - Seconds to wait between events. Default: 0
+     - No
+
+Example:
+
+.. code-block:: yaml
+
+  sources:
+    - name: test_data
+      eda.builtin.generic:
+        payload:
+          - name: "Event 1"
+            data: "test"
+          - name: "Event 2"
+            data: "example"
+        loop_count: 2
+        create_index: "seq"
+
+
+eda.builtin.webhook
+-------------------
+
+Receive events via HTTP webhook. Provides an HTTP server endpoint that
+accepts POST requests with JSON payloads.
+
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - host
+     - Hostname to listen on. Default: "0.0.0.0"
+     - No
+   * - port
+     - TCP port to listen on
+     - Yes
+   * - token
+     - Optional Bearer authentication token
+     - No
+   * - hmac_secret
+     - Optional HMAC secret for payload verification
+     - No
+   * - hmac_algo
+     - HMAC algorithm (sha256, sha512, etc.). Default: "sha256"
+     - No
+   * - hmac_header
+     - HTTP header containing HMAC signature. Default:
+       "x-hub-signature-256"
+     - No
+   * - hmac_format
+     - HMAC signature format: "hex" or "base64". Default: "hex"
+     - No
+   * - certfile
+     - Path to certificate file for TLS support
+     - No
+   * - keyfile
+     - Path to key file (used with certfile)
+     - No
+   * - cafile
+     - Path to CA certificate file for mTLS
+     - No
+
+Example:
+
+.. code-block:: yaml
+
+  sources:
+    - name: webhook_events
+      eda.builtin.webhook:
+        host: 0.0.0.0
+        port: 5000
+        token: "my-secret-token"
+
+Example with HMAC verification:
+
+.. code-block:: yaml
+
+  sources:
+    - name: github_webhook
+      eda.builtin.webhook:
+        host: 0.0.0.0
+        port: 5000
+        hmac_secret: "github-webhook-secret"
+        hmac_algo: "sha256"
+        hmac_header: "x-hub-signature-256"
+        hmac_format: "hex"
+
+.. note::
+   The webhook event source places the received payload under the
+   ``payload`` key in the event data. Use the
+   ``eda.builtin.insert_hosts_to_meta`` filter if you need to extract
+   hosts from the payload.
+
+
+eda.builtin.pg_listener
+-----------------------
+
+PostgreSQL LISTEN/NOTIFY event source. Listens for notifications from a PostgreSQL database.
+
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - dsn
+     - PostgreSQL connection string (e.g., "host=localhost dbname=mydb user=myuser password=mypass")
+     - Yes
+   * - channels
+     - List of PostgreSQL channels to listen on
+     - Yes
+   * - delay
+     - Polling delay in seconds. Default: 0
+     - No
+
+Example:
+
+.. code-block:: yaml
+
+  sources:
+    - name: postgres_notifications
+      eda.builtin.pg_listener:
+        dsn: "host=localhost dbname=events user=eda password=secret"
+        channels:
+          - rulebook_events
+          - alerts
+
+.. note::
+   The ``pg_listener`` source requires the ``psycopg`` library to be installed.
 
 
 How to Develop a Custom Plugin
@@ -131,7 +343,7 @@ Each source must contain a key which is the name of the plugin. Its nested keys
 must match argument names expected by the main function. The name of the plugin
 is the python filename. If the plugin is from a collection then the plugin name
 is a FQCN which is the collection name concatenating with the python filename
-with a period delimit, for example ``ansible.eda.range``.
+with a period delimit, for example ``ansible.eda.alertmanager``.
 
 In the main function you can implement code that connects to an external source
 of events, retrieves events and puts them onto the provided asyncio queue. The
@@ -167,7 +379,7 @@ the ``-S`` argument in the ansible-rulebook CLI. The recommended method for
 distributing and installing the plugin is through a collection. In this case
 the plugin source file should be placed under ``extensions/eda/plugins/event_source`` folder
 and referred to by FQCN. The following rulebook example illustrates how to
-refer to the range plugin provided by ``ansible.eda`` collection:
+refer to the range plugin provided as a builtin:
 
 .. code-block:: yaml
 
@@ -175,7 +387,7 @@ refer to the range plugin provided by ``ansible.eda`` collection:
     hosts: localhost
     sources:
       - name: range
-        ansible.eda.range:
+        eda.builtin.range:
           limit: 5
 
 Any dependent packages needed by the custom plugin should be installed in the
