@@ -97,6 +97,41 @@ def has_object(collection, name, object_types, extensions):
     return False
 
 
+@lru_cache
+def _load_eda_runtime(collection_name: str) -> dict:
+    """Load and cache the eda_runtime.yml file for a collection.
+
+    This function is cached to avoid repeatedly reading and parsing
+    the YAML file for the same collection.
+
+    Args:
+        collection_name: Name of the collection (e.g., 'ansible.eda')
+
+    Returns:
+        Dictionary containing the runtime data, or empty dict if not found
+    """
+    path = find_collection(collection_name)
+    if path is None:
+        return {}
+
+    runtime_yml = os.path.join(path, "extensions", "eda", "eda_runtime.yml")
+
+    if not os.path.exists(runtime_yml):
+        return {}
+
+    try:
+        with open(runtime_yml) as file:
+            data = yaml.safe_load(file)
+            return data if isinstance(data, dict) else {}
+    except (OSError, yaml.YAMLError) as exc:
+        logger.warning(
+            "Failed to read eda_runtime.yml for collection %s: %s",
+            collection_name,
+            exc,
+        )
+        return {}
+
+
 def is_deprecated(name: str, obj_type: str) -> Tuple[bool, Optional[str]]:
     """Check if a plugin is deprecated and get its redirect target.
 
@@ -105,6 +140,9 @@ def is_deprecated(name: str, obj_type: str) -> Tuple[bool, Optional[str]]:
     and event filters.
     If the plugin is deprecated, logs a warning with the deprecation message
     and removal version.
+
+    The runtime YAML file is cached using @lru_cache on _load_eda_runtime()
+    to avoid repeatedly reading and parsing the same file.
 
     Args:
         name: str
@@ -133,38 +171,43 @@ def is_deprecated(name: str, obj_type: str) -> Tuple[bool, Optional[str]]:
         return False, None
 
     collection_name = ".".join(parts[:-1])
-    path = find_collection(collection_name)
-    if path is None:
-        return (False, None)
 
-    # Look for eda_runtime.yml in extensions/eda directory
-    runtime_yml = os.path.join(path, "extensions", "eda", "eda_runtime.yml")
+    # Use cached runtime data loading
+    data = _load_eda_runtime(collection_name)
+    if not data:
+        return False, None
 
-    if os.path.exists(runtime_yml):
-        with open(runtime_yml) as file:
-            data = yaml.safe_load(file)
+    plugin_routing = data.get("plugin_routing")
+    if not isinstance(plugin_routing, dict):
+        return False, None
 
-        if "plugin_routing" in data:
+    deprecated_objs = plugin_routing.get(
+        f"{EDA_EXTENSIONS}.plugins.{obj_type}", {}
+    )
+    if not isinstance(deprecated_objs, dict):
+        return False, None
 
-            deprecated_objs = data["plugin_routing"].get(
-                f"{EDA_EXTENSIONS}.plugins.{obj_type}", {}
-            )
-            deprecated_item = deprecated_objs.get(name, {})
-            if "redirect" in deprecated_item:
+    deprecated_item = deprecated_objs.get(name, {})
+    if not isinstance(deprecated_item, dict):
+        return False, None
 
-                deprecation_details = deprecated_item.get("deprecation", {})
-                warning_text = deprecation_details.get("warning_text", "")
-                removal_version = deprecation_details.get("removal_version")
+    redirect = deprecated_item.get("redirect")
+    if not redirect:
+        return False, None
 
-                msg = warning_text
-                if removal_version:
-                    msg += f" It will be removed in version {removal_version}."
+    # Log deprecation warning
+    deprecation_details = deprecated_item.get("deprecation", {})
+    warning_text = deprecation_details.get("warning_text", "")
+    removal_version = deprecation_details.get("removal_version")
 
-                logger.warning(msg)
+    msg = warning_text
+    if removal_version:
+        msg += f" It will be removed in version {removal_version}."
 
-                return True, deprecated_item["redirect"]
+    if msg:
+        logger.warning(msg)
 
-    return False, None
+    return True, redirect
 
 
 def find_object(collection, name, object_types, extensions):
