@@ -39,6 +39,27 @@ Then you can add the directories above and start populating it with content.
 Not every Collection you write will have its own plugins but if you find yourself building your own :ref:`event sources <event-source-plugins>`
 or :ref:`event filters <event-filter>` then you'll want to put them in the collection as shown above.
 
+Plugin deprecation and redirects
+--------------------------------
+
+Collections can describe event source and event filter plugin deprecations by
+adding entries to ``meta/runtime.yml`` under ``plugin_routing``. When a plugin
+is marked as deprecated, ``ansible-rulebook`` prints the warning once per run
+and, if a redirect is provided, automatically loads the replacement plugin. For
+example::
+
+    plugin_routing:
+      event_source:
+        old_plugin:
+          redirect: my_namespace.my_collection.new_plugin
+          deprecation:
+            removal_version: 2.0.0
+            warning_text: Use my_namespace.my_collection.new_plugin instead.
+
+Only event sources and event filters are supported today. The redirect target
+must use a fully qualified collection name; when it does ansible-rulebook
+loads that plugin transparently while emitting the warning shown above.
+
 Using a rulebook included in a collection
 -----------------------------------------
 

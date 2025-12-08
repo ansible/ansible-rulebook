@@ -1,0 +1,11 @@
+---
+- name: Plugin deprecation redirect rulebook
+  hosts: all
+  sources:
+    - testns.testcol.old_plugin: {}
+  rules:
+    - name: log redirected plugin event
+      condition: event.message is defined
+      action:
+        debug:
+          msg: "{{ event.message }}"

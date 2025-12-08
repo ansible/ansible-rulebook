@@ -1,0 +1,7 @@
+---
+plugin_routing:
+  event_source:
+    old_plugin:
+      redirect: testns.testcol.new_plugin
+      deprecation:
+        warning_text: Use testns.testcol.new_plugin instead.
