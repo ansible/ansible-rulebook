@@ -89,7 +89,7 @@ jobs:
         # Upload coverage artifact to Github for SonarCloud (only from Python 3.11)
       - name: Upload coverage as artifact
         if: matrix.python-version == '3.11'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: coverage
           path: ./coverage.xml
