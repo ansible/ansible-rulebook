@@ -6,7 +6,7 @@ ARG SETUPTOOLS_SCM_PRETEND_VERSION
 ARG DEVEL_COLLECTION_LIBRARY=0
 ARG DEVEL_COLLECTION_REPO=git+https://github.com/ansible/event-driven-ansible.git
 ARG ANSIBLE_CORE_VER=${ANSIBLE_CORE_VER:-2.16.14}
-ARG PYTHON_VER="3.11"
+ARG PYTHON_VER="3.12"
 ARG PYTHON_BIN="python${PYTHON_VER}"
 ARG PIP_BIN="pip${PYTHON_VER}"
 
@@ -23,15 +23,15 @@ RUN for dir in \
     $APP_DIR/.local \
     $APP_DIR/.local/bin \
     $APP_DIR/.local/lib \
-    $APP_DIR/.local/lib/python3.9/site-packages \
+    "$APP_DIR/.local/lib/${PYTHON_BIN}/site-packages" \
     $APP_DIR/.ansible; \
     do mkdir -p $dir ; chown -R "${USER_ID}:0" $dir ; chmod 0775 $dir ; done \
     && useradd --uid "$USER_ID" --gid 0 --home-dir "$APP_DIR" appuser
 
 RUN dnf install -y \
-    ${PYTHON_BIN} \
-    ${PYTHON_BIN}-devel \
-    ${PYTHON_BIN}-pip \
+    "${PYTHON_BIN}" \
+    "${PYTHON_BIN}-devel" \
+    "${PYTHON_BIN}-pip" \
     java-17-openjdk-devel \
     postgresql-devel \
     gcc \
@@ -43,18 +43,19 @@ USER $USER_ID
 WORKDIR $APP_DIR
 COPY --chown=${USER_ID}:0 . $WORKDIR
 
-RUN ${PIP_BIN} install -U pip \
-    && pip install ansible-core==${ANSIBLE_CORE_VER} \
-    ansible-runner \
-    jmespath \
+RUN "${PIP_BIN}" install -U pip \
+    && pip install \
+    aiobotocore \
     aiohttp \
     aiokafka[gssapi] \
-    watchdog \
+    "ansible-core==${ANSIBLE_CORE_VER}" \
+    ansible-runner \
     azure-servicebus \
-    aiobotocore \
+    jmespath \
+    watchdog \
     && ansible-galaxy collection install ansible.eda
 
 RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
     ansible-galaxy collection install ${DEVEL_COLLECTION_REPO} --force; fi"
 
-RUN ${PIP_BIN} install .[production]
+RUN "${PIP_BIN}" install .[production]
