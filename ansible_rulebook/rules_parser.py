@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import logging
 import uuid
 from typing import Any, Dict, List, Optional
 
@@ -33,6 +34,25 @@ from .exception import (
     RulesetNameDuplicateException,
     RulesetNameEmptyException,
 )
+
+LEGACY_FILTER_MAPPING = {
+    "ansible.eda.dashes_to_underscores": (
+        "ansible.builtin.dashes_to_underscores"
+    ),
+    "ansible.eda.json_filter": "eda.builtin.json_filter",
+    "ansible.eda.normalize_keys": "eda.builtin.normalize_keys",
+    "ansible.eda.insert_hosts_to_meta": "eda.builtin.insert_hosts_to_meta",
+    "ansible.eda.noop": "eda.builtin.noop",
+}
+
+LEGACY_SOURCE_MAPPING = {
+    "ansible.eda.pg_listener": "eda.builtin.pg_listener",
+    "ansible.eda.generic": "eda.builtin.generic",
+    "ansible.eda.range": "eda.builtin.range",
+}
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def parse_hosts(hosts):
@@ -109,12 +129,24 @@ def parse_event_sources(sources: Dict) -> List[rt.EventSource]:
         else:
             source_args = {}
 
-        # Check if source is deprecated and redirect to builtin
-        deprecated, alternate_name = is_deprecated(
-            source_name, EVENT_SOURCE_OBJ_TYPE
-        )
-        if deprecated and alternate_name:
-            source_name = alternate_name
+        # Check legacy mapping first, then use is_deprecated for runtime check
+        if source_name in LEGACY_SOURCE_MAPPING:
+            LOGGER.info(
+                (
+                    "Source %s has been deprecated, "
+                    "please update your rulebook to use: %s"
+                ),
+                source_name,
+                LEGACY_SOURCE_MAPPING[source_name],
+            )
+            source_name = LEGACY_SOURCE_MAPPING[source_name]
+        else:
+            # Check if source is deprecated via runtime YAML
+            deprecated, alternate_name = is_deprecated(
+                source_name, EVENT_SOURCE_OBJ_TYPE
+            )
+            if deprecated and alternate_name:
+                source_name = alternate_name
 
         source_list.append(
             rt.EventSource(
@@ -133,12 +165,24 @@ def parse_source_filter(source_filter: Dict) -> rt.EventSourceFilter:
     source_filter_name = list(source_filter.keys())[0]
     source_filter_args = source_filter[source_filter_name]
 
-    # Check if filter is deprecated and redirect to builtin
-    deprecated, alternate_name = is_deprecated(
-        source_filter_name, EVENT_SOURCE_FILTER_OBJ_TYPE
-    )
-    if deprecated and alternate_name:
-        source_filter_name = alternate_name
+    # Check legacy mapping first, then use is_deprecated for runtime check
+    if source_filter_name in LEGACY_FILTER_MAPPING:
+        LOGGER.info(
+            (
+                "Filter  %s has been deprecated, "
+                "please update your rulebook to use: %s"
+            ),
+            source_filter_name,
+            LEGACY_FILTER_MAPPING[source_filter_name],
+        )
+        source_filter_name = LEGACY_FILTER_MAPPING[source_filter_name]
+    else:
+        # Check if filter is deprecated via runtime YAML
+        deprecated, alternate_name = is_deprecated(
+            source_filter_name, EVENT_SOURCE_FILTER_OBJ_TYPE
+        )
+        if deprecated and alternate_name:
+            source_filter_name = alternate_name
     return rt.EventSourceFilter(source_filter_name, source_filter_args)
 
 
