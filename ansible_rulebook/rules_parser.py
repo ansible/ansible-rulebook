@@ -17,8 +17,8 @@ from typing import Any, Dict, List, Optional
 
 import ansible_rulebook.rule_types as rt
 from ansible_rulebook.collection import (
+    EVENT_SOURCE_FILTER_OBJ_TYPE,
     EVENT_SOURCE_OBJ_TYPE,
-    EVENT_SOUURCE_FILTER_OBJ_TYPE,
     is_deprecated,
 )
 from ansible_rulebook.condition_parser import (
@@ -135,7 +135,7 @@ def parse_source_filter(source_filter: Dict) -> rt.EventSourceFilter:
 
     # Check if filter is deprecated and redirect to builtin
     deprecated, alternate_name = is_deprecated(
-        source_filter_name, EVENT_SOUURCE_FILTER_OBJ_TYPE
+        source_filter_name, EVENT_SOURCE_FILTER_OBJ_TYPE
     )
     if deprecated and alternate_name:
         source_filter_name = alternate_name

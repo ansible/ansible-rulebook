@@ -28,7 +28,7 @@ from ansible_rulebook.vault import has_vaulted_str
 EDA_PATH_PREFIX = "extensions/eda"
 EDA_EXTENSIONS = "extensions.eda"
 EVENT_SOURCE_OBJ_TYPE = "event_source"
-EVENT_SOUURCE_FILTER_OBJ_TYPE = "event_filter"
+EVENT_SOURCE_FILTER_OBJ_TYPE = "event_filter"
 
 EDA_FILTER_PATHS = [
     f"{EDA_PATH_PREFIX}/plugins/event_filter",
