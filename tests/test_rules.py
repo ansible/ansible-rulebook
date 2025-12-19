@@ -237,3 +237,153 @@ async def test_rule_name_substitution():
     event = durable_rulesets[0].plan.queue.get_nowait()
     assert event.rule == "fred"
     assert event.actions[0].action == "debug"
+
+
+def test_parse_event_sources_with_legacy_mapping():
+    """Test that legacy source mappings are applied correctly."""
+    from unittest.mock import patch
+
+    from ansible_rulebook.rules_parser import parse_event_sources
+
+    sources = [{"ansible.eda.range": {"limit": 5}}]
+
+    with patch("ansible_rulebook.rules_parser.is_deprecated") as mock_is_dep:
+        # is_deprecated should not be called when legacy mapping is used
+        mock_is_dep.return_value = (False, None)
+
+        result = parse_event_sources(sources)
+
+        # Should use legacy mapping instead of calling is_deprecated
+        assert len(result) == 1
+        assert result[0].source_name == "eda.builtin.range"
+        assert result[0].source_args["limit"] == 5
+
+
+def test_parse_event_sources_with_is_deprecated():
+    """Test that is_deprecated is used when no legacy mapping exists."""
+    from unittest.mock import patch
+
+    from ansible_rulebook.rules_parser import parse_event_sources
+
+    sources = [{"custom.collection.custom_source": {"arg": "value"}}]
+
+    with patch("ansible_rulebook.rules_parser.is_deprecated") as mock_is_dep:
+        mock_is_dep.return_value = (True, "custom.builtin.new_source")
+
+        result = parse_event_sources(sources)
+
+        # Should call is_deprecated and use the redirect
+        assert len(result) == 1
+        assert result[0].source_name == "custom.builtin.new_source"
+        assert result[0].source_args["arg"] == "value"
+        mock_is_dep.assert_called_once_with(
+            "custom.collection.custom_source", "event_source"
+        )
+
+
+def test_parse_event_sources_no_deprecation():
+    """Test event sources that are not deprecated."""
+    from unittest.mock import patch
+
+    from ansible_rulebook.rules_parser import parse_event_sources
+
+    sources = [{"eda.builtin.range": {"limit": 10}}]
+
+    with patch("ansible_rulebook.rules_parser.is_deprecated") as mock_is_dep:
+        mock_is_dep.return_value = (False, None)
+
+        result = parse_event_sources(sources)
+
+        assert len(result) == 1
+        assert result[0].source_name == "eda.builtin.range"
+        mock_is_dep.assert_called_once()
+
+
+def test_parse_source_filter_with_legacy_mapping():
+    """Test that legacy filter mappings are applied correctly."""
+    from unittest.mock import patch
+
+    from ansible_rulebook.rules_parser import parse_source_filter
+
+    source_filter = {"ansible.eda.json_filter": {"exclude_keys": ["key1"]}}
+
+    with patch("ansible_rulebook.rules_parser.is_deprecated") as mock_is_dep:
+        # is_deprecated should not be called when legacy mapping is used
+        mock_is_dep.return_value = (False, None)
+
+        result = parse_source_filter(source_filter)
+
+        # Should use legacy mapping
+        assert result.filter_name == "eda.builtin.json_filter"
+        assert result.filter_args["exclude_keys"] == ["key1"]
+
+
+def test_parse_source_filter_with_is_deprecated():
+    """Test that is_deprecated is used when no legacy mapping exists."""
+    from unittest.mock import patch
+
+    from ansible_rulebook.rules_parser import parse_source_filter
+
+    source_filter = {"custom.collection.custom_filter": {"option": "value"}}
+
+    with patch("ansible_rulebook.rules_parser.is_deprecated") as mock_is_dep:
+        mock_is_dep.return_value = (True, "custom.builtin.new_filter")
+
+        result = parse_source_filter(source_filter)
+
+        # Should call is_deprecated and use the redirect
+        assert result.filter_name == "custom.builtin.new_filter"
+        assert result.filter_args["option"] == "value"
+        mock_is_dep.assert_called_once_with(
+            "custom.collection.custom_filter", "event_filter"
+        )
+
+
+def test_parse_source_filter_no_deprecation():
+    """Test source filters that are not deprecated."""
+    from unittest.mock import patch
+
+    from ansible_rulebook.rules_parser import parse_source_filter
+
+    source_filter = {"eda.builtin.json_filter": {"include_keys": ["key1"]}}
+
+    with patch("ansible_rulebook.rules_parser.is_deprecated") as mock_is_dep:
+        mock_is_dep.return_value = (False, None)
+
+        result = parse_source_filter(source_filter)
+
+        assert result.filter_name == "eda.builtin.json_filter"
+        mock_is_dep.assert_called_once()
+
+
+def test_all_legacy_source_mappings():
+    """Test all entries in LEGACY_SOURCE_MAPPING."""
+    from ansible_rulebook.rules_parser import (
+        LEGACY_SOURCE_MAPPING,
+        parse_event_sources,
+    )
+
+    for old_name, new_name in LEGACY_SOURCE_MAPPING.items():
+        sources = [{old_name: {}}]
+        result = parse_event_sources(sources)
+
+        assert len(result) == 1
+        assert (
+            result[0].source_name == new_name
+        ), f"Failed for {old_name} -> {new_name}"
+
+
+def test_all_legacy_filter_mappings():
+    """Test all entries in LEGACY_FILTER_MAPPING."""
+    from ansible_rulebook.rules_parser import (
+        LEGACY_FILTER_MAPPING,
+        parse_source_filter,
+    )
+
+    for old_name, new_name in LEGACY_FILTER_MAPPING.items():
+        source_filter = {old_name: {}}
+        result = parse_source_filter(source_filter)
+
+        assert (
+            result.filter_name == new_name
+        ), f"Failed for {old_name} -> {new_name}"
