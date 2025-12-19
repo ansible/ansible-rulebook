@@ -16,6 +16,7 @@ import logging
 import os
 import subprocess
 from functools import lru_cache
+from typing import Optional, Tuple
 
 import yaml
 
@@ -25,6 +26,9 @@ from ansible_rulebook.exception import RulebookNotFoundException
 from ansible_rulebook.vault import has_vaulted_str
 
 EDA_PATH_PREFIX = "extensions/eda"
+EDA_EXTENSIONS = "extensions.eda"
+EVENT_SOURCE_OBJ_TYPE = "event_source"
+EVENT_SOURCE_FILTER_OBJ_TYPE = "event_filter"
 
 EDA_FILTER_PATHS = [
     f"{EDA_PATH_PREFIX}/plugins/event_filter",
@@ -91,6 +95,119 @@ def has_object(collection, name, object_types, extensions):
             ):
                 return True
     return False
+
+
+@lru_cache
+def _load_eda_runtime(collection_name: str) -> dict:
+    """Load and cache the eda_runtime.yml file for a collection.
+
+    This function is cached to avoid repeatedly reading and parsing
+    the YAML file for the same collection.
+
+    Args:
+        collection_name: Name of the collection (e.g., 'ansible.eda')
+
+    Returns:
+        Dictionary containing the runtime data, or empty dict if not found
+    """
+    path = find_collection(collection_name)
+    if path is None:
+        return {}
+
+    runtime_yml = os.path.join(path, "extensions", "eda", "eda_runtime.yml")
+
+    if not os.path.exists(runtime_yml):
+        return {}
+
+    try:
+        with open(runtime_yml) as file:
+            data = yaml.safe_load(file)
+            return data if isinstance(data, dict) else {}
+    except (OSError, yaml.YAMLError) as exc:
+        logger.warning(
+            "Failed to read eda_runtime.yml for collection %s: %s",
+            collection_name,
+            exc,
+        )
+        return {}
+
+
+def is_deprecated(name: str, obj_type: str) -> Tuple[bool, Optional[str]]:
+    """Check if a plugin is deprecated and get its redirect target.
+
+    Checks the extensions/eda/eda_runtime.yml file from the ansible.eda
+    collection for deprecation information about event sources
+    and event filters.
+    If the plugin is deprecated, logs a warning with the deprecation message
+    and removal version.
+
+    The runtime YAML file is cached using @lru_cache on _load_eda_runtime()
+    to avoid repeatedly reading and parsing the same file.
+
+    Args:
+        name: str
+            Fully qualified name of the plugin (ex:'ansible.eda.json_filter')
+        obj_type: str
+            Type of plugin object, either 'event_source' or 'event_filter'
+
+    Returns:
+        A tuple of (is_deprecated : bool, redirect_target : str | None) where:
+        - is_deprecated: True if the plugin is deprecated, False otherwise
+        - redirect_target:
+                The fully qualified name to redirect to if deprecated,
+                None otherwise (e.g., 'eda.builtin.json_filter')
+
+    Example:
+        >>> is_deprecated('ansible.eda.json_filter', 'event_filter')
+        (True, 'eda.builtin.json_filter')
+        >>> is_deprecated('ansible.eda.range', 'event_source')
+        (True, 'eda.builtin.range')
+        >>> is_deprecated('some.unknown.plugin', 'event_source')
+        (False, None)
+    """
+
+    parts = name.split(".")
+    if len(parts) < 2:
+        return False, None
+
+    collection_name = ".".join(parts[:-1])
+
+    # Use cached runtime data loading
+    data = _load_eda_runtime(collection_name)
+    if not data:
+        return False, None
+
+    plugin_routing = data.get("plugin_routing")
+    if not isinstance(plugin_routing, dict):
+        return False, None
+
+    deprecated_objs = plugin_routing.get(
+        f"{EDA_EXTENSIONS}.plugins.{obj_type}", {}
+    )
+    if not isinstance(deprecated_objs, dict):
+        return False, None
+
+    deprecated_item = deprecated_objs.get(name, {})
+    if not isinstance(deprecated_item, dict):
+        return False, None
+
+    redirect = deprecated_item.get("redirect")
+    if not redirect:
+        return False, None
+
+    # Log deprecation warning
+    deprecation_details = deprecated_item.get("deprecation", {})
+    warning_text = deprecation_details.get("warning_text", "")
+    removal_version = deprecation_details.get("removal_version")
+
+    msg = warning_text
+    if removal_version:
+        msg += f" It will be removed in version {removal_version}."
+
+    if msg:
+        logger.warning(msg)
+
+    return True, redirect
 
 
 def find_object(collection, name, object_types, extensions):

@@ -17,6 +17,11 @@ import uuid
 from typing import Any, Dict, List, Optional
 
 import ansible_rulebook.rule_types as rt
+from ansible_rulebook.collection import (
+    EVENT_SOURCE_FILTER_OBJ_TYPE,
+    EVENT_SOURCE_OBJ_TYPE,
+    is_deprecated,
+)
 from ansible_rulebook.condition_parser import (
     parse_condition as parse_condition_value,
 )
@@ -124,7 +129,7 @@ def parse_event_sources(sources: Dict) -> List[rt.EventSource]:
         else:
             source_args = {}
 
-        # Swap out sources for our builtins if available
+        # Check legacy mapping first, then use is_deprecated for runtime check
         if source_name in LEGACY_SOURCE_MAPPING:
             LOGGER.info(
                 (
@@ -135,6 +140,13 @@ def parse_event_sources(sources: Dict) -> List[rt.EventSource]:
                 LEGACY_SOURCE_MAPPING[source_name],
             )
             source_name = LEGACY_SOURCE_MAPPING[source_name]
+        else:
+            # Check if source is deprecated via runtime YAML
+            deprecated, alternate_name = is_deprecated(
+                source_name, EVENT_SOURCE_OBJ_TYPE
+            )
+            if deprecated and alternate_name:
+                source_name = alternate_name
 
         source_list.append(
             rt.EventSource(
@@ -153,6 +165,7 @@ def parse_source_filter(source_filter: Dict) -> rt.EventSourceFilter:
     source_filter_name = list(source_filter.keys())[0]
     source_filter_args = source_filter[source_filter_name]
 
+    # Check legacy mapping first, then use is_deprecated for runtime check
     if source_filter_name in LEGACY_FILTER_MAPPING:
         LOGGER.info(
             (
@@ -163,6 +176,13 @@ def parse_source_filter(source_filter: Dict) -> rt.EventSourceFilter:
             LEGACY_FILTER_MAPPING[source_filter_name],
         )
         source_filter_name = LEGACY_FILTER_MAPPING[source_filter_name]
+    else:
+        # Check if filter is deprecated via runtime YAML
+        deprecated, alternate_name = is_deprecated(
+            source_filter_name, EVENT_SOURCE_FILTER_OBJ_TYPE
+        )
+        if deprecated and alternate_name:
+            source_filter_name = alternate_name
     return rt.EventSourceFilter(source_filter_name, source_filter_args)
 
 
