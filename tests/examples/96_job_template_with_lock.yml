@@ -3,7 +3,7 @@
   hosts: all
   execution_strategy: parallel
   sources:
-    - ansible.eda.generic:
+    - eda.builtin.generic:
         shutdown_delay: 20
         create_index: index
         payload:

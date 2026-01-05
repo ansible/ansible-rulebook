@@ -2,7 +2,7 @@
 - name: 94 local filter
   hosts: localhost
   sources:
-    - ansible.eda.generic:
+    - eda.builtin.generic:
         payload:
           - name: Fred
             age: 50

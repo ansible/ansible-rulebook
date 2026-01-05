@@ -71,7 +71,7 @@ A ruleset has the following properties:
       gather_facts: true
       sources:
         - name: range
-          ansible.eda.range:
+          eda.builtin.range:
             limit: 5
       rules:
         - name: r1
@@ -116,9 +116,9 @@ Example
 .. code-block:: yaml
 
     sources:
-      - ansible.eda.range:
+      - eda.builtin.range:
           limit: 6
-      - ansible.eda.webhook:
+      - eda.builtin.webhook:
           port: 5000
 
 The condition can match events from either source

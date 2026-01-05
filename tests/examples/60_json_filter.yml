@@ -2,7 +2,7 @@
 - name: 60 json filter
   hosts: all
   sources:
-    - ansible.eda.generic:
+    - eda.builtin.generic:
         payload:
           key1:
             key2:
@@ -13,7 +13,7 @@
               f_use_1: 42
               f_use_2: 45
       filters:
-        - ansible.eda.json_filter:
+        - eda.builtin.json_filter:
             include_keys:  
               - key3
               - key4

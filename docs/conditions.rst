@@ -253,7 +253,7 @@ Multiple conditions where **all** of them have to match with internal references
       - name: Delayed comparison
         hosts: all
         sources:
-        - ansible.eda.generic:
+        - eda.builtin.generic:
             payload:
               - friend_list:
                   names:
@@ -294,7 +294,7 @@ Multiple conditions where **all** of them have to match with internal references
       - name: multiple conditions caching
         hosts: all
         sources:
-          - ansible.eda.generic:
+          - eda.builtin.generic:
               payload:
                 - request:
                     type: Delete
