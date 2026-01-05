@@ -3,7 +3,7 @@
   hosts: localhost
   sources:
     - name: Test
-      ansible.eda.generic:
+      eda.builtin.generic:
         payload:
           - name: alert1
             level: error
