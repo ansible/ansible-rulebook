@@ -17,6 +17,13 @@ import uuid
 from typing import Any, Dict, List, Optional
 
 import ansible_rulebook.rule_types as rt
+from ansible_rulebook.collection import (
+    EVENT_SOURCE_FILTER_OBJ_TYPE,
+    EVENT_SOURCE_OBJ_TYPE,
+    LEGACY_FILTER_MAPPING,
+    LEGACY_SOURCE_MAPPING,
+    apply_plugin_routing,
+)
 from ansible_rulebook.condition_parser import (
     parse_condition as parse_condition_value,
 )
@@ -28,24 +35,9 @@ from .exception import (
     RulenameEmptyException,
     RulesetNameDuplicateException,
     RulesetNameEmptyException,
+    SourceFilterNotFoundException,
+    SourcePluginNotFoundException,
 )
-
-LEGACY_FILTER_MAPPING = {
-    "ansible.eda.dashes_to_underscores": (
-        "ansible.builtin.dashes_to_underscores"
-    ),
-    "ansible.eda.json_filter": "eda.builtin.json_filter",
-    "ansible.eda.normalize_keys": "eda.builtin.normalize_keys",
-    "ansible.eda.insert_hosts_to_meta": "eda.builtin.insert_hosts_to_meta",
-    "ansible.eda.noop": "eda.builtin.noop",
-}
-
-LEGACY_SOURCE_MAPPING = {
-    "ansible.eda.pg_listener": "eda.builtin.pg_listener",
-    "ansible.eda.generic": "eda.builtin.generic",
-    "ansible.eda.range": "eda.builtin.range",
-}
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -124,17 +116,12 @@ def parse_event_sources(sources: Dict) -> List[rt.EventSource]:
         else:
             source_args = {}
 
-        # Swap out sources for our builtins if available
-        if source_name in LEGACY_SOURCE_MAPPING:
-            LOGGER.info(
-                (
-                    "Source %s has been deprecated, "
-                    "please update your rulebook to use: %s"
-                ),
-                source_name,
-                LEGACY_SOURCE_MAPPING[source_name],
-            )
-            source_name = LEGACY_SOURCE_MAPPING[source_name]
+        source_name = apply_plugin_routing(
+            source_name,
+            EVENT_SOURCE_OBJ_TYPE,
+            LEGACY_SOURCE_MAPPING,
+            SourcePluginNotFoundException,
+        )
 
         source_list.append(
             rt.EventSource(
@@ -153,16 +140,13 @@ def parse_source_filter(source_filter: Dict) -> rt.EventSourceFilter:
     source_filter_name = list(source_filter.keys())[0]
     source_filter_args = source_filter[source_filter_name]
 
-    if source_filter_name in LEGACY_FILTER_MAPPING:
-        LOGGER.info(
-            (
-                "Filter  %s has been deprecated, "
-                "please update your rulebook to use: %s"
-            ),
-            source_filter_name,
-            LEGACY_FILTER_MAPPING[source_filter_name],
-        )
-        source_filter_name = LEGACY_FILTER_MAPPING[source_filter_name]
+    source_filter_name = apply_plugin_routing(
+        source_filter_name,
+        EVENT_SOURCE_FILTER_OBJ_TYPE,
+        LEGACY_FILTER_MAPPING,
+        SourceFilterNotFoundException,
+    )
+
     return rt.EventSourceFilter(source_filter_name, source_filter_args)
 
 

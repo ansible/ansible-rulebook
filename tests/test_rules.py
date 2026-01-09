@@ -15,20 +15,32 @@
 import asyncio
 import os
 from queue import Queue
+from unittest.mock import patch
 
 import pytest
 import yaml
 from drools.ruleset import assert_fact as set_fact, post
 from jinja2.exceptions import UndefinedError
 
+from ansible_rulebook.collection import (
+    LEGACY_FILTER_MAPPING,
+    LEGACY_SOURCE_MAPPING,
+    apply_plugin_routing,
+)
 from ansible_rulebook.exception import (
     RulenameDuplicateException,
     RulenameEmptyException,
     RulesetNameDuplicateException,
     RulesetNameEmptyException,
+    SourceFilterNotFoundException,
+    SourcePluginNotFoundException,
 )
 from ansible_rulebook.rule_generator import generate_rulesets
-from ansible_rulebook.rules_parser import parse_rule_sets
+from ansible_rulebook.rules_parser import (
+    parse_event_sources,
+    parse_rule_sets,
+    parse_source_filter,
+)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -237,3 +249,419 @@ async def test_rule_name_substitution():
     event = durable_rulesets[0].plan.queue.get_nowait()
     assert event.rule == "fred"
     assert event.actions[0].action == "debug"
+
+
+@pytest.mark.parametrize(
+    "plugin_name,plugin_type,args,expected_name",
+    [
+        ("ansible.eda.range", "source", {"limit": 5}, "eda.builtin.range"),
+        (
+            "ansible.eda.json_filter",
+            "filter",
+            {"exclude_keys": ["key1"]},
+            "eda.builtin.json_filter",
+        ),
+    ],
+)
+def test_parse_with_legacy_mapping(
+    plugin_name, plugin_type, args, expected_name
+):
+    """Test that legacy mappings are applied correctly."""
+    if plugin_type == "source":
+        sources = [{plugin_name: args}]
+        result = parse_event_sources(sources)
+        assert len(result) == 1
+        assert result[0].source_name == expected_name
+        assert result[0].source_args == args
+    else:
+        source_filter = {plugin_name: args}
+        result = parse_source_filter(source_filter)
+        assert result.filter_name == expected_name
+        assert result.filter_args == args
+
+
+@pytest.mark.parametrize(
+    "plugin_name,plugin_type,args",
+    [
+        ("eda.builtin.range", "source", {"limit": 10}),
+        ("eda.builtin.json_filter", "filter", {"include_keys": ["key1"]}),
+    ],
+)
+def test_parse_no_deprecation(plugin_name, plugin_type, args):
+    """Test plugins that are not deprecated."""
+    if plugin_type == "source":
+        sources = [{plugin_name: args}]
+        result = parse_event_sources(sources)
+        assert len(result) == 1
+        assert result[0].source_name == plugin_name
+    else:
+        source_filter = {plugin_name: args}
+        result = parse_source_filter(source_filter)
+        assert result.filter_name == plugin_name
+
+
+def test_all_legacy_source_mappings():
+    """Test all entries in LEGACY_SOURCE_MAPPING."""
+    for old_name, new_name in LEGACY_SOURCE_MAPPING.items():
+        sources = [{old_name: {}}]
+        result = parse_event_sources(sources)
+
+        assert len(result) == 1
+        assert (
+            result[0].source_name == new_name
+        ), f"Failed for {old_name} -> {new_name}"
+
+
+def test_all_legacy_filter_mappings():
+    """Test all entries in LEGACY_FILTER_MAPPING."""
+    for old_name, new_name in LEGACY_FILTER_MAPPING.items():
+        source_filter = {old_name: {}}
+        result = parse_source_filter(source_filter)
+
+        assert (
+            result.filter_name == new_name
+        ), f"Failed for {old_name} -> {new_name}"
+
+
+@pytest.mark.parametrize(
+    "plugin_name,plugin_type,exception_type",
+    [
+        (
+            "ansible.eda.removed_source",
+            "source",
+            SourcePluginNotFoundException,
+        ),
+        (
+            "ansible.eda.removed_filter",
+            "filter",
+            SourceFilterNotFoundException,
+        ),
+    ],
+)
+def test_tombstone_raises_exception(plugin_name, plugin_type, exception_type):
+    """Test tombstoned plugins raise appropriate exceptions."""
+    mock_collection_path = os.path.join(HERE, "data/mock_collection")
+
+    with patch(
+        "ansible_rulebook.collection.find_collection",
+        return_value=mock_collection_path,
+    ):
+        if plugin_type == "source":
+            sources = [{plugin_name: {}}]
+            with pytest.raises(exception_type) as exc_info:
+                parse_event_sources(sources)
+        else:
+            source_filter = {plugin_name: {}}
+            with pytest.raises(exception_type) as exc_info:
+                parse_source_filter(source_filter)
+
+        assert "has been removed" in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    "plugin_name,plugin_type,expected_result",
+    [
+        (
+            "ansible.eda.deprecated_custom_source",
+            "source",
+            "eda.builtin.new_custom_source",
+        ),
+        (
+            "ansible.eda.deprecated_custom_filter",
+            "filter",
+            "eda.builtin.new_custom_filter",
+        ),
+    ],
+)
+def test_deprecated_with_redirect(plugin_name, plugin_type, expected_result):
+    """Test deprecated plugins with redirect."""
+    mock_collection_path = os.path.join(HERE, "data/mock_collection")
+
+    with patch(
+        "ansible_rulebook.collection.find_collection",
+        return_value=mock_collection_path,
+    ):
+        if plugin_type == "source":
+            sources = [{plugin_name: {}}]
+            result = parse_event_sources(sources)
+            assert len(result) == 1
+            assert result[0].source_name == expected_result
+        else:
+            source_filter = {plugin_name: {}}
+            result = parse_source_filter(source_filter)
+            assert result.filter_name == expected_result
+
+
+@pytest.mark.parametrize(
+    "plugin_name,plugin_type,expected_result",
+    [
+        (
+            "ansible.eda.silent_redirect_source",
+            "source",
+            "eda.builtin.better_source",
+        ),
+        (
+            "ansible.eda.silent_redirect_filter",
+            "filter",
+            "eda.builtin.better_filter",
+        ),
+    ],
+)
+def test_silent_redirect(plugin_name, plugin_type, expected_result):
+    """Test plugins with redirect only (no deprecation)."""
+    mock_collection_path = os.path.join(HERE, "data/mock_collection")
+
+    with patch(
+        "ansible_rulebook.collection.find_collection",
+        return_value=mock_collection_path,
+    ):
+        if plugin_type == "source":
+            sources = [{plugin_name: {}}]
+            result = parse_event_sources(sources)
+            assert len(result) == 1
+            assert result[0].source_name == expected_result
+        else:
+            source_filter = {plugin_name: {}}
+            result = parse_source_filter(source_filter)
+            assert result.filter_name == expected_result
+
+
+@pytest.mark.parametrize(
+    "plugin_name,plugin_type",
+    [
+        ("ansible.eda.old_custom_source", "source"),
+        ("ansible.eda.old_custom_filter", "filter"),
+    ],
+)
+def test_deprecated_without_redirect(plugin_name, plugin_type):
+    """Test deprecated plugins without redirect keep original name."""
+    mock_collection_path = os.path.join(HERE, "data/mock_collection")
+
+    with patch(
+        "ansible_rulebook.collection.find_collection",
+        return_value=mock_collection_path,
+    ):
+        if plugin_type == "source":
+            sources = [{plugin_name: {}}]
+            result = parse_event_sources(sources)
+            assert len(result) == 1
+            assert result[0].source_name == plugin_name
+        else:
+            source_filter = {plugin_name: {}}
+            result = parse_source_filter(source_filter)
+            assert result.filter_name == plugin_name
+
+
+def test_apply_plugin_routing_with_legacy_mapping():
+    """Test apply_plugin_routing uses legacy mapping first."""
+    # Legacy mapping should be checked before runtime YAML
+    result = apply_plugin_routing(
+        "ansible.eda.range",
+        "event_source",
+        LEGACY_SOURCE_MAPPING,
+        SourcePluginNotFoundException,
+    )
+
+    assert result == "eda.builtin.range"
+
+
+def test_apply_plugin_routing_returns_original_if_no_routing():
+    """Test apply_plugin_routing returns original name when no routing."""
+    with patch(
+        "ansible_rulebook.collection.find_collection",
+        return_value=None,
+    ):
+        # Plugin with no routing info should return original name
+        result = apply_plugin_routing(
+            "unknown.collection.plugin",
+            "event_source",
+            LEGACY_SOURCE_MAPPING,
+            SourcePluginNotFoundException,
+        )
+
+        assert result == "unknown.collection.plugin"
+
+
+def test_apply_plugin_routing_combined_source_and_filter():
+    """Test that apply_plugin_routing works for both sources and filters."""
+    mock_collection_path = os.path.join(HERE, "data/mock_collection")
+
+    with patch(
+        "ansible_rulebook.collection.find_collection",
+        return_value=mock_collection_path,
+    ):
+        # Test with source
+        source_result = apply_plugin_routing(
+            "ansible.eda.deprecated_custom_source",
+            "event_source",
+            LEGACY_SOURCE_MAPPING,
+            SourcePluginNotFoundException,
+        )
+        assert source_result == "eda.builtin.new_custom_source"
+
+        # Test with filter
+        filter_result = apply_plugin_routing(
+            "ansible.eda.deprecated_custom_filter",
+            "event_filter",
+            LEGACY_FILTER_MAPPING,
+            SourceFilterNotFoundException,
+        )
+        assert filter_result == "eda.builtin.new_custom_filter"
+
+
+def test_apply_plugin_routing_tombstone_raises_correct_exception():
+    """Test tombstone raises the correct exception type."""
+    mock_collection_path = os.path.join(HERE, "data/mock_collection")
+
+    with patch(
+        "ansible_rulebook.collection.find_collection",
+        return_value=mock_collection_path,
+    ):
+        # Source tombstone should raise SourcePluginNotFoundException
+        with pytest.raises(SourcePluginNotFoundException) as exc_info:
+            apply_plugin_routing(
+                "ansible.eda.removed_source",
+                "event_source",
+                LEGACY_SOURCE_MAPPING,
+                SourcePluginNotFoundException,
+            )
+        assert "has been removed" in str(exc_info.value)
+
+        # Filter tombstone should raise SourceFilterNotFoundException
+        with pytest.raises(SourceFilterNotFoundException) as exc_info:
+            apply_plugin_routing(
+                "ansible.eda.removed_filter",
+                "event_filter",
+                LEGACY_FILTER_MAPPING,
+                SourceFilterNotFoundException,
+            )
+        assert "has been removed" in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    "plugin_name,obj_type,legacy_mapping",
+    [
+        ("ansible.eda.loop_source_a", "event_source", "LEGACY_SOURCE_MAPPING"),
+        ("ansible.eda.loop_filter_a", "event_filter", "LEGACY_FILTER_MAPPING"),
+    ],
+)
+def test_redirect_loop_detection(plugin_name, obj_type, legacy_mapping):
+    """Test that redirect loops are detected and raise ValueError."""
+    mock_collection_path = os.path.join(HERE, "data/mock_collection")
+
+    # Get the actual legacy mapping dict based on the string name
+    legacy_map = (
+        LEGACY_SOURCE_MAPPING
+        if legacy_mapping == "LEGACY_SOURCE_MAPPING"
+        else LEGACY_FILTER_MAPPING
+    )
+    exception_type = (
+        SourcePluginNotFoundException
+        if obj_type == "event_source"
+        else SourceFilterNotFoundException
+    )
+
+    with patch(
+        "ansible_rulebook.collection.find_collection",
+        return_value=mock_collection_path,
+    ):
+        # Test redirect loop: plugin_a -> plugin_b -> plugin_a
+        with pytest.raises(ValueError) as exc_info:
+            apply_plugin_routing(
+                plugin_name, obj_type, legacy_map, exception_type
+            )
+        error_msg = str(exc_info.value)
+        assert "plugin redirect loop" in error_msg
+        assert plugin_name in error_msg
+
+
+@pytest.mark.parametrize(
+    "plugin_name,obj_type,legacy_mapping,expected_result",
+    [
+        (
+            "ansible.eda.chain_source_hop1",
+            "event_source",
+            "LEGACY_SOURCE_MAPPING",
+            "eda.builtin.final_source",
+        ),
+        (
+            "ansible.eda.chain_filter_hop1",
+            "event_filter",
+            "LEGACY_FILTER_MAPPING",
+            "eda.builtin.final_filter",
+        ),
+    ],
+)
+def test_multi_hop_redirect_chain(
+    plugin_name, obj_type, legacy_mapping, expected_result
+):
+    """Test that multi-hop redirect chains work correctly (3+ hops)."""
+    mock_collection_path = os.path.join(HERE, "data/mock_collection")
+
+    # Get the actual legacy mapping dict based on the string name
+    legacy_map = (
+        LEGACY_SOURCE_MAPPING
+        if legacy_mapping == "LEGACY_SOURCE_MAPPING"
+        else LEGACY_FILTER_MAPPING
+    )
+    exception_type = (
+        SourcePluginNotFoundException
+        if obj_type == "event_source"
+        else SourceFilterNotFoundException
+    )
+
+    with patch(
+        "ansible_rulebook.collection.find_collection",
+        return_value=mock_collection_path,
+    ):
+        # Test chain: hop1 -> hop2 -> hop3 -> final
+        result = apply_plugin_routing(
+            plugin_name, obj_type, legacy_map, exception_type
+        )
+        # Should follow the chain to the final target
+        assert result == expected_result
+
+
+@pytest.mark.parametrize(
+    "plugin_name,obj_type,legacy_mapping",
+    [
+        (
+            "ansible.eda.long_chain_source_hop1",
+            "event_source",
+            "LEGACY_SOURCE_MAPPING",
+        ),
+        (
+            "ansible.eda.long_chain_hop1",
+            "event_filter",
+            "LEGACY_FILTER_MAPPING",
+        ),
+    ],
+)
+def test_max_redirect_chain_limit(plugin_name, obj_type, legacy_mapping):
+    """Test that redirect chains exceeding max limit raise RuntimeError."""
+    mock_collection_path = os.path.join(HERE, "data/mock_collection")
+
+    # Get the actual legacy mapping dict based on the string name
+    legacy_map = (
+        LEGACY_SOURCE_MAPPING
+        if legacy_mapping == "LEGACY_SOURCE_MAPPING"
+        else LEGACY_FILTER_MAPPING
+    )
+    exception_type = (
+        SourcePluginNotFoundException
+        if obj_type == "event_source"
+        else SourceFilterNotFoundException
+    )
+
+    with patch(
+        "ansible_rulebook.collection.find_collection",
+        return_value=mock_collection_path,
+    ):
+        # Test chain with 11 hops (exceeds max of 10)
+        with pytest.raises(RuntimeError) as exc_info:
+            apply_plugin_routing(
+                plugin_name, obj_type, legacy_map, exception_type
+            )
+        error_msg = str(exc_info.value)
+        assert "Exceeded max allowed" in error_msg
+        assert "redirections" in error_msg
