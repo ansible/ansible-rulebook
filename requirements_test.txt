@@ -20,7 +20,7 @@ dynaconf==3.1.11
 freezegun
 oauthlib>=3.2.0
 kubernetes
-urllib3<2
+urllib3 >= 2.6.3
 aioresponses
 httpie
 anyio
