@@ -21,6 +21,7 @@ supporting Ansible Roles, Modules, Plugins, and Documentation. Lets look at what
     ├ ...
     ├── extensions/
     │   ├── eda/
+    │   │   ├── eda_runtime.yml
     │   │   ├── rulebooks/
     │   │   └── plugins/
     │   │       ├── event_source/
