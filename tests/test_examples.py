@@ -72,6 +72,7 @@ async def test_01_noop(rulebook):
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             dict(),
@@ -101,6 +102,7 @@ async def test_02_debug():
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             dict(),
@@ -130,6 +132,7 @@ async def test_03_print_event():
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             dict(),
@@ -159,6 +162,7 @@ async def test_04_set_fact():
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             dict(),
@@ -191,6 +195,7 @@ async def test_05_post_event():
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             dict(),
@@ -223,6 +228,7 @@ async def test_06_retract_fact():
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             dict(),
@@ -257,6 +263,7 @@ async def test_07_and():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -281,6 +288,7 @@ async def test_08_or():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -305,6 +313,7 @@ async def test_09_gt():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -329,6 +338,7 @@ async def test_10_lt():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -353,6 +363,7 @@ async def test_11_le():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -377,6 +388,7 @@ async def test_12_ge():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -401,6 +413,7 @@ async def test_13_add():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -425,6 +438,7 @@ async def test_14_sub():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -452,6 +466,7 @@ async def test_15_multiple_events_all():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -481,6 +496,7 @@ async def test_16_multiple_events_any():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -508,6 +524,7 @@ async def test_17_multiple_sources_any():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -539,6 +556,7 @@ async def test_18_multiple_sources_all():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -567,6 +585,7 @@ async def test_19_is_defined():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -597,6 +616,7 @@ async def test_20_is_not_defined():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -644,6 +664,7 @@ async def test_21_run_playbook(rule, ansible_events):
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -682,6 +703,7 @@ async def test_23_nested_data():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -708,6 +730,7 @@ async def test_24_max_attributes():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -735,6 +758,7 @@ async def test_25_max_attributes_nested():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         dict(),
@@ -759,6 +783,7 @@ async def test_26_print_events():
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             dict(),
@@ -784,6 +809,7 @@ async def test_27_var_root():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -818,6 +844,7 @@ async def test_28_right_side_condition_template():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         {"custom": {"expected_index": 2}},
         dict(),
@@ -845,6 +872,7 @@ async def test_29_run_module():
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -886,6 +914,7 @@ async def test_30_run_module_missing():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         "playbooks/inventory.yml",
@@ -919,6 +948,7 @@ async def test_31_run_module_missing_args():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         "playbooks/inventory.yml",
@@ -952,6 +982,7 @@ async def test_32_run_module_fail():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         "playbooks/inventory.yml",
@@ -990,6 +1021,7 @@ async def test_35_multiple_rulesets_1_fired():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
     )
@@ -1022,6 +1054,7 @@ async def test_36_multiple_rulesets_both_fired():
         ):
             await run_rulesets(
                 event_log,
+                [],
                 ruleset_queues,
                 dict(),
                 "playbooks/inventory.yml",
@@ -1047,6 +1080,7 @@ async def test_37_hosts_facts():
 
     await run_rulesets(
         event_log,
+        [],
         ruleset_queues,
         dict(),
         "playbooks/inventory.yml",
@@ -1070,6 +1104,7 @@ async def test_38_shutdown_action():
         with patch("uuid.uuid4", return_value=DUMMY_UUID):
             await run_rulesets(
                 event_log,
+                [],
                 ruleset_queues,
                 dict(),
                 "playbooks/inventory.yml",
@@ -1098,6 +1133,7 @@ async def test_40_in():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1120,6 +1156,7 @@ async def test_41_not_in():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1142,6 +1179,7 @@ async def test_42_contains():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1165,6 +1203,7 @@ async def test_43_not_contains():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1187,6 +1226,7 @@ async def test_44_in_and():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1210,6 +1250,7 @@ async def test_45_in_or():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1235,6 +1276,7 @@ async def test_47_generic_plugin():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1259,6 +1301,7 @@ async def test_48_echo():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1291,6 +1334,7 @@ async def test_49_float():
         with patch("uuid.uuid4", return_value=DUMMY_UUID):
             await run_rulesets(
                 event_log,
+                [],
                 ruleset_queues,
                 dict(),
                 "playbooks/inventory.yml",
@@ -1336,6 +1380,7 @@ async def test_50_negation():
         with patch("uuid.uuid4", return_value=DUMMY_UUID):
             await run_rulesets(
                 event_log,
+                [],
                 ruleset_queues,
                 dict(),
                 "playbooks/inventory.yml",
@@ -1400,6 +1445,7 @@ async def test_51_vars_namespace():
 
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             person,
             "playbooks/inventory.yml",
@@ -1444,6 +1490,7 @@ async def test_51_vars_namespace_missing_key():
         with pytest.raises(VarsKeyMissingException) as exc_info:
             await run_rulesets(
                 event_log,
+                [],
                 ruleset_queues,
                 person,
                 "playbooks/inventory.yml",
@@ -1460,6 +1507,7 @@ async def test_52_once_within():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1487,6 +1535,7 @@ async def test_53_once_within_multiple_hosts():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1514,6 +1563,7 @@ async def test_54_time_window():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1550,6 +1600,7 @@ async def test_55_not_all():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1577,6 +1628,7 @@ async def test_56_once_after():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1605,6 +1657,7 @@ async def test_57_once_after_multiple():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1625,6 +1678,7 @@ async def test_58_string_search():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1655,6 +1709,7 @@ async def test_59_multiple_actions():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1682,6 +1737,7 @@ async def test_60_json_filter():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1706,6 +1762,7 @@ async def test_61_select_1():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1730,6 +1787,7 @@ async def test_62_select_2():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1756,6 +1814,7 @@ async def test_63_selectattr_1():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1781,6 +1840,7 @@ async def test_64_selectattr_2():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1805,6 +1865,7 @@ async def test_65_selectattr_3():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1837,6 +1898,7 @@ async def test_66_sleepy_playbook():
         ):
             await run_rulesets(
                 event_log,
+                [],
                 ruleset_queues,
                 dict(),
                 "playbooks/inventory.yml",
@@ -1869,6 +1931,7 @@ async def test_67_shutdown_now():
         ):
             await run_rulesets(
                 event_log,
+                [],
                 ruleset_queues,
                 dict(),
                 "playbooks/inventory.yml",
@@ -1895,6 +1958,7 @@ async def test_68_disabled_rule():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1919,6 +1983,7 @@ async def test_69_enhanced_debug():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1946,6 +2011,7 @@ async def test_70_null():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -1974,6 +2040,7 @@ async def test_72_set_fact_with_type():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(my_bool=True, my_int=2, my_float=3.123),
             "playbooks/inventory.yml",
@@ -2005,6 +2072,7 @@ async def test_73_mix_and_match_list():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -2035,6 +2103,7 @@ async def test_74_self_referential():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -2059,6 +2128,7 @@ async def test_75_all_conditions():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -2083,6 +2153,7 @@ async def test_76_all_conditions():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -2118,6 +2189,7 @@ async def test_46_job_template():
         ):
             await run_rulesets(
                 event_log,
+                [],
                 ruleset_queues,
                 dict(),
                 "playbooks/inventory.yml",
@@ -2154,6 +2226,7 @@ async def test_46_job_template_exception(err_msg, err):
         ):
             await run_rulesets(
                 event_log,
+                [],
                 ruleset_queues,
                 dict(),
                 "playbooks/inventory.yml",
@@ -2194,6 +2267,7 @@ async def test_77_default_events_ttl():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             "playbooks/inventory.yml",
@@ -2222,6 +2296,7 @@ async def test_78_complete_retract_fact():
     with patch("uuid.uuid4", return_value=DUMMY_UUID):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             dict(),
@@ -2274,6 +2349,7 @@ async def test_79_workflow_job_template_exception(err_msg, err):
         ):
             await run_rulesets(
                 event_log,
+                [],
                 ruleset_queues,
                 dict(),
                 dict(),
@@ -2325,6 +2401,7 @@ async def test_79_workflow_job_template():
         ):
             await run_rulesets(
                 event_log,
+                [],
                 ruleset_queues,
                 dict(),
                 dict(),
@@ -2350,6 +2427,7 @@ async def test_80_match_multiple_rules():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             dict(),
@@ -2377,6 +2455,7 @@ async def test_81_match_single_rule():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             dict(),
@@ -2402,6 +2481,7 @@ async def test_82_non_alpha_keys():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             dict(),
@@ -2428,6 +2508,7 @@ async def test_83_boolean_true():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         await run_rulesets(
             event_log,
+            [],
             ruleset_queues,
             dict(),
             dict(),
