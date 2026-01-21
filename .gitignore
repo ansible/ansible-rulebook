@@ -106,6 +106,9 @@ ENV/
 .vscode/
 .idea/
 
+# local system
+.DS_Store
+
 # awx provision
 tests/e2e/utils/awx/artifacts
 
