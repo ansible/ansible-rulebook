@@ -24,11 +24,14 @@ on:
       - CI
     types:
       - completed
-permissions: read-all
 jobs:
   sonar-pr-analysis:
     name: SonarCloud PR Analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
     if: |
       github.repository == 'ansible/ansible-rulebook' &&
       github.event.workflow_run.conclusion == 'success' && 
@@ -165,6 +168,9 @@ jobs:
   sonar-branch-analysis:
     name: SonarCloud Branch Analysis (Push)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     if: |
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
