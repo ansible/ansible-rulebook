@@ -1,0 +1,178 @@
+---
+requires_ansible: ">=2.15.0"
+plugin_routing:
+  event_filter:
+    # One legacy example (will be caught by LEGACY_FILTER_MAPPING)
+    json_filter:
+      redirect: eda.builtin.json_filter
+      deprecation:
+        removal_version: "3.1.1"
+        warning_text: >-
+          The ansible.eda.json_filter has moved to a builtin
+          Please update to eda.builtin.json_filter
+
+    # Test scenarios (non-legacy names to test runtime.yml logic)
+    # Deprecated without redirect
+    old_custom_filter:
+      deprecation:
+        removal_version: "3.0.0"
+        warning_text: >-
+          This filter is deprecated.
+
+    # Deprecated with redirect
+    deprecated_custom_filter:
+      redirect: eda.builtin.new_custom_filter
+      deprecation:
+        removal_version: "3.1.0"
+        warning_text: >-
+          Please use the new filter.
+
+    # Redirect only (no deprecation)
+    silent_redirect_filter:
+      redirect: eda.builtin.better_filter
+
+    # Tombstone
+    removed_filter:
+      tombstone:
+        removal_version: "2.5.0"
+        warning_text: >-
+          This filter was removed.
+
+    # Redirect loop (filter_a -> filter_b)
+    loop_filter_a:
+      redirect: ansible.eda.loop_filter_b
+
+    loop_filter_b:
+      redirect: ansible.eda.loop_filter_a
+
+    # Multi-hop redirect chain (filter_hop1 -> hop2 -> hop3 -> final)
+    chain_filter_hop1:
+      redirect: ansible.eda.chain_filter_hop2
+
+    chain_filter_hop2:
+      redirect: ansible.eda.chain_filter_hop3
+
+    chain_filter_hop3:
+      redirect: eda.builtin.final_filter
+
+    # Long chain exceeding max redirects (11 hops)
+    long_chain_hop1:
+      redirect: ansible.eda.long_chain_hop2
+
+    long_chain_hop2:
+      redirect: ansible.eda.long_chain_hop3
+
+    long_chain_hop3:
+      redirect: ansible.eda.long_chain_hop4
+
+    long_chain_hop4:
+      redirect: ansible.eda.long_chain_hop5
+
+    long_chain_hop5:
+      redirect: ansible.eda.long_chain_hop6
+
+    long_chain_hop6:
+      redirect: ansible.eda.long_chain_hop7
+
+    long_chain_hop7:
+      redirect: ansible.eda.long_chain_hop8
+
+    long_chain_hop8:
+      redirect: ansible.eda.long_chain_hop9
+
+    long_chain_hop9:
+      redirect: ansible.eda.long_chain_hop10
+
+    long_chain_hop10:
+      redirect: ansible.eda.long_chain_hop11
+
+    long_chain_hop11:
+      redirect: eda.builtin.final_filter
+
+  event_source:
+    # One legacy example (will be caught by LEGACY_SOURCE_MAPPING)
+    range:
+      redirect: eda.builtin.range
+      deprecation:
+        removal_version: "3.1.1"
+        warning_text: >-
+          The ansible.eda.range has moved to a builtin
+          Please update to eda.builtin.range
+
+    # Test scenarios (non-legacy names to test runtime.yml logic)
+    # Deprecated without redirect
+    old_custom_source:
+      deprecation:
+        removal_version: "3.0.0"
+        warning_text: >-
+          This source is deprecated.
+
+    # Deprecated with redirect
+    deprecated_custom_source:
+      redirect: eda.builtin.new_custom_source
+      deprecation:
+        removal_version: "3.1.0"
+        warning_text: >-
+          Please use the new source.
+
+    # Redirect only (no deprecation)
+    silent_redirect_source:
+      redirect: eda.builtin.better_source
+
+    # Tombstone
+    removed_source:
+      tombstone:
+        removal_version: "2.5.0"
+        warning_text: >-
+          This source was removed.
+
+    # Redirect loop (source_a -> source_b)
+    loop_source_a:
+      redirect: ansible.eda.loop_source_b
+
+    loop_source_b:
+      redirect: ansible.eda.loop_source_a
+
+    # Multi-hop redirect chain (source_hop1 -> hop2 -> hop3 -> final)
+    chain_source_hop1:
+      redirect: ansible.eda.chain_source_hop2
+
+    chain_source_hop2:
+      redirect: ansible.eda.chain_source_hop3
+
+    chain_source_hop3:
+      redirect: eda.builtin.final_source
+
+    # Long chain exceeding max redirects (11 hops)
+    long_chain_source_hop1:
+      redirect: ansible.eda.long_chain_source_hop2
+
+    long_chain_source_hop2:
+      redirect: ansible.eda.long_chain_source_hop3
+
+    long_chain_source_hop3:
+      redirect: ansible.eda.long_chain_source_hop4
+
+    long_chain_source_hop4:
+      redirect: ansible.eda.long_chain_source_hop5
+
+    long_chain_source_hop5:
+      redirect: ansible.eda.long_chain_source_hop6
+
+    long_chain_source_hop6:
+      redirect: ansible.eda.long_chain_source_hop7
+
+    long_chain_source_hop7:
+      redirect: ansible.eda.long_chain_source_hop8
+
+    long_chain_source_hop8:
+      redirect: ansible.eda.long_chain_source_hop9
+
+    long_chain_source_hop9:
+      redirect: ansible.eda.long_chain_source_hop10
+
+    long_chain_source_hop10:
+      redirect: ansible.eda.long_chain_source_hop11
+
+    long_chain_source_hop11:
+      redirect: eda.builtin.final_source

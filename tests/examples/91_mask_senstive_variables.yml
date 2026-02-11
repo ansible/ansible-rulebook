@@ -2,7 +2,7 @@
 - name: Test sensitive variable is masked with missing key
   hosts: all
   sources:
-    - ansible.eda.generic:
+    - eda.builtin.generic:
         payload:
           - name: Fred
   rules:

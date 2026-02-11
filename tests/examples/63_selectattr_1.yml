@@ -2,7 +2,7 @@
 - name: 63 selectattr 1
   hosts: all
   sources:
-    - ansible.eda.generic:
+    - eda.builtin.generic:
         payload:
           - people:
              - person:

@@ -2,7 +2,7 @@
 - name: Test run workflow templates with event payload
   hosts: all
   sources:
-    - ansible.eda.generic:
+    - eda.builtin.generic:
         payload:
           - age: 55
             name: Fred

@@ -2,7 +2,7 @@
 - name: Hello Events with variable
   hosts: all
   sources:
-    - ansible.eda.generic:
+    - eda.builtin.generic:
         payload:
           - action: "{{ go_var }}"
           - alert:

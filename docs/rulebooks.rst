@@ -71,7 +71,7 @@ A ruleset has the following properties:
       gather_facts: true
       sources:
         - name: range
-          ansible.eda.range:
+          eda.builtin.range:
             limit: 5
       rules:
         - name: r1
@@ -116,9 +116,9 @@ Example
 .. code-block:: yaml
 
     sources:
-      - ansible.eda.range:
+      - eda.builtin.range:
           limit: 6
-      - ansible.eda.webhook:
+      - eda.builtin.webhook:
           port: 5000
 
 The condition can match events from either source
@@ -146,7 +146,7 @@ If any source terminates, it shuts down the whole engine. All events from other 
 Using vaulted strings
 --------------------------
 
-Sensitive data referenced by a rulebook must be encrypted by `ansible-vault <https://docs.ansible.com/ansible/latest/vault_guide/vault_encrypting_content.html#encrypting-content-with-ansible-vault>`_
+Sensitive data referenced by a rulebook must be encrypted by `ansible-vault <https://docs.ansible.com/projects/ansible/latest/vault_guide/vault_encrypting_content.html#encrypting-content-with-ansible-vault>`_
 cli. The vaulted strings can be directly embedded in the rulebook, or placed in a variables file and
 referenced in the rulebook via extra vars. Only arguments to source plugins or actions can be vaulted.
 Example for a rulebook that has embedded vaulted strings:

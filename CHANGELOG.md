@@ -6,6 +6,14 @@
 ### Added
 ### Fixed
 
+## [1.2.1]
+### Changed
+### Added
+- New eda.builtin filters: `dashes_to_underscores`, `insert_hosts_to_meta`, `json_filter`, `normalize_keys`
+- New eda.builtin sources: `generic`, `pg_listener`, `range`
+- Collection lifecycle configuration to deprecate, redirect, tombstone EDA filters and sources
+### Fixed
+
 ## [1.2.0]
 ### Changed
 ### Added

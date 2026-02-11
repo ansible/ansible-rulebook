@@ -23,6 +23,7 @@ Welcome to Ansible Rulebook documentation
    filters
    runner
    collections
+   plugin_lifecycle
    decision_environment
 
 Indices and tables
