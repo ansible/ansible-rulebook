@@ -2,7 +2,7 @@
 - name: 93 event splitter
   hosts: localhost
   sources:
-    - ansible.eda.generic:
+    - eda.builtin.generic:
         payload:
           - bundle:
               employer: Slate Rock & Gravel Company

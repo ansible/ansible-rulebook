@@ -2,7 +2,7 @@
 - name: Hello Events with string interpolation
   hosts: all
   sources:
-    - ansible.eda.generic:
+    - eda.builtin.generic:
         payload:
           - action: "pay and {{ go_var }}"
           - alert:

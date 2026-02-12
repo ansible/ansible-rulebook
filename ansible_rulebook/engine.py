@@ -43,7 +43,9 @@ from ansible_rulebook.rule_types import (
 from ansible_rulebook.util import (
     collect_ansible_facts,
     find_builtin_filter,
+    find_builtin_source,
     has_builtin_filter,
+    has_builtin_source,
     send_session_stats,
     substitute_variables,
 )
@@ -130,6 +132,8 @@ async def start_source(
             module = runpy.run_path(
                 os.path.join(source_dirs[0], source.source_name + ".py")
             )
+        elif has_builtin_source(source.source_name):
+            module = runpy.run_path(find_builtin_source(source.source_name))
         elif has_source(*split_collection_name(source.source_name)):
             module = runpy.run_path(
                 find_source(*split_collection_name(source.source_name))

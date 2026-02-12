@@ -22,10 +22,10 @@ that emits a monitored event. Be sure that the source plugin already sends this 
 Inserting hosts to meta
 -----------------------
 
-The plugins may not send metadata like for example the `ansible.eda.webhook` plugin which
+The plugins may not send metadata like for example the `eda.builtin.webhook` plugin which
 sends the arbitrary payload under the `payload` key.
 
-To accommodate this, the EDA collection provides the `insert_hosts_to_meta` filter,
+To accommodate this, ansible-rulebook provides the `insert_hosts_to_meta` builtin filter,
 allowing any plugin to customize the value of `event.meta.hosts` based on the contents
 of a specific key in the event.
 
@@ -40,8 +40,8 @@ Example:
 .. code-block:: yaml
 
     sources:
-        - ansible.eda.webhook:
+        - eda.builtin.webhook:
             port: 4444
           filters:
-            - ansible.eda.insert_hosts_to_meta:
+            - eda.builtin.insert_hosts_to_meta:
                 host_path: "payload.alert.instances"

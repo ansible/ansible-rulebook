@@ -16,11 +16,11 @@ pytest-cov
 pytest-check
 marshmallow==3.26.1
 pytest-jira
-dynaconf==3.1.11
+dynaconf
 freezegun
 oauthlib>=3.2.0
 kubernetes
-urllib3<2
+urllib3 >= 2.6.3
 aioresponses
 httpie
 anyio
