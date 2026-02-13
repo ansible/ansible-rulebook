@@ -25,7 +25,10 @@ from ansible_rulebook.exception import (
     ControllerApiException,
     WorkflowJobTemplateNotFoundException,
 )
-from ansible_rulebook.job_template_runner import job_template_runner
+from ansible_rulebook.job_template_runner import (
+    WORKFLOW_TEMPLATE_TYPE,
+    job_template_runner,
+)
 from ansible_rulebook.util import process_controller_host_limit, run_at
 
 from .control import Control
@@ -83,8 +86,20 @@ class RunWorkflowTemplate:
         if self.action_args.get("retry", False):
             retries = max(self.action_args.get("retries", 0), 1)
         delay = self.action_args.get("delay", 0)
+        add_event_uuid_label = self.action_args.get(
+            "add_event_uuid_label", False
+        )
+        job_labels = list(self.action_args.get("labels") or [])
+        if add_event_uuid_label:
+            job_labels.append(self.helper.get_event_uuid_label())
 
         try:
+            job_url = await self.helper.get_old_job_url(
+                self.name,
+                self.organization,
+                WORKFLOW_TEMPLATE_TYPE,
+                add_event_uuid_label,
+            )
             for i in range(retries + 1):
                 if i > 0:
                     if delay > 0:
@@ -95,16 +110,27 @@ class RunWorkflowTemplate:
                         i,
                         retries,
                     )
-                controller_job = (
-                    await job_template_runner.run_workflow_job_template(
-                        self.name,
-                        self.organization,
-                        self.job_args,
-                        self.action_args.get("labels"),
+                # Launch the workflow and get URL immediately
+                if job_url is None:
+                    job_url = (
+                        await job_template_runner.launch_workflow_job_template(
+                            self.name,
+                            self.organization,
+                            self.job_args,
+                            job_labels,
+                        )
                     )
-                )
+                    logger.info(f"Workflow launched, URL: {job_url}")
+                    self.helper.update_action_state({"job_url": job_url})
+
+                # Monitor the job until completion
+                controller_job = await job_template_runner.monitor_job(job_url)
                 if controller_job["status"] != "failed":
                     break
+
+                # Reset job_url to launch a new job on retry
+                job_url = None
+                self.helper.update_action_state({"job_url": None})
         except (
             ControllerApiException,
             WorkflowJobTemplateNotFoundException,

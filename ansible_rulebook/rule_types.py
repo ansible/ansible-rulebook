@@ -98,6 +98,7 @@ class ActionContext(NamedTuple):
 class RuleSetQueue(NamedTuple):
     ruleset: RuleSet
     source_queue: asyncio.Queue
+    source_feedback_queues: dict[str, asyncio.Queue]
 
 
 @dataclass
@@ -109,3 +110,4 @@ class EngineRuleSetQueuePlan(NamedTuple):
     ruleset: EngineRuleSet
     source_queue: asyncio.Queue
     plan: Plan
+    source_feedback_queues: dict[str, asyncio.Queue]

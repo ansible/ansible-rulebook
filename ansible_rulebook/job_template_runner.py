@@ -38,6 +38,8 @@ logger = logging.getLogger(__name__)
 
 
 CLIENT_CONNECT_ERROR_STRING = "Error connecting to controller: %s"
+JOB_TEMPLATE_TYPE = "job_template"
+WORKFLOW_TEMPLATE_TYPE = "workflow_template"
 
 
 class JobTemplateRunner:
@@ -127,15 +129,17 @@ class JobTemplateRunner:
         logger.info("Attempting to connect to Controller %s", self.host)
         return await self._get_page(self._config_slug, {})
 
-    def _auth_headers(self) -> dict:
+    def _auth_headers(self) -> Optional[dict]:
         if self.token:
             return dict(Authorization=f"Bearer {self.token}")
+        return None
 
-    def _basic_auth(self) -> aiohttp.BasicAuth:
+    def _basic_auth(self) -> Optional[aiohttp.BasicAuth]:
         if self.username and self.password:
             return aiohttp.BasicAuth(
                 login=self.username, password=self.password
             )
+        return None
 
     @cached_property
     def _sslcontext(self) -> Union[bool, ssl.SSLContext]:
@@ -148,7 +152,7 @@ class JobTemplateRunner:
 
     async def _get_template_obj(
         self, name: str, organization: str, unified_type: str
-    ) -> dict:
+    ) -> Optional[dict]:
         params = {"name": name}
 
         while True:
@@ -168,6 +172,7 @@ class JobTemplateRunner:
                     == organization
                 ):
                     return {
+                        "id": jt["id"],
                         "launch": dpath.get(jt, "related.launch", ".", None),
                         "ask_limit_on_launch": jt["ask_limit_on_launch"],
                         "ask_labels_on_launch": jt["ask_labels_on_launch"],
@@ -184,13 +189,35 @@ class JobTemplateRunner:
             else:
                 break
 
-    async def run_job_template(
+        return None
+
+    async def launch_job_template(
         self,
         name: str,
         organization: str,
         job_params: dict,
         labels: Optional[list[str]] = None,
-    ) -> dict:
+    ) -> str:
+        """Launch a job template and return the job URL immediately.
+
+        This method initiates a job template execution on the controller
+        and returns immediately with the job URL without waiting for
+        completion. This enables asynchronous job monitoring.
+
+        Args:
+            name: Name of the job template to launch
+            organization: Organization name containing the job template
+            job_params: Dictionary of parameters to pass to the job (e.g.,
+                extra_vars, inventory, limit)
+            labels: Optional list of label names to attach to the job
+
+        Returns:
+            str: The job URL for monitoring
+
+        Raises:
+            JobTemplateNotFoundException: If the specified job template
+                does not exist in the organization
+        """
         obj = await self._get_template_obj(name, organization, "job_template")
         if not obj:
             raise JobTemplateNotFoundException(
@@ -213,15 +240,69 @@ class JobTemplateRunner:
 
         url = urljoin(self.host, obj["launch"])
         job = await self._launch(job_params, url)
-        return await self._monitor_job(job["url"])
+        return job["url"]
 
-    async def run_workflow_job_template(
+    async def run_job_template(
         self,
         name: str,
         organization: str,
         job_params: dict,
         labels: Optional[list[str]] = None,
     ) -> dict:
+        """Launch a job template and wait for it to complete.
+
+        This method combines launching a job template with monitoring its
+        execution until completion. It's a convenience wrapper around
+        launch_job_template() and monitor_job().
+
+        Args:
+            name: Name of the job template to run
+            organization: Organization name containing the job template
+            job_params: Dictionary of parameters to pass to the job
+            labels: Optional list of label names to attach to the job
+
+        Returns:
+            dict: The final job status information including status, artifacts,
+                and other job metadata
+
+        Raises:
+            JobTemplateNotFoundException: If the specified job template
+                does not exist in the organization
+        """
+        job_url = await self.launch_job_template(
+            name, organization, job_params, labels
+        )
+        return await self.monitor_job(job_url)
+
+    async def launch_workflow_job_template(
+        self,
+        name: str,
+        organization: str,
+        job_params: dict,
+        labels: Optional[list[str]] = None,
+    ) -> str:
+        """Launch a workflow job template and return the job URL immediately.
+
+        This method initiates a workflow job template execution on the
+        controller and returns immediately with the job URL without waiting
+        for completion. Workflows may not support all parameters that regular
+        job templates do (e.g., limit parameter).
+
+        Args:
+            name: Name of the workflow job template to launch
+            organization: Organization name containing the workflow template
+            job_params: Dictionary of parameters to pass to the workflow
+                (e.g., extra_vars, inventory). Note: 'limit' is removed if
+                the workflow template doesn't accept it.
+            labels: Optional list of label names to attach to the workflow job
+
+        Returns:
+            str: The workflow job URL for monitoring
+
+        Raises:
+            WorkflowJobTemplateNotFoundException: If the specified workflow
+                template does not exist in the organization
+        """
         obj = await self._get_template_obj(
             name, organization, "workflow_job_template"
         )
@@ -251,9 +332,54 @@ class JobTemplateRunner:
             )
             job_params.pop("limit")
         job = await self._launch(job_params, url)
-        return await self._monitor_job(job["url"])
+        return job["url"]
 
-    async def _monitor_job(self, url) -> dict:
+    async def run_workflow_job_template(
+        self,
+        name: str,
+        organization: str,
+        job_params: dict,
+        labels: Optional[list[str]] = None,
+    ) -> dict:
+        """Launch a workflow job template and wait for it to complete.
+
+        This method combines launching a workflow job template with monitoring
+        its execution until completion. It's a convenience wrapper around
+        launch_workflow_job_template() and monitor_job().
+
+        Args:
+            name: Name of the workflow job template to run
+            organization: Organization name containing the workflow template
+            job_params: Dictionary of parameters to pass to the workflow
+            labels: Optional list of label names to attach to the workflow job
+
+        Returns:
+            dict: The final workflow job status information including status,
+                artifacts, and other job metadata
+
+        Raises:
+            WorkflowJobTemplateNotFoundException: If the specified workflow
+                template does not exist in the organization
+        """
+        job_url = await self.launch_workflow_job_template(
+            name, organization, job_params, labels
+        )
+        return await self.monitor_job(job_url)
+
+    async def monitor_job(self, url) -> dict:
+        """Monitor a running job until it reaches a completion status.
+
+        This method polls the controller for job status updates at regular
+        intervals until the job reaches a terminal state (successful, failed,
+        error, or canceled).
+
+        Args:
+            url: The job URL to monitor (can be a regular job or workflow job)
+
+        Returns:
+            dict: The final job status information when the job completes,
+                including status, artifacts, and other job metadata
+        """
         while True:
             # fetch and process job status
             json_body = await self._get_page(url, {})
@@ -292,7 +418,7 @@ class JobTemplateRunner:
 
     async def _create_obj(
         self, href_slug: str, params: dict
-    ) -> (Optional[dict], bool):
+    ) -> tuple[Optional[dict], bool]:
         body = None
         try:
             url = urljoin(self.host, href_slug)
@@ -394,6 +520,81 @@ class JobTemplateRunner:
                 name,
             )
         return []
+
+    def _api_slug_prefix(self) -> str:
+        return self._unified_job_template_slug.split("unified_job_templates/")[
+            0
+        ]
+
+    async def get_job_url_from_label(
+        self, name: str, organization: str, obj_type: str, label: str
+    ) -> Optional[str]:
+        """Retrieve a job URL by searching for a job with a specific label.
+
+        This method searches for jobs or workflow jobs associated with a
+        template that have been tagged with a specific label. This is useful
+        in HA/persistence scenarios where a job was launched in a previous
+        execution and needs to be found and monitored.
+
+        Args:
+            name: Name of the job or workflow template
+            organization: Organization name containing the template
+            obj_type: Type of template ("job_template" or
+                "workflow_template")
+            label: Label name to search for (e.g., "eda-event-uuid-{uuid}")
+
+        Returns:
+            Optional[str]: The job URL if a job with the label is found,
+                None if no matching job exists
+
+        Raises:
+            JobTemplateNotFoundException: If obj_type is "job_template"
+                and the template doesn't exist
+            WorkflowJobTemplateNotFoundException: If obj_type is
+                "workflow_template" and the template doesn't exist
+            ValueError: If obj_type is neither "job_template" nor
+                "workflow_template"
+        """
+        if obj_type == JOB_TEMPLATE_TYPE:
+            obj = await self._get_template_obj(
+                name, organization, "job_template"
+            )
+            if not obj:
+                raise JobTemplateNotFoundException(
+                    (
+                        f"Job template {name} in organization "
+                        f"{organization} does not exist"
+                    )
+                )
+            job_slug = (
+                f"{self._api_slug_prefix()}job_templates/{obj['id']}/jobs/"
+            )
+        elif obj_type == WORKFLOW_TEMPLATE_TYPE:
+            obj = await self._get_template_obj(
+                name, organization, "workflow_job_template"
+            )
+            if not obj:
+                raise WorkflowJobTemplateNotFoundException(
+                    (
+                        f"Workflow template {name} in organization "
+                        f"{organization} does not exist"
+                    )
+                )
+            job_slug = (
+                f"{self._api_slug_prefix()}"
+                f"workflow_job_templates/{obj['id']}/workflow_jobs/"
+            )
+        else:
+            raise ValueError(
+                f"Invalid type {obj_type} passed into job_url_from_label"
+            )
+
+        params = {"labels__name": label}
+        result = await self._get_page(job_slug, params)
+        if result["count"] >= 1:
+            return result["results"][0]["url"]
+
+        return None
 
 
 job_template_runner = JobTemplateRunner()

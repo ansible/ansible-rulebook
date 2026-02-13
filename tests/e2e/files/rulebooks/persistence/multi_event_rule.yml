@@ -1,0 +1,17 @@
+---
+- name: Multi Event Rule
+  hosts: localhost
+  sources:
+    - json_event_queue:
+        file: "{{ json_data_file }}"
+        delay: 2
+        feedback: true
+  rules:
+    - name: r1
+      condition:
+        all:
+           - event.i == 1
+           - event.i == 3
+           - event.i == 7
+      actions:
+        - debug:

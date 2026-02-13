@@ -174,6 +174,10 @@ async def test_run_example_rulebook(
         await asyncio.wait_for(proc.wait(), timeout=DEFAULT_TIMEOUT)
         assert proc.returncode == 0
 
+        # Give a small delay to allow any final SessionStats messages
+        # to arrive before the websocket context exits
+        await asyncio.sleep(0.5)
+
     # Verify data
     assert not queue.empty()
 

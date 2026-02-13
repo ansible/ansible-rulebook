@@ -18,6 +18,7 @@ The `ansible-rulebook` CLI supports the following options:
                         [--execution-strategy {sequential,parallel}] [--hot-reload] [--skip-audit-events]
                         [--vault-password-file VAULT_PASSWORD_FILE] [--vault-id VAULT_ID] [--ask-vault-pass]
                         [-F FILTER_DIR]
+                        [--persistence-id PERSISTENCE_ID]
 
     optional arguments:
     -h, --help            show this help message and exit
@@ -72,6 +73,8 @@ The `ansible-rulebook` CLI supports the following options:
                             The file containing one ansible vault password, can also be passed via the env var EDA_VAULT_PASSWORD_FILE.
     --vault-id VAULT_ID   label@filename pointing to an ansible vault password file
     --ask-vault-pass      Ask vault password interactively 
+    --persistence-id   PERSISTENCE_ID 
+                         The unique id, preferably a UUID to track persistent event data
 
 To get help from `ansible-rulebook` run the following:
 

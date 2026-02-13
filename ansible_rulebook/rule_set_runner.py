@@ -33,7 +33,12 @@ from drools.ruleset import session_stats
 from ansible_rulebook import terminal
 from ansible_rulebook.action.control import Control
 from ansible_rulebook.action.debug import Debug
-from ansible_rulebook.action.metadata import Metadata
+from ansible_rulebook.action.helper import (
+    FAILED_STATUS,
+    STARTED_STATUS,
+    SUCCESSFUL_STATUS,
+)
+from ansible_rulebook.action.metadata import ActionPersistence, Metadata
 from ansible_rulebook.action.noop import Noop
 from ansible_rulebook.action.pg_notify import PGNotify
 from ansible_rulebook.action.post_event import PostEvent
@@ -51,6 +56,10 @@ from ansible_rulebook.exception import (
     UnsupportedActionException,
 )
 from ansible_rulebook.messages import Shutdown
+from ansible_rulebook.persistence import (
+    get_action_a_priori,
+    update_action_info,
+)
 from ansible_rulebook.rule_types import (
     Action,
     ActionContext,
@@ -64,6 +73,8 @@ from ansible_rulebook.util import (
     send_session_stats,
     substitute_variables,
 )
+
+COMPLETED_STATUSES = [FAILED_STATUS, SUCCESSFUL_STATUS]
 
 logger = logging.getLogger(__name__)
 
@@ -248,6 +259,25 @@ class RuleSetRunner:
                         str(data),
                     )
                     lang.post(self.name, data)
+
+                    try:
+                        source_name = dpath.get(data, "meta/source/name")
+                    except KeyError:
+                        source_name = None
+
+                    if (
+                        source_name
+                        and source_name
+                        in self.ruleset_queue_plan.source_feedback_queues
+                    ):
+                        feedback_queue = (
+                            self.ruleset_queue_plan.source_feedback_queues.get(
+                                source_name
+                            )
+                        )
+                        await feedback_queue.put(data)
+                except asyncio.CancelledError:
+                    raise
                 except MessageObservedException:
                     logger.debug("MessageObservedException: %s", data)
                 except MessageNotHandledException:
@@ -361,11 +391,23 @@ class RuleSetRunner:
     async def _run_multiple_actions(
         self, action_item: ActionContext, rule_run_at: str
     ) -> None:
-        for action in action_item.actions:
-            await self._run_action(action, action_item, rule_run_at)
+        number_of_actions = len(action_item.actions)
+        for index, action in enumerate(action_item.actions):
+            await self._run_action(
+                action,
+                action_item,
+                rule_run_at,
+                index,
+                index == (number_of_actions - 1),
+            )
 
     def _run_action(
-        self, action: Action, action_item: ActionContext, rule_run_at: str
+        self,
+        action: Action,
+        action_item: ActionContext,
+        rule_run_at: str,
+        index: int = 0,
+        last_action: bool = True,
     ) -> asyncio.Task:
         task_name = (
             f"action::{action.action}::"
@@ -373,12 +415,35 @@ class RuleSetRunner:
             f"{action_item.rule}"
         )
         logger.debug("Creating action task %s", task_name)
+        persistent_info = None
+        matching_uuid = action_item.rule_engine_results.matching_uuid
+        if matching_uuid:
+            a_priori = None
+            a_priori = get_action_a_priori(
+                action_item.ruleset, matching_uuid, index
+            )
+            if a_priori is None:
+                update_action_info(
+                    action_item.ruleset,
+                    matching_uuid,
+                    index,
+                    {"status": STARTED_STATUS},
+                    True,
+                )
+            persistent_info = ActionPersistence(
+                matching_uuid=matching_uuid,
+                action_index=index,
+                last_action=last_action,
+                a_priori=a_priori,
+            )
+
         metadata = Metadata(
             rule_set=action_item.ruleset,
             rule_set_uuid=action_item.ruleset_uuid,
             rule=action_item.rule,
             rule_uuid=action_item.rule_uuid,
             rule_run_at=rule_run_at,
+            persistent_info=persistent_info,
         )
 
         task = asyncio.create_task(
@@ -410,7 +475,29 @@ class RuleSetRunner:
         logger.debug("call_action %s", action)
         action_args = immutable_action_args.copy()
 
+        if (
+            metadata.persistent_info
+            and metadata.persistent_info.a_priori
+            and metadata.persistent_info.a_priori.get("status")
+            in COMPLETED_STATUSES
+        ):
+            logger.warning(
+                "Skipping action %s already ran %s",
+                action,
+                metadata.persistent_info.a_priori.get("status"),
+            )
+            if (
+                metadata.persistent_info
+                and metadata.persistent_info.last_action
+            ):
+                lang.delete_action_info(
+                    metadata.rule_set, metadata.persistent_info.matching_uuid
+                )
+            return
+
         error = None
+        action_status = FAILED_STATUS
+        cancelled = False
         if action in ACTION_CLASSES:
             try:
                 if (
@@ -495,13 +582,14 @@ class RuleSetRunner:
                         control,
                         action_args,
                     )
+                    action_status = SUCCESSFUL_STATUS
                 else:
                     await ACTION_CLASSES[action](
                         metadata,
                         control,
                         **action_args,
                     )()
-
+                    action_status = SUCCESSFUL_STATUS
             except KeyError as e:
                 logger.error(
                     "KeyError %s with variables %s",
@@ -526,6 +614,7 @@ class RuleSetRunner:
                     await self.broadcast_method(e.shutdown)
             except asyncio.CancelledError:
                 logger.debug("Action task caught Cancelled error")
+                cancelled = True
                 raise
             except jinja2_exceptions.UndefinedError as e:
                 error = e
@@ -544,6 +633,24 @@ class RuleSetRunner:
             except BaseException as e:
                 logger.error(e)
                 raise
+            finally:
+                if (
+                    metadata.persistent_info
+                    and metadata.persistent_info.matching_uuid
+                    and not cancelled
+                ):
+                    if metadata.persistent_info.last_action:
+                        lang.delete_action_info(
+                            metadata.rule_set,
+                            metadata.persistent_info.matching_uuid,
+                        )
+                    else:
+                        update_action_info(
+                            metadata.rule_set,
+                            metadata.persistent_info.matching_uuid,
+                            metadata.persistent_info.action_index,
+                            {"status": action_status},
+                        )
         else:
             logger.error("Action %s not supported", action)
             error = UnsupportedActionException(

@@ -55,7 +55,7 @@ async def test_generate_rules():
 
     rulesets = parse_rule_sets(data)
     print(rulesets)
-    ruleset_queues = [(ruleset, Queue()) for ruleset in rulesets]
+    ruleset_queues = [(ruleset, Queue(), Queue()) for ruleset in rulesets]
     durable_rulesets = generate_rulesets(ruleset_queues, dict(), inventory)
 
     durable_rulesets[0].plan.queue = asyncio.Queue()
@@ -80,7 +80,7 @@ async def test_generate_rules_multiple_conditions_any():
 
     rulesets = parse_rule_sets(data)
     print(rulesets)
-    ruleset_queues = [(ruleset, Queue()) for ruleset in rulesets]
+    ruleset_queues = [(ruleset, Queue(), Queue()) for ruleset in rulesets]
     durable_rulesets = generate_rulesets(ruleset_queues, dict(), inventory)
 
     durable_rulesets[0].plan.queue = asyncio.Queue()
@@ -108,7 +108,7 @@ async def test_generate_rules_multiple_conditions_all():
 
     rulesets = parse_rule_sets(data)
     print(rulesets)
-    ruleset_queues = [(ruleset, Queue()) for ruleset in rulesets]
+    ruleset_queues = [(ruleset, Queue(), Queue()) for ruleset in rulesets]
     durable_rulesets = generate_rulesets(ruleset_queues, dict(), inventory)
 
     durable_rulesets[0].plan.queue = asyncio.Queue()
@@ -134,7 +134,7 @@ async def test_generate_rules_multiple_conditions_all_3():
 
     rulesets = parse_rule_sets(data)
     print(rulesets)
-    ruleset_queues = [(ruleset, Queue()) for ruleset in rulesets]
+    ruleset_queues = [(ruleset, Queue(), Queue()) for ruleset in rulesets]
     durable_rulesets = generate_rulesets(ruleset_queues, dict(), inventory)
 
     durable_rulesets[0].plan.queue = asyncio.Queue()
@@ -234,7 +234,7 @@ async def test_rule_name_substitution():
         inventory = yaml.safe_load(f.read())
 
     rulesets = parse_rule_sets(data, variables)
-    ruleset_queues = [(ruleset, Queue()) for ruleset in rulesets]
+    ruleset_queues = [(ruleset, Queue(), Queue()) for ruleset in rulesets]
     durable_rulesets = generate_rulesets(ruleset_queues, dict(), inventory)
     ruleset_name = durable_rulesets[0].ruleset.name
 

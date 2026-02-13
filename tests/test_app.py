@@ -16,8 +16,10 @@ from ansible_rulebook.cli import get_parser
 from ansible_rulebook.common import StartupArgs
 from ansible_rulebook.exception import (
     ControllerNeededException,
+    DuplicateSourceNamesException,
     InventoryNeededException,
     RulebookNotFoundException,
+    SourcePluginFeedbackMisconfiguredException,
     WebSocketExchangeException,
 )
 
@@ -185,3 +187,58 @@ async def test_failed_run_with_websocket(create_ruleset):
         with pytest.raises(WebSocketExchangeException):
             await run(cmdline_args)
         assert mock_request_workload.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_spawn_sources_feedback_without_persistence(
+    create_ruleset, create_event_source
+):
+    """Test that SourcePluginFeedbackMisconfiguredException is raised
+    when source requests feedback but persistence is not enabled."""
+    # Create a source with feedback enabled
+    source_with_feedback = create_event_source(
+        name="feedback_source",
+        source_args={"feedback": True},
+    )
+    ruleset = create_ruleset(event_sources=[source_with_feedback])
+
+    # Mock settings to have persistence_id as None
+    with mock.patch("ansible_rulebook.app.settings") as mock_settings:
+        mock_settings.persistence_id = None
+        with mock.patch("ansible_rulebook.app.start_source"):
+            with pytest.raises(
+                SourcePluginFeedbackMisconfiguredException
+            ) as exc_info:
+                spawn_sources([ruleset], dict(), ["."], 0.0, list())
+
+            # Verify the exception message contains the source name
+            assert "feedback_source" in str(exc_info.value)
+            assert "persistence has not been enabled" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_spawn_sources_duplicate_source_names(
+    create_ruleset, create_event_source
+):
+    """Test that DuplicateSourceNamesException is raised
+    when sources with duplicate names are detected."""
+    # Create two sources with the same name and feedback enabled
+    source1 = create_event_source(
+        name="duplicate_name",
+        source_args={"feedback": True},
+    )
+    source2 = create_event_source(
+        name="duplicate_name",
+        source_args={"feedback": True},
+    )
+    ruleset = create_ruleset(event_sources=[source1, source2])
+
+    # Mock settings to have persistence_id set
+    with mock.patch("ansible_rulebook.app.settings") as mock_settings:
+        mock_settings.persistence_id = "test-persistence-id"
+        with mock.patch("ansible_rulebook.app.start_source"):
+            with pytest.raises(DuplicateSourceNamesException) as exc_info:
+                spawn_sources([ruleset], dict(), ["."], 0.0, list())
+
+            # Verify the exception message contains the duplicate source name
+            assert "duplicate_name" in str(exc_info.value)

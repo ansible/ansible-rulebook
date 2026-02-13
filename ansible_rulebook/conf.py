@@ -36,6 +36,8 @@ class _Settings:
         self.vault = Vault()
         self.ansible_galaxy_path = shutil.which("ansible-galaxy")
         self.eda_labels = [DEFAULT_EDA_LABEL]
+        self.persistence_enabled = False
+        self.persistence_id = None
 
 
 settings = _Settings()

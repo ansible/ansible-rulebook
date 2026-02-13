@@ -17,6 +17,7 @@ import argparse
 import asyncio
 import logging
 import os
+import signal
 import sys
 from typing import List
 
@@ -143,6 +144,11 @@ def get_parser() -> argparse.ArgumentParser:
         "--id",
         help="Identifier, the activation_instance id which allows "
         "the results to be communicated back to the websocket.",
+    )
+    parser.add_argument(
+        "--persistence-id",
+        help="Identifier, the persistence id which allows "
+        "for the data to be saved across multiple restarts.",
     )
     parser.add_argument(
         "-w",
@@ -300,6 +306,9 @@ def update_settings(args: argparse.Namespace) -> None:
     if args.execution_strategy:
         settings.default_execution_strategy = args.execution_strategy
 
+    if args.persistence_id:
+        settings.persistence_id = args.persistence_id
+
     settings.print_events = args.print_events
     settings.websocket_url = args.websocket_url
     settings.websocket_ssl_verify = args.websocket_ssl_verify
@@ -332,6 +341,22 @@ def parse_vault_passwords(args: argparse.Namespace) -> None:
     )
 
 
+def setup_signal_handlers() -> None:
+    """Setup signal handlers for graceful shutdown."""
+
+    def signal_handler(signum, frame):
+        sig_name = signal.Signals(signum).name
+        logger.info(
+            f"Received signal {sig_name} ({signum}), initiating shutdown"
+        )
+        raise KeyboardInterrupt(f"Signal {sig_name} received")
+
+    # Register handlers for SIGTERM and SIGINT
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    logger.debug("Signal handlers registered for SIGTERM and SIGINT")
+
+
 def main(args: List[str] = None) -> int:
     parser = get_parser()
     if len(sys.argv) == 1:
@@ -342,6 +367,7 @@ def main(args: List[str] = None) -> int:
     validate_args(args)
     update_settings(args)
     setup_logging_and_display(args)
+    setup_signal_handlers()
 
     if args.controller_url:
         job_template_runner.host = args.controller_url

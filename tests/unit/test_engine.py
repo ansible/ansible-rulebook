@@ -656,7 +656,9 @@ class TestRunRulesets:
         )
 
         source_queue = asyncio.Queue()
-        ruleset_queues = [RuleSetQueue(mock_ruleset, source_queue)]
+        ruleset_queues = [
+            RuleSetQueue(mock_ruleset, source_queue, asyncio.Queue())
+        ]
         variables = {"test": "value"}
 
         # Mock dependencies
@@ -717,12 +719,15 @@ class TestRunRulesets:
         )
 
         source_queue = asyncio.Queue()
-        ruleset_queues = [RuleSetQueue(mock_ruleset, source_queue)]
+        ruleset_queues = [
+            RuleSetQueue(mock_ruleset, source_queue, asyncio.Queue())
+        ]
         variables = {}
 
         # Mock parsed_args with heartbeat
         parsed_args = argparse.Namespace()
         parsed_args.heartbeat = 30
+        parsed_args.persistence_id = None
 
         with patch(
             "ansible_rulebook.engine.rule_generator.generate_rulesets"
@@ -786,7 +791,9 @@ class TestRunRulesets:
         )
 
         source_queue = asyncio.Queue()
-        ruleset_queues = [RuleSetQueue(mock_ruleset, source_queue)]
+        ruleset_queues = [
+            RuleSetQueue(mock_ruleset, source_queue, asyncio.Queue())
+        ]
         variables = {}
 
         with patch(
@@ -858,7 +865,9 @@ class TestRunRulesets:
         )
 
         source_queue = asyncio.Queue()
-        ruleset_queues = [RuleSetQueue(mock_ruleset, source_queue)]
+        ruleset_queues = [
+            RuleSetQueue(mock_ruleset, source_queue, asyncio.Queue())
+        ]
         variables = {}
         inventory = "/path/to/inventory"
 
@@ -925,7 +934,9 @@ class TestRunRulesets:
         )
 
         source_queue = asyncio.Queue()
-        ruleset_queues = [RuleSetQueue(mock_ruleset, source_queue)]
+        ruleset_queues = [
+            RuleSetQueue(mock_ruleset, source_queue, asyncio.Queue())
+        ]
         variables = {}
 
         with patch(

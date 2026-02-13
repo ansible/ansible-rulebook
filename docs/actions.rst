@@ -199,6 +199,9 @@ Run a job template.
    * - labels
      - Optional list of strings as labels, which can be added to the job in the controller. Requires that Prompt on launch for Labels is enabled. If its not enabled the labels are ignored. ansible-rulebook will add a default label called "Activated by Event-Driven Ansible". If the label gets resolved as None or an empty string it will be dropped. If there are duplicate labels the duplicate ones will be removed. e.g {{ event.payload.my_label | default(None) }} if the attribute doesn't exist we will skip the label.
      - No
+   * - add_event_uuid_label
+     - A boolean field, when set to true can leverage the event.meta.uuid field as a label, you can establish clear traceability between triggering events and their resulting jobs.
+     - No
 
 run_workflow_template
 *********************
@@ -263,6 +266,9 @@ Run a workflow template.
      - No
    * - labels
      - Optional list of strings as labels, which can be added to the job in the controller. Requires that Prompt on launch for Labels is enabled. If its not enabled the labels are ignored. ansible-rulebook will add a default label called "Activated by Event-Driven Ansible". If the label gets resolved as None or an empty string it will be dropped. If there are duplicate labels the duplicate ones will be removed. e.g {{ event.payload.my_label | default(None) }} if the attribute doesn't exist we will skip the label.
+     - No
+   * - add_event_uuid_label
+     - A boolean field, when set to true can leverage the event.meta.uuid field as a label, you can establish clear traceability between triggering events and their resulting jobs.
      - No
 post_event
 **********
