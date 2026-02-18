@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 
 import websockets
 import yaml
-from websockets.client import WebSocketClientProtocol
+from websockets.asyncio.client import ClientConnection
 
 from ansible_rulebook import rules_parser as rules_parser
 from ansible_rulebook.common import StartupArgs
@@ -78,7 +78,7 @@ async def _update_authorization_header(headers: dict) -> None:
 
 
 async def _connect_websocket(
-    handler: tp.Callable[[WebSocketClientProtocol], tp.Awaitable],
+    handler: tp.Callable[[ClientConnection], tp.Awaitable],
     retry_on_close: bool,
     **kwargs: list,
 ) -> tp.Any:
@@ -111,18 +111,11 @@ async def _connect_websocket(
         except asyncio.CancelledError as e:  # pragma: no cover
             logger.warning(f"websocket aborted by CancelledError: {e}")
             raise
-        except websockets.exceptions.InvalidStatusCode as e:
-            if refresh_token and e.status_code == 403:
-                await _update_authorization_header(extra_headers)
-                # Only attempt to refresh token once. If a new token cannot
-                # establish the connection, something else must have caused 403
-                refresh_token = False
-            else:
-                logger.warning(f"websocket aborted by InvalidStatusCode: {e}")
-                raise  # abort
         except websockets.exceptions.InvalidStatus as e:
             if refresh_token and e.response.status_code == 403:
                 await _update_authorization_header(extra_headers)
+                # Only attempt to refresh token once. If a new token cannot
+                # establish the connection, something else must have caused 403
                 refresh_token = False
             else:
                 logger.warning(f"websocket aborted by InvalidStatus: {e}")
@@ -135,7 +128,14 @@ async def _connect_websocket(
                 logger.warning(f"websocket aborted by OSError: {e}")
                 raise  # abort
         except websockets.exceptions.ConnectionClosedError as e:
-            if retry_on_close and e.code != 1011:  # unexpected error
+            # Check if we should retry - skip retry if close code is
+            # 1011 (unexpected error)
+            # When rcvd is None, the connection was closed without a
+            # proper close frame
+            should_retry = retry_on_close and (
+                not e.rcvd or e.rcvd.code != 1011
+            )
+            if should_retry:
                 backoff_delay = await _wait_before_retry(backoff_delay)
             else:
                 logger.warning(
@@ -171,7 +171,7 @@ async def request_workload(activation_instance_id: str) -> StartupArgs:
 
 
 async def _handle_request_workload(
-    websocket: WebSocketClientProtocol,
+    websocket: ClientConnection,
     activation_instance_id: str,
 ) -> StartupArgs:
     logger.info("workload websocket connected")
@@ -274,7 +274,7 @@ async def send_event_log_to_websocket(event_log: asyncio.Queue):
 
 
 async def _handle_send_event_log(
-    websocket: WebSocketClientProtocol,
+    websocket: ClientConnection,
     logs: EventLogQueue,
 ):
     logger.info("feedback websocket connected")
