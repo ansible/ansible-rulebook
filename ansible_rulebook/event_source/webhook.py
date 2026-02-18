@@ -101,6 +101,14 @@ if typing.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
+# AppKey instances for application configuration
+queue_key = web.AppKey("queue", asyncio.Queue[Any])
+token_key = web.AppKey("token", str)
+hmac_secret_key = web.AppKey("hmac_secret", bytes)
+hmac_algo_key = web.AppKey("hmac_algo", str)
+hmac_header_key = web.AppKey("hmac_header", str)
+hmac_format_key = web.AppKey("hmac_format", str)
+
 
 @routes.post(r"/{endpoint:.*}")
 async def webhook(request: web.Request) -> web.Response:
@@ -119,7 +127,7 @@ async def webhook(request: web.Request) -> web.Response:
         "payload": payload,
         "meta": {"endpoint": endpoint, "headers": headers},
     }
-    await request.app["queue"].put(data)
+    await request.app[queue_key].put(data)
     return web.Response(text=endpoint)
 
 
@@ -127,16 +135,16 @@ def _parse_token(request: web.Request) -> tuple[str, str]:
     scheme, token = request.headers["Authorization"].strip().split(" ")
     if scheme != "Bearer":
         raise web.HTTPUnauthorized(text="Only Bearer type is accepted")
-    if token != request.app["token"]:
+    if token != request.app[token_key]:
         raise web.HTTPUnauthorized(text="Invalid authorization token")
     return scheme, token
 
 
 async def _hmac_verify(request: web.Request) -> bool:
-    hmac_secret = request.app["hmac_secret"]
-    hmac_header = request.app["hmac_header"]
-    hmac_algo = request.app["hmac_algo"]
-    hmac_format = request.app["hmac_format"]
+    hmac_secret = request.app[hmac_secret_key]
+    hmac_header = request.app[hmac_header_key]
+    hmac_algo = request.app[hmac_algo_key]
+    hmac_format = request.app[hmac_format_key]
 
     if hmac_header not in request.headers:
         raise web.HTTPBadRequest(text="Signature header not found")
@@ -259,9 +267,20 @@ async def main(queue: asyncio.Queue[Any], args: dict[str, Any]) -> None:
             raise ValueError(msg)
 
     app = web.Application(middlewares=middlewares)
-    for key, value in app_attrs.items():
-        app[key] = value
-    app["queue"] = queue
+
+    # Set application configuration using AppKey instances
+    if "token" in app_attrs:
+        app[token_key] = app_attrs["token"]
+    if "hmac_secret" in app_attrs:
+        app[hmac_secret_key] = app_attrs["hmac_secret"]
+    if "hmac_algo" in app_attrs:
+        app[hmac_algo_key] = app_attrs["hmac_algo"]
+    if "hmac_header" in app_attrs:
+        app[hmac_header_key] = app_attrs["hmac_header"]
+    if "hmac_format" in app_attrs:
+        app[hmac_format_key] = app_attrs["hmac_format"]
+
+    app[queue_key] = queue
 
     app.add_routes(routes)
 
