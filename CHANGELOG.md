@@ -6,6 +6,10 @@
 ### Added
 ### Fixed
 
+## [1.0.9] - 2026-02-25
+### Added
+- Add support for Python 3.12
+
 ## [1.0.8] - 2025-04-01
 ### Changed
 - Update tests
