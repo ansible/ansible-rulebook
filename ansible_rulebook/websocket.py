@@ -189,6 +189,7 @@ async def _handle_request_workload(
     response = StartupArgs()
     non_fq_key = False
     file_template_vars = {}
+    rulebook_raw_data = None
     while True:
         msg = await websocket.recv()
         data = json.loads(msg)
@@ -224,11 +225,8 @@ async def _handle_request_workload(
             os.chmod(filename, 0o400)
             logger.debug(f"File Content eda.filename.{key} : {filename}")
         if data.get("type") == "Rulebook":
-            raw_data = base64.b64decode(data.get("data"))
-            response.check_vault = has_vaulted_str(raw_data)
-            response.rulesets = rules_parser.parse_rule_sets(
-                yaml.safe_load(raw_data)
-            )
+            rulebook_raw_data = base64.b64decode(data.get("data"))
+            response.check_vault = has_vaulted_str(rulebook_raw_data)
         if data.get("type") == "ExtraVars":
             response.variables = yaml.safe_load(
                 base64.b64decode(data.get("data"))
@@ -243,6 +241,12 @@ async def _handle_request_workload(
             response.controller_ssl_verify = data.get("ssl_verify")
             response.controller_username = data.get("username", "")
             response.controller_password = data.get("password", "")
+
+    if rulebook_raw_data is not None:
+        response.rulesets = rules_parser.parse_rule_sets(
+            yaml.safe_load(rulebook_raw_data),
+            response.variables,
+        )
 
     if non_fq_key and "filename" in file_template_vars:
         response.variables["eda"] = {

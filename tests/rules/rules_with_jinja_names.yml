@@ -1,0 +1,15 @@
+---
+- name: Demo rules
+  hosts: localhost
+  sources:
+    - range:
+        limit: 5
+  rules:
+    - name: "Handle {{ service.name }} alert"
+      condition: event.i == 1
+      action:
+        debug:
+    - name: "Restart {{ service.name }} on {{ target_host }}"
+      condition: event.i == 2
+      action:
+        debug:
