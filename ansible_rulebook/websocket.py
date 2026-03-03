@@ -22,6 +22,7 @@ import tempfile
 import typing as tp
 from dataclasses import dataclass, field
 
+import aiofiles.tempfile
 import websockets
 import yaml
 from websockets.asyncio.client import ClientConnection
@@ -217,9 +218,11 @@ async def _handle_request_workload(
                 non_fq_key = True
             else:
                 key = keys[1]
-            filename = tempfile.NamedTemporaryFile().name
-            with open(filename, "wb") as f:
-                f.write(raw_data)
+            async with aiofiles.tempfile.NamedTemporaryFile(
+                delete=False
+            ) as tmp:
+                filename = tmp.name
+                await tmp.write(raw_data)
             file_template_vars[key] = filename
             os.chmod(filename, 0o400)
             logger.debug(f"File Content eda.filename.{key} : {filename}")
