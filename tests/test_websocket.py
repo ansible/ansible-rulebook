@@ -157,6 +157,54 @@ async def test_request_workload(file_contents, checks, single):
 
 
 @pytest.mark.asyncio
+async def test_request_workload_jinja_rule_names():
+    """Verify Jinja2 substitution works in rule names via worker mode.
+
+    Previously, parse_rule_sets was called before ExtraVars were
+    available, so Jinja2 expressions in rule names would raise
+    UndefinedError.
+    """
+    prepare_settings()
+    os.chdir(HERE)
+    test_data = []
+    test_data.append(
+        dict2json(
+            dict(
+                type="ControllerInfo",
+                url="https://www.example.com",
+                token="abc",
+                ssl_verify="no",
+            )
+        )
+    )
+    load_file(
+        "./rules/rules_with_jinja_names.yml",
+        "Rulebook",
+        test_data,
+        True,
+    )
+    load_file(
+        "./data/test_vars_with_names.yml",
+        "ExtraVars",
+        test_data,
+        True,
+    )
+    load_file("./data/test_env.yml", "EnvVars", test_data, True)
+    test_data.append(dict2json({"type": "EndOfResponse"}))
+
+    with patch("ansible_rulebook.websocket.websockets.connect") as mo:
+        mo.return_value.__aenter__.return_value.recv.side_effect = test_data
+        mo.return_value.__aenter__.return_value.send.return_value = None
+
+        response = await request_workload("dummy")
+        assert response.rulesets[0].name == "Demo rules"
+        rules = response.rulesets[0].rules
+        assert len(rules) == 2
+        assert rules[0].name == "Handle httpd alert"
+        assert rules[1].name == "Restart httpd on web-01"
+
+
+@pytest.mark.asyncio
 async def test_send_event_log_to_websocket():
     prepare_settings()
     queue = asyncio.Queue()
