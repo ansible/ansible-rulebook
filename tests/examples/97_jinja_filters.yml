@@ -1,0 +1,30 @@
+---
+- name: 97 jinja
+  hosts: all
+  sources:
+    - eda.builtin.generic:
+        payload:
+           - name: "host1.net"
+           - name: "Bamm Bamm Rubble"
+        create_index: index
+        shutdown_delay: 5
+  rules:
+    - name: regex rule
+      condition: event.name is regex("host")
+      actions:
+        - debug:
+            msg:
+              - " {{ event.name|replace('.com','') }} "
+              - " {{ event.name.split('.') | first }} "
+              - " {{ event.name.capitalize()}} "
+              - " {{ event.name|regex_replace('host1','host195')}} "
+    - name: original event
+      condition: event.name == "Bamm Bamm Rubble"
+      actions:
+        - post_event:
+             event:
+                msg: "{{ event.name|regex_replace('Bamm','Betty',count=1)}}"
+    - name: posted event
+      condition: event.msg == "Betty Bamm Rubble"
+      action:
+        print_event:

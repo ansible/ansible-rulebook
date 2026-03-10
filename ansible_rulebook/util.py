@@ -30,7 +30,7 @@ from urllib.parse import urlparse
 
 import ansible_runner
 import jinja2
-from jinja2.nativetypes import NativeTemplate
+from jinja2.nativetypes import NativeEnvironment
 from packaging import version
 from packaging.version import InvalidVersion
 
@@ -42,6 +42,7 @@ from ansible_rulebook.exception import (
     InventoryNotFound,
     VaultDecryptException,
 )
+from ansible_rulebook.jinja import register_filters
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +84,10 @@ def decryptable(obj: Union[Dict, List, str, bool, int]) -> None:
 
 def render_string(value: str, context: Dict) -> str:
     if "{{" in value and "}}" in value:
-        value = NativeTemplate(value, undefined=jinja2.StrictUndefined).render(
-            context
-        )
+        env = NativeEnvironment(undefined=jinja2.StrictUndefined)
+        register_filters(env)
+        # Create a NativeTemplate
+        value = env.from_string(value).render(context)
 
     if isinstance(value, str) and settings.vault.is_encrypted(value):
         value = settings.vault.decrypt(value)

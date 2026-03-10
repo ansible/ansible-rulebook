@@ -4,6 +4,7 @@
 ## [Unreleased]
 ### Changed
 ### Added
+- New jinja filters in actions: `regex_replace`, `basename`, `normpath`, `dirname`
 ### Fixed
 
 ## [1.2.1]

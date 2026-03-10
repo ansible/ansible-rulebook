@@ -3,6 +3,12 @@ Actions
 =======
 
 When a rule matches the condition(s), it fires the corresponding action for the rule.
+
+.. note::
+    Actions can use Jinja filters to transform and manipulate data. See :doc:`jinja_filters` for
+    details on available filters including regex_replace, basename, dirname, and normpath, as well
+    as Python string methods. Note that Jinja filters cannot be used in conditions.
+
 The following actions are supported:
 
 - `run_playbook`_
@@ -303,6 +309,7 @@ Example, using data saved with assignment:
 
 | The events and facts prefixes have rule scope and cannot be accessed outside of
 | rules. Please note the use of Jinja substitution when accessing the event results.
+| You can also use :doc:`jinja_filters` to transform the data before posting it.
 
 set_fact
 ********
@@ -501,6 +508,7 @@ debug
 | **msg** and **var** are mutually exclusive, you can have only 1 of them in the debug
 | msg can be a single string or an array of strings, with references to event or events.
 | With var using the Jinja style braces is optional like shown in the example below
+| You can use :doc:`jinja_filters` to transform the data in debug messages
 
 Example:
 
