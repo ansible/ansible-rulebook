@@ -2742,3 +2742,60 @@ async def test_96_job_template_with_lock(response, my_vars, expected_order):
             assert action["action"] == "run_job_template"
 
     assert order_of_templates == expected_order
+
+
+@pytest.mark.jira("AAPRFE-2108")
+@pytest.mark.asyncio
+async def test_97_jinja_filters():
+    ruleset_queues, event_log = load_rulebook("examples/97_jinja_filters.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+
+        checks = {
+            "max_events": 4,
+            "shutdown_events": 1,
+            "actions": [
+                "97 jinja::regex rule::debug",
+                "97 jinja::original event::post_event",
+                "97 jinja::posted event::print_event",
+            ],
+        }
+        await validate_events(event_log, **checks)
+
+
+@pytest.mark.jira("AAPRFE-2108")
+@pytest.mark.asyncio
+async def test_98_jinja_files():
+    ruleset_queues, event_log = load_rulebook("examples/98_jinja_files.yml")
+
+    queue = ruleset_queues[0][1]
+    rs = ruleset_queues[0][0]
+    with SourceTask(rs.sources[0], "sources", {}, queue):
+        await run_rulesets(
+            event_log,
+            ruleset_queues,
+            dict(),
+            dict(),
+        )
+
+        checks = {
+            "max_events": 7,
+            "shutdown_events": 1,
+            "actions": [
+                "98 jinja files::catch_all::post_event",
+                "98 jinja files::catch_all::post_event",
+                "98 jinja files::catch_all::post_event",
+                "98 jinja files::normpath::print_event",
+                "98 jinja files::dirname::print_event",
+                "98 jinja files::basename::print_event",
+            ],
+        }
+        await validate_events(event_log, **checks)

@@ -101,6 +101,36 @@ TEST_DATA = [
         },
         "95 accumulate within",
     ),
+    (
+        {
+            "rules_triggered": 3,
+            "events_processed": 3,
+            "events_matched": 3,
+            "number_of_actions": 3,
+            "number_of_session_stats": 2,
+            "number_of_rules": 3,
+            "number_of_disabled_rules": 0,
+        },
+        utils.EXAMPLES_PATH / "97_jinja_filters.yml",
+        {
+            "regex rule": {
+                "action": "debug",
+                "event_key": "m/name",
+                "event_value": "host1.net",
+            },
+            "original event": {
+                "action": "post_event",
+                "event_key": "m/name",
+                "event_value": "Bamm Bamm Rubble",
+            },
+            "posted event": {
+                "action": "print_event",
+                "event_key": "m/msg",
+                "event_value": "Betty Bamm Rubble",
+            },
+        },
+        "97 jinja",
+    ),
 ]
 
 
