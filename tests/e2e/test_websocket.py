@@ -149,25 +149,34 @@ async def test_worker_startup_output(verbosity):
     # run server and ansible-rulebook
     queue = asyncio.Queue()
     handler = partial(utils.msg_handler, queue=queue)
-    async with ws_server.serve(handler, host, port):
-        LOGGER.info(f"Running command: {cmd}")
-        process = subprocess.Popen(
-            cmd,
-            cwd=utils.BASE_DATA_PATH,
-            text=True,
-            stdout=subprocess.PIPE,
-        )
-        lines = []
-        start = time.time()
-        while line := process.stdout.readline():
-            lines.append(line)
-            if "Starting worker mode" in line:
-                break
-            if time.time() - start > timeout:
-                break
-            time.sleep(0.1)
-
-        process.kill()
+    process = None
+    try:
+        async with ws_server.serve(handler, host, port):
+            LOGGER.info(f"Running command: {cmd}")
+            process = subprocess.Popen(
+                cmd,
+                cwd=utils.BASE_DATA_PATH,
+                text=True,
+                stdout=subprocess.PIPE,
+            )
+            lines = []
+            start = time.time()
+            while line := process.stdout.readline():
+                lines.append(line)
+                if "Starting worker mode" in line:
+                    break
+                if time.time() - start > timeout:
+                    break
+                time.sleep(0.1)
+    finally:
+        # Properly clean up the subprocess before event loop closes
+        if process:
+            process.kill()
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                process.terminate()
+                process.wait(timeout=2)
 
     assert lines, "No output from ansible-rulebook"
     info_messages = [
