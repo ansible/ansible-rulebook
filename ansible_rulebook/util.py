@@ -424,7 +424,7 @@ def validate_url(url: str, url_type: str) -> bool:
 
 # If the following values exist in a key,
 # replace the value of the key with the MASKED_STRING
-KEYS_TO_FILTER = ["token", "password", "key", "passphrase"]
+KEYS_TO_FILTER = ["token", "password", "key", "passphrase", "secret"]
 MASKED_STRING = "******"
 
 
@@ -477,3 +477,9 @@ def create_context(
             return ssl._create_unverified_context()
         return ssl.create_default_context(cafile=ssl_verify)
     return None
+
+
+def strtobool(value: str) -> bool:
+    if value.lower() in ("y", "yes", "on", "1", "true", "t"):
+        return True
+    return False
