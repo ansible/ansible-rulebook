@@ -62,6 +62,7 @@ logger = logging.getLogger(__name__)
 
 
 all_source_queues = []
+_background_tasks = set()
 
 
 async def heartbeat_task(
@@ -247,7 +248,7 @@ async def start_source(
         raise
     finally:
         logger.debug("Broadcast shutdown to all source plugins")
-        asyncio.create_task(
+        task = asyncio.create_task(
             broadcast(
                 Shutdown(
                     message=shutdown_msg,
@@ -256,6 +257,8 @@ async def start_source(
                 ),
             )
         )
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
 
 
 class RulebookFileChangeHandler(FileSystemEventHandler):
