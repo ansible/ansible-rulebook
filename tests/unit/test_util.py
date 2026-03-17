@@ -32,6 +32,7 @@ from ansible_rulebook.util import (
     has_builtin_filter,
     mask_sensitive_variable_values,
     startup_logging,
+    strtobool,
 )
 from ansible_rulebook.vault import Vault
 
@@ -239,6 +240,15 @@ def test_startup_logging_no_collections(caplog):
     "extra_vars, expected",
     [
         ({"password": "dummy"}, {"password": MASKED_STRING}),
+        ({"my_secret": "dummy"}, {"my_secret": MASKED_STRING}),
+        (
+            {"drools_secondary_encryption_secret": "dummy"},
+            {"drools_secondary_encryption_secret": MASKED_STRING},
+        ),
+        (
+            {"drools_primary_encryption_secret": "dummy"},
+            {"drools_primary_encryption_secret": MASKED_STRING},
+        ),
         (
             {
                 "TOWER_HOST": "https://ansible.com",
@@ -356,3 +366,18 @@ def test_startup_logging_no_collections(caplog):
 )
 def test_mask_sensitive_variable_values(extra_vars, expected):
     assert mask_sensitive_variable_values(extra_vars) == expected
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        ("true", True),
+        ("false", False),
+        ("0", False),
+        ("1", True),
+        ("yes", True),
+        ("no", False),
+    ],
+)
+def test_strtobool(value: str, expected: bool):
+    assert strtobool(value) == expected
