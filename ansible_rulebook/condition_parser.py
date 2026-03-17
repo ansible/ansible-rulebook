@@ -332,7 +332,7 @@ condition = infix_notation(
 
 def parse_condition(condition_string: str) -> Condition:
     try:
-        return condition.parseString(condition_string, parse_all=True)[0]
+        return condition.parse_string(condition_string, parse_all=True)[0]
     except ParseException as pe:
         msg = f"Error parsing: {condition_string}. {pe}"
         logger.debug(pe.explain(depth=0))
