@@ -43,7 +43,12 @@ async def test_websocket_messages(expect_failure):
 
     # run server and ansible-rulebook
     queue = asyncio.Queue()
-    handler = partial(utils.msg_handler, queue=queue, failed=expect_failure)
+    handler = partial(
+        utils.msg_handler,
+        queue=queue,
+        disconnect=not expect_failure,
+        force_error=expect_failure,
+    )
     async with ws_server.serve(handler, host, port):
         LOGGER.info(f"Running command: {cmd}")
         proc = await asyncio.create_subprocess_shell(
