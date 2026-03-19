@@ -156,11 +156,22 @@ def assert_playbook_output(result: CompletedProcess) -> List[dict]:
 async def msg_handler(
     websocket: ws_server.ServerConnection,
     queue: asyncio.Queue,
-    failed: bool = False,
+    disconnect: bool = False,
+    force_error: bool = False,
 ):
     """
     Handler for a websocket server that passes json messages
-    from ansible-rulebook in the given queue
+    from ansible-rulebook in the given queue.
+
+    Args:
+        websocket: The websocket connection
+        queue: Queue to put received messages
+        disconnect: If True, closes connection after 2nd message to test
+            reconnect logic. NOTE: This triggers _wait_before_retry with
+            random backoff, making tests non-deterministic. Only use for
+            tests specifically testing reconnection behavior.
+        force_error: If True, raises error after 2nd message to test
+            error handling
     """
     i = 0
     async for message in websocket:
@@ -168,9 +179,9 @@ async def msg_handler(
         data = {"path": websocket.request.path, "payload": payload}
         await queue.put(data)
         if i == 1:
-            if failed:
+            if force_error:
                 print(data["bad"])  # force a coding error
-            else:
+            elif disconnect:
                 await websocket.close()  # should be auto reconnected
         i += 1
 
