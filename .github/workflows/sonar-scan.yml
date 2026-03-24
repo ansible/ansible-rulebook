@@ -41,7 +41,7 @@ jobs:
 
       # Download coverage artifact from CI workflow
       - name: Download coverage artifact
-        uses: dawidd6/action-download-artifact@1f8785ff7a5130826f848e7f72725c85d241860f  #v2.27.0 sonar cannot use official Github action: actions/download-artifact
+        uses: dawidd6/action-download-artifact@8a338493df3d275e4a7a63bcff3b8fe97e51a927  #v2.27.0 sonar cannot use official Github action: actions/download-artifact
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: CI
@@ -180,7 +180,7 @@ jobs:
 
       # Download coverage artifact from CI workflow
       - name: Download coverage artifact
-        uses: dawidd6/action-download-artifact@1f8785ff7a5130826f848e7f72725c85d241860f  #v2.27.0 sonar cannot use official Github action: actions/download-artifact
+        uses: dawidd6/action-download-artifact@8a338493df3d275e4a7a63bcff3b8fe97e51a927  #v2.27.0 sonar cannot use official Github action: actions/download-artifact
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: CI
