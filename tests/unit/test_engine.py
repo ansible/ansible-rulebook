@@ -657,7 +657,7 @@ class TestRunRulesets:
 
         source_queue = asyncio.Queue()
         ruleset_queues = [
-            RuleSetQueue(mock_ruleset, source_queue, asyncio.Queue())
+            RuleSetQueue(mock_ruleset, source_queue, {})
         ]
         variables = {"test": "value"}
 
@@ -720,7 +720,7 @@ class TestRunRulesets:
 
         source_queue = asyncio.Queue()
         ruleset_queues = [
-            RuleSetQueue(mock_ruleset, source_queue, asyncio.Queue())
+            RuleSetQueue(mock_ruleset, source_queue, {})
         ]
         variables = {}
 
@@ -792,7 +792,7 @@ class TestRunRulesets:
 
         source_queue = asyncio.Queue()
         ruleset_queues = [
-            RuleSetQueue(mock_ruleset, source_queue, asyncio.Queue())
+            RuleSetQueue(mock_ruleset, source_queue, {})
         ]
         variables = {}
 
@@ -866,7 +866,7 @@ class TestRunRulesets:
 
         source_queue = asyncio.Queue()
         ruleset_queues = [
-            RuleSetQueue(mock_ruleset, source_queue, asyncio.Queue())
+            RuleSetQueue(mock_ruleset, source_queue, {})
         ]
         variables = {}
         inventory = "/path/to/inventory"
@@ -935,7 +935,7 @@ class TestRunRulesets:
 
         source_queue = asyncio.Queue()
         ruleset_queues = [
-            RuleSetQueue(mock_ruleset, source_queue, asyncio.Queue())
+            RuleSetQueue(mock_ruleset, source_queue, {})
         ]
         variables = {}
 
