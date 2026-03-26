@@ -111,7 +111,7 @@ class RunWorkflowTemplate:
                         retries,
                     )
                 # Launch the workflow and get URL immediately
-                if job_url is None:
+                if not job_url:
                     job_url = (
                         await job_template_runner.launch_workflow_job_template(
                             self.name,
