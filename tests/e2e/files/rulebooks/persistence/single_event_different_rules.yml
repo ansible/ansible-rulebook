@@ -1,0 +1,21 @@
+---
+- name: Single Event Different Rules
+  hosts: localhost
+  sources:
+    - json_event_queue:
+        file: "{{ json_data_file }}"
+        delay: 2
+        feedback: true
+  rules:
+    - name: r1
+      condition: event.i == 1
+      actions:
+        - debug:
+    - name: r5
+      condition: event.i == 5
+      actions:
+        - debug:
+    - name: r9
+      condition: event.i == 9
+      actions:
+        - print_event:

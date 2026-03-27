@@ -286,21 +286,21 @@ async def test_run_job_template(
             UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE_NO_LABELS,
             UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE_NO_LABELS,
             False,
-            False,
+            {},
         ),
         (
             [CUSTOMER_LABEL],
             UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE,
             UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE,
             False,
-            False,
+            {},
         ),
         (
             [CUSTOMER_LABEL],
             UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE_NO_LABELS,
             UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE_NO_LABELS,
             False,
-            False,
+            {},
         ),
     ],
 )
@@ -442,3 +442,344 @@ async def test_session_get_called_with_expected_url(
         calls = mocked_session.get.mock_calls[0]
         args = calls[1]
         assert args[0] == expected
+
+
+@pytest.mark.asyncio
+async def test_get_job_url_from_label_job_template_found(
+    new_job_template_runner,
+):
+    """Test get_job_url_from_label with job_template type when job is found."""
+    from ansible_rulebook.job_template_runner import JOB_TEMPLATE_TYPE
+
+    label_name = "test-label"
+    job_url = "api/v2/jobs/123/"
+
+    # Mock response for job template
+    job_template_response = {
+        "id": 255,
+        "type": "job_template",
+        "name": JOB_TEMPLATE_NAME_1,
+        "ask_limit_on_launch": False,
+        "ask_variables_on_launch": False,
+        "ask_inventory_on_launch": False,
+        "ask_labels_on_launch": True,
+        "related": {"launch": JOB_TEMPLATE_1_LAUNCH_SLUG},
+        "summary_fields": {"organization": {"name": ORGANIZATION_NAME}},
+    }
+
+    # Mock response for jobs with label
+    jobs_response = {
+        "count": 1,
+        "next": None,
+        "previous": None,
+        "results": [{"url": job_url, "id": 123, "status": "successful"}],
+    }
+
+    with aioresponses() as mocked:
+        # Mock the unified job templates endpoint
+        mocked.get(
+            f"{new_job_template_runner.host}{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
+            status=200,
+            body=json.dumps(
+                {
+                    "count": 1,
+                    "next": None,
+                    "previous": None,
+                    "results": [job_template_response],
+                }
+            ),
+        )
+
+        # Mock the jobs endpoint filtered by label
+        jobs_slug = f"api/v2/job_templates/255/jobs/?labels__name={label_name}"
+        mocked.get(
+            f"{new_job_template_runner.host}{jobs_slug}",
+            status=200,
+            body=json.dumps(jobs_response),
+        )
+
+        result = await new_job_template_runner.get_job_url_from_label(
+            JOB_TEMPLATE_NAME_1,
+            ORGANIZATION_NAME,
+            JOB_TEMPLATE_TYPE,
+            label_name,
+        )
+
+        assert result == job_url
+
+
+@pytest.mark.asyncio
+async def test_get_job_url_from_label_job_template_not_found(
+    new_job_template_runner,
+):
+    """Test get_job_url_from_label with job_template type.
+
+    When no job is found.
+    """
+    from ansible_rulebook.job_template_runner import JOB_TEMPLATE_TYPE
+
+    label_name = "test-label"
+
+    # Mock response for job template
+    job_template_response = {
+        "id": 255,
+        "type": "job_template",
+        "name": JOB_TEMPLATE_NAME_1,
+        "ask_limit_on_launch": False,
+        "ask_variables_on_launch": False,
+        "ask_inventory_on_launch": False,
+        "ask_labels_on_launch": True,
+        "related": {"launch": JOB_TEMPLATE_1_LAUNCH_SLUG},
+        "summary_fields": {"organization": {"name": ORGANIZATION_NAME}},
+    }
+
+    # Mock response for jobs with label - no results
+    jobs_response = {
+        "count": 0,
+        "next": None,
+        "previous": None,
+        "results": [],
+    }
+
+    with aioresponses() as mocked:
+        # Mock the unified job templates endpoint
+        mocked.get(
+            f"{new_job_template_runner.host}{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
+            status=200,
+            body=json.dumps(
+                {
+                    "count": 1,
+                    "next": None,
+                    "previous": None,
+                    "results": [job_template_response],
+                }
+            ),
+        )
+
+        # Mock the jobs endpoint filtered by label
+        jobs_slug = f"api/v2/job_templates/255/jobs/?labels__name={label_name}"
+        mocked.get(
+            f"{new_job_template_runner.host}{jobs_slug}",
+            status=200,
+            body=json.dumps(jobs_response),
+        )
+
+        result = await new_job_template_runner.get_job_url_from_label(
+            JOB_TEMPLATE_NAME_1,
+            ORGANIZATION_NAME,
+            JOB_TEMPLATE_TYPE,
+            label_name,
+        )
+
+        assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_job_url_from_label_workflow_template_found(
+    new_job_template_runner,
+):
+    """Test get_job_url_from_label with workflow_template type.
+
+    When job is found.
+    """
+    from ansible_rulebook.job_template_runner import WORKFLOW_TEMPLATE_TYPE
+
+    label_name = "test-label"
+    workflow_job_url = "api/v2/workflow_jobs/456/"
+
+    # Mock response for workflow template
+    workflow_template_response = {
+        "id": 300,
+        "type": "workflow_job_template",
+        "name": JOB_TEMPLATE_NAME_1,
+        "ask_limit_on_launch": False,
+        "ask_variables_on_launch": False,
+        "ask_inventory_on_launch": True,
+        "ask_labels_on_launch": True,
+        "related": {"launch": JOB_TEMPLATE_2_LAUNCH_SLUG},
+        "summary_fields": {"organization": {"name": ORGANIZATION_NAME}},
+    }
+
+    # Mock response for workflow jobs with label
+    workflow_jobs_response = {
+        "count": 1,
+        "next": None,
+        "previous": None,
+        "results": [
+            {"url": workflow_job_url, "id": 456, "status": "successful"}
+        ],
+    }
+
+    with aioresponses() as mocked:
+        # Mock the unified job templates endpoint
+        mocked.get(
+            f"{new_job_template_runner.host}{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
+            status=200,
+            body=json.dumps(
+                {
+                    "count": 1,
+                    "next": None,
+                    "previous": None,
+                    "results": [workflow_template_response],
+                }
+            ),
+        )
+
+        # Mock the workflow jobs endpoint filtered by label
+        jobs_slug = (
+            f"api/v2/workflow_job_templates/300/workflow_jobs/"
+            f"?labels__name={label_name}"
+        )
+        mocked.get(
+            f"{new_job_template_runner.host}{jobs_slug}",
+            status=200,
+            body=json.dumps(workflow_jobs_response),
+        )
+
+        result = await new_job_template_runner.get_job_url_from_label(
+            JOB_TEMPLATE_NAME_1,
+            ORGANIZATION_NAME,
+            WORKFLOW_TEMPLATE_TYPE,
+            label_name,
+        )
+
+        assert result == workflow_job_url
+
+
+@pytest.mark.asyncio
+async def test_get_job_url_from_label_workflow_template_not_found(
+    new_job_template_runner,
+):
+    """Test get_job_url_from_label with workflow_template type.
+
+    When no job is found.
+    """
+    from ansible_rulebook.job_template_runner import WORKFLOW_TEMPLATE_TYPE
+
+    label_name = "test-label"
+
+    # Mock response for workflow template
+    workflow_template_response = {
+        "id": 300,
+        "type": "workflow_job_template",
+        "name": JOB_TEMPLATE_NAME_1,
+        "ask_limit_on_launch": False,
+        "ask_variables_on_launch": False,
+        "ask_inventory_on_launch": True,
+        "ask_labels_on_launch": True,
+        "related": {"launch": JOB_TEMPLATE_2_LAUNCH_SLUG},
+        "summary_fields": {"organization": {"name": ORGANIZATION_NAME}},
+    }
+
+    # Mock response for workflow jobs with label - no results
+    workflow_jobs_response = {
+        "count": 0,
+        "next": None,
+        "previous": None,
+        "results": [],
+    }
+
+    with aioresponses() as mocked:
+        # Mock the unified job templates endpoint
+        mocked.get(
+            f"{new_job_template_runner.host}{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
+            status=200,
+            body=json.dumps(
+                {
+                    "count": 1,
+                    "next": None,
+                    "previous": None,
+                    "results": [workflow_template_response],
+                }
+            ),
+        )
+
+        # Mock the workflow jobs endpoint filtered by label
+        jobs_slug = (
+            f"api/v2/workflow_job_templates/300/workflow_jobs/"
+            f"?labels__name={label_name}"
+        )
+        mocked.get(
+            f"{new_job_template_runner.host}{jobs_slug}",
+            status=200,
+            body=json.dumps(workflow_jobs_response),
+        )
+
+        result = await new_job_template_runner.get_job_url_from_label(
+            JOB_TEMPLATE_NAME_1,
+            ORGANIZATION_NAME,
+            WORKFLOW_TEMPLATE_TYPE,
+            label_name,
+        )
+
+        assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_job_url_from_label_template_not_exists(
+    new_job_template_runner,
+):
+    """Test get_job_url_from_label when the template doesn't exist."""
+    from ansible_rulebook.job_template_runner import JOB_TEMPLATE_TYPE
+
+    label_name = "test-label"
+
+    with aioresponses() as mocked:
+        # Mock the unified job templates endpoint - no results
+        mocked.get(
+            f"{new_job_template_runner.host}{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
+            status=200,
+            body=json.dumps(NO_JOB_TEMPLATE_PAGE1_RESPONSE),
+        )
+
+        with pytest.raises(JobTemplateNotFoundException):
+            await new_job_template_runner.get_job_url_from_label(
+                JOB_TEMPLATE_NAME_1,
+                ORGANIZATION_NAME,
+                JOB_TEMPLATE_TYPE,
+                label_name,
+            )
+
+
+@pytest.mark.asyncio
+async def test_get_job_url_from_label_workflow_template_not_exists(
+    new_job_template_runner,
+):
+    """Test get_job_url_from_label when the workflow template doesn't exist."""
+    from ansible_rulebook.job_template_runner import WORKFLOW_TEMPLATE_TYPE
+
+    label_name = "test-label"
+
+    with aioresponses() as mocked:
+        # Mock the unified job templates endpoint - no results
+        mocked.get(
+            f"{new_job_template_runner.host}{UNIFIED_JOB_TEMPLATE_PAGE1_SLUG}",
+            status=200,
+            body=json.dumps(NO_JOB_TEMPLATE_PAGE1_RESPONSE),
+        )
+
+        with pytest.raises(WorkflowJobTemplateNotFoundException):
+            await new_job_template_runner.get_job_url_from_label(
+                JOB_TEMPLATE_NAME_1,
+                ORGANIZATION_NAME,
+                WORKFLOW_TEMPLATE_TYPE,
+                label_name,
+            )
+
+
+@pytest.mark.asyncio
+async def test_get_job_url_from_label_invalid_type(new_job_template_runner):
+    """Test get_job_url_from_label with an invalid type."""
+    label_name = "test-label"
+    invalid_type = "invalid_type"
+
+    with pytest.raises(ValueError) as exc_info:
+        await new_job_template_runner.get_job_url_from_label(
+            JOB_TEMPLATE_NAME_1,
+            ORGANIZATION_NAME,
+            invalid_type,
+            label_name,
+        )
+
+    assert "Invalid type" in str(exc_info.value)
+    assert invalid_type in str(exc_info.value)

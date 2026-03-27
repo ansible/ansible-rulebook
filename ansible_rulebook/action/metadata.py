@@ -13,6 +13,37 @@
 #  limitations under the License.
 
 from dataclasses import dataclass
+from typing import Optional
+
+
+@dataclass(frozen=True)
+class ActionPersistence:
+    """ActionPersistence class stores the persistence information
+    which is used to ensure that an action has been persisted and
+    not lost during outages in execution
+
+    Attributes
+    ----------
+    matching_uuid: str
+        The matching UUID used when in HA mode
+    action_index: int
+        The action index
+    last_action: bool
+        If this is a last action for the rule
+    a_priori: dict
+        Previous information for this action
+    """
+
+    __slots__ = [
+        "matching_uuid",
+        "action_index",
+        "last_action",
+        "a_priori",
+    ]
+    matching_uuid: Optional[str]
+    action_index: int
+    last_action: bool
+    a_priori: Optional[dict]
 
 
 @dataclass(frozen=True)
@@ -32,17 +63,12 @@ class Metadata:
         Rule set uuid
     rule_run_at: str
         ISO 8601 date/time when the rule was triggered
+    persistent_info: Optional[ActionPersistence]
     """
 
-    __slots__ = [
-        "rule",
-        "rule_uuid",
-        "rule_set",
-        "rule_set_uuid",
-        "rule_run_at",
-    ]
     rule: str
     rule_uuid: str
     rule_set: str
     rule_set_uuid: str
     rule_run_at: str
+    persistent_info: Optional[ActionPersistence] = None

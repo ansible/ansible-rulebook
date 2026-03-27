@@ -11,9 +11,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+import argparse
 import asyncio
 import json
 import logging
+import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -55,39 +58,56 @@ class SourceTask:
 
 
 RULEBOOK_NAMES = [
-    ("examples/01_noop.yml"),
-    ("examples/92_gather_facts_sans_inventory.yml"),
+    ("examples/01_noop.yml", None, False),
+    ("examples/92_gather_facts_sans_inventory.yml", None, False),
+    (
+        "examples/01_noop.yml",
+        argparse.Namespace(
+            id="42", persistence_id="test-persistence-id", heartbeat=0
+        ),
+        True,
+    ),
 ]
 
 
-@pytest.mark.parametrize("rulebook", RULEBOOK_NAMES)
+@pytest.mark.parametrize("rulebook, args, use_persistence", RULEBOOK_NAMES)
 @pytest.mark.asyncio
-async def test_01_noop(rulebook):
-    ruleset_queues, event_log = load_rulebook(rulebook)
+async def test_01_noop(rulebook, args, use_persistence):
+    # Use a temporary directory that auto-cleans on exit
+    variables = {}
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Only populate the db path if persistence is needed
+        if use_persistence:
+            db_path = Path(tmpdir) / "test_drools.db"
+            variables = {"drools_db_file_path": str(db_path)}
 
-    queue = ruleset_queues[0][1]
-    queue.put_nowait(dict(i=1))
-    queue.put_nowait(Shutdown())
+        ruleset_queues, event_log = load_rulebook(rulebook)
 
-    with patch("uuid.uuid4", return_value=DUMMY_UUID):
-        await run_rulesets(
-            event_log,
-            ruleset_queues,
-            dict(),
-            dict(),
-        )
+        queue = ruleset_queues[0][1]
+        queue.put_nowait(dict(i=1))
+        queue.put_nowait(Shutdown())
 
-    event = event_log.get_nowait()
-    assert event["type"] == "Action", "1"
-    assert event["action"] == "noop", "2"
-    assert event["action_uuid"] == DUMMY_UUID
-    assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
-    assert event["status"] == "successful"
-    assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
-    assert event["matching_events"] == {"m": {"i": 1}}, "3"
-    event = event_log.get_nowait()
-    assert event["type"] == "Shutdown", "7"
-    assert event_log.empty()
+        with patch("uuid.uuid4", return_value=DUMMY_UUID):
+            await run_rulesets(
+                event_log,
+                ruleset_queues,
+                variables,
+                "",
+                args,
+            )
+
+        event = event_log.get_nowait()
+        assert event["type"] == "Action", "1"
+        assert event["action"] == "noop", "2"
+        assert event["action_uuid"] == DUMMY_UUID
+        assert event["ruleset_uuid"] == ruleset_queues[0][0].uuid
+        assert event["status"] == "successful"
+        assert event["rule_uuid"] == ruleset_queues[0][0].rules[0].uuid
+        assert event["matching_events"] == {"m": {"i": 1}}, "3"
+        event = event_log.get_nowait()
+        assert event["type"] == "Shutdown", "7"
+        assert event_log.empty()
+    # tmpdir and all its contents are automatically deleted here
 
 
 @pytest.mark.asyncio
@@ -2113,23 +2133,28 @@ async def test_46_job_template():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
             "ansible_rulebook.action.run_job_template."
-            "job_template_runner.run_job_template",
-            return_value=response_obj,
+            "job_template_runner.launch_job_template",
+            return_value=job_url,
         ):
-            await run_rulesets(
-                event_log,
-                ruleset_queues,
-                dict(),
-                "playbooks/inventory.yml",
-            )
+            with patch(
+                "ansible_rulebook.action.run_job_template."
+                "job_template_runner.monitor_job",
+                return_value=response_obj,
+            ):
+                await run_rulesets(
+                    event_log,
+                    ruleset_queues,
+                    dict(),
+                    "playbooks/inventory.yml",
+                )
 
-            while not event_log.empty():
-                event = event_log.get_nowait()
-                if event["type"] == "Action":
-                    action = event
+                while not event_log.empty():
+                    event = event_log.get_nowait()
+                    if event["type"] == "Action":
+                        action = event
 
-            assert action["url"] == job_url
-            assert action["action"] == "run_job_template"
+                assert action["url"] == job_url
+                assert action["action"] == "run_job_template"
 
 
 JOB_TEMPLATE_ERRORS = [
@@ -2149,7 +2174,7 @@ async def test_46_job_template_exception(err_msg, err):
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
             "ansible_rulebook.action.run_job_template."
-            "job_template_runner.run_job_template",
+            "job_template_runner.launch_job_template",
             side_effect=err,
         ):
             await run_rulesets(
@@ -2269,7 +2294,7 @@ async def test_79_workflow_job_template_exception(err_msg, err):
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
             "ansible_rulebook.action.run_workflow_template."
-            "job_template_runner.run_workflow_job_template",
+            "job_template_runner.launch_workflow_job_template",
             side_effect=err,
         ):
             await run_rulesets(
@@ -2320,23 +2345,27 @@ async def test_79_workflow_job_template():
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
             "ansible_rulebook.action.run_workflow_template."
-            "job_template_runner.run_workflow_job_template",
-            return_value=response_obj,
+            "job_template_runner.launch_workflow_job_template",
+            return_value=job_url,
         ):
-            await run_rulesets(
-                event_log,
-                ruleset_queues,
-                dict(),
-                dict(),
-            )
+            with patch(
+                "ansible_rulebook.action.run_workflow_template."
+                "job_template_runner.monitor_job",
+                return_value=response_obj,
+            ):
+                await run_rulesets(
+                    event_log,
+                    ruleset_queues,
+                    dict(),
+                    dict(),
+                )
 
-            while not event_log.empty():
-                event = event_log.get_nowait()
-                if event["type"] == "Action":
-                    action = event
-
-            assert action["url"] == job_url
-            assert action["action"] == "run_workflow_template"
+                while not event_log.empty():
+                    event = event_log.get_nowait()
+                    if event["type"] == "Action":
+                        action = event
+                assert action["url"] == job_url
+                assert action["action"] == "run_workflow_template"
 
 
 @pytest.mark.asyncio
@@ -2449,7 +2478,11 @@ INCLUDE_EVENTS_RUN = [
     (
         (
             "ansible_rulebook.action.run_job_template."
-            "job_template_runner.run_job_template"
+            "job_template_runner.launch_job_template"
+        ),
+        (
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.monitor_job"
         ),
         "examples/84_job_template_exclude_events.yml",
         "run_job_template",
@@ -2459,7 +2492,11 @@ INCLUDE_EVENTS_RUN = [
     (
         (
             "ansible_rulebook.action.run_workflow_template."
-            "job_template_runner.run_workflow_job_template"
+            "job_template_runner.launch_workflow_job_template"
+        ),
+        (
+            "ansible_rulebook.action.run_workflow_template."
+            "job_template_runner.monitor_job"
         ),
         "examples/85_workflow_template_exclude_events.yml",
         "run_workflow_template",
@@ -2469,7 +2506,11 @@ INCLUDE_EVENTS_RUN = [
     (
         (
             "ansible_rulebook.action.run_job_template."
-            "job_template_runner.run_job_template"
+            "job_template_runner.launch_job_template"
+        ),
+        (
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.monitor_job"
         ),
         "examples/86_job_template_include_events.yml",
         "run_job_template",
@@ -2479,7 +2520,11 @@ INCLUDE_EVENTS_RUN = [
     (
         (
             "ansible_rulebook.action.run_workflow_template."
-            "job_template_runner.run_workflow_job_template"
+            "job_template_runner.launch_workflow_job_template"
+        ),
+        (
+            "ansible_rulebook.action.run_workflow_template."
+            "job_template_runner.monitor_job"
         ),
         "examples/87_workflow_template_include_events.yml",
         "run_workflow_template",
@@ -2489,7 +2534,11 @@ INCLUDE_EVENTS_RUN = [
     (
         (
             "ansible_rulebook.action.run_job_template."
-            "job_template_runner.run_job_template"
+            "job_template_runner.launch_job_template"
+        ),
+        (
+            "ansible_rulebook.action.run_job_template."
+            "job_template_runner.monitor_job"
         ),
         "examples/88_job_template_no_args.yml",
         "run_job_template",
@@ -2501,10 +2550,11 @@ INCLUDE_EVENTS_RUN = [
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "location,rulebook,action_type,job_url,expected_keys", INCLUDE_EVENTS_RUN
+    "location,monitor,rulebook,action_type,job_url,expected_keys",
+    INCLUDE_EVENTS_RUN,
 )
 async def test_include_events(
-    location, rulebook, action_type, job_url, expected_keys
+    location, monitor, rulebook, action_type, job_url, expected_keys
 ):
     ruleset_queues, event_log = load_rulebook(rulebook)
 
@@ -2517,26 +2567,30 @@ async def test_include_events(
     with SourceTask(rs.sources[0], "sources", {}, queue):
         with patch(
             location,
-            return_value=response_obj,
+            return_value=job_url,
         ) as mocked_obj:
-            await run_rulesets(
-                event_log,
-                ruleset_queues,
-                dict(),
-                "playbooks/inventory.yml",
-            )
+            with patch(
+                monitor,
+                return_value=response_obj,
+            ):
+                await run_rulesets(
+                    event_log,
+                    ruleset_queues,
+                    dict(),
+                    "playbooks/inventory.yml",
+                )
 
-            while not event_log.empty():
-                event = event_log.get_nowait()
-                if event["type"] == "Action":
-                    action = event
+                while not event_log.empty():
+                    event = event_log.get_nowait()
+                    if event["type"] == "Action":
+                        action = event
 
-            assert action["url"] == job_url
-            assert action["action"] == action_type
-            assert (
-                list(mocked_obj.call_args.args[2]["extra_vars"].keys())
-                == expected_keys
-            )
+                assert action["url"] == job_url
+                assert action["action"] == action_type
+                assert (
+                    list(mocked_obj.call_args.args[2]["extra_vars"].keys())
+                    == expected_keys
+                )
 
 
 @pytest.mark.asyncio
@@ -2711,7 +2765,7 @@ async def test_96_job_template_with_lock(response, my_vars, expected_order):
 
     order_of_templates = []
 
-    async def dummy_template_runner(arg1, arg2, arg3, arg4):
+    async def dummy_template_runner(arg1):
         order_of_templates.append(arg1)
         if arg1 in response:
             obj = response[arg1]
@@ -2724,24 +2778,29 @@ async def test_96_job_template_with_lock(response, my_vars, expected_order):
     with SourceTask(rs.sources[0], "sources", my_vars, queue):
         with patch(
             "ansible_rulebook.action.run_job_template."
-            "job_template_runner.run_job_template",
-            side_effect=dummy_template_runner,
+            "job_template_runner.launch_job_template",
+            side_effect=expected_order,
         ):
-            await run_rulesets(
-                event_log,
-                ruleset_queues,
-                my_vars,
-                "playbooks/inventory.yml",
-            )
+            with patch(
+                "ansible_rulebook.action.run_job_template."
+                "job_template_runner.monitor_job",
+                side_effect=dummy_template_runner,
+            ):
+                await run_rulesets(
+                    event_log,
+                    ruleset_queues,
+                    my_vars,
+                    "playbooks/inventory.yml",
+                )
 
-            while not event_log.empty():
-                event = event_log.get_nowait()
-                if event["type"] == "Action":
-                    action = event
+                while not event_log.empty():
+                    event = event_log.get_nowait()
+                    if event["type"] == "Action":
+                        action = event
 
-            assert action["action"] == "run_job_template"
+                assert action["action"] == "run_job_template"
 
-    assert order_of_templates == expected_order
+            assert order_of_templates == expected_order
 
 
 @pytest.mark.jira("AAPRFE-2108")
