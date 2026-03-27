@@ -295,21 +295,17 @@ class RuleSetRunner:
                 # regardless of which lang.post() outcome occurred.
                 if send_feedback:
                     try:
-                        source_name = dpath.get(
-                            data, "meta/source/name"
-                        )
+                        source_name = dpath.get(data, "meta/source/name")
                     except KeyError:
                         source_name = None
 
                     if (
                         source_name
                         and source_name
-                        in self.ruleset_queue_plan
-                        .source_feedback_queues
+                        in self.ruleset_queue_plan.source_feedback_queues
                     ):
                         feedback_queue = (
-                            self.ruleset_queue_plan
-                            .source_feedback_queues.get(
+                            self.ruleset_queue_plan.source_feedback_queues.get(
                                 source_name
                             )
                         )
