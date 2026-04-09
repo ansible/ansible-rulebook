@@ -1,7 +1,15 @@
 
 # Changelog
 
-## [Unreleased]
+## [1.3.0]
+### Changed
+### Added
+- Add support for event persistence
+- Add `add_event_uuid_label` parameter in `run_job_template`, `run_workflow_template` actions
+- Add new `--persistence-id` command line parameter
+### Fixed
+
+## [1.2.2]
 ### Changed
 ### Added
 - New jinja filters in actions: `regex_replace`, `basename`, `normpath`, `dirname`
