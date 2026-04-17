@@ -40,7 +40,6 @@ from ansible_rulebook.action.helper import (
 )
 from ansible_rulebook.action.metadata import ActionPersistence, Metadata
 from ansible_rulebook.action.noop import Noop
-from ansible_rulebook.action.pg_notify import PGNotify
 from ansible_rulebook.action.post_event import PostEvent
 from ansible_rulebook.action.print_event import PrintEvent
 from ansible_rulebook.action.retract_fact import RetractFact
@@ -90,7 +89,6 @@ ACTION_CLASSES = {
     "run_module": RunModule,
     "run_job_template": RunJobTemplate,
     "run_workflow_template": RunWorkflowTemplate,
-    "pg_notify": PGNotify,
 }
 
 
