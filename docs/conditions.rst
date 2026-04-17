@@ -18,11 +18,20 @@ Each of the condition(s) can use information from
  * Variables provided by the user at startup saved as vars
 
 When writing conditions
-  * use the **event** prefix when accessing data from the current event
+  * use the **event** prefix when accessing data from the current event in **single condition rules**
+  * use the **events** prefix when accessing matched events in **multi-condition rules** (any/all)
   * use the **fact** prefix when accessing data from the set_facts actions in the rulebook
-  * use the **events** prefix when assigning variables and accessing data within the rule
   * use the **facts** prefix when assigning variables and accessing data within the rule
   * use the **vars** prefix when accessing variables passed in via --vars and --env-vars
+
+.. important::
+    **The event vs events distinction is critical:**
+
+    * **Single condition rules** use ``event`` (singular) to access the matching event
+    * **Multi-condition rules** (any/all) use ``events`` (plural) to access matched events
+
+    Even if an ``any`` condition matches only one event at a time, you must still use ``events``
+    (not ``event``) in the action. For example: ``{{ events.m_0 }}`` or ``{{ events.match }}``
 
 
 .. note::
@@ -205,6 +214,17 @@ passes and the action is triggered.
 Multiple conditions where **all** of them have to match
 -------------------------------------------------------
 
+.. important::
+    **Critical: event vs events**
+
+    * **Single condition rules:** Access the matching event using ``event`` (singular)
+    * **Multi-condition rules (any/all):** Access matching events using ``events`` (plural)
+
+    For ``all`` conditions, when multiple events match different conditions, you **must**
+    use the ``events`` prefix (not ``event``). Matched events are stored as ``events.m_0``,
+    ``events.m_1``, etc., based on the order of conditions, or you can assign custom names
+    using the ``<<`` operator.
+
     .. code-block:: yaml
 
         name: All conditions must match
@@ -214,13 +234,14 @@ Multiple conditions where **all** of them have to match
             - event.tracking_id == 345
         action:
           debug:
+            msg: "First event: {{ events.m_0 }}, Second event: {{ events.m_1 }}"
 
 As we receive events from the source plugins we send them to the appropriate
 rule set sessions running in the rule engine.
 With multiple conditions the rule engine will keep track of the conditions that
 have matched and wait for the next event to come in which might match other conditions.
 Once all the conditions have been met, it will return you all the events that matched,
-which can be used in action.
+which can be used in action via the ``events`` variable.
 
     .. warning::
         Note that in this case the engine will consider **all the different events** until the conditions are met,
@@ -331,30 +352,116 @@ Multiple conditions where **all** of them have to match with internal references
 Multiple conditions where **any** one of them has to match
 ----------------------------------------------------------
 
+| When using multiple conditions with **any**, the rule engine waits for **distinct events**
+| (separate incoming events) and fires the rule as soon as **any one** of the conditions
+| matches. This is fundamentally different from using the **or** operator, which evaluates
+| multiple attributes from a **single event**.
+
+.. important::
+    **Critical: event vs events**
+
+    * **Single condition rules:** Access the matching event using ``event`` (singular)
+    * **Multi-condition rules (any/all):** Access matching events using ``events`` (plural)
+
+    For ``any`` conditions, even though only **one** event triggers the rule at a time, you **must**
+    still use the ``events`` prefix (not ``event``). The matching event is stored as ``events.m_0``,
+    ``events.m_1``, etc., or you can assign it to a custom name like ``events.match`` using the
+    ``<<`` operator as shown below.
+
+**Important:**
+  * Each condition in an **any** block evaluates **different events**, not different attributes from the same event
+  * By default, matched events are stored as **events.m_0**, **events.m_1**, **events.m_2**, etc., based on which condition matched
+  * You can override the default **m_{n}** naming using the **<<** assignment operator
+
+**Example with default assignments (m_0, m_1, m_2):**
+
     .. code-block:: yaml
 
-        name: Any condition can match
-        condition:
-          any:
-            - event.target_os == "linux"
-            - event.target_os == "windows"
-        action:
-          debug:
+        ---
+        - name: Any condition with default assignments
+          hosts: localhost
+          sources:
+            - ansible.eda.generic:
+                payload:
+                  - temperature: 85
+                    location: "server-room"
+                  - user: "alice"
+                    action: "login"
+                  - inventory: 42
+                    warehouse: "west"
+          rules:
+            - name: Monitor different event types
+              condition:
+                any:
+                  - event.temperature == 85
+                  - event.user == "alice"
+                  - event.inventory == 42
+              action:
+                debug:
+                  msg: "Matched event: {{ events }}"
 
-    .. note::
-        Note that in this case the engine will consider **all the different events** until one of them meets one of the conditions,
-        regardless of whether those events come from one or multiple sources.
-        Multiple conditions with ``any`` are not equivalent to a single condition with the ``or`` operator.
+| In this example, three **different events** will arrive. The first event has ``temperature: 85``,
+| the second has ``user: "alice"``, and the third has ``inventory: 42``. As soon as the first
+| event arrives and matches the first condition, the rule fires. The matching event is stored as
+| **events.m_0** (because the first condition matched). If the second condition had matched first,
+| it would be stored as **events.m_1**, and so on.
 
-        If you want to match only one event using multiple attributes
-        the rule must use a single condition with the ``or`` operator:
+**Example with custom assignment using the << operator:**
 
     .. code-block:: yaml
 
-        name: One condition combining attributes
-        condition: event.target_os == "linux" or event.target_os == "windows"
-        action:
-          debug:
+        ---
+        - name: Any condition with custom assignment
+          hosts: localhost
+          sources:
+            - ansible.eda.generic:
+                payload:
+                  - temperature: 85
+                    location: "server-room"
+                  - user: "alice"
+                    action: "login"
+                  - inventory: 42
+                    warehouse: "west"
+          rules:
+            - name: Monitor different event types with custom name
+              condition:
+                any:
+                  - events.match << event.temperature == 85
+                  - events.match << event.user == "alice"
+                  - events.match << event.inventory == 42
+              action:
+                debug:
+                  msg: "Found a match: {{ events.match }}"
+
+| Using the **<<** assignment operator, you can assign all matching events to a single, more
+| readable attribute name like **events.match**. Regardless of which condition matches, the
+| matching event will be stored as **events.match**, making it easier to reference in your actions.
+
+    .. warning::
+        The engine considers **distinct events** (separate incoming events), not different attributes
+        from a single event. Multiple conditions with ``any`` are **not** equivalent to a single
+        condition with the ``or`` operator.
+
+        **Wrong approach** - This will NOT work as expected if you want to check multiple attributes from one event:
+
+        .. code-block:: yaml
+
+            # This waits for DIFFERENT events, not one event with either attribute
+            condition:
+              any:
+                - event.target_os == "linux"
+                - event.target_os == "windows"
+
+        **Correct approach** - To match one event using multiple possible attribute values,
+        use a single condition with the ``or`` operator:
+
+        .. code-block:: yaml
+
+            # This checks ONE event for either attribute value
+            name: One condition combining attributes from a single event
+            condition: event.target_os == "linux" or event.target_os == "windows"
+            action:
+              debug:
 
 
 Multiple conditions with facts and events and **all** of one of them have to match
@@ -550,6 +657,12 @@ The first match is stored as **m_0**, and the subsequent ones are stored as **m_
 Single condition assignment (Not supported)
 -------------------------------------------
 
+.. important::
+    **Remember: Single condition rules use event, not events**
+
+    For single condition rules, the matching event is **always** accessed via ``event`` (singular).
+    You **cannot** use ``events`` or assignment operators in single condition rules.
+
     .. code-block:: yaml
 
         name: assignment ignored
@@ -562,7 +675,7 @@ Single condition assignment (Not supported)
 | Assignment **cannot** be used for rules that have a single condition, the
 | matching event will always be called **event**. In the above example **event.first**
 | is ignored and the matching event is stored as **event**. Compare this to multiple
-| condition rules where the matching events are stored as **events**.
+| condition rules where the matching events are stored as **events** (plural).
 
 
 Negation Example
@@ -999,6 +1112,36 @@ Example:
             fact:
             msg: "{{event.msg}}"
 
+    .. warning::
+        **Important:** Unlike traditional programming languages, the rule engine does **not** crash
+        when an attribute is undefined. If an attribute doesn't exist in an event, the condition
+        is simply ignored and doesn't match. This means **is defined** checks are usually unnecessary.
+
+        **Special case - event.meta:** Every event automatically has a **meta** field added by the
+        system when the event is received. Using ``event.meta is defined`` will **always** match
+        (equivalent to setting ``condition: true``), so this check is meaningless.
+
+        **When is defined is actually useful:**
+          * Initializing variables with set_fact
+          * After a retract_fact operation
+          * When you explicitly want a rule to fire for **any** event (use ``event.meta is defined``)
+
+        **Example of unnecessary is defined check:**
+
+        .. code-block:: yaml
+
+            # UNNECESSARY - the condition will be ignored if event.temperature doesn't exist
+            name: Check temperature (bad)
+            condition: event.temperature is defined and event.temperature > 85
+            action:
+              debug:
+
+            # BETTER - just check the value directly
+            name: Check temperature (good)
+            condition: event.temperature > 85
+            action:
+              debug:
+
 | **Q:** How do I check if an attribute in an object referred in a condition does not exist?
 
 | **Ans:** Use the is not defined
@@ -1014,18 +1157,20 @@ Example:
             msg: Hello World
 
 | **Q:** What are the caveats of using **is not defined**?
-| **Ans:** The is not defined should be used sparingly to
+| **Ans:** The **is not defined** should be used sparingly to
 |          a. initialize a variable
 |          b. immediately following a retract fact
-| If a rule only has one condition with is not defined, then
+| If a rule only has one condition with **is not defined**, then
 | placement of this rule is important. If the rule is defined
 | first in the rulebook it will get executed all the time till
 | the variable gets defined this might lead to misleading results and
 | skipping of other rules. You should typically combine the
-| is not defined with another comparison. It's not important to check
-| if an attribute exists before you use it in a condition. The rule engine
-| will check for the existence and only then compare it. If its missing, the
-| comparison fails.
+| **is not defined** with another comparison.
+|
+| **Important reminder:** It's **not** necessary to check if an attribute exists before you
+| use it in a condition. The rule engine will check for the existence and only then compare it.
+| If the attribute is missing, the comparison simply fails and the condition is ignored - the
+| program does **not** crash with undefined variable errors like in traditional programming languages.
 
 
 | **Q:** If a condition string has an embedded colon followed by a space in it how do I escape it?
