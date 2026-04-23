@@ -31,6 +31,8 @@ runs:
     - name: Run tests
       shell: bash
       run: >
-        docker run --rm localhost/ansible-rulebook:test bash -c '
-        pip install -r requirements_test.txt &&
+        docker run --rm -v $PWD:/app/rulebook localhost/ansible-rulebook:test bash -c '
+        cd /app/rulebook &&
+        export PATH=/app/.local/bin:$PATH &&
+        pip3 install -r requirements_test.txt &&
         pytest -m "e2e" -n auto'
