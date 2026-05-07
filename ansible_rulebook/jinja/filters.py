@@ -97,9 +97,43 @@ def normpath(
     return os.path.normpath(value)
 
 
+def bool_filter(
+    value: Any,
+) -> bool:
+    """
+    Convert a string to a boolean value.
+
+    Returns True for: 'true', 'yes', '1', 'on' (case-insensitive)
+    Returns False for: 'false', 'no', '0', 'off', '' (case-insensitive)
+    For other types, returns the Python bool() evaluation.
+    """
+    if value is None:
+        return False
+
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, str):
+        lower_value = value.lower().strip()
+        if lower_value in ("true", "yes", "1", "on"):
+            return True
+        elif lower_value in ("false", "no", "0", "off", ""):
+            return False
+        else:
+            # For any other string, raise an error for clarity
+            raise ValueError(
+                f"Cannot convert '{value}' to boolean. "
+                "Expected: true/false, yes/no, 1/0, on/off"
+            )
+
+    # For other types (int, list, etc.), use Python's bool()
+    return bool(value)
+
+
 FILTERS: Dict[str, Callable[..., str]] = {
     "regex_replace": regex_replace,
     "basename": basename,
     "dirname": dirname,
     "normpath": normpath,
+    "bool": bool_filter,
 }
