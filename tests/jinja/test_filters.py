@@ -1,8 +1,10 @@
 import pytest
 from jinja2 import Environment
+from jinja2.nativetypes import NativeEnvironment
 
 from ansible_rulebook.jinja import (
     basename,
+    bool_filter,
     dirname,
     normpath,
     regex_replace,
@@ -184,3 +186,161 @@ def test_dirname(value, expected):
 )
 def test_normpath(value, expected):
     assert normpath(value) == expected
+
+
+# Tests for bool_filter
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        # String values - truthy
+        ("true", True),
+        ("True", True),
+        ("TRUE", True),
+        ("yes", True),
+        ("Yes", True),
+        ("YES", True),
+        ("1", True),
+        ("on", True),
+        ("On", True),
+        ("ON", True),
+        # String values - falsy
+        ("false", False),
+        ("False", False),
+        ("FALSE", False),
+        ("no", False),
+        ("No", False),
+        ("NO", False),
+        ("0", False),
+        ("off", False),
+        ("Off", False),
+        ("OFF", False),
+        ("", False),
+        # String values with whitespace
+        ("  true  ", True),
+        ("  false  ", False),
+        ("  yes  ", True),
+        ("  no  ", False),
+        # Boolean values
+        (True, True),
+        (False, False),
+        # None
+        (None, False),
+        # Other types
+        (1, True),
+        (0, False),
+        ([], False),
+        ([1, 2], True),
+        ({}, False),
+        ({"a": 1}, True),
+    ],
+)
+def test_bool_filter(value, expected):
+    assert bool_filter(value) == expected
+
+
+def test_bool_filter_invalid_string():
+    # Test that invalid string values raise ValueError
+    with pytest.raises(ValueError, match="Cannot convert 'maybe' to boolean"):
+        bool_filter("maybe")
+
+    with pytest.raises(
+        ValueError, match="Cannot convert 'invalid' to boolean"
+    ):
+        bool_filter("invalid")
+
+
+def test_bool_filter_jinja_integration():
+    env = Environment()
+    register_filters(env)
+
+    # Test truthy string
+    template = env.from_string("{{ 'yes' | bool }}")
+    assert template.render() == "True"
+
+    # Test falsy string
+    template = env.from_string("{{ 'no' | bool }}")
+    assert template.render() == "False"
+
+    # Test with variable
+    template = env.from_string(
+        "{% if enabled | bool %}enabled{% else %}disabled{% endif %}"
+    )
+    assert template.render(enabled="true") == "enabled"
+    assert template.render(enabled="false") == "disabled"
+    assert template.render(enabled="1") == "enabled"
+    assert template.render(enabled="0") == "disabled"
+
+
+def test_bool_filter_native_environment():
+    """Test bool filter with NativeEnvironment to get actual boolean values."""
+    env = NativeEnvironment()
+    register_filters(env)
+
+    # Test truthy string - should return actual boolean True
+    template = env.from_string("{{ 'yes' | bool }}")
+    result = template.render()
+    assert result is True
+    assert isinstance(result, bool)
+
+    # Test falsy string - should return actual boolean False
+    template = env.from_string("{{ 'no' | bool }}")
+    result = template.render()
+    assert result is False
+    assert isinstance(result, bool)
+
+    # Test various truthy strings
+    for truthy_value in [
+        "true",
+        "True",
+        "TRUE",
+        "yes",
+        "Yes",
+        "1",
+        "on",
+        "ON",
+    ]:
+        template = env.from_string("{{ value | bool }}")
+        result = template.render(value=truthy_value)
+        assert (
+            result is True
+        ), f"Expected True for '{truthy_value}', got {result}"
+        assert isinstance(result, bool)
+
+    # Test various falsy strings
+    for falsy_value in [
+        "false",
+        "False",
+        "FALSE",
+        "no",
+        "No",
+        "0",
+        "off",
+        "OFF",
+        "",
+    ]:
+        template = env.from_string("{{ value | bool }}")
+        result = template.render(value=falsy_value)
+        assert (
+            result is False
+        ), f"Expected False for '{falsy_value}', got {result}"
+        assert isinstance(result, bool)
+
+    # Test with conditional logic
+    template = env.from_string(
+        "{% if enabled | bool %}enabled{% else %}disabled{% endif %}"
+    )
+    assert template.render(enabled="true") == "enabled"
+    assert template.render(enabled="false") == "disabled"
+    assert template.render(enabled="1") == "enabled"
+    assert template.render(enabled="0") == "disabled"
+
+    # Test that boolean values can be used in expressions
+    template = env.from_string("{{ ('yes' | bool) and ('true' | bool) }}")
+    result = template.render()
+    assert result is True
+    assert isinstance(result, bool)
+
+    template = env.from_string("{{ ('yes' | bool) and ('false' | bool) }}")
+    result = template.render()
+    assert result is False
+    assert isinstance(result, bool)

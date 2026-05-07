@@ -13,13 +13,21 @@
 #  limitations under the License.
 from typing import Any, List
 
-from .filters import FILTERS, basename, dirname, normpath, regex_replace
+from .filters import (
+    FILTERS,
+    basename,
+    bool_filter,
+    dirname,
+    normpath,
+    regex_replace,
+)
 
 __all__: List[str] = [
     "regex_replace",
     "basename",
     "dirname",
     "normpath",
+    "bool_filter",
     "FILTERS",
     "register_filters",
 ]
