@@ -14,9 +14,8 @@
 
 import getpass
 import shutil
+import subprocess
 import tempfile
-
-import pexpect
 
 from ansible_rulebook.exception import (
     AnsibleVaultNotFound,
@@ -37,19 +36,26 @@ class Vault:
         vault_ids: list[str] = None,
         ask_pass: bool = False,
     ):
-        cli_args = ""
+        cli_args = []
+        self.tempfiles = []
+
+        has_vault_config = ask_pass or password_file or vault_ids or passwords
+        if has_vault_config and not shutil.which("ansible-vault"):
+            raise AnsibleVaultNotFound
+
         if ask_pass:
-            self.secret = getpass.getpass(prompt="Vault password: ")
-            cli_args = " --ask-vault-pass"
-        else:
-            self.secret = None
+            secret = getpass.getpass(prompt="Vault password: ")
+            tmpf = tempfile.NamedTemporaryFile("w+t", suffix=".vaultpw")
+            tmpf.write(secret)
+            tmpf.flush()
+            self.tempfiles.append(tmpf)
+            cli_args += ["--vault-password-file", tmpf.name]
 
         if password_file:
-            cli_args += f" --vault-password-file {password_file}"
+            cli_args += ["--vault-password-file", password_file]
 
         if not vault_ids:
             vault_ids = []
-        self.tempfiles = []
         for item in passwords or []:
             if item["type"] == "VaultPassword":
                 tmpf = tempfile.NamedTemporaryFile("w+t")
@@ -59,34 +65,40 @@ class Vault:
                 vault_ids.append(f"{item['label']}@{tmpf.name}")
 
         for vid in vault_ids:
-            cli_args += f" --vault-id {vid}"
+            cli_args += ["--vault-id", vid]
 
         if cli_args:
-            if not shutil.which("ansible-vault"):
-                raise AnsibleVaultNotFound
-            self.cli = f"ansible-vault decrypt {cli_args}"
+            self.cli_args = ["ansible-vault", "decrypt"] + cli_args
         else:
-            self.cli = None
+            self.cli_args = None
 
     def decrypt(self, vault_text: str) -> str:
-        """Decrypt a vault text."""
-        if not self.cli:
+        """Decrypt a vault text.
+
+        Pipes ciphertext to ansible-vault via subprocess stdin.
+        subprocess.run with input= uses communicate() for coordinated
+        read/write, handling arbitrarily large payloads on all platforms.
+        """
+        if not self.cli_args:
             raise VaultDecryptException("No vault secrets were provided")
-        child = pexpect.spawn(self.cli)
-        if self.secret:
-            child.expect("Vault password: ")
-            child.sendline(self.secret)
-        child.expect("Reading ciphertext input from stdin")
-        child.sendline(vault_text)
-        child.sendcontrol("D")
-        i = child.expect(["Decryption successful", "ERROR"])
-        if i == 0:
-            child.readline()
-            decrypted_text = "".join(line.decode() for line in child)
-            return decrypted_text.strip()
-        else:
-            error_msg = child.readline()
-            raise VaultDecryptException(error_msg.decode())
+
+        try:
+            result = subprocess.run(
+                self.cli_args,
+                capture_output=True,
+                input=vault_text,
+                text=True,
+                timeout=30,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise VaultDecryptException(
+                "ansible-vault decrypt timed out"
+            ) from exc
+
+        if result.returncode != 0:
+            raise VaultDecryptException(result.stderr.strip())
+
+        return result.stdout.rstrip("\n")
 
     @staticmethod
     def is_encrypted(vault_text: str) -> bool:
