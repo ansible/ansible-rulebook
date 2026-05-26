@@ -19,6 +19,8 @@ The `ansible-rulebook` CLI supports the following options:
                         [--vault-password-file VAULT_PASSWORD_FILE] [--vault-id VAULT_ID] [--ask-vault-pass]
                         [-F FILTER_DIR]
                         [--persistence-id PERSISTENCE_ID]
+                        [--controller-retry-max-timeout CONTROLLER_RETRY_MAX_TIMEOUT]
+                        [--controller-retry-attempts CONTROLLER_RETRY_ATTEMPTS]
 
     optional arguments:
     -h, --help            show this help message and exit
@@ -73,8 +75,12 @@ The `ansible-rulebook` CLI supports the following options:
                             The file containing one ansible vault password, can also be passed via the env var EDA_VAULT_PASSWORD_FILE.
     --vault-id VAULT_ID   label@filename pointing to an ansible vault password file
     --ask-vault-pass      Ask vault password interactively 
-    --persistence-id   PERSISTENCE_ID 
+    --persistence-id   PERSISTENCE_ID
                          The unique id, preferably a UUID to track persistent event data
+    --controller-retry-max-timeout CONTROLLER_RETRY_MAX_TIMEOUT
+                            Maximum backoff time in seconds for controller API retries on transient errors (429/502/503/504). Default is 60. Can also be passed via env var EDA_CONTROLLER_RETRY_MAX_TIMEOUT
+    --controller-retry-attempts CONTROLLER_RETRY_ATTEMPTS
+                            Number of retry attempts for controller API calls on transient errors. Default is 5. Can also be passed via env var EDA_CONTROLLER_RETRY_ATTEMPTS
 
 To get help from `ansible-rulebook` run the following:
 
