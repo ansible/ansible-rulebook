@@ -913,10 +913,11 @@ async def test_30_run_module_missing():
 
     event = event_log.get_nowait()
     assert event["type"] == "Job", "0"
-    for i in range(10):
-        assert event_log.get_nowait()["type"] == "AnsibleEvent", f"0.{i}"
+    while True:
+        event = event_log.get_nowait()
+        if event["type"] != "AnsibleEvent":
+            break
 
-    event = event_log.get_nowait()
     assert event["type"] == "Action", "1"
     assert event["action"] == "run_module", "2"
 

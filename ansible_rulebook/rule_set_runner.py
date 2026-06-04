@@ -49,6 +49,7 @@ from ansible_rulebook.action.run_playbook import RunPlaybook
 from ansible_rulebook.action.run_workflow_template import RunWorkflowTemplate
 from ansible_rulebook.action.set_fact import SetFact
 from ansible_rulebook.action.shutdown import Shutdown as ShutdownAction
+from ansible_rulebook.back_pressure import BackPressureManager
 from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import (
     ShutdownException,
@@ -119,6 +120,7 @@ class RuleSetRunner:
         self.event_counter = 0
         self.display = terminal.Display()
         self.locks = defaultdict(asyncio.Lock)
+        self.back_pressure_manager = BackPressureManager(event_log)
 
     async def run_ruleset(self):
         tasks = []
@@ -225,6 +227,7 @@ class RuleSetRunner:
         logger.info("Waiting for events, ruleset: %s", self.name)
         try:
             while True:
+                await self.back_pressure_manager.apply_all_back_pressure()
                 data = await self.ruleset_queue_plan.source_queue.get()
                 # Default to output events at debug level.
                 level = logging.DEBUG
@@ -459,7 +462,7 @@ class RuleSetRunner:
         )
 
         task = asyncio.create_task(
-            self._call_action(
+            self._call_action_with_semaphore(
                 metadata,
                 action.action,
                 MappingProxyType(action.action_args),
@@ -473,6 +476,38 @@ class RuleSetRunner:
         self.active_actions.add(task)
         task.add_done_callback(self._handle_action_completion)
         return task
+
+    async def _call_action_with_semaphore(
+        self,
+        metadata: Metadata,
+        action: str,
+        immutable_action_args: MappingProxyType,
+        variables: Dict,
+        inventory: str,
+        hosts: List,
+        rules_engine_result,
+    ) -> None:
+        if settings.max_actions_semaphore:
+            async with settings.max_actions_semaphore:
+                await self._call_action(
+                    metadata,
+                    action,
+                    immutable_action_args,
+                    variables,
+                    inventory,
+                    hosts,
+                    rules_engine_result,
+                )
+        else:
+            await self._call_action(
+                metadata,
+                action,
+                immutable_action_args,
+                variables,
+                inventory,
+                hosts,
+                rules_engine_result,
+            )
 
     async def _call_action(
         self,

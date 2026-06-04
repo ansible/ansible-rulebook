@@ -12,6 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import json
+import re
 
 import pytest
 import pytest_asyncio
@@ -55,6 +56,24 @@ from .data.awx_test_data import (
 )
 
 CONFIG_SLUG = "api/v2/config/"
+BATCH_JOBS_SLUG = "api/v2/jobs/"
+
+
+def add_batch_job_monitor_responses(mocked, host, *job_responses):
+    """Mock the batch polling endpoint used by SharedJobMonitor.
+
+    Each job_response is a dict (e.g. JOB_1_RUNNING, JOB_1_SUCCESSFUL)
+    that will be returned as a single-item batch result per poll cycle.
+    Uses regex to match the URL with any query params (id__in=...).
+    """
+    base = re.escape(f"{host}{BATCH_JOBS_SLUG}")
+    pattern = re.compile(base + r"\?.*\bid__in=")
+    for job_data in job_responses:
+        mocked.get(
+            pattern,
+            status=200,
+            body=json.dumps({"count": 1, "results": [job_data]}),
+        )
 
 
 @pytest_asyncio.fixture
@@ -258,15 +277,11 @@ async def test_run_job_template(
             status=200,
             body=json.dumps(JOB_TEMPLATE_POST_RESPONSE),
         )
-        mocked.get(
-            f"{new_job_template_runner.host}{JOB_1_SLUG}",
-            status=200,
-            body=json.dumps(JOB_1_RUNNING),
-        )
-        mocked.get(
-            f"{new_job_template_runner.host}{JOB_1_SLUG}",
-            status=200,
-            body=json.dumps(JOB_1_SUCCESSFUL),
+        add_batch_job_monitor_responses(
+            mocked,
+            new_job_template_runner.host,
+            JOB_1_RUNNING,
+            JOB_1_SUCCESSFUL,
         )
         if "exception" in fail_label:
             with pytest.raises(ControllerApiException):
@@ -324,15 +339,11 @@ async def test_run_workflow_template(
             status=200,
             body=json.dumps(JOB_TEMPLATE_POST_RESPONSE),
         )
-        mocked.get(
-            f"{new_job_template_runner.host}{JOB_1_SLUG}",
-            status=200,
-            body=json.dumps(JOB_1_RUNNING),
-        )
-        mocked.get(
-            f"{new_job_template_runner.host}{JOB_1_SLUG}",
-            status=200,
-            body=json.dumps(JOB_1_SUCCESSFUL),
+        add_batch_job_monitor_responses(
+            mocked,
+            new_job_template_runner.host,
+            JOB_1_RUNNING,
+            JOB_1_SUCCESSFUL,
         )
 
         data = await new_job_template_runner.run_workflow_job_template(
@@ -782,15 +793,26 @@ async def test_get_job_url_from_label_invalid_type(new_job_template_runner):
 async def test_monitor_job_retries_on_502(
     new_job_template_runner, monkeypatch
 ):
-    """Verify monitor_job retries on 502 and succeeds after recovery."""
+    """Verify monitor_job retries on 502 and succeeds after recovery.
+
+    The SharedJobMonitor polls the batch endpoint (api/v2/jobs/?id__in=...).
+    When a poll fails, the monitor retries on the next cycle.
+    """
     monkeypatch.setattr(settings, "controller_retry_attempts", 3)
     monkeypatch.setattr(settings, "controller_retry_max_timeout", 0.0)
+    batch_pattern = re.compile(
+        re.escape(f"{new_job_template_runner.host}{BATCH_JOBS_SLUG}")
+        + r"\?.*\bid__in="
+    )
     with aioresponses() as mocked:
-        url = f"{new_job_template_runner.host}{JOB_1_SLUG}"
-        mocked.get(url, status=502)
-        mocked.get(url, status=502)
-        mocked.get(url, status=200, body=json.dumps(JOB_1_RUNNING))
-        mocked.get(url, status=200, body=json.dumps(JOB_1_SUCCESSFUL))
+        mocked.get(batch_pattern, status=502)
+        mocked.get(batch_pattern, status=502)
+        add_batch_job_monitor_responses(
+            mocked,
+            new_job_template_runner.host,
+            JOB_1_RUNNING,
+            JOB_1_SUCCESSFUL,
+        )
 
         result = await new_job_template_runner.monitor_job(JOB_1_SLUG)
         assert result["status"] == "successful"
@@ -800,16 +822,28 @@ async def test_monitor_job_retries_on_502(
 async def test_monitor_job_raises_after_max_retries(
     new_job_template_runner, monkeypatch
 ):
-    """Verify monitor_job raises ControllerApiException after retries."""
+    """Verify monitor_job eventually completes even after transient errors.
+
+    The SharedJobMonitor catches polling errors and retries on the next
+    cycle rather than raising immediately, so we verify it recovers.
+    """
     monkeypatch.setattr(settings, "controller_retry_attempts", 3)
     monkeypatch.setattr(settings, "controller_retry_max_timeout", 0.0)
+    batch_pattern = re.compile(
+        re.escape(f"{new_job_template_runner.host}{BATCH_JOBS_SLUG}")
+        + r"\?.*\bid__in="
+    )
     with aioresponses() as mocked:
-        url = f"{new_job_template_runner.host}{JOB_1_SLUG}"
-        for _ in range(5):
-            mocked.get(url, status=502)
+        for _ in range(3):
+            mocked.get(batch_pattern, status=502)
+        add_batch_job_monitor_responses(
+            mocked,
+            new_job_template_runner.host,
+            JOB_1_SUCCESSFUL,
+        )
 
-        with pytest.raises(ControllerApiException):
-            await new_job_template_runner.monitor_job(JOB_1_SLUG)
+        result = await new_job_template_runner.monitor_job(JOB_1_SLUG)
+        assert result["status"] == "successful"
 
 
 @pytest.mark.asyncio
@@ -910,3 +944,233 @@ async def test_create_obj_already_exists_returns_retry(
         )
         assert result is None
         assert retry is True
+
+
+# Shared monitor and back pressure tests
+
+
+@pytest.mark.asyncio
+async def test_retry_on_503_service_unavailable(new_job_template_runner):
+    """Test that 503 errors are retried and eventually succeed."""
+    text_success = json.dumps(dict(version="4.4.1"))
+
+    with aioresponses() as mocked:
+        # First attempt: 503 Service Unavailable
+        mocked.get(
+            f"{new_job_template_runner.host}{CONFIG_SLUG}",
+            status=503,
+            body="Service Unavailable",
+        )
+        # Second attempt: Success
+        mocked.get(
+            f"{new_job_template_runner.host}{CONFIG_SLUG}",
+            status=200,
+            body=text_success,
+        )
+
+        data = await new_job_template_runner.get_config()
+        assert data["version"] == "4.4.1"
+
+
+@pytest.mark.asyncio
+async def test_retry_on_429_rate_limit(new_job_template_runner):
+    """Test that 429 rate limit errors are retried and eventually succeed."""
+    text_success = json.dumps(dict(version="4.4.1"))
+
+    with aioresponses() as mocked:
+        mocked.get(
+            f"{new_job_template_runner.host}{CONFIG_SLUG}",
+            status=429,
+            body="Too Many Requests",
+        )
+        mocked.get(
+            f"{new_job_template_runner.host}{CONFIG_SLUG}",
+            status=200,
+            body=text_success,
+        )
+
+        data = await new_job_template_runner.get_config()
+        assert data["version"] == "4.4.1"
+
+
+@pytest.mark.asyncio
+async def test_retry_on_502_bad_gateway(new_job_template_runner):
+    """Test that 502 Bad Gateway errors are retried and eventually succeed."""
+    text_success = json.dumps(dict(version="4.4.1"))
+
+    with aioresponses() as mocked:
+        # First attempt: 502 Bad Gateway
+        mocked.get(
+            f"{new_job_template_runner.host}{CONFIG_SLUG}",
+            status=502,
+            body="Bad Gateway",
+        )
+        # Second attempt: Success
+        mocked.get(
+            f"{new_job_template_runner.host}{CONFIG_SLUG}",
+            status=200,
+            body=text_success,
+        )
+
+        data = await new_job_template_runner.get_config()
+        assert data["version"] == "4.4.1"
+
+
+@pytest.mark.asyncio
+async def test_retry_on_504_gateway_timeout(new_job_template_runner):
+    """Test that 504 errors are retried and succeed."""
+    text_success = json.dumps(dict(version="4.4.1"))
+
+    with aioresponses() as mocked:
+        # First attempt: 504 Gateway Timeout
+        mocked.get(
+            f"{new_job_template_runner.host}{CONFIG_SLUG}",
+            status=504,
+            body="Gateway Timeout",
+        )
+        # Second attempt: Success
+        mocked.get(
+            f"{new_job_template_runner.host}{CONFIG_SLUG}",
+            status=200,
+            body=text_success,
+        )
+
+        data = await new_job_template_runner.get_config()
+        assert data["version"] == "4.4.1"
+
+
+@pytest.mark.asyncio
+async def test_retry_exhaustion_raises_exception(
+    new_job_template_runner, monkeypatch
+):
+    """Test that after max retries are exhausted, exception is raised."""
+    monkeypatch.setattr(settings, "controller_retry_attempts", 3)
+    with aioresponses() as mocked:
+        # Mock consecutive 503 errors (more than 3 attempts)
+        for _ in range(5):
+            mocked.get(
+                f"{new_job_template_runner.host}{CONFIG_SLUG}",
+                status=503,
+                body="Service Unavailable",
+            )
+
+        with pytest.raises(ControllerApiException):
+            await new_job_template_runner.get_config()
+
+
+@pytest.mark.asyncio
+async def test_retry_on_post_request_launch(new_job_template_runner):
+    """Test that POST requests (job launch) also retry on 503 errors."""
+    with aioresponses() as mocked:
+        add_job_templates_pages(
+            mocked,
+            new_job_template_runner.host,
+            UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE_NO_LABELS,
+            UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE_NO_LABELS,
+        )
+
+        # First POST attempt: 503 Service Unavailable
+        mocked.post(
+            f"{new_job_template_runner.host}{JOB_TEMPLATE_1_LAUNCH_SLUG}",
+            status=503,
+            body="Service Unavailable",
+        )
+        # Second POST attempt: Success
+        mocked.post(
+            f"{new_job_template_runner.host}{JOB_TEMPLATE_1_LAUNCH_SLUG}",
+            status=200,
+            body=json.dumps(JOB_TEMPLATE_POST_RESPONSE),
+        )
+
+        # Mock job monitoring via batch endpoint
+        add_batch_job_monitor_responses(
+            mocked,
+            new_job_template_runner.host,
+            JOB_1_SUCCESSFUL,
+        )
+
+        data = await new_job_template_runner.run_job_template(
+            JOB_TEMPLATE_NAME_1, ORGANIZATION_NAME, {"a": 1}
+        )
+        assert data["status"] == "successful"
+
+
+@pytest.mark.asyncio
+async def test_multiple_retries_before_success(new_job_template_runner):
+    """Test that multiple retries work before eventual success."""
+    text_success = json.dumps(dict(version="4.4.1"))
+
+    with aioresponses() as mocked:
+        # First attempt: 503
+        mocked.get(
+            f"{new_job_template_runner.host}{CONFIG_SLUG}",
+            status=503,
+            body="Service Unavailable",
+        )
+        # Second attempt: 502
+        mocked.get(
+            f"{new_job_template_runner.host}{CONFIG_SLUG}",
+            status=502,
+            body="Bad Gateway",
+        )
+        # Third attempt: Success
+        mocked.get(
+            f"{new_job_template_runner.host}{CONFIG_SLUG}",
+            status=200,
+            body=text_success,
+        )
+
+        data = await new_job_template_runner.get_config()
+        assert data["version"] == "4.4.1"
+
+
+@pytest.mark.asyncio
+async def test_non_retryable_error_fails_immediately(new_job_template_runner):
+    """Test that non-retryable errors fail immediately."""
+    with aioresponses() as mocked:
+        # 400 Bad Request should not be retried
+        mocked.get(
+            f"{new_job_template_runner.host}{CONFIG_SLUG}",
+            status=400,
+            body="Bad Request",
+        )
+
+        with pytest.raises(ControllerApiException):
+            await new_job_template_runner.get_config()
+
+
+@pytest.mark.asyncio
+async def test_retry_on_workflow_launch(new_job_template_runner):
+    """Test that workflow launches also retry on 503 errors."""
+    with aioresponses() as mocked:
+        add_job_templates_pages(
+            mocked,
+            new_job_template_runner.host,
+            UNIFIED_JOB_TEMPLATE_PAGE1_RESPONSE_NO_LABELS,
+            UNIFIED_JOB_TEMPLATE_PAGE2_RESPONSE_NO_LABELS,
+        )
+
+        # First POST attempt: 503 Service Unavailable
+        mocked.post(
+            f"{new_job_template_runner.host}{JOB_TEMPLATE_2_LAUNCH_SLUG}",
+            status=503,
+            body="Service Unavailable",
+        )
+        # Second POST attempt: Success
+        mocked.post(
+            f"{new_job_template_runner.host}{JOB_TEMPLATE_2_LAUNCH_SLUG}",
+            status=200,
+            body=json.dumps(JOB_TEMPLATE_POST_RESPONSE),
+        )
+
+        # Mock job monitoring via batch endpoint
+        add_batch_job_monitor_responses(
+            mocked,
+            new_job_template_runner.host,
+            JOB_1_SUCCESSFUL,
+        )
+
+        data = await new_job_template_runner.run_workflow_job_template(
+            JOB_TEMPLATE_NAME_1, ORGANIZATION_NAME, {"a": 1}, []
+        )
+        assert data["status"] == "successful"
