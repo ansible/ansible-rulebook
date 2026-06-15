@@ -38,6 +38,8 @@ class _Settings:
         self.eda_labels = [DEFAULT_EDA_LABEL]
         self.persistence_enabled = False
         self.persistence_id = None
+        self.controller_retry_max_timeout = 60.0
+        self.controller_retry_attempts = 5
 
 
 settings = _Settings()

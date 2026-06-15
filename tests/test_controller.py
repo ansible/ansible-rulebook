@@ -12,12 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import pytest_asyncio
 from aiohttp import ClientError
 from aioresponses import aioresponses
 
+from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import (
     ControllerApiException,
     JobTemplateNotFoundException,
@@ -56,16 +57,18 @@ from .data.awx_test_data import (
 CONFIG_SLUG = "api/v2/config/"
 
 
-@pytest.fixture
-def new_job_template_runner():
+@pytest_asyncio.fixture
+async def new_job_template_runner(monkeypatch):
     from ansible_rulebook.job_template_runner import JobTemplateRunner
 
+    monkeypatch.setattr(settings, "controller_retry_max_timeout", 0.0)
     obj = JobTemplateRunner(
         host="https://example.com",
         token="DUMMY",
     )
     obj.refresh_delay = 0.0
-    return obj
+    yield obj
+    await obj.close_session()
 
 
 @pytest.fixture
@@ -427,21 +430,11 @@ async def test_session_get_called_with_expected_url(
     host,
     expected,
 ):
-    with patch(
-        "ansible_rulebook.job_template_runner.aiohttp.ClientSession"
-    ) as mock:
-        mocked_session = AsyncMock()
-        mocked_session.get = MagicMock()
-        mocked_session.get.return_value.__aenter__.return_value = MagicMock(
-            status=200,
-            text=AsyncMock(return_value=json.dumps({"a": 1})),
-        )
-        mock.return_value = mocked_session
-        new_job_template_runner.host = host
-        await new_job_template_runner.get_config()
-        calls = mocked_session.get.mock_calls[0]
-        args = calls[1]
-        assert args[0] == expected
+    new_job_template_runner.host = host
+    with aioresponses() as mocked:
+        mocked.get(expected, status=200, body=json.dumps({"a": 1}))
+        data = await new_job_template_runner.get_config()
+        assert data == {"a": 1}
 
 
 @pytest.mark.asyncio
@@ -783,3 +776,137 @@ async def test_get_job_url_from_label_invalid_type(new_job_template_runner):
 
     assert "Invalid type" in str(exc_info.value)
     assert invalid_type in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_monitor_job_retries_on_502(
+    new_job_template_runner, monkeypatch
+):
+    """Verify monitor_job retries on 502 and succeeds after recovery."""
+    monkeypatch.setattr(settings, "controller_retry_attempts", 3)
+    monkeypatch.setattr(settings, "controller_retry_max_timeout", 0.0)
+    with aioresponses() as mocked:
+        url = f"{new_job_template_runner.host}{JOB_1_SLUG}"
+        mocked.get(url, status=502)
+        mocked.get(url, status=502)
+        mocked.get(url, status=200, body=json.dumps(JOB_1_RUNNING))
+        mocked.get(url, status=200, body=json.dumps(JOB_1_SUCCESSFUL))
+
+        result = await new_job_template_runner.monitor_job(JOB_1_SLUG)
+        assert result["status"] == "successful"
+
+
+@pytest.mark.asyncio
+async def test_monitor_job_raises_after_max_retries(
+    new_job_template_runner, monkeypatch
+):
+    """Verify monitor_job raises ControllerApiException after retries."""
+    monkeypatch.setattr(settings, "controller_retry_attempts", 3)
+    monkeypatch.setattr(settings, "controller_retry_max_timeout", 0.0)
+    with aioresponses() as mocked:
+        url = f"{new_job_template_runner.host}{JOB_1_SLUG}"
+        for _ in range(5):
+            mocked.get(url, status=502)
+
+        with pytest.raises(ControllerApiException):
+            await new_job_template_runner.monitor_job(JOB_1_SLUG)
+
+
+@pytest.mark.asyncio
+async def test_controller_unavailable_and_restored_logging(
+    caplog, monkeypatch
+):
+    """Verify unavailable/restored logging."""
+    from ansible_rulebook.job_template_runner import JobTemplateRunner
+
+    monkeypatch.setattr(settings, "controller_retry_attempts", 1)
+    monkeypatch.setattr(settings, "controller_retry_max_timeout", 0.0)
+    runner = JobTemplateRunner(host="https://example.com", token="DUMMY")
+    runner.refresh_delay = 0.0
+    url = f"{runner.host}api/v2/config/"
+
+    with aioresponses() as mocked:
+        mocked.get(url, status=502)
+        with pytest.raises(ControllerApiException):
+            await runner.get_config()
+
+        mocked.get(url, status=200, body=json.dumps({"version": "4.4.1"}))
+        await runner.get_config()
+
+    unavailable_msgs = [
+        r for r in caplog.records if "Controller unavailable" in r.message
+    ]
+    restored_msgs = [
+        r
+        for r in caplog.records
+        if "Controller connection restored" in r.message
+    ]
+    assert len(unavailable_msgs) == 1
+    assert len(restored_msgs) == 1
+    await runner.close_session()
+
+
+def test_controller_retry_max_timeout_default(monkeypatch):
+    """Verify default when env var is not set."""
+    from ansible_rulebook.conf import _Settings
+
+    monkeypatch.delenv("EDA_CONTROLLER_RETRY_MAX_TIMEOUT", raising=False)
+    s = _Settings()
+    assert s.controller_retry_max_timeout == 60.0
+
+
+@pytest.mark.asyncio
+async def test_get_page_empty_response(new_job_template_runner):
+    """Verify _get_page raises on empty response body."""
+    with aioresponses() as mocked:
+        url = f"{new_job_template_runner.host}{CONFIG_SLUG}"
+        mocked.get(url, status=200, body="")
+        with pytest.raises(ControllerApiException, match="empty response"):
+            await new_job_template_runner.get_config()
+
+
+@pytest.mark.asyncio
+async def test_launch_empty_response(new_job_template_runner, monkeypatch):
+    """Verify _launch raises on empty response body."""
+    monkeypatch.setattr(settings, "controller_retry_attempts", 1)
+    monkeypatch.setattr(settings, "controller_retry_max_timeout", 0.0)
+    new_job_template_runner._create_session()
+    launch_url = "api/v2/job_templates/1/launch/"
+    with aioresponses() as mocked:
+        url = f"{new_job_template_runner.host}{launch_url}"
+        mocked.post(url, status=200, body="")
+        with pytest.raises(ControllerApiException, match="empty response"):
+            await new_job_template_runner._launch({}, url)
+
+
+@pytest.mark.asyncio
+async def test_launch_5xx_with_body(new_job_template_runner, monkeypatch):
+    """Verify _launch parses body before raise_for_status on 5xx."""
+    monkeypatch.setattr(settings, "controller_retry_attempts", 1)
+    monkeypatch.setattr(settings, "controller_retry_max_timeout", 0.0)
+    new_job_template_runner._create_session()
+    launch_url = "api/v2/job_templates/1/launch/"
+    error_body = json.dumps({"detail": "Bad Gateway"})
+    with aioresponses() as mocked:
+        url = f"{new_job_template_runner.host}{launch_url}"
+        mocked.post(url, status=502, body=error_body)
+        with pytest.raises(ControllerApiException):
+            await new_job_template_runner._launch({}, url)
+
+
+@pytest.mark.asyncio
+async def test_create_obj_already_exists_returns_retry(
+    new_job_template_runner,
+):
+    """Verify _create_obj returns (None, True) on 400 'already exists'."""
+    new_job_template_runner._create_session()
+    slug = "api/v2/labels/"
+    exists_body = json.dumps({"__all__": "Label already exists"})
+    with aioresponses() as mocked:
+        url = f"{new_job_template_runner.host}{slug}"
+        mocked.post(url, status=400, body=exists_body)
+        result, retry = await new_job_template_runner._create_obj(
+            slug, {"name": "test"}
+        )
+        assert result is None
+        assert retry is True

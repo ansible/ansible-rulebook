@@ -19,11 +19,15 @@ DEFAULT_TIMEOUT = 15
 
 @pytest.mark.e2e
 @pytest.mark.asyncio
-@pytest.mark.parametrize("expect_failure", [True, False])
-async def test_websocket_messages(expect_failure):
+@pytest.mark.parametrize("test_retry", [True, False])
+async def test_websocket_messages(test_retry):
     """
     Verify that ansible-rulebook can correctly
-    send event messages to a websocket server
+    send event messages to a websocket server.
+
+    When test_retry is True, verifies that ansible-rulebook
+    automatically retries when the websocket connection fails
+    with transient errors (e.g., server handler crash with 1011).
     """
     # variables
     host = "127.0.0.1"
@@ -43,11 +47,13 @@ async def test_websocket_messages(expect_failure):
 
     # run server and ansible-rulebook
     queue = asyncio.Queue()
+    connection_attempts = [] if test_retry else None
     handler = partial(
         utils.msg_handler,
         queue=queue,
-        disconnect=not expect_failure,
-        force_error=expect_failure,
+        disconnect=False,
+        force_error=test_retry,
+        connection_attempts=connection_attempts,
     )
     async with ws_server.serve(handler, host, port):
         LOGGER.info(f"Running command: {cmd}")
@@ -59,27 +65,40 @@ async def test_websocket_messages(expect_failure):
         )
 
         await asyncio.wait_for(proc.wait(), timeout=DEFAULT_TIMEOUT)
-        if expect_failure:
-            assert proc.returncode == 1
-            assert queue.qsize() == 2
-            return
-        else:
-            assert proc.returncode == 0
+        assert proc.returncode == 0
+
+        if test_retry:
+            # Verify that retry happened
+            assert len(connection_attempts) >= 2, (
+                f"Expected at least 2 connection attempts for retry test, "
+                f"but got {len(connection_attempts)}"
+            )
 
     # Verify data
     assert not queue.empty()
 
+    # Collect all messages first (to handle any ordering from retries)
+    messages = []
+    while not queue.empty():
+        data = await queue.get()
+        assert data["path"] == endpoint
+        messages.append(data["payload"])
+
+    # Find job_id from Job messages
     job_id = None
+    for msg in messages:
+        if msg["type"] == "Job":
+            job_id = msg["job_id"]
+            break
+
+    # Now validate all messages
     ansible_event_counter = 0
     job_counter = 0
     action_counter = 0
     session_stats_counter = 0
     stats = None
-    while not queue.empty():
-        data = await queue.get()
-        assert data["path"] == endpoint
-        data = data["payload"]
 
+    for data in messages:
         if data["type"] == "Action":
             action_counter += 1
             assert data["action"] == "run_playbook"
@@ -93,7 +112,7 @@ async def test_websocket_messages(expect_failure):
 
         if data["type"] == "Job":
             job_counter += 1
-            job_id = data["job_id"]
+            assert data["job_id"] == job_id
             assert data["ansible_rulebook_id"] == proc_id
             assert data["action"] == "run_playbook"
             assert data["name"] == "print_event.yml"

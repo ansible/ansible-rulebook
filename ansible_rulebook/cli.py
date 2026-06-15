@@ -197,6 +197,29 @@ def get_parser() -> argparse.ArgumentParser:
         default=os.environ.get("EDA_CONTROLLER_SSL_VERIFY", "yes"),
     )
     parser.add_argument(
+        "--controller-retry-max-timeout",
+        type=float,
+        help="Maximum backoff time in seconds for controller API retries "
+        "on transient errors (502/503/504). Default is 60. "
+        "Can also be passed via env var EDA_CONTROLLER_RETRY_MAX_TIMEOUT",
+        default=os.environ.get(
+            "EDA_CONTROLLER_RETRY_MAX_TIMEOUT",
+            settings.controller_retry_max_timeout,
+        ),
+    )
+    parser.add_argument(
+        "--controller-retry-attempts",
+        type=int,
+        help="Number of retry attempts for controller API calls "
+        "on transient errors. Default is 5. "
+        "Can also be passed via env var "
+        "EDA_CONTROLLER_RETRY_ATTEMPTS",
+        default=os.environ.get(
+            "EDA_CONTROLLER_RETRY_ATTEMPTS",
+            settings.controller_retry_attempts,
+        ),
+    )
+    parser.add_argument(
         "--print-events",
         action="store_true",
         default=settings.print_events,
@@ -316,6 +339,10 @@ def update_settings(args: argparse.Namespace) -> None:
     settings.websocket_access_token = args.websocket_access_token
     settings.websocket_refresh_token = args.websocket_refresh_token
     settings.skip_audit_events = args.skip_audit_events
+    settings.controller_retry_max_timeout = float(
+        args.controller_retry_max_timeout
+    )
+    settings.controller_retry_attempts = int(args.controller_retry_attempts)
     parse_vault_passwords(args)
 
 
