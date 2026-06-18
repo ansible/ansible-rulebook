@@ -33,6 +33,7 @@ from ansible_rulebook.util import (
     mask_sensitive_variable_values,
     startup_logging,
     strtobool,
+    validate_file_path,
 )
 from ansible_rulebook.vault import Vault
 
@@ -381,3 +382,81 @@ def test_mask_sensitive_variable_values(extra_vars, expected):
 )
 def test_strtobool(value: str, expected: bool):
     assert strtobool(value) == expected
+
+
+def test_validate_file_path_valid(tmp_path):
+    """Test validate_file_path with a valid file."""
+    test_file = tmp_path / "test_file.txt"
+    test_file.write_text("test content")
+
+    result = validate_file_path(str(test_file), "Test file")
+    assert result == str(test_file.resolve())
+
+
+def test_validate_file_path_empty():
+    """Test validate_file_path with empty path."""
+    with pytest.raises(ValueError, match="path cannot be empty"):
+        validate_file_path("", "Test file")
+
+
+def test_validate_file_path_nonexistent():
+    """Test validate_file_path with non-existent file."""
+    with pytest.raises(ValueError, match="does not exist"):
+        validate_file_path("/nonexistent/file.txt", "Test file")
+
+
+def test_validate_file_path_directory(tmp_path):
+    """Test validate_file_path with a directory instead of file."""
+    test_dir = tmp_path / "test_dir"
+    test_dir.mkdir()
+
+    with pytest.raises(ValueError, match="is not a file"):
+        validate_file_path(str(test_dir), "Test file")
+
+
+def test_validate_file_path_null_byte():
+    """Test validate_file_path with null byte in path."""
+    with pytest.raises(ValueError, match="contains null bytes"):
+        validate_file_path("/tmp/test\x00file.txt", "Test file")
+
+
+def test_validate_file_path_with_symlink(tmp_path):
+    """Test validate_file_path resolves symlinks correctly."""
+    # Create a real file
+    real_file = tmp_path / "real_file.txt"
+    real_file.write_text("test content")
+
+    # Create a symlink to it
+    symlink = tmp_path / "symlink.txt"
+    symlink.symlink_to(real_file)
+
+    # Validate should resolve to the real file
+    result = validate_file_path(str(symlink), "Test file")
+    assert result == str(real_file.resolve())
+
+
+def test_validate_file_path_custom_description():
+    """Test validate_file_path with custom file description."""
+    with pytest.raises(ValueError, match="Rulebook file does not exist"):
+        validate_file_path("/nonexistent/rulebook.yml", "Rulebook file")
+
+
+def test_validate_file_path_oserror(tmp_path, monkeypatch):
+    """Test validate_file_path handles OSError during path resolution."""
+    test_file = tmp_path / "test_file.txt"
+    test_file.write_text("test content")
+
+    # Mock Path.resolve to raise OSError
+    from pathlib import Path
+
+    original_resolve = Path.resolve
+
+    def mock_resolve(self, strict=False):
+        if str(self) == str(test_file):
+            raise OSError("Permission denied")
+        return original_resolve(self, strict=strict)
+
+    monkeypatch.setattr(Path, "resolve", mock_resolve)
+
+    with pytest.raises(ValueError, match="Invalid test file path"):
+        validate_file_path(str(test_file), "Test file")

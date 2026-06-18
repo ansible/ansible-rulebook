@@ -87,6 +87,14 @@ class RulebookNotFoundException(Exception):
     pass
 
 
+class TimedOutActionsException(Exception):
+    pass
+
+
+class TimedOutReportingException(Exception):
+    pass
+
+
 class SourcePluginNotFoundException(Exception):
     """Exception class for source plugin not found."""
 

@@ -21,6 +21,9 @@ The `ansible-rulebook` CLI supports the following options:
                         [--persistence-id PERSISTENCE_ID]
                         [--controller-retry-max-timeout CONTROLLER_RETRY_MAX_TIMEOUT]
                         [--controller-retry-attempts CONTROLLER_RETRY_ATTEMPTS]
+                        [-m MAX_CONCURRENT_ACTIONS] [--max-back-pressure-timeout MAX_BACK_PRESSURE_TIMEOUT]
+                        [--max-reporting-queue-size MAX_REPORTING_QUEUE_SIZE]
+                        [--max-batch-job-polling-size MAX_BATCH_JOB_POLLING_SIZE]
 
     optional arguments:
     -h, --help            show this help message and exit
@@ -81,6 +84,14 @@ The `ansible-rulebook` CLI supports the following options:
                             Maximum backoff time in seconds for controller API retries on transient errors (429/502/503/504). Default is 60. Can also be passed via env var EDA_CONTROLLER_RETRY_MAX_TIMEOUT
     --controller-retry-attempts CONTROLLER_RETRY_ATTEMPTS
                             Number of retry attempts for controller API calls on transient errors. Default is 5. Can also be passed via env var EDA_CONTROLLER_RETRY_ATTEMPTS
+    -m MAX_CONCURRENT_ACTIONS, --max-concurrent-actions MAX_CONCURRENT_ACTIONS
+                            Maximum number of concurrent actions for parallel execution strategy. Default is 25. Can also be passed via env var EDA_MAX_CONCURRENT_ACTIONS
+    --max-back-pressure-timeout MAX_BACK_PRESSURE_TIMEOUT
+                            Seconds to wait for actions or reporting queue to drain before aborting. Default is 3600. Can also be passed via env var EDA_MAX_BACK_PRESSURE_TIMEOUT
+    --max-reporting-queue-size MAX_REPORTING_QUEUE_SIZE
+                            Maximum backlog of reporting objects to flush to EDA Server. Default is 50. Can also be passed via env var EDA_MAX_REPORTING_QUEUE_SIZE
+    --max-batch-job-polling-size MAX_BATCH_JOB_POLLING_SIZE
+                            Maximum number of jobs per batch polling request to the controller. Default is 25. Can also be passed via env var EDA_MAX_BATCH_JOB_POLLING_SIZE
 
 To get help from `ansible-rulebook` run the following:
 

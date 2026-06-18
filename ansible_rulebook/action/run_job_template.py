@@ -83,9 +83,25 @@ class RunJobTemplate:
         await self._run()
 
     async def _run(self):
+        try:
+            controller_job = await self._run_with_retries()
+        except (ControllerApiException, JobTemplateNotFoundException) as ex:
+            logger.error(ex)
+            controller_job = {
+                "status": "failed",
+                "created": run_at(),
+                "error": str(ex),
+            }
+
+        self.controller_job = controller_job
+        await self._post_process()
+
+    async def _run_with_retries(self):
         retries = self.action_args.get("retries", 0)
         if self.action_args.get("retry", False):
-            retries = max(self.action_args.get("retries", 0), 1)
+            retries = max(retries, 1)
+        # Ensure retries is never negative to prevent skipping loop body
+        retries = max(retries, 0)
         delay = self.action_args.get("delay", 0)
         add_event_uuid_label = self.action_args.get(
             "add_event_uuid_label", False
@@ -94,52 +110,43 @@ class RunJobTemplate:
         if add_event_uuid_label:
             job_labels.append(self.helper.get_event_uuid_label())
 
-        try:
-            job_url = await self.helper.get_old_job_url(
-                self.name,
-                self.organization,
-                JOB_TEMPLATE_TYPE,
-                add_event_uuid_label,
-            )
-            for i in range(retries + 1):
-                if i > 0:
-                    if delay > 0:
-                        await asyncio.sleep(delay)
-                    logger.warning(
-                        "Previous run_job_template failed. Retry %d of %d",
-                        i,
-                        retries,
-                    )
-                # Launch the job and get URL immediately
-                if not job_url:
-                    job_url = await job_template_runner.launch_job_template(
-                        self.name,
-                        self.organization,
-                        self.job_args,
-                        job_labels,
-                    )
-                    logger.info(f"Job Launched, url: {job_url}")
-                    self.helper.update_action_state({"job_url": job_url})
+        job_url = await self.helper.get_old_job_url(
+            self.name,
+            self.organization,
+            JOB_TEMPLATE_TYPE,
+            add_event_uuid_label,
+        )
+        last_job = None
+        for i in range(retries + 1):
+            if i > 0:
+                if delay > 0:
+                    await asyncio.sleep(delay)
+                logger.warning(
+                    "Previous run_job_template failed. Retry %d of %d",
+                    i,
+                    retries,
+                )
 
-                # Monitor the job until completion
-                controller_job = await job_template_runner.monitor_job(job_url)
+            if not job_url:
+                job_url = await job_template_runner.launch_job_template(
+                    self.name,
+                    self.organization,
+                    self.job_args,
+                    job_labels,
+                )
+                logger.info(f"Job Launched, url: {job_url}")
+                self.helper.update_action_state({"job_url": job_url})
 
-                if controller_job["status"] != "failed":
-                    break
+            last_job = await job_template_runner.monitor_job(job_url)
+            self.helper.log_completion("Job template", self.name, last_job)
 
-                # Reset job_url to launch a new job on retry
-                job_url = None
-                self.helper.update_action_state({"job_url": None})
+            if last_job["status"] != "failed":
+                return last_job
 
-        except (ControllerApiException, JobTemplateNotFoundException) as ex:
-            logger.error(ex)
-            controller_job = {}
-            controller_job["status"] = "failed"
-            controller_job["created"] = run_at()
-            controller_job["error"] = str(ex)
+            job_url = None
+            self.helper.update_action_state({"job_url": None})
 
-        self.controller_job = controller_job
-        await self._post_process()
+        return last_job
 
     async def _post_process(self) -> None:
         a_log = {

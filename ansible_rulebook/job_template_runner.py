@@ -12,7 +12,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import asyncio
 import json
 import logging
 import os
@@ -34,6 +33,7 @@ from ansible_rulebook.exception import (
     JobTemplateNotFoundException,
     WorkflowJobTemplateNotFoundException,
 )
+from ansible_rulebook.shared_job_monitor import SharedJobMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,9 @@ class JobTemplateRunner:
             os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10.0)
         )
         self._session = None
+        self._raw_session = None
         self._controller_available = True
+        self._job_monitor = SharedJobMonitor(self)
         self._config_slug = self.LEGACY_CONFIG_SLUG
         self._unified_job_template_slug = self.LEGACY_UNIFIED_TEMPLATE_SLUG
         self._labels_slug = self.LEGACY_LABELS_SLUG
@@ -92,6 +94,9 @@ class JobTemplateRunner:
         if self._session:
             await self._session.close()
             self._session = None
+        if self._raw_session:
+            await self._raw_session.close()
+            self._raw_session = None
 
     def _create_session(self):
         if self._session is None:
@@ -101,6 +106,8 @@ class JobTemplateRunner:
                 headers=self._auth_headers(),
                 auth=self._basic_auth(),
             )
+            # Store the raw session for use in no-retry operations
+            self._raw_session = client_session
             retry_options = ExponentialRetry(
                 attempts=settings.controller_retry_attempts,
                 start_timeout=2.0,
@@ -182,6 +189,59 @@ class JobTemplateRunner:
                     e,
                 )
             logger.error(CLIENT_CONNECT_ERROR_STRING, str(e))  # NOSONAR
+            raise ControllerApiException(str(e))
+
+    async def _get_page_no_retry(self, href_slug: str, params: dict) -> dict:
+        """Get page without retry logic - used for polling operations.
+
+        For operations like job monitoring that happen frequently,
+        we don't want aggressive retries that could overload the controller.
+        Transient errors during polling will be handled by the next poll cycle.
+        """
+        url = urljoin(self.host, href_slug)
+        try:
+            self._create_session()
+            # Use the raw session directly to bypass retry logic
+            async with self._raw_session.get(
+                url, params=params, ssl=self._sslcontext
+            ) as response:
+                response.raise_for_status()
+                response_text = await response.text()
+                try:
+                    result = json.loads(response_text)
+                    logger.debug(
+                        "Successfully polled page from %s (status: %d)",
+                        url,
+                        response.status,
+                    )
+                    return result
+                except json.JSONDecodeError as json_err:
+                    logger.error(
+                        "Failed to parse JSON response from %s. "
+                        "Response status: %d, Response body: %s",
+                        url,
+                        response.status,
+                        response_text[:500],
+                    )
+                    raise ControllerApiException(
+                        f"Invalid JSON response from controller: {json_err}"
+                    )
+        except aiohttp.ClientResponseError as e:
+            logger.debug(
+                "Polling error at %s (will retry on next poll cycle). "
+                "Status: %s, Message: %s",
+                url,
+                e.status,
+                e.message,
+            )
+            raise ControllerApiException(str(e))
+        except (aiohttp.ClientError, ConnectionError) as e:
+            logger.debug(
+                "Polling connection error at %s "
+                "(will retry on next poll cycle): %s",
+                url,
+                str(e),
+            )
             raise ControllerApiException(str(e))
 
     async def get_config(self) -> dict:
@@ -428,9 +488,11 @@ class JobTemplateRunner:
     async def monitor_job(self, url) -> dict:
         """Monitor a running job until it reaches a completion status.
 
-        This method polls the controller for job status updates at regular
-        intervals until the job reaches a terminal state (successful, failed,
-        error, or canceled).
+        This method uses the shared batch monitor to efficiently poll
+        multiple jobs with fewer API calls. The monitor batches job IDs
+        into chunked requests and polls at regular intervals until each
+        job reaches a terminal state (successful, failed, error, or
+        canceled).
 
         Args:
             url: The job URL to monitor (can be a regular job or workflow job)
@@ -439,13 +501,8 @@ class JobTemplateRunner:
             dict: The final job status information when the job completes,
                 including status, artifacts, and other job metadata
         """
-        while True:
-            # fetch and process job status
-            json_body = await self._get_page(url, {})
-            if json_body["status"] in self.JOB_COMPLETION_STATUSES:
-                return json_body
-
-            await asyncio.sleep(self.refresh_delay)
+        future = await self._job_monitor.register_job(url)
+        return await future
 
     async def _launch(self, job_params: dict, url: str) -> dict:
         body = None
