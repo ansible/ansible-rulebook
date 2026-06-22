@@ -140,6 +140,12 @@ async def run(parsed_args: argparse.Namespace) -> None:
     for k, v in startup_args.env_vars.items():
         os.environ[k] = str(v)
 
+    # If syntax-check mode, exit successfully after validation
+    if parsed_args.syntax_check:
+        logger.info("Syntax check passed successfully")
+        print("No issues encountered")
+        return
+
     # Update the settings from env in worker mode
     if parsed_args.worker:
         settings.update_from_env()
