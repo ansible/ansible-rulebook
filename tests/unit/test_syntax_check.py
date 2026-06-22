@@ -172,8 +172,8 @@ class TestSyntaxCheckIntegration:
             Path(rulebook_path).unlink()
 
     @pytest.mark.asyncio
-    async def test_syntax_check_missing_inventory_action(self):
-        """Test syntax-check with action requiring inventory."""
+    async def test_syntax_check_missing_inventory_action(self, capsys):
+        """Test syntax-check allows inventory actions without inventory (syntax-only validation)."""
         # Create rulebook with run_playbook action but no inventory
         rulebook_content = {
             "name": "Test Rulebook",
@@ -217,10 +217,12 @@ class TestSyntaxCheckIntegration:
                 shutdown_delay=60,
             )
 
-            # Should raise InventoryNeededException
-            with pytest.raises(Exception) as exc_info:
-                await run(args)
-            assert "inventory" in str(exc_info.value).lower()
+            # Should PASS - syntax is valid, runtime config not checked
+            await run(args)
+
+            # Verify output
+            captured = capsys.readouterr()
+            assert "No issues encountered" in captured.out
 
         finally:
             Path(rulebook_path).unlink()
@@ -816,6 +818,180 @@ class TestSyntaxCheckIntegration:
             # Should raise validation error for missing rules
             with pytest.raises(Exception):
                 await run(args)
+
+        finally:
+            Path(rulebook_path).unlink()
+
+    @pytest.mark.asyncio
+    async def test_syntax_check_controller_action_without_config(self, capsys):
+        """Test syntax-check allows controller actions without controller config (syntax-only validation)."""
+        rulebook_content = {
+            "name": "Controller Action Rulebook",
+            "hosts": "all",
+            "sources": [{"name": "range", "range": {"limit": 5}}],
+            "rules": [
+                {
+                    "name": "test_rule",
+                    "condition": "event.i == 1",
+                    "action": {
+                        "run_job_template": {
+                            "name": "Demo Job Template",
+                            "organization": "Default"
+                        }
+                    },
+                }
+            ],
+        }
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yml", delete=False
+        ) as f:
+            yaml.dump([rulebook_content], f)
+            rulebook_path = f.name
+
+        try:
+            args = Namespace(
+                rulebook=rulebook_path,
+                syntax_check=True,
+                worker=False,
+                vars=None,
+                env_vars=None,
+                inventory=None,
+                hot_reload=False,
+                project_tarball=None,
+                controller_url=None,
+                controller_token=None,
+                controller_ssl_verify=None,
+                controller_username=None,
+                controller_password=None,
+                websocket_url=None,
+                source_dir=None,
+                filter_dir=None,
+                shutdown_delay=60,
+            )
+
+            # Should PASS - syntax is valid, runtime config not checked
+            await run(args)
+
+            # Verify output
+            captured = capsys.readouterr()
+            assert "No issues encountered" in captured.out
+
+        finally:
+            Path(rulebook_path).unlink()
+
+    @pytest.mark.asyncio
+    async def test_syntax_check_workflow_template_action_without_config(self, capsys):
+        """Test syntax-check allows workflow template actions without controller config (syntax-only validation)."""
+        rulebook_content = {
+            "name": "Workflow Template Action Rulebook",
+            "hosts": "all",
+            "sources": [{"name": "range", "range": {"limit": 5}}],
+            "rules": [
+                {
+                    "name": "test_rule",
+                    "condition": "event.i == 1",
+                    "action": {
+                        "run_workflow_template": {
+                            "name": "Demo Workflow Template",
+                            "organization": "Default"
+                        }
+                    },
+                }
+            ],
+        }
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yml", delete=False
+        ) as f:
+            yaml.dump([rulebook_content], f)
+            rulebook_path = f.name
+
+        try:
+            args = Namespace(
+                rulebook=rulebook_path,
+                syntax_check=True,
+                worker=False,
+                vars=None,
+                env_vars=None,
+                inventory=None,
+                hot_reload=False,
+                project_tarball=None,
+                controller_url=None,
+                controller_token=None,
+                controller_ssl_verify=None,
+                controller_username=None,
+                controller_password=None,
+                websocket_url=None,
+                source_dir=None,
+                filter_dir=None,
+                shutdown_delay=60,
+            )
+
+            # Should PASS - syntax is valid, runtime config not checked
+            await run(args)
+
+            # Verify output
+            captured = capsys.readouterr()
+            assert "No issues encountered" in captured.out
+
+        finally:
+            Path(rulebook_path).unlink()
+
+    @pytest.mark.asyncio
+    async def test_syntax_check_run_module_action_without_inventory(self, capsys):
+        """Test syntax-check allows run_module actions without inventory (syntax-only validation)."""
+        rulebook_content = {
+            "name": "Run Module Action Rulebook",
+            "hosts": "all",
+            "sources": [{"name": "range", "range": {"limit": 5}}],
+            "rules": [
+                {
+                    "name": "test_rule",
+                    "condition": "event.i == 1",
+                    "action": {
+                        "run_module": {
+                            "name": "ansible.builtin.debug",
+                            "module_args": {"msg": "test"}
+                        }
+                    },
+                }
+            ],
+        }
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yml", delete=False
+        ) as f:
+            yaml.dump([rulebook_content], f)
+            rulebook_path = f.name
+
+        try:
+            args = Namespace(
+                rulebook=rulebook_path,
+                syntax_check=True,
+                worker=False,
+                vars=None,
+                env_vars=None,
+                inventory=None,
+                hot_reload=False,
+                project_tarball=None,
+                controller_url=None,
+                controller_token=None,
+                controller_ssl_verify=None,
+                controller_username=None,
+                controller_password=None,
+                websocket_url=None,
+                source_dir=None,
+                filter_dir=None,
+                shutdown_delay=60,
+            )
+
+            # Should PASS - syntax is valid, runtime config not checked
+            await run(args)
+
+            # Verify output
+            captured = capsys.readouterr()
+            assert "No issues encountered" in captured.out
 
         finally:
             Path(rulebook_path).unlink()
