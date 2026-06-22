@@ -131,7 +131,7 @@ async def run(parsed_args: argparse.Namespace) -> None:
         startup_args.controller_username = parsed_args.controller_username
         startup_args.controller_password = parsed_args.controller_password
 
-    validate_actions(startup_args)
+    validate_actions(startup_args, syntax_check=parsed_args.syntax_check)
     validate_variables(startup_args)
     startup_args.variables = decrypted_context(startup_args.variables)
     startup_args.env_vars = substitute_variables(
@@ -356,12 +356,17 @@ def validate_variables(startup_args: StartupArgs) -> None:
     decryptable(startup_args.variables)
 
 
-def validate_actions(startup_args: StartupArgs) -> None:
+def validate_actions(startup_args: StartupArgs, syntax_check: bool = False) -> None:
     for ruleset in startup_args.rulesets:
         for rule in ruleset.rules:
             for action in rule.actions:
                 if action.action in CONTROLLER_ACTIONS:
                     startup_args.check_controller_connection = True
+
+                # Skip runtime validation in syntax-check mode
+                if syntax_check:
+                    continue
+
                 if (
                     action.action in INVENTORY_ACTIONS
                     and not startup_args.inventory
