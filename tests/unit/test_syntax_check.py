@@ -14,6 +14,7 @@
 
 """Tests for --syntax-check functionality."""
 
+import os
 import tempfile
 from argparse import Namespace
 from pathlib import Path
@@ -342,3 +343,479 @@ class TestSyntaxCheckIntegration:
         finally:
             Path(rulebook_path).unlink()
             Path(vars_path).unlink()
+
+    @pytest.mark.asyncio
+    async def test_syntax_check_multiple_rulesets(self, capsys):
+        """Test syntax-check with multiple rulesets in one file."""
+        # Create a rulebook with multiple rulesets
+        rulebook_content = [
+            {
+                "name": "First Ruleset",
+                "hosts": "all",
+                "sources": [{"name": "range", "range": {"limit": 5}}],
+                "rules": [
+                    {
+                        "name": "rule_1",
+                        "condition": "event.i == 1",
+                        "action": {"debug": {}},
+                    }
+                ],
+            },
+            {
+                "name": "Second Ruleset",
+                "hosts": "localhost",
+                "sources": [{"name": "range", "range": {"limit": 3}}],
+                "rules": [
+                    {
+                        "name": "rule_2",
+                        "condition": "event.i == 2",
+                        "action": {"print_event": {}},
+                    }
+                ],
+            },
+        ]
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yml", delete=False
+        ) as f:
+            yaml.dump(rulebook_content, f)
+            rulebook_path = f.name
+
+        try:
+            args = Namespace(
+                rulebook=rulebook_path,
+                syntax_check=True,
+                worker=False,
+                vars=None,
+                env_vars=None,
+                inventory=None,
+                hot_reload=False,
+                project_tarball=None,
+                controller_url=None,
+                controller_token=None,
+                controller_ssl_verify=None,
+                controller_username=None,
+                controller_password=None,
+                websocket_url=None,
+                source_dir=None,
+                filter_dir=None,
+                shutdown_delay=60,
+            )
+
+            await run(args)
+
+            captured = capsys.readouterr()
+            assert "No issues encountered" in captured.out
+
+        finally:
+            Path(rulebook_path).unlink()
+
+    @pytest.mark.asyncio
+    async def test_syntax_check_with_gather_facts(self, capsys):
+        """Test syntax-check with gather_facts enabled."""
+        rulebook_content = {
+            "name": "Gather Facts Rulebook",
+            "hosts": "all",
+            "gather_facts": True,
+            "sources": [{"name": "range", "range": {"limit": 5}}],
+            "rules": [
+                {
+                    "name": "test_rule",
+                    "condition": "event.i == 1",
+                    "action": {"debug": {}},
+                }
+            ],
+        }
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yml", delete=False
+        ) as f:
+            yaml.dump([rulebook_content], f)
+            rulebook_path = f.name
+
+        try:
+            args = Namespace(
+                rulebook=rulebook_path,
+                syntax_check=True,
+                worker=False,
+                vars=None,
+                env_vars=None,
+                inventory=None,
+                hot_reload=False,
+                project_tarball=None,
+                controller_url=None,
+                controller_token=None,
+                controller_ssl_verify=None,
+                controller_username=None,
+                controller_password=None,
+                websocket_url=None,
+                source_dir=None,
+                filter_dir=None,
+                shutdown_delay=60,
+            )
+
+            await run(args)
+
+            captured = capsys.readouterr()
+            assert "No issues encountered" in captured.out
+
+        finally:
+            Path(rulebook_path).unlink()
+
+    @pytest.mark.asyncio
+    async def test_syntax_check_multiple_sources(self, capsys):
+        """Test syntax-check with multiple event sources."""
+        rulebook_content = {
+            "name": "Multiple Sources Rulebook",
+            "hosts": "all",
+            "sources": [
+                {"name": "range1", "range": {"limit": 5}},
+                {"name": "range2", "range": {"limit": 3}},
+            ],
+            "rules": [
+                {
+                    "name": "test_rule",
+                    "condition": "event.i == 1",
+                    "action": {"debug": {}},
+                }
+            ],
+        }
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yml", delete=False
+        ) as f:
+            yaml.dump([rulebook_content], f)
+            rulebook_path = f.name
+
+        try:
+            args = Namespace(
+                rulebook=rulebook_path,
+                syntax_check=True,
+                worker=False,
+                vars=None,
+                env_vars=None,
+                inventory=None,
+                hot_reload=False,
+                project_tarball=None,
+                controller_url=None,
+                controller_token=None,
+                controller_ssl_verify=None,
+                controller_username=None,
+                controller_password=None,
+                websocket_url=None,
+                source_dir=None,
+                filter_dir=None,
+                shutdown_delay=60,
+            )
+
+            await run(args)
+
+            captured = capsys.readouterr()
+            assert "No issues encountered" in captured.out
+
+        finally:
+            Path(rulebook_path).unlink()
+
+    @pytest.mark.asyncio
+    async def test_syntax_check_complex_conditions(self, capsys):
+        """Test syntax-check with complex rule conditions."""
+        rulebook_content = {
+            "name": "Complex Conditions Rulebook",
+            "hosts": "all",
+            "sources": [{"name": "range", "range": {"limit": 10}}],
+            "rules": [
+                {
+                    "name": "complex_all",
+                    "condition": {
+                        "all": [
+                            "event.i > 0",
+                            "event.i < 10",
+                        ]
+                    },
+                    "action": {"debug": {}},
+                },
+                {
+                    "name": "complex_any",
+                    "condition": {
+                        "any": [
+                            "event.i == 1",
+                            "event.i == 5",
+                        ]
+                    },
+                    "action": {"print_event": {}},
+                },
+            ],
+        }
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yml", delete=False
+        ) as f:
+            yaml.dump([rulebook_content], f)
+            rulebook_path = f.name
+
+        try:
+            args = Namespace(
+                rulebook=rulebook_path,
+                syntax_check=True,
+                worker=False,
+                vars=None,
+                env_vars=None,
+                inventory=None,
+                hot_reload=False,
+                project_tarball=None,
+                controller_url=None,
+                controller_token=None,
+                controller_ssl_verify=None,
+                controller_username=None,
+                controller_password=None,
+                websocket_url=None,
+                source_dir=None,
+                filter_dir=None,
+                shutdown_delay=60,
+            )
+
+            await run(args)
+
+            captured = capsys.readouterr()
+            assert "No issues encountered" in captured.out
+
+        finally:
+            Path(rulebook_path).unlink()
+
+    @pytest.mark.asyncio
+    async def test_syntax_check_with_environment_variables(self, capsys):
+        """Test syntax-check with environment variable usage."""
+        rulebook_content = {
+            "name": "Environment Variables Rulebook",
+            "hosts": "all",
+            "sources": [{"name": "range", "range": {"limit": 5}}],
+            "rules": [
+                {
+                    "name": "test_rule",
+                    "condition": "event.i == 1",
+                    "action": {"debug": {}},
+                }
+            ],
+        }
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yml", delete=False
+        ) as f:
+            yaml.dump([rulebook_content], f)
+            rulebook_path = f.name
+
+        # Set environment variable for test
+        os.environ["TEST_SYNTAX_VAR"] = "test_value"
+
+        try:
+            args = Namespace(
+                rulebook=rulebook_path,
+                syntax_check=True,
+                worker=False,
+                vars=None,
+                env_vars="TEST_SYNTAX_VAR",
+                inventory=None,
+                hot_reload=False,
+                project_tarball=None,
+                controller_url=None,
+                controller_token=None,
+                controller_ssl_verify=None,
+                controller_username=None,
+                controller_password=None,
+                websocket_url=None,
+                source_dir=None,
+                filter_dir=None,
+                shutdown_delay=60,
+            )
+
+            await run(args)
+
+            captured = capsys.readouterr()
+            assert "No issues encountered" in captured.out
+
+        finally:
+            Path(rulebook_path).unlink()
+            # Clean up environment variable
+            if "TEST_SYNTAX_VAR" in os.environ:
+                del os.environ["TEST_SYNTAX_VAR"]
+
+    @pytest.mark.asyncio
+    async def test_syntax_check_real_example_rulebook(self, capsys):
+        """Test syntax-check with actual example from the repository."""
+        # Use the 02_debug.yml example from tests/examples
+        example_path = (
+            "/Users/bgrimmet/Nextcloud/Projects/Ansible/"
+            "ansible-rulebook/tests/examples/02_debug.yml"
+        )
+
+        if not Path(example_path).exists():
+            pytest.skip("Example rulebook not found")
+
+        args = Namespace(
+            rulebook=example_path,
+            syntax_check=True,
+            worker=False,
+            vars=None,
+            env_vars=None,
+            inventory=None,
+            hot_reload=False,
+            project_tarball=None,
+            controller_url=None,
+            controller_token=None,
+            controller_ssl_verify=None,
+            controller_username=None,
+            controller_password=None,
+            websocket_url=None,
+            source_dir=None,
+            filter_dir=None,
+            shutdown_delay=60,
+        )
+
+        await run(args)
+
+        captured = capsys.readouterr()
+        assert "No issues encountered" in captured.out
+
+    @pytest.mark.asyncio
+    async def test_syntax_check_execution_strategy(self, capsys):
+        """Test syntax-check with execution_strategy specified."""
+        rulebook_content = {
+            "name": "Parallel Execution Rulebook",
+            "hosts": "all",
+            "execution_strategy": "parallel",
+            "sources": [{"name": "range", "range": {"limit": 5}}],
+            "rules": [
+                {
+                    "name": "test_rule",
+                    "condition": "event.i == 1",
+                    "action": {"debug": {}},
+                }
+            ],
+        }
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yml", delete=False
+        ) as f:
+            yaml.dump([rulebook_content], f)
+            rulebook_path = f.name
+
+        try:
+            args = Namespace(
+                rulebook=rulebook_path,
+                syntax_check=True,
+                worker=False,
+                vars=None,
+                env_vars=None,
+                inventory=None,
+                hot_reload=False,
+                project_tarball=None,
+                controller_url=None,
+                controller_token=None,
+                controller_ssl_verify=None,
+                controller_username=None,
+                controller_password=None,
+                websocket_url=None,
+                source_dir=None,
+                filter_dir=None,
+                shutdown_delay=60,
+            )
+
+            await run(args)
+
+            captured = capsys.readouterr()
+            assert "No issues encountered" in captured.out
+
+        finally:
+            Path(rulebook_path).unlink()
+
+    @pytest.mark.asyncio
+    async def test_syntax_check_missing_sources(self):
+        """Test syntax-check with missing required sources field."""
+        rulebook_content = {
+            "name": "Missing Sources Rulebook",
+            "hosts": "all",
+            "rules": [
+                {
+                    "name": "test_rule",
+                    "condition": "event.i == 1",
+                    "action": {"debug": {}},
+                }
+            ],
+        }
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yml", delete=False
+        ) as f:
+            yaml.dump([rulebook_content], f)
+            rulebook_path = f.name
+
+        try:
+            args = Namespace(
+                rulebook=rulebook_path,
+                syntax_check=True,
+                worker=False,
+                vars=None,
+                env_vars=None,
+                inventory=None,
+                hot_reload=False,
+                project_tarball=None,
+                controller_url=None,
+                controller_token=None,
+                controller_ssl_verify=None,
+                controller_username=None,
+                controller_password=None,
+                websocket_url=None,
+                source_dir=None,
+                filter_dir=None,
+                shutdown_delay=60,
+            )
+
+            # Should raise validation error for missing sources
+            with pytest.raises(Exception):
+                await run(args)
+
+        finally:
+            Path(rulebook_path).unlink()
+
+    @pytest.mark.asyncio
+    async def test_syntax_check_missing_rules(self):
+        """Test syntax-check with missing required rules field."""
+        rulebook_content = {
+            "name": "Missing Rules Rulebook",
+            "hosts": "all",
+            "sources": [{"name": "range", "range": {"limit": 5}}],
+        }
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".yml", delete=False
+        ) as f:
+            yaml.dump([rulebook_content], f)
+            rulebook_path = f.name
+
+        try:
+            args = Namespace(
+                rulebook=rulebook_path,
+                syntax_check=True,
+                worker=False,
+                vars=None,
+                env_vars=None,
+                inventory=None,
+                hot_reload=False,
+                project_tarball=None,
+                controller_url=None,
+                controller_token=None,
+                controller_ssl_verify=None,
+                controller_username=None,
+                controller_password=None,
+                websocket_url=None,
+                source_dir=None,
+                filter_dir=None,
+                shutdown_delay=60,
+            )
+
+            # Should raise validation error for missing rules
+            with pytest.raises(Exception):
+                await run(args)
+
+        finally:
+            Path(rulebook_path).unlink()
