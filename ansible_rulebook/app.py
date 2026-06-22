@@ -363,6 +363,10 @@ def validate_actions(startup_args: StartupArgs, syntax_check: bool = False) -> N
                 if action.action in CONTROLLER_ACTIONS:
                     startup_args.check_controller_connection = True
 
+                # Validate vault in action args (runs in both modes)
+                if startup_args.check_vault:
+                    decryptable(action.action_args)
+
                 # Skip runtime validation in syntax-check mode
                 if syntax_check:
                     continue
@@ -391,8 +395,6 @@ def validate_actions(startup_args: StartupArgs, syntax_check: bool = False) -> N
                         f"Rule {rule.name} has an action {action.action} "
                         "which needs controller url and token to be defined"
                     )
-                if startup_args.check_vault:
-                    decryptable(action.action_args)
 
 
 async def validate_controller_params(startup_args: StartupArgs) -> None:
