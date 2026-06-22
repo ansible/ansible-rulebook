@@ -6,6 +6,7 @@ from argparse import Namespace
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
+import jsonschema
 import pytest
 import yaml
 
@@ -101,7 +102,7 @@ class TestSyntaxCheckIntegration:
             )
 
             # Should raise YAML parsing error
-            with pytest.raises(Exception):
+            with pytest.raises(yaml.YAMLError):
                 await run(args)
 
         finally:
@@ -151,7 +152,7 @@ class TestSyntaxCheckIntegration:
             )
 
             # Should raise validation error
-            with pytest.raises(Exception):
+            with pytest.raises(jsonschema.ValidationError):
                 await run(args)
 
         finally:
@@ -756,7 +757,7 @@ class TestSyntaxCheckIntegration:
             )
 
             # Should raise validation error for missing sources
-            with pytest.raises(Exception):
+            with pytest.raises(jsonschema.ValidationError):
                 await run(args)
 
         finally:
@@ -799,7 +800,7 @@ class TestSyntaxCheckIntegration:
             )
 
             # Should raise validation error for missing rules
-            with pytest.raises(Exception):
+            with pytest.raises(jsonschema.ValidationError):
                 await run(args)
 
         finally:
