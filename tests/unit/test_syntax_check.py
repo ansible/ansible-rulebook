@@ -631,16 +631,13 @@ class TestSyntaxCheckIntegration:
     async def test_syntax_check_real_example_rulebook(self, capsys):
         """Test syntax-check with actual example from the repository."""
         # Use the 02_debug.yml example from tests/examples
-        example_path = (
-            "/Users/bgrimmet/Nextcloud/Projects/Ansible/"
-            "ansible-rulebook/tests/examples/02_debug.yml"
-        )
+        example_path = Path(__file__).parent.parent / "examples" / "02_debug.yml"
 
-        if not Path(example_path).exists():
+        if not example_path.exists():
             pytest.skip("Example rulebook not found")
 
         args = Namespace(
-            rulebook=example_path,
+            rulebook=str(example_path),
             syntax_check=True,
             worker=False,
             vars=None,
