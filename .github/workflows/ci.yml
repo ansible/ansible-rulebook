@@ -104,7 +104,7 @@ jobs:
           path: ./coverage.xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@f2274c2c340e0c81c8f7dc407b2a477b8935f171  # v6.0.0
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v6.0.0
         with:
           env_vars: OS,PYTHON
           fail_ci_if_error: false
