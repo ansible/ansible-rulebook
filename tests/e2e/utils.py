@@ -10,6 +10,7 @@ from subprocess import CompletedProcess
 from typing import Iterable, List, Optional, Union
 
 import websockets.asyncio.server as ws_server
+import websockets.exceptions
 
 BASE_DATA_PATH = Path(f"{__file__}").parent / Path("files")
 DEFAULT_SOURCES = Path(f"{__file__}").parent / Path("../sources")
@@ -49,6 +50,7 @@ class Command:
     skip_audit_events: bool = False
     vault_ids: Optional[list] = None
     vault_password_file: Optional[Path] = None
+    persistence_id: Optional[str] = None
 
     def __post_init__(self):
         # verbosity overrides verbose and debug
@@ -122,6 +124,9 @@ class Command:
                 ]
             )
 
+        if self.persistence_id:
+            result.extend(["--persistence-id", self.persistence_id])
+
         return result
 
     def to_string(self) -> str:
@@ -156,23 +161,69 @@ def assert_playbook_output(result: CompletedProcess) -> List[dict]:
 async def msg_handler(
     websocket: ws_server.ServerConnection,
     queue: asyncio.Queue,
-    failed: bool = False,
+    disconnect: bool = False,
+    force_error: bool = False,
+    ignore_connection_closed: bool = False,
+    connection_attempts: Optional[list] = None,
 ):
     """
     Handler for a websocket server that passes json messages
-    from ansible-rulebook in the given queue
+    from ansible-rulebook in the given queue.
+
+    Args:
+        websocket: The websocket connection
+        queue: Queue to put received messages
+        disconnect: If True, closes connection after 2nd message to test
+            reconnect logic. NOTE: This triggers _wait_before_retry with
+            random backoff, making tests non-deterministic. Only use for
+            tests specifically testing reconnection behavior.
+        force_error: If True, raises error after 2nd message to test
+            error handling. If connection_attempts is provided, only raises
+            on first connection attempt (to test retry logic).
+        ignore_connection_closed: If True, silently handles
+                                  abrupt connection closes
+                                  (useful for restart scenarios)
+        connection_attempts: If provided, a list to track connection attempts.
+                           Used with force_error to test retry behavior - will
+                           fail on first attempt but succeed on retry.
     """
+    # Track connection attempts if requested
+    if connection_attempts is not None:
+        connection_attempts.append(1)
+
+    # Determine if this is the first connection (for retry testing)
+    is_first_connection = (
+        connection_attempts is None or len(connection_attempts) == 1
+    )
+
     i = 0
-    async for message in websocket:
-        payload = json.loads(message)
-        data = {"path": websocket.request.path, "payload": payload}
-        await queue.put(data)
-        if i == 1:
-            if failed:
-                print(data["bad"])  # force a coding error
-            else:
-                await websocket.close()  # should be auto reconnected
-        i += 1
+    try:
+        async for message in websocket:
+            payload = json.loads(message)
+            data = {"path": websocket.request.path, "payload": payload}
+            await queue.put(data)
+            # When testing retries, fail on message 3 (i==2)
+            # (typically message 2) is received before the failure
+            fail_index = 2 if connection_attempts is not None else 1
+            if i == fail_index:
+                if force_error:
+                    # If testing retries, only fail on first connection
+                    if is_first_connection:
+                        raise RuntimeError(
+                            "Simulated server error for retry testing"
+                        )
+                elif disconnect:
+                    await websocket.close()  # should be auto reconnected
+            i += 1
+    except websockets.exceptions.ConnectionClosedError:
+        if ignore_connection_closed:
+            # Connection closed abruptly (e.g., client process
+            # killed during restart)
+            # This is expected, so we handle it gracefully
+            pass
+        else:
+            # Unexpected connection close - re-raise to surface the error
+            raise
 
 
 def get_safe_port() -> int:
