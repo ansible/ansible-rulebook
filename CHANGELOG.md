@@ -1,5 +1,10 @@
 
 # Changelog
+## [1.3.1]
+### Changed
+### Added
+- New jinja filters in actions: `bool`
+### Fixed
 
 ## [1.3.0]
 ### Changed

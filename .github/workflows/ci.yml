@@ -16,16 +16,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.0
+        with:
+          persist-credentials: false
 
       - name: run commitlint
-        uses: wagoid/commitlint-github-action@v6
+        uses: wagoid/commitlint-github-action@f133a0d95090ef2609192b4a21f54e20af819ea9  # v6.0.0
 
   flake8:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.0
+        with:
+          persist-credentials: false
 
       - name: run flake
         uses: ./.github/actions/run-flake
@@ -34,7 +38,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.0
+        with:
+          persist-credentials: false
 
       - name: run isort
         uses: ./.github/actions/run-isort
@@ -43,10 +49,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.0
+        with:
+          persist-credentials: false
 
       - name: black
-        uses: psf/black@stable
+        uses: psf/black@87928e6d6761a4a6d22250e1fee5601b3998086e  # stable
         with:
           version: "22.12.0"
 
@@ -63,9 +71,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup
         uses: ./.github/actions/setup
@@ -89,13 +98,13 @@ jobs:
         # Upload coverage artifact to Github for SonarCloud (only from Python 3.11)
       - name: Upload coverage as artifact
         if: matrix.python-version == '3.11'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.0
         with:
           name: coverage
           path: ./coverage.xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@f2274c2c340e0c81c8f7dc407b2a477b8935f171  # v6.0.0
         with:
           env_vars: OS,PYTHON
           fail_ci_if_error: false
@@ -109,9 +118,10 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.0
       with:
         fetch-depth: 0
+        persist-credentials: false
 
     - name: Build and test the container image
       uses: ./.github/actions/image-test

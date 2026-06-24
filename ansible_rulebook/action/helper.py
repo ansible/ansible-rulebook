@@ -266,3 +266,47 @@ class Helper:
             return job_url
 
         return None
+
+    def log_completion(
+        self, template_type: str, template_name: str, controller_job: dict
+    ) -> None:
+        """Log job or workflow completion at the appropriate level.
+
+        Args:
+            template_type: Type of template (e.g., "Job template",
+                "Workflow template")
+            template_name: Name of the template
+            controller_job: Job data dictionary containing status and id
+        """
+        status = controller_job["status"]
+        job_id = controller_job.get("id")
+        if status == "successful":
+            logger.info(
+                "%s '%s' completed successfully (job_id: %s)",
+                template_type,
+                template_name,
+                job_id,
+            )
+        elif status in ["failed", "error"]:
+            logger.error(
+                "%s '%s' %s (job_id: %s)",
+                template_type,
+                template_name,
+                status,
+                job_id,
+            )
+        elif status == "canceled":
+            logger.warning(
+                "%s '%s' was canceled (job_id: %s)",
+                template_type,
+                template_name,
+                job_id,
+            )
+        else:
+            logger.debug(
+                "%s '%s' completed with unexpected status: %s (job_id: %s)",
+                template_type,
+                template_name,
+                status,
+                job_id,
+            )

@@ -361,3 +361,52 @@ async def test_run_workflow_template_with_null_labels():
                 await RunWorkflowTemplate(metadata, control, **action_args)()
 
         _validate(queue, True)
+
+
+@pytest.mark.asyncio
+async def test_run_workflow_template_negative_retries():
+    """Test that negative retries are clamped to 0 to prevent TypeError."""
+    queue = asyncio.Queue()
+    metadata = Metadata(
+        rule="r1",
+        rule_set="rs1",
+        rule_uuid="u1",
+        rule_set_uuid="u2",
+        rule_run_at="abc",
+    )
+    control = Control(
+        queue=queue,
+        inventory="abc",
+        hosts=["all"],
+        variables={"a": 1},
+        project_data_file="",
+    )
+    # Negative retries value (from malformed rulebook)
+    action_args = {
+        "name": "fred",
+        "organization": "Default",
+        "retries": -5,  # Negative value
+        "retry": False,
+        "delay": 0,
+    }
+    controller_job = {
+        "status": "successful",
+        "rc": 0,
+        "artifacts": dict(b=1),
+        "created": "abc",
+        "id": 10,
+    }
+    with patch(
+        "ansible_rulebook.action.run_workflow_template."
+        "job_template_runner.launch_workflow_job_template",
+        return_value="https://www.example.com",
+    ):
+        with patch(
+            "ansible_rulebook.action.run_workflow_template."
+            "job_template_runner.monitor_job",
+            return_value=controller_job,
+        ):
+            # Should not raise TypeError from range() with negative number
+            await RunWorkflowTemplate(metadata, control, **action_args)()
+
+            _validate(queue, True)

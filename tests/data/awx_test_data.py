@@ -112,12 +112,14 @@ JOB_TEMPLATE_POST_RESPONSE = {
 }
 
 JOB_1_RUNNING = dict(
+    id=JOB_ID_1,
     job=JOB_ID_1,
     url=JOB_1_SLUG,
     status=JOB_STATUS_RUNNING,
 )
 
 JOB_1_SUCCESSFUL = dict(
+    id=JOB_ID_1,
     job=JOB_ID_1,
     url=JOB_1_SLUG,
     status=JOB_STATUS_SUCCESSFUL,

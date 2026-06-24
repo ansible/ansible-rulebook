@@ -45,6 +45,8 @@ BACKOFF_MAX = 60.0
 BACKOFF_FACTOR = 1.618
 BACKOFF_INITIAL = 5
 
+WS_TRANSIENT_CLOSE_CODES = {1001, 1006, 1011, 1012, 1013}
+
 
 async def _wait_before_retry(backoff_delay: float) -> float:
     # Sleep and retry implemention duplicated from
@@ -129,14 +131,16 @@ async def _connect_websocket(
                 logger.warning(f"websocket aborted by OSError: {e}")
                 raise  # abort
         except websockets.exceptions.ConnectionClosedError as e:
-            # Check if we should retry - skip retry if close code is
-            # 1011 (unexpected error)
-            # When rcvd is None, the connection was closed without a
-            # proper close frame
-            should_retry = retry_on_close and (
-                not e.rcvd or e.rcvd.code != 1011
+            close_code = e.rcvd.code if e.rcvd else None
+            is_transient = (
+                close_code is None or close_code in WS_TRANSIENT_CLOSE_CODES
             )
-            if should_retry:
+            if retry_on_close and is_transient:
+                logger.warning(
+                    "websocket ConnectionClosedError (code=%s), "
+                    "will retry with backoff",
+                    close_code,
+                )
                 backoff_delay = await _wait_before_retry(backoff_delay)
             else:
                 logger.warning(
