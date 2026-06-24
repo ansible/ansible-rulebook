@@ -94,7 +94,11 @@ def generate_rulesets(
 
     rulesets = []
 
-    for ansible_ruleset, source_queue in ruleset_queues:
+    for (
+        ansible_ruleset,
+        source_queue,
+        source_feedback_queues,
+    ) in ruleset_queues:
         ruleset_ast = visit_ruleset(ansible_ruleset, variables)
         drools_ruleset = DroolsRuleset(
             name=ansible_ruleset.name,
@@ -117,6 +121,8 @@ def generate_rulesets(
                 )
 
         rulesets.append(
-            EngineRuleSetQueuePlan(drools_ruleset, source_queue, plan)
+            EngineRuleSetQueuePlan(
+                drools_ruleset, source_queue, plan, source_feedback_queues
+            )
         )
     return rulesets

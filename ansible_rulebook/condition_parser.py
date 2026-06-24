@@ -16,6 +16,7 @@ import logging
 
 from pyparsing import (
     Combine,
+    DelimitedList,
     Group,
     Keyword,
     Literal,
@@ -28,10 +29,9 @@ from pyparsing import (
     Word,
     ZeroOrMore,
     alphanums,
-    delimitedList,
     infix_notation,
     one_of,
-    originalTextFor,
+    original_text_for,
     pyparsing_common,
 )
 
@@ -109,8 +109,8 @@ varname = (
             | (
                 ("[")
                 + (
-                    originalTextFor(QuotedString('"'))
-                    | originalTextFor(QuotedString("'"))
+                    original_text_for(QuotedString('"'))
+                    | original_text_for(QuotedString("'"))
                     | pyparsing_common.signed_integer
                 )
                 + ("]")
@@ -146,26 +146,26 @@ key_value = ident + Suppress("=") + allowed_values
 string_search_t = (
     one_of("regex match search")
     + Suppress("(")
-    + Group(Optional(delimitedList(string1 | string2 | varname | key_value)))
+    + Group(Optional(DelimitedList(string1 | string2 | varname | key_value)))
     + Suppress(")")
 )
 
 delim_value = Group(
-    delimitedList(number_t | null_t | boolean | varname | string1 | string2)
+    DelimitedList(number_t | null_t | boolean | varname | string1 | string2)
 )
 list_values = Suppress("[") + delim_value + Suppress("]")
 
 selectattr_t = (
     Literal("selectattr")
     + Suppress("(")
-    + Group(delimitedList(allowed_values | list_values | varname))
+    + Group(DelimitedList(allowed_values | list_values | varname))
     + Suppress(")")
 )
 
 select_t = (
     Literal("select")
     + Suppress("(")
-    + Group(delimitedList(allowed_values | list_values | varname))
+    + Group(DelimitedList(allowed_values | list_values | varname))
     + Suppress(")")
 )
 
@@ -332,7 +332,7 @@ condition = infix_notation(
 
 def parse_condition(condition_string: str) -> Condition:
     try:
-        return condition.parseString(condition_string, parse_all=True)[0]
+        return condition.parse_string(condition_string, parse_all=True)[0]
     except ParseException as pe:
         msg = f"Error parsing: {condition_string}. {pe}"
         logger.debug(pe.explain(depth=0))

@@ -2,7 +2,7 @@
 - name: 72 set fact with type
   hosts: all
   sources:
-    - ansible.eda.generic:
+    - eda.builtin.generic:
         shutdown_after: 1
         payload:
           - action: "go"

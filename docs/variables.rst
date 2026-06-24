@@ -40,7 +40,7 @@ Let's take the following example rulebook:
         - name: Testing vars
           hosts: all
           sources:
-            - ansible.eda.range:
+            - eda.builtin.range:
                 limit: "{{ src_range_limit }}"
           rules:
             - name: Say Hello

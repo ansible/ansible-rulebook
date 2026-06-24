@@ -58,6 +58,8 @@ class Throttle(NamedTuple):
     group_by_attributes: List[str]
     once_within: Optional[str] = None
     once_after: Optional[str] = None
+    accumulate_within: Optional[str] = None
+    threshold: Optional[int] = None
 
 
 class Rule(NamedTuple):
@@ -96,6 +98,7 @@ class ActionContext(NamedTuple):
 class RuleSetQueue(NamedTuple):
     ruleset: RuleSet
     source_queue: asyncio.Queue
+    source_feedback_queues: dict[str, asyncio.Queue]
 
 
 @dataclass
@@ -107,3 +110,4 @@ class EngineRuleSetQueuePlan(NamedTuple):
     ruleset: EngineRuleSet
     source_queue: asyncio.Queue
     plan: Plan
+    source_feedback_queues: dict[str, asyncio.Queue]

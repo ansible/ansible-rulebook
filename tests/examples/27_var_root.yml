@@ -3,7 +3,7 @@
   hosts: all
   sources:
     - name: generic
-      ansible.eda.generic:
+      eda.builtin.generic:
         payload:
           - webhook:
               payload:

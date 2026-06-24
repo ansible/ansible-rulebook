@@ -1,3 +1,7 @@
+import inspect
+from unittest.mock import Mock
+
+import aiohttp
 import pytest
 
 from ansible_rulebook.condition_types import Condition as Conditions
@@ -10,6 +14,21 @@ from ansible_rulebook.rule_types import (
     Rule,
     RuleSet,
 )
+
+# TODO: Remove this patch once aioresponses releases a fix for
+# https://github.com/pnuckowski/aioresponses/issues/289
+# aiohttp 3.14 added a required stream_writer kwarg to
+# ClientResponse.__init__ that aioresponses (<=0.7.8) doesn't
+# pass. aiohttp only reads stream_writer.output_size, so a
+# Mock(output_size=0) suffices.
+_response_init = aiohttp.ClientResponse.__init__
+if "stream_writer" in inspect.signature(_response_init).parameters:
+
+    def _patched_response_init(self, *args, **kwargs):
+        kwargs.setdefault("stream_writer", Mock(output_size=0))
+        _response_init(self, *args, **kwargs)
+
+    aiohttp.ClientResponse.__init__ = _patched_response_init
 
 
 @pytest.fixture

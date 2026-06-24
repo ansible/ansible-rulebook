@@ -1,26 +1,25 @@
+---
 version: 3
 
 images:
   base_image:
-    name: 'registry.access.redhat.com/ubi9/python-311:latest'
+    name: "registry.access.redhat.com/ubi9/python-312-minimal:latest"
+
+options:
+  package_manager_path: /usr/bin/microdnf
 
 dependencies:
+  python_interpreter:
+    python_path: /usr/bin/python3.12
   galaxy:
     collections:
-      - ansible.eda
+      - "ansible.eda:>=2.12.0"
   python:
-    - azure-servicebus
-    - aiobotocore
-    - aiohttp
-    - aiokafka
-    - gssapi
-    - watchdog
-    - systemd-python
-    - dpath
     - ansible-rulebook
   ansible_core:
     package_pip: ansible-core~=2.16.0
   ansible_runner:
     package_pip: ansible-runner
   system:
-    - java-17-openjdk-devel [platform:rpm]
+    - java-17-openjdk-headless [platform:rpm]
+    - python3.12-devel [compile platform:rpm]

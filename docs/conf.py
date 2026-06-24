@@ -108,7 +108,7 @@ html_title = "Ansible Rulebook Documentation"
 html_theme_options = {
     "display_version": False,
     "titles_only": False,
-    "documentation_home_url": "https://ansible-rulebook.readthedocs.io/en/latest/",
+    "documentation_home_url": "https://docs.ansible.com/projects/rulebook/en/latest/",
 }
 
 # Theme options are theme-specific and customize the look and feel of a

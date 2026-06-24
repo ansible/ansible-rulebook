@@ -5,6 +5,14 @@ ansible-rulebook
 .. maintainenance status
 .. image:: https://img.shields.io/badge/Maintained%3F-yes-green.svg
 
+.. SonarCloud
+.. image:: https://sonarcloud.io/api/project_badges/measure?project=ansible_ansible-rulebook&metric=alert_status
+        :target: https://sonarcloud.io/summary/new_code?id=ansible_ansible-rulebook
+
+.. Coverage
+.. image:: https://sonarcloud.io/api/project_badges/measure?project=ansible_ansible-rulebook&metric=coverage
+        :target: https://sonarcloud.io/summary/overall?id=ansible_ansible-rulebook
+
 .. codecov
 .. image:: https://codecov.io/gh/ansible/ansible-rulebook/branch/main/graph/badge.svg?token=U1mIB6PI9I
         :target: https://codecov.io/gh/ansible/ansible-rulebook
@@ -23,7 +31,7 @@ ansible-rulebook
 
 .. Docs
 .. image:: https://readthedocs.org/projects/ansible-rulebook/badge/?version=latest
-        :target: https://ansible-rulebook.readthedocs.io/en/latest/?version=latest
+        :target: https://docs.ansible.com/projects/rulebook/en/latest/?version=latest
         :alt: Documentation Status
 
 .. Last release
@@ -60,23 +68,23 @@ Features
 ===============
 Installation
 ===============
-Please follow the `Installation guide <https://ansible.readthedocs.io/projects/rulebook/en/latest/installation.html>`_ to install ``ansible-rulebook``.
+Please follow the `Installation guide <https://docs.ansible.com/projects/rulebook/en/latest/installation.html>`_ to install ``ansible-rulebook``.
 
 ===============
 Documentation
 ===============
-Please refer to the `Getting Started guide <https://ansible.readthedocs.io/projects/rulebook/en/latest/getting_started.html>`_ to get started with ``ansible-rulebook``.
+Please refer to the `Getting Started guide <https://docs.ansible.com/projects/rulebook/en/latest/getting_started.html>`_ to get started with ``ansible-rulebook``.
 
 ===============
 Contributing
 ===============
-We ask all of our community members and contributors to adhere to the `Ansible code of conduct <https://docs.ansible.com/ansible/latest/community/code_of_conduct.html>`_.
+We ask all of our community members and contributors to adhere to the `Ansible code of conduct <https://docs.ansible.com/projects/ansible/latest/community/code_of_conduct.html>`_.
 If you have questions or need assistance, please reach out to our community team at codeofconduct@ansible.com
 
-Refer to the `Contributing guide <https://ansible.readthedocs.io/projects/rulebook/en/latest/contributing.html>`_ to get started developing, reporting bugs or providing feedback.
+Refer to the `Contributing guide <https://docs.ansible.com/projects/rulebook/en/latest/contributing.html>`_ to get started developing, reporting bugs or providing feedback.
 
-To find out how to join the community and get in touch, see the `Getting in touch <https://ansible.readthedocs.io/projects/rulebook/en/latest/contributing.html#getting-in-touch>`_ section of our docs.
-You can also find more information in the `Ansible communication guide <https://docs.ansible.com/ansible/devel/community/communication.html>`_.
+To find out how to join the community and get in touch, see the `Getting in touch <https://docs.ansible.com/projects/rulebook/en/latest/contributing.html#getting-in-touch>`_ section of our docs.
+You can also find more information in the `Ansible communication guide <https://docs.ansible.com/projects/ansible/devel/community/communication.html>`_.
 
 Credits
 -------
