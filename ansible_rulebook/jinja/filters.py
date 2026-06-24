@@ -11,9 +11,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from __future__ import annotations
+
 import os
 import re
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 
 
 def regex_replace(
@@ -97,9 +99,45 @@ def normpath(
     return os.path.normpath(value)
 
 
-FILTERS: Dict[str, Callable[..., str]] = {
+def bool_filter(
+    value: Any,
+) -> bool:
+    """
+    Convert a string to a boolean value.
+
+    Returns True for: 'true', 'yes', '1', 'on', 't', 'y'
+        (case-insensitive)
+    Returns False for: 'false', 'no', '0', 'off', 'f', 'n', ''
+        (case-insensitive)
+    For other types, returns the Python bool() evaluation.
+    """
+    if value is None:
+        return False
+
+    if isinstance(value, bool):
+        return value
+
+    if isinstance(value, str):
+        lower_value = value.lower().strip()
+        if lower_value in ("true", "yes", "1", "on", "t", "y"):
+            return True
+        elif lower_value in ("false", "no", "0", "off", "f", "n", ""):
+            return False
+        else:
+            # For any other string, raise an error for clarity
+            raise ValueError(
+                f"Cannot convert '{value}' to boolean. "
+                "Expected: true/false, yes/no, 1/0, on/off, t/f, y/n"
+            )
+
+    # For other types (int, list, etc.), use Python's bool()
+    return bool(value)
+
+
+FILTERS: dict[str, Callable[..., str | bool]] = {
     "regex_replace": regex_replace,
     "basename": basename,
     "dirname": dirname,
     "normpath": normpath,
+    "bool": bool_filter,
 }

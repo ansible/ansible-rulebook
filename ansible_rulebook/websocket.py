@@ -22,9 +22,10 @@ import tempfile
 import typing as tp
 from dataclasses import dataclass, field
 
+import aiofiles.tempfile
 import websockets
 import yaml
-from websockets.client import WebSocketClientProtocol
+from websockets.asyncio.client import ClientConnection
 
 from ansible_rulebook import rules_parser as rules_parser
 from ansible_rulebook.common import StartupArgs
@@ -43,6 +44,8 @@ BACKOFF_MIN = 1.92
 BACKOFF_MAX = 60.0
 BACKOFF_FACTOR = 1.618
 BACKOFF_INITIAL = 5
+
+WS_TRANSIENT_CLOSE_CODES = {1001, 1006, 1011, 1012, 1013}
 
 
 async def _wait_before_retry(backoff_delay: float) -> float:
@@ -78,7 +81,7 @@ async def _update_authorization_header(headers: dict) -> None:
 
 
 async def _connect_websocket(
-    handler: tp.Callable[[WebSocketClientProtocol], tp.Awaitable],
+    handler: tp.Callable[[ClientConnection], tp.Awaitable],
     retry_on_close: bool,
     **kwargs: list,
 ) -> tp.Any:
@@ -111,18 +114,11 @@ async def _connect_websocket(
         except asyncio.CancelledError as e:  # pragma: no cover
             logger.warning(f"websocket aborted by CancelledError: {e}")
             raise
-        except websockets.exceptions.InvalidStatusCode as e:
-            if refresh_token and e.status_code == 403:
-                await _update_authorization_header(extra_headers)
-                # Only attempt to refresh token once. If a new token cannot
-                # establish the connection, something else must have caused 403
-                refresh_token = False
-            else:
-                logger.warning(f"websocket aborted by InvalidStatusCode: {e}")
-                raise  # abort
         except websockets.exceptions.InvalidStatus as e:
             if refresh_token and e.response.status_code == 403:
                 await _update_authorization_header(extra_headers)
+                # Only attempt to refresh token once. If a new token cannot
+                # establish the connection, something else must have caused 403
                 refresh_token = False
             else:
                 logger.warning(f"websocket aborted by InvalidStatus: {e}")
@@ -135,7 +131,16 @@ async def _connect_websocket(
                 logger.warning(f"websocket aborted by OSError: {e}")
                 raise  # abort
         except websockets.exceptions.ConnectionClosedError as e:
-            if retry_on_close and e.code != 1011:  # unexpected error
+            close_code = e.rcvd.code if e.rcvd else None
+            is_transient = (
+                close_code is None or close_code in WS_TRANSIENT_CLOSE_CODES
+            )
+            if retry_on_close and is_transient:
+                logger.warning(
+                    "websocket ConnectionClosedError (code=%s), "
+                    "will retry with backoff",
+                    close_code,
+                )
                 backoff_delay = await _wait_before_retry(backoff_delay)
             else:
                 logger.warning(
@@ -171,7 +176,7 @@ async def request_workload(activation_instance_id: str) -> StartupArgs:
 
 
 async def _handle_request_workload(
-    websocket: WebSocketClientProtocol,
+    websocket: ClientConnection,
     activation_instance_id: str,
 ) -> StartupArgs:
     logger.info("workload websocket connected")
@@ -189,6 +194,7 @@ async def _handle_request_workload(
     response = StartupArgs()
     non_fq_key = False
     file_template_vars = {}
+    rulebook_raw_data = None
     while True:
         msg = await websocket.recv()
         data = json.loads(msg)
@@ -217,18 +223,17 @@ async def _handle_request_workload(
                 non_fq_key = True
             else:
                 key = keys[1]
-            filename = tempfile.NamedTemporaryFile().name
-            with open(filename, "wb") as f:
-                f.write(raw_data)
+            async with aiofiles.tempfile.NamedTemporaryFile(
+                delete=False
+            ) as tmp:
+                filename = tmp.name
+                await tmp.write(raw_data)
             file_template_vars[key] = filename
             os.chmod(filename, 0o400)
             logger.debug(f"File Content eda.filename.{key} : {filename}")
         if data.get("type") == "Rulebook":
-            raw_data = base64.b64decode(data.get("data"))
-            response.check_vault = has_vaulted_str(raw_data)
-            response.rulesets = rules_parser.parse_rule_sets(
-                yaml.safe_load(raw_data)
-            )
+            rulebook_raw_data = base64.b64decode(data.get("data"))
+            response.check_vault = has_vaulted_str(rulebook_raw_data)
         if data.get("type") == "ExtraVars":
             response.variables = yaml.safe_load(
                 base64.b64decode(data.get("data"))
@@ -243,6 +248,12 @@ async def _handle_request_workload(
             response.controller_ssl_verify = data.get("ssl_verify")
             response.controller_username = data.get("username", "")
             response.controller_password = data.get("password", "")
+
+    if rulebook_raw_data is not None:
+        response.rulesets = rules_parser.parse_rule_sets(
+            yaml.safe_load(rulebook_raw_data),
+            response.variables,
+        )
 
     if non_fq_key and "filename" in file_template_vars:
         response.variables["eda"] = {
@@ -274,7 +285,7 @@ async def send_event_log_to_websocket(event_log: asyncio.Queue):
 
 
 async def _handle_send_event_log(
-    websocket: WebSocketClientProtocol,
+    websocket: ClientConnection,
     logs: EventLogQueue,
 ):
     logger.info("feedback websocket connected")

@@ -12,7 +12,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import asyncio
 import json
 import logging
 import os
@@ -24,6 +23,7 @@ from urllib.parse import urljoin, urlparse
 
 import aiohttp
 import dpath
+from aiohttp_retry import ExponentialRetry, RetryClient
 
 from ansible_rulebook import util
 from ansible_rulebook.conf import settings
@@ -33,11 +33,15 @@ from ansible_rulebook.exception import (
     JobTemplateNotFoundException,
     WorkflowJobTemplateNotFoundException,
 )
+from ansible_rulebook.shared_job_monitor import SharedJobMonitor
 
 logger = logging.getLogger(__name__)
 
 
 CLIENT_CONNECT_ERROR_STRING = "Error connecting to controller: %s"
+CLIENT_INVALID_JSON_STRING = "Invalid JSON response from controller at %s: %s"
+JOB_TEMPLATE_TYPE = "job_template"
+WORKFLOW_TEMPLATE_TYPE = "workflow_template"
 
 
 class JobTemplateRunner:
@@ -69,6 +73,9 @@ class JobTemplateRunner:
             os.environ.get("EDA_JOB_TEMPLATE_REFRESH_DELAY", 10.0)
         )
         self._session = None
+        self._raw_session = None
+        self._controller_available = True
+        self._job_monitor = SharedJobMonitor(self)
         self._config_slug = self.LEGACY_CONFIG_SLUG
         self._unified_job_template_slug = self.LEGACY_UNIFIED_TEMPLATE_SLUG
         self._labels_slug = self.LEGACY_LABELS_SLUG
@@ -84,16 +91,53 @@ class JobTemplateRunner:
         self._set_slugs(value)
 
     async def close_session(self):
-        if self._session and not self._session.closed:
+        if self._session:
             await self._session.close()
+            self._session = None
+        if self._raw_session:
+            await self._raw_session.close()
+            self._raw_session = None
 
     def _create_session(self):
         if self._session is None:
             limit = int(os.getenv("EDA_CONTROLLER_CONNECTION_LIMIT", "30"))
-            self._session = aiohttp.ClientSession(
+            client_session = aiohttp.ClientSession(
                 connector=aiohttp.TCPConnector(limit=limit),
                 headers=self._auth_headers(),
                 auth=self._basic_auth(),
+            )
+            # Store the raw session for use in no-retry operations
+            self._raw_session = client_session
+            retry_options = ExponentialRetry(
+                attempts=settings.controller_retry_attempts,
+                start_timeout=2.0,
+                max_timeout=settings.controller_retry_max_timeout,
+                factor=2.0,
+                statuses={429, 500, 502, 503, 504},
+                retry_all_server_errors=False,
+                exceptions={aiohttp.ClientConnectorError},
+                methods={"GET"},
+            )
+            # POST retries are limited to 429/502/503.  502/503
+            # typically mean the request never reached the backend,
+            # but in rare edge cases the gateway may return 502 after
+            # the controller accepted the launch, risking a duplicate
+            # job.  The controller does not provide server-side
+            # idempotency for launches; label-based duplicate detection
+            # in _create_obj mitigates this for label creation only.
+            self._post_retry_options = ExponentialRetry(
+                attempts=settings.controller_retry_attempts,
+                start_timeout=2.0,
+                max_timeout=settings.controller_retry_max_timeout,
+                factor=2.0,
+                statuses={429, 502, 503},
+                retry_all_server_errors=False,
+                exceptions={aiohttp.ClientConnectorError},
+                methods={"POST"},
+            )
+            self._session = RetryClient(
+                client_session=client_session,
+                retry_options=retry_options,
                 raise_for_status=True,
             )
 
@@ -118,24 +162,103 @@ class JobTemplateRunner:
             async with self._session.get(
                 url, params=params, ssl=self._sslcontext
             ) as response:
-                return json.loads(await response.text())
+                response_text = await response.text()
+                if not response_text:
+                    raise ControllerApiException(
+                        f"Controller returned empty response from {url}"
+                    )
+                result = json.loads(response_text)
+                if not self._controller_available:
+                    self._controller_available = True
+                    logger.warning("Controller connection restored")
+                return result
+        except json.JSONDecodeError as e:
+            logger.error(  # NOSONAR
+                CLIENT_INVALID_JSON_STRING,
+                url,
+                str(e),
+            )
+            raise ControllerApiException(
+                f"Controller returned invalid JSON response: {str(e)}"
+            )
         except aiohttp.ClientError as e:
-            logger.error(CLIENT_CONNECT_ERROR_STRING, str(e))
+            if self._controller_available:
+                self._controller_available = False
+                logger.warning(
+                    "Controller unavailable (%s), retries exhausted",
+                    e,
+                )
+            logger.error(CLIENT_CONNECT_ERROR_STRING, str(e))  # NOSONAR
+            raise ControllerApiException(str(e))
+
+    async def _get_page_no_retry(self, href_slug: str, params: dict) -> dict:
+        """Get page without retry logic - used for polling operations.
+
+        For operations like job monitoring that happen frequently,
+        we don't want aggressive retries that could overload the controller.
+        Transient errors during polling will be handled by the next poll cycle.
+        """
+        url = urljoin(self.host, href_slug)
+        try:
+            self._create_session()
+            # Use the raw session directly to bypass retry logic
+            async with self._raw_session.get(
+                url, params=params, ssl=self._sslcontext
+            ) as response:
+                response.raise_for_status()
+                response_text = await response.text()
+                try:
+                    result = json.loads(response_text)
+                    logger.debug(
+                        "Successfully polled page from %s (status: %d)",
+                        url,
+                        response.status,
+                    )
+                    return result
+                except json.JSONDecodeError as json_err:
+                    logger.error(
+                        "Failed to parse JSON response from %s. "
+                        "Response status: %d, Response body: %s",
+                        url,
+                        response.status,
+                        response_text[:500],
+                    )
+                    raise ControllerApiException(
+                        f"Invalid JSON response from controller: {json_err}"
+                    )
+        except aiohttp.ClientResponseError as e:
+            logger.debug(
+                "Polling error at %s (will retry on next poll cycle). "
+                "Status: %s, Message: %s",
+                url,
+                e.status,
+                e.message,
+            )
+            raise ControllerApiException(str(e))
+        except (aiohttp.ClientError, ConnectionError) as e:
+            logger.debug(
+                "Polling connection error at %s "
+                "(will retry on next poll cycle): %s",
+                url,
+                str(e),
+            )
             raise ControllerApiException(str(e))
 
     async def get_config(self) -> dict:
         logger.info("Attempting to connect to Controller %s", self.host)
         return await self._get_page(self._config_slug, {})
 
-    def _auth_headers(self) -> dict:
+    def _auth_headers(self) -> Optional[dict]:
         if self.token:
             return dict(Authorization=f"Bearer {self.token}")
+        return None
 
-    def _basic_auth(self) -> aiohttp.BasicAuth:
+    def _basic_auth(self) -> Optional[aiohttp.BasicAuth]:
         if self.username and self.password:
             return aiohttp.BasicAuth(
                 login=self.username, password=self.password
             )
+        return None
 
     @cached_property
     def _sslcontext(self) -> Union[bool, ssl.SSLContext]:
@@ -148,7 +271,7 @@ class JobTemplateRunner:
 
     async def _get_template_obj(
         self, name: str, organization: str, unified_type: str
-    ) -> dict:
+    ) -> Optional[dict]:
         params = {"name": name}
 
         while True:
@@ -168,6 +291,7 @@ class JobTemplateRunner:
                     == organization
                 ):
                     return {
+                        "id": jt["id"],
                         "launch": dpath.get(jt, "related.launch", ".", None),
                         "ask_limit_on_launch": jt["ask_limit_on_launch"],
                         "ask_labels_on_launch": jt["ask_labels_on_launch"],
@@ -184,13 +308,35 @@ class JobTemplateRunner:
             else:
                 break
 
-    async def run_job_template(
+        return None
+
+    async def launch_job_template(
         self,
         name: str,
         organization: str,
         job_params: dict,
         labels: Optional[list[str]] = None,
-    ) -> dict:
+    ) -> str:
+        """Launch a job template and return the job URL immediately.
+
+        This method initiates a job template execution on the controller
+        and returns immediately with the job URL without waiting for
+        completion. This enables asynchronous job monitoring.
+
+        Args:
+            name: Name of the job template to launch
+            organization: Organization name containing the job template
+            job_params: Dictionary of parameters to pass to the job (e.g.,
+                extra_vars, inventory, limit)
+            labels: Optional list of label names to attach to the job
+
+        Returns:
+            str: The job URL for monitoring
+
+        Raises:
+            JobTemplateNotFoundException: If the specified job template
+                does not exist in the organization
+        """
         obj = await self._get_template_obj(name, organization, "job_template")
         if not obj:
             raise JobTemplateNotFoundException(
@@ -213,15 +359,69 @@ class JobTemplateRunner:
 
         url = urljoin(self.host, obj["launch"])
         job = await self._launch(job_params, url)
-        return await self._monitor_job(job["url"])
+        return job["url"]
 
-    async def run_workflow_job_template(
+    async def run_job_template(
         self,
         name: str,
         organization: str,
         job_params: dict,
         labels: Optional[list[str]] = None,
     ) -> dict:
+        """Launch a job template and wait for it to complete.
+
+        This method combines launching a job template with monitoring its
+        execution until completion. It's a convenience wrapper around
+        launch_job_template() and monitor_job().
+
+        Args:
+            name: Name of the job template to run
+            organization: Organization name containing the job template
+            job_params: Dictionary of parameters to pass to the job
+            labels: Optional list of label names to attach to the job
+
+        Returns:
+            dict: The final job status information including status, artifacts,
+                and other job metadata
+
+        Raises:
+            JobTemplateNotFoundException: If the specified job template
+                does not exist in the organization
+        """
+        job_url = await self.launch_job_template(
+            name, organization, job_params, labels
+        )
+        return await self.monitor_job(job_url)
+
+    async def launch_workflow_job_template(
+        self,
+        name: str,
+        organization: str,
+        job_params: dict,
+        labels: Optional[list[str]] = None,
+    ) -> str:
+        """Launch a workflow job template and return the job URL immediately.
+
+        This method initiates a workflow job template execution on the
+        controller and returns immediately with the job URL without waiting
+        for completion. Workflows may not support all parameters that regular
+        job templates do (e.g., limit parameter).
+
+        Args:
+            name: Name of the workflow job template to launch
+            organization: Organization name containing the workflow template
+            job_params: Dictionary of parameters to pass to the workflow
+                (e.g., extra_vars, inventory). Note: 'limit' is removed if
+                the workflow template doesn't accept it.
+            labels: Optional list of label names to attach to the workflow job
+
+        Returns:
+            str: The workflow job URL for monitoring
+
+        Raises:
+            WorkflowJobTemplateNotFoundException: If the specified workflow
+                template does not exist in the organization
+        """
         obj = await self._get_template_obj(
             name, organization, "workflow_job_template"
         )
@@ -251,16 +451,58 @@ class JobTemplateRunner:
             )
             job_params.pop("limit")
         job = await self._launch(job_params, url)
-        return await self._monitor_job(job["url"])
+        return job["url"]
 
-    async def _monitor_job(self, url) -> dict:
-        while True:
-            # fetch and process job status
-            json_body = await self._get_page(url, {})
-            if json_body["status"] in self.JOB_COMPLETION_STATUSES:
-                return json_body
+    async def run_workflow_job_template(
+        self,
+        name: str,
+        organization: str,
+        job_params: dict,
+        labels: Optional[list[str]] = None,
+    ) -> dict:
+        """Launch a workflow job template and wait for it to complete.
 
-            await asyncio.sleep(self.refresh_delay)
+        This method combines launching a workflow job template with monitoring
+        its execution until completion. It's a convenience wrapper around
+        launch_workflow_job_template() and monitor_job().
+
+        Args:
+            name: Name of the workflow job template to run
+            organization: Organization name containing the workflow template
+            job_params: Dictionary of parameters to pass to the workflow
+            labels: Optional list of label names to attach to the workflow job
+
+        Returns:
+            dict: The final workflow job status information including status,
+                artifacts, and other job metadata
+
+        Raises:
+            WorkflowJobTemplateNotFoundException: If the specified workflow
+                template does not exist in the organization
+        """
+        job_url = await self.launch_workflow_job_template(
+            name, organization, job_params, labels
+        )
+        return await self.monitor_job(job_url)
+
+    async def monitor_job(self, url) -> dict:
+        """Monitor a running job until it reaches a completion status.
+
+        This method uses the shared batch monitor to efficiently poll
+        multiple jobs with fewer API calls. The monitor batches job IDs
+        into chunked requests and polls at regular intervals until each
+        job reaches a terminal state (successful, failed, error, or
+        canceled).
+
+        Args:
+            url: The job URL to monitor (can be a regular job or workflow job)
+
+        Returns:
+            dict: The final job status information when the job completes,
+                including status, artifacts, and other job metadata
+        """
+        future = await self._job_monitor.register_job(url)
+        return await future
 
     async def _launch(self, job_params: dict, url: str) -> dict:
         body = None
@@ -270,14 +512,23 @@ class JobTemplateRunner:
                 json=job_params,
                 ssl=self._sslcontext,
                 raise_for_status=False,
+                retry_options=self._post_retry_options,
             ) as post_response:
-                body = json.loads(await post_response.text())
+                response_text = await post_response.text()
+                if not response_text:
+                    raise ControllerApiException(
+                        f"Controller returned empty response from {url}"
+                    )
+                try:
+                    body = json.loads(response_text)
+                except json.JSONDecodeError:
+                    body = response_text
                 post_response.raise_for_status()
                 return body
         except aiohttp.ClientError as e:
-            logger.error(CLIENT_CONNECT_ERROR_STRING, str(e))
+            logger.error(CLIENT_CONNECT_ERROR_STRING, str(e))  # NOSONAR
             if body:
-                logger.error("Error: %s", body)
+                logger.error("Error: %s", body)  # NOSONAR
             raise ControllerApiException(str(e))
 
     async def _get_obj_by_name(
@@ -292,7 +543,7 @@ class JobTemplateRunner:
 
     async def _create_obj(
         self, href_slug: str, params: dict
-    ) -> (Optional[dict], bool):
+    ) -> tuple[Optional[dict], bool]:
         body = None
         try:
             url = urljoin(self.host, href_slug)
@@ -302,22 +553,30 @@ class JobTemplateRunner:
                 json=params,
                 ssl=self._sslcontext,
                 raise_for_status=False,
+                retry_options=self._post_retry_options,
             ) as post_response:
-                body = json.loads(await post_response.text())
+                response_text = await post_response.text()
+                if not response_text:
+                    raise ControllerApiException(
+                        f"Controller returned empty response from {url}"
+                    )
+                try:
+                    body = json.loads(response_text)
+                except json.JSONDecodeError:
+                    body = response_text
                 post_response.raise_for_status()
                 return body, False
         except aiohttp.ClientResponseError as e:
-            # If the object got created by another process, do a retry
             if e.status == HTTPStatus.BAD_REQUEST and "already exists" in str(
                 body
             ):
                 return None, True
-            logger.error(
+            logger.error(  # NOSONAR
                 f"Client Response Error {e.status} message {e.message}"
             )
             raise ControllerObjectCreateException(str(e))
         except aiohttp.ClientError as e:
-            logger.error(CLIENT_CONNECT_ERROR_STRING, str(e))
+            logger.error(CLIENT_CONNECT_ERROR_STRING, str(e))  # NOSONAR
             raise ControllerApiException(str(e))
 
     async def _get_or_create_label(
@@ -394,6 +653,81 @@ class JobTemplateRunner:
                 name,
             )
         return []
+
+    def _api_slug_prefix(self) -> str:
+        return self._unified_job_template_slug.split("unified_job_templates/")[
+            0
+        ]
+
+    async def get_job_url_from_label(
+        self, name: str, organization: str, obj_type: str, label: str
+    ) -> Optional[str]:
+        """Retrieve a job URL by searching for a job with a specific label.
+
+        This method searches for jobs or workflow jobs associated with a
+        template that have been tagged with a specific label. This is useful
+        in HA/persistence scenarios where a job was launched in a previous
+        execution and needs to be found and monitored.
+
+        Args:
+            name: Name of the job or workflow template
+            organization: Organization name containing the template
+            obj_type: Type of template ("job_template" or
+                "workflow_template")
+            label: Label name to search for (e.g., "eda-event-uuid-{uuid}")
+
+        Returns:
+            Optional[str]: The job URL if a job with the label is found,
+                None if no matching job exists
+
+        Raises:
+            JobTemplateNotFoundException: If obj_type is "job_template"
+                and the template doesn't exist
+            WorkflowJobTemplateNotFoundException: If obj_type is
+                "workflow_template" and the template doesn't exist
+            ValueError: If obj_type is neither "job_template" nor
+                "workflow_template"
+        """
+        if obj_type == JOB_TEMPLATE_TYPE:
+            obj = await self._get_template_obj(
+                name, organization, "job_template"
+            )
+            if not obj:
+                raise JobTemplateNotFoundException(
+                    (
+                        f"Job template {name} in organization "
+                        f"{organization} does not exist"
+                    )
+                )
+            job_slug = (
+                f"{self._api_slug_prefix()}job_templates/{obj['id']}/jobs/"
+            )
+        elif obj_type == WORKFLOW_TEMPLATE_TYPE:
+            obj = await self._get_template_obj(
+                name, organization, "workflow_job_template"
+            )
+            if not obj:
+                raise WorkflowJobTemplateNotFoundException(
+                    (
+                        f"Workflow template {name} in organization "
+                        f"{organization} does not exist"
+                    )
+                )
+            job_slug = (
+                f"{self._api_slug_prefix()}"
+                f"workflow_job_templates/{obj['id']}/workflow_jobs/"
+            )
+        else:
+            raise ValueError(
+                f"Invalid type {obj_type} passed into job_url_from_label"
+            )
+
+        params = {"labels__name": label}
+        result = await self._get_page(job_slug, params)
+        if result["count"] >= 1:
+            return result["results"][0]["url"]
+
+        return None
 
 
 job_template_runner = JobTemplateRunner()

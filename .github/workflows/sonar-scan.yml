@@ -37,11 +37,13 @@ jobs:
       github.event.workflow_run.conclusion == 'success' && 
       github.event.workflow_run.event == 'pull_request'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.0
+        with:
+          persist-credentials: false
 
       # Download coverage artifact from CI workflow
       - name: Download coverage artifact
-        uses: dawidd6/action-download-artifact@5c98f0b039f36ef966fdb7dfa9779262785ecb05  #v2.27.0 sonar cannot use official Github action: actions/download-artifact
+        uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151  #v2.27.0 sonar cannot use official Github action: actions/download-artifact
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: CI
@@ -153,7 +155,7 @@ jobs:
           gh pr checkout "${PR_NUMBER_VAR}"
 
       - name: SonarCloud Scan (Pull Request)
-        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 # v7.0.0
+        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets[format('{0}', vars.SONAR_TOKEN_SECRET_NAME)] }}
@@ -176,11 +178,13 @@ jobs:
       github.event.workflow_run.event == 'push' &&
       github.repository == 'ansible/ansible-rulebook'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.0
+        with:
+          persist-credentials: false
 
       # Download coverage artifact from CI workflow
       - name: Download coverage artifact
-        uses: dawidd6/action-download-artifact@5c98f0b039f36ef966fdb7dfa9779262785ecb05  #v2.27.0 sonar cannot use official Github action: actions/download-artifact
+        uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151  #v2.27.0 sonar cannot use official Github action: actions/download-artifact
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: CI
@@ -199,7 +203,7 @@ jobs:
           echo "└── Result: ✅ Proceed - \"Running SonarCloud analysis\""
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 # v6
+        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets[format('{0}', vars.SONAR_TOKEN_SECRET_NAME)] }}

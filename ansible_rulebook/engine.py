@@ -21,7 +21,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from drools.dispatch import establish_async_channel, handle_async_messages
-from drools.ruleset import session_stats
+from drools.ruleset import session_stats, shutdown as drools_shutdown
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -34,6 +34,7 @@ from ansible_rulebook.collection import (
     split_collection_name,
 )
 from ansible_rulebook.messages import Shutdown
+from ansible_rulebook.persistence import enable_leader, enable_persistence
 from ansible_rulebook.rule_set_runner import RuleSetRunner
 from ansible_rulebook.rule_types import (
     EventSource,
@@ -62,6 +63,7 @@ logger = logging.getLogger(__name__)
 
 
 all_source_queues = []
+_background_tasks = set()
 
 
 async def heartbeat_task(
@@ -118,6 +120,7 @@ async def start_source(
     queue: asyncio.Queue,
     shutdown_delay: float = 60.0,
     filter_dirs: Optional[list[str]] = None,
+    source_feedback_queue: asyncio.Queue = None,
 ) -> None:
     all_source_queues.append(queue)
     try:
@@ -209,6 +212,8 @@ async def start_source(
                 source_name=source.source_name
             )
 
+        if source_feedback_queue:
+            args["eda_feedback_queue"] = source_feedback_queue
         await entrypoint(fqueue, args)
         shutdown_msg = (
             f"Source {source.source_name} initiated shutdown at "
@@ -220,6 +225,7 @@ async def start_source(
             f"Source {source.source_name} keyboard interrupt, "
             + f"initiated shutdown at {str(datetime.now())}"
         )
+        drools_shutdown()
         pass
     except asyncio.CancelledError:
         shutdown_msg = (
@@ -247,7 +253,7 @@ async def start_source(
         raise
     finally:
         logger.debug("Broadcast shutdown to all source plugins")
-        asyncio.create_task(
+        task = asyncio.create_task(
             broadcast(
                 Shutdown(
                     message=shutdown_msg,
@@ -256,6 +262,8 @@ async def start_source(
                 ),
             )
         )
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
 
 
 class RulebookFileChangeHandler(FileSystemEventHandler):
@@ -303,6 +311,12 @@ async def run_rulesets(
     file_monitor: str = None,
 ) -> bool:
     logger.debug("run_ruleset")
+    reader, writer = await establish_async_channel()
+    async_task = asyncio.create_task(
+        handle_async_messages(reader, writer), name="drools_async_task"
+    )
+
+    enable_persistence(parsed_args, variables)
     rulesets_queue_plans = rule_generator.generate_rulesets(
         ruleset_queues, variables, inventory
     )
@@ -316,7 +330,8 @@ async def run_rulesets(
     hosts_facts = []
     ruleset_names = []
     rulesets = {}
-    for ruleset, _ in ruleset_queues:
+    enable_leader()
+    for ruleset, _, _ in ruleset_queues:
         if ruleset.gather_facts and not hosts_facts:
             if inventory:
                 hosts_facts = collect_ansible_facts(inventory)
@@ -329,11 +344,6 @@ async def run_rulesets(
         rulesets[ruleset.name] = ruleset
 
     ruleset_tasks = []
-    reader, writer = await establish_async_channel()
-    async_task = asyncio.create_task(
-        handle_async_messages(reader, writer), name="drools_async_task"
-    )
-
     send_heartbeat_task = None
     if parsed_args and parsed_args.heartbeat > 0 and event_log:
         send_heartbeat_task = asyncio.create_task(

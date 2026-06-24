@@ -17,6 +17,7 @@ import argparse
 import asyncio
 import logging
 import os
+import signal
 import sys
 from typing import List
 
@@ -145,6 +146,11 @@ def get_parser() -> argparse.ArgumentParser:
         "the results to be communicated back to the websocket.",
     )
     parser.add_argument(
+        "--persistence-id",
+        help="Identifier, the persistence id which allows "
+        "for the data to be saved across multiple restarts.",
+    )
+    parser.add_argument(
         "-w",
         "--worker",
         action="store_true",
@@ -189,6 +195,29 @@ def get_parser() -> argparse.ArgumentParser:
         "default to yes for https connection, "
         "can also be passed via env var EDA_CONTROLLER_SSL_VERIFY",
         default=os.environ.get("EDA_CONTROLLER_SSL_VERIFY", "yes"),
+    )
+    parser.add_argument(
+        "--controller-retry-max-timeout",
+        type=float,
+        help="Maximum backoff time in seconds for controller API retries "
+        "on transient errors (502/503/504). Default is 60. "
+        "Can also be passed via env var EDA_CONTROLLER_RETRY_MAX_TIMEOUT",
+        default=os.environ.get(
+            "EDA_CONTROLLER_RETRY_MAX_TIMEOUT",
+            settings.controller_retry_max_timeout,
+        ),
+    )
+    parser.add_argument(
+        "--controller-retry-attempts",
+        type=int,
+        help="Number of retry attempts for controller API calls "
+        "on transient errors. Default is 5. "
+        "Can also be passed via env var "
+        "EDA_CONTROLLER_RETRY_ATTEMPTS",
+        default=os.environ.get(
+            "EDA_CONTROLLER_RETRY_ATTEMPTS",
+            settings.controller_retry_attempts,
+        ),
     )
     parser.add_argument(
         "--print-events",
@@ -259,6 +288,43 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         default=False,
     )
+    parser.add_argument(
+        "-m",
+        "--max-concurrent-actions",
+        help="For parallel execution strategy the maximum number of "
+        "concurrent actions. Default is 25 when using parallel strategy. "
+        "Only applies to parallel execution strategy. "
+        "It can also be passed via the env var EDA_MAX_CONCURRENT_ACTIONS",
+        default=os.environ.get("EDA_MAX_CONCURRENT_ACTIONS", "0"),
+        type=int,
+    )
+    parser.add_argument(
+        "--max-back-pressure-timeout",
+        help="When a back pressure is applied due to actions or reporting "
+        "objects being at capacity, how long should we wait before failing "
+        "Default is 3600 seconds. It can also "
+        "be passed via the env var EDA_MAX_BACK_PRESSURE_TIMEOUT",
+        default=os.environ.get("EDA_MAX_BACK_PRESSURE_TIMEOUT", "3600"),
+        type=int,
+    )
+    parser.add_argument(
+        "--max-reporting-queue-size",
+        help="For rule audits we send back reporting objects, this queue "
+        "size is to specify the backlog of reporting objects to be flushed "
+        "to the EDA Server default is 50. Increasing this may cause OOM "
+        "It can be passed via the env var EDA_MAX_REPORTING_QUEUE_SIZE",
+        default=os.environ.get("EDA_MAX_REPORTING_QUEUE_SIZE", "50"),
+        type=int,
+    )
+    parser.add_argument(
+        "--max-batch-job-polling-size",
+        help="Maximum number of jobs to include in a single batch polling "
+        "request to the controller. Default is 25. "
+        "It can be passed via the env var EDA_MAX_BATCH_JOB_POLLING_SIZE",
+        default=os.environ.get("EDA_MAX_BATCH_JOB_POLLING_SIZE", "25"),
+        type=int,
+    )
+
     return parser
 
 
@@ -291,14 +357,30 @@ def setup_logging_and_display(args: argparse.Namespace) -> None:
 
 
 def update_settings(args: argparse.Namespace) -> None:
+    """Update settings from CLI arguments.
+
+    Since argparse already uses env vars as defaults, we directly assign
+    values from args to settings. CLI args take priority over env vars.
+
+    Note: Do NOT call settings.update_from_env() here - that's only for
+    when the websocket handler updates env vars later.
+    """
+    # Special case: identifier is not in ENV_MAP but can be set via CLI
     if args.id:
         settings.identifier = args.id
 
+    # Direct assignments - argparse already handled env var defaults
     if args.gc_after is not None:
         settings.gc_after = args.gc_after
 
     if args.execution_strategy:
         settings.default_execution_strategy = args.execution_strategy
+
+    if args.persistence_id:
+        settings.persistence_id = args.persistence_id
+
+    if args.max_concurrent_actions > 0:
+        settings.max_concurrent_actions = args.max_concurrent_actions
 
     settings.print_events = args.print_events
     settings.websocket_url = args.websocket_url
@@ -307,6 +389,13 @@ def update_settings(args: argparse.Namespace) -> None:
     settings.websocket_access_token = args.websocket_access_token
     settings.websocket_refresh_token = args.websocket_refresh_token
     settings.skip_audit_events = args.skip_audit_events
+    settings.max_back_pressure_timeout = args.max_back_pressure_timeout
+    settings.max_reporting_queue_size = args.max_reporting_queue_size
+    settings.max_batch_job_polling_size = args.max_batch_job_polling_size
+    settings.controller_retry_max_timeout = float(
+        args.controller_retry_max_timeout
+    )
+    settings.controller_retry_attempts = int(args.controller_retry_attempts)
     parse_vault_passwords(args)
 
 
@@ -319,17 +408,60 @@ def parse_vault_passwords(args: argparse.Namespace) -> None:
         return
 
     secret_files = []
+    validated_password_file = None
+    validated_vault_ids = []
 
+    # Validate vault password file
     if args.vault_password_file:
-        secret_files.append(args.vault_password_file)
+        try:
+            validated_password_file = util.validate_file_path(
+                args.vault_password_file, "Vault password file"
+            )
+            secret_files.append(validated_password_file)
+        except ValueError as e:
+            logger.error(f"Invalid vault password file: {e}")  # NOSONAR
+            sys.exit(1)
 
-    secret_files += args.vault_id
+    # Validate vault ID files (format: label@filename)
+    for vault_id in args.vault_id:
+        if "@" in vault_id:
+            label, filename = vault_id.split("@", 1)
+            try:
+                validated_filename = util.validate_file_path(
+                    filename, "Vault ID file"
+                )
+                validated_vault_id = f"{label}@{validated_filename}"
+                validated_vault_ids.append(validated_vault_id)
+                secret_files.append(validated_filename)
+            except ValueError as e:
+                logger.error(  # NOSONAR
+                    f"Invalid vault ID file '{vault_id}': {e}"
+                )
+                sys.exit(1)
+        else:
+            validated_vault_ids.append(vault_id)
 
     settings.vault = Vault(
-        password_file=args.vault_password_file,
-        vault_ids=args.vault_id,
+        password_file=validated_password_file,
+        vault_ids=validated_vault_ids,
         ask_pass=args.ask_vault_pass,
     )
+
+
+def setup_signal_handlers() -> None:
+    """Setup signal handlers for graceful shutdown."""
+
+    def signal_handler(signum, frame):
+        sig_name = signal.Signals(signum).name
+        logger.info(
+            f"Received signal {sig_name} ({signum}), initiating shutdown"
+        )
+        raise KeyboardInterrupt(f"Signal {sig_name} received")
+
+    # Register handlers for SIGTERM and SIGINT
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    logger.debug("Signal handlers registered for SIGTERM and SIGINT")
 
 
 def main(args: List[str] = None) -> int:
@@ -342,6 +474,7 @@ def main(args: List[str] = None) -> int:
     validate_args(args)
     update_settings(args)
     setup_logging_and_display(args)
+    setup_signal_handlers()
 
     if args.controller_url:
         job_template_runner.host = args.controller_url

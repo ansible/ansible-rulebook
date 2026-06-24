@@ -157,6 +157,54 @@ async def test_request_workload(file_contents, checks, single):
 
 
 @pytest.mark.asyncio
+async def test_request_workload_jinja_rule_names():
+    """Verify Jinja2 substitution works in rule names via worker mode.
+
+    Previously, parse_rule_sets was called before ExtraVars were
+    available, so Jinja2 expressions in rule names would raise
+    UndefinedError.
+    """
+    prepare_settings()
+    os.chdir(HERE)
+    test_data = []
+    test_data.append(
+        dict2json(
+            dict(
+                type="ControllerInfo",
+                url="https://www.example.com",
+                token="abc",
+                ssl_verify="no",
+            )
+        )
+    )
+    load_file(
+        "./rules/rules_with_jinja_names.yml",
+        "Rulebook",
+        test_data,
+        True,
+    )
+    load_file(
+        "./data/test_vars_with_names.yml",
+        "ExtraVars",
+        test_data,
+        True,
+    )
+    load_file("./data/test_env.yml", "EnvVars", test_data, True)
+    test_data.append(dict2json({"type": "EndOfResponse"}))
+
+    with patch("ansible_rulebook.websocket.websockets.connect") as mo:
+        mo.return_value.__aenter__.return_value.recv.side_effect = test_data
+        mo.return_value.__aenter__.return_value.send.return_value = None
+
+        response = await request_workload("dummy")
+        assert response.rulesets[0].name == "Demo rules"
+        rules = response.rulesets[0].rules
+        assert len(rules) == 2
+        assert rules[0].name == "Handle httpd alert"
+        assert rules[1].name == "Restart httpd on web-01"
+
+
+@pytest.mark.asyncio
 async def test_send_event_log_to_websocket():
     prepare_settings()
     queue = asyncio.Queue()
@@ -218,14 +266,17 @@ async def test_send_event_log_to_websocket_with_exception(
 
 @pytest.mark.asyncio
 @mock.patch("ansible_rulebook.websocket.websockets.connect")
-async def test_send_event_log_to_websocket_with_non_recoverable_exception(
+async def test_send_event_log_to_websocket_1011_retries_and_recovers(
     socket_mock: AsyncMock,
 ):
+    """1011 (Internal Error) is transient and should be retried."""
     prepare_settings()
     queue = asyncio.Queue()
     queue.put_nowait({"a": 1})
     queue.put_nowait({"b": 2})
     queue.put_nowait(dict(type="Exit"))
+
+    data_sent = []
 
     mock_object = AsyncMock()
     socket_mock.return_value = mock_object
@@ -235,9 +286,20 @@ async def test_send_event_log_to_websocket_with_non_recoverable_exception(
 
     rcvd = mock.Mock()
     rcvd.code = 1011
-    socket_mock.return_value.send.side_effect = (
-        websockets.exceptions.ConnectionClosedError(rcvd=rcvd, sent=None)
-    )
+    call_count = 0
 
-    with pytest.raises(websockets.exceptions.ConnectionClosedError):
-        await send_event_log_to_websocket(queue)
+    async def send_side_effect(payload):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise websockets.exceptions.ConnectionClosedError(
+                rcvd=rcvd, sent=None
+            )
+        data_sent.append(json.loads(payload))
+
+    socket_mock.return_value.send.side_effect = send_side_effect
+
+    await send_event_log_to_websocket(queue)
+    assert len(data_sent) == 2
+    assert data_sent[0] == {"a": 1}
+    assert data_sent[1] == {"b": 2}
