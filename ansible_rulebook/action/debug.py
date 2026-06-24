@@ -66,6 +66,7 @@ class Debug:
                 raise
         else:
             args = asdict(self.helper.metadata)
+            args.pop("persistent_info", None)
             project_data_file = self.helper.control.project_data_file
             args.update(
                 {

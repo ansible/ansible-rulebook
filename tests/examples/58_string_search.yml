@@ -3,7 +3,7 @@
   hosts: all
   sources:
     - name: generic
-      ansible.eda.generic:
+      eda.builtin.generic:
         payload:
           - url1: "https://example.com/users/foo/resources/bar"
           - url2: "https://example.com/groups/foo/resources/bar"

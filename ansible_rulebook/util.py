@@ -25,12 +25,13 @@ import sys
 import tempfile
 import typing
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple, Union
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from urllib.parse import urlparse
 
 import ansible_runner
 import jinja2
-from jinja2.nativetypes import NativeTemplate
+from jinja2.nativetypes import NativeEnvironment
 from packaging import version
 from packaging.version import InvalidVersion
 
@@ -38,14 +39,17 @@ from ansible_rulebook import terminal
 from ansible_rulebook.conf import settings
 from ansible_rulebook.exception import (
     InvalidFilterNameException,
+    InvalidSourceNameException,
     InventoryNotFound,
     VaultDecryptException,
 )
+from ansible_rulebook.jinja import register_filters
 
 logger = logging.getLogger(__name__)
 
 
 EDA_BUILTIN_FILTER_PREFIX = "eda.builtin."
+EDA_BUILTIN_SOURCE_PREFIX = "eda.builtin."
 
 
 def decrypted_context(
@@ -81,9 +85,10 @@ def decryptable(obj: Union[Dict, List, str, bool, int]) -> None:
 
 def render_string(value: str, context: Dict) -> str:
     if "{{" in value and "}}" in value:
-        value = NativeTemplate(value, undefined=jinja2.StrictUndefined).render(
-            context
-        )
+        env = NativeEnvironment(undefined=jinja2.StrictUndefined)
+        register_filters(env)
+        # Create a NativeTemplate
+        value = env.from_string(value).render(context)
 
     if isinstance(value, str) and settings.vault.is_encrypted(value):
         value = settings.vault.decrypt(value)
@@ -312,20 +317,32 @@ def find_builtin_filter(name: str) -> Optional[str]:
     return None
 
 
+def has_builtin_source(name: str) -> bool:
+    return _builtin_source_path(name)[0]
+
+
+def find_builtin_source(name: str) -> Optional[str]:
+    found, path = _builtin_source_path(name)
+    if found:
+        return path
+    return None
+
+
 def run_at() -> str:
     return f"{datetime.now(timezone.utc).isoformat()}".replace("+00:00", "Z")
 
 
 async def send_session_stats(event_log: asyncio.Queue, stats: Dict):
-    await event_log.put(
-        dict(
-            type="SessionStats",
-            activation_id=settings.identifier,
-            activation_instance_id=settings.identifier,
-            stats=stats,
-            reported_at=run_at(),
+    if stats:
+        await event_log.put(
+            dict(
+                type="SessionStats",
+                activation_id=settings.identifier,
+                activation_instance_id=settings.identifier,
+                stats=stats,
+                reported_at=run_at(),
+            )
         )
-    )
 
 
 def create_inventory(runner_inventory_dir: str, inventory: str) -> str:
@@ -347,15 +364,35 @@ def create_inventory(runner_inventory_dir: str, inventory: str) -> str:
 
 
 def _builtin_filter_path(name: str) -> Tuple[bool, str]:
-    if not name.startswith(EDA_BUILTIN_FILTER_PREFIX):
-        return False, ""
-    filter_name = name.split(".")[-1]
+    return _builtin_path(
+        name,
+        EDA_BUILTIN_FILTER_PREFIX,
+        InvalidFilterNameException,
+        "event_filter",
+    )
 
-    if not filter_name:
-        raise InvalidFilterNameException(name)
+
+def _builtin_source_path(name: str) -> Tuple[bool, str]:
+    return _builtin_path(
+        name,
+        EDA_BUILTIN_SOURCE_PREFIX,
+        InvalidSourceNameException,
+        "event_source",
+    )
+
+
+def _builtin_path(
+    name: str, prefix: str, exception_class: Type[Exception], builtin_dir: str
+) -> Tuple[bool, str]:
+    if not name.startswith(prefix):
+        return False, ""
+    builtin_name = name.split(".")[-1]
+
+    if not builtin_name:
+        raise exception_class(builtin_name)
 
     dirname = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.join(dirname, "event_filter", filter_name + ".py")
+    path = os.path.join(dirname, builtin_dir, builtin_name + ".py")
     return os.path.exists(path), path
 
 
@@ -386,9 +423,57 @@ def validate_url(url: str, url_type: str) -> bool:
     return res.scheme in ["ws", "wss"] and bool(res.netloc)
 
 
+def validate_file_path(file_path: str, file_description: str = "File") -> str:
+    """Validate file path to prevent path traversal attacks.
+
+    This function validates user-provided file paths to ensure they are safe
+    to open. It prevents path traversal attacks and validates that the file
+    exists and is readable.
+
+    Args:
+        file_path: The file path to validate
+        file_description: Description of the file type for error messages
+
+    Returns:
+        The resolved absolute path if valid
+
+    Raises:
+        ValueError: If the path is invalid, doesn't exist, or attempts
+                   path traversal
+    """
+    if not file_path:
+        raise ValueError(f"{file_description} path cannot be empty")
+
+    # Check for null bytes (path injection attempt) before Path.resolve()
+    if "\x00" in file_path:
+        raise ValueError(f"{file_description} path contains null bytes")
+
+    try:
+        # Resolve to absolute path and resolve any symlinks
+        resolved_path = Path(file_path).resolve()
+
+        # Check if path exists
+        if not resolved_path.exists():
+            raise ValueError(f"{file_description} does not exist: {file_path}")
+
+        # Check if it's a file (not a directory)
+        if not resolved_path.is_file():
+            raise ValueError(
+                f"{file_description} path is not a file: {file_path}"
+            )
+
+        return str(resolved_path)
+
+    except (OSError, RuntimeError) as e:
+        raise ValueError(
+            f"Invalid {file_description.lower()} path: {file_path}. "
+            f"Error: {e}"
+        )
+
+
 # If the following values exist in a key,
 # replace the value of the key with the MASKED_STRING
-KEYS_TO_FILTER = ["token", "password", "key", "passphrase"]
+KEYS_TO_FILTER = ["token", "password", "key", "passphrase", "secret"]
 MASKED_STRING = "******"
 
 
@@ -441,3 +526,9 @@ def create_context(
             return ssl._create_unverified_context()
         return ssl.create_default_context(cafile=ssl_verify)
     return None
+
+
+def strtobool(value: str) -> bool:
+    if value.lower() in ("y", "yes", "on", "1", "true", "t"):
+        return True
+    return False

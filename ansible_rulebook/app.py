@@ -30,15 +30,16 @@ from ansible_rulebook.collection import (
     split_collection_name,
 )
 from ansible_rulebook.common import StartupArgs
-from ansible_rulebook.conf import settings
+from ansible_rulebook.conf import DEFAULT_MAX_CONCURRENT_ACTIONS, settings
 from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.job_template_runner import job_template_runner
-from ansible_rulebook.rule_types import RuleSet, RuleSetQueue
+from ansible_rulebook.rule_types import EventSource, RuleSet, RuleSetQueue
 from ansible_rulebook.util import (
     decryptable,
     decrypted_context,
     startup_logging,
     substitute_variables,
+    validate_file_path,
     validate_url,
 )
 from ansible_rulebook.validators import Validate
@@ -50,20 +51,34 @@ from ansible_rulebook.websocket import (
 
 from .exception import (
     ControllerNeededException,
+    DuplicateSourceNamesException,
     InvalidUrlException,
     InventoryNeededException,
     InventoryNotFound,
     RulebookNotFoundException,
+    SourcePluginFeedbackMisconfiguredException,
     WebSocketExchangeException,
 )
 
 
 class NullQueue:
+    """A no-op queue that discards all data.
+
+    Used when no websocket_url is configured (no EDA Server).
+    Implements asyncio.Queue interface for compatibility.
+    """
+
+    def __init__(self):
+        self.maxsize = 0
+
     async def put(self, _data):
         pass
 
     def qsize(self):
         return 0
+
+    def full(self):
+        return False
 
 
 logger = logging.getLogger(__name__)
@@ -125,11 +140,16 @@ async def run(parsed_args: argparse.Namespace) -> None:
     for k, v in startup_args.env_vars.items():
         os.environ[k] = str(v)
 
+    # Update the settings from env in worker mode
+    if parsed_args.worker:
+        settings.update_from_env()
+
+    setup_semaphores()
     if startup_args.check_controller_connection:
         await validate_controller_params(startup_args)
 
     if parsed_args.websocket_url:
-        event_log = asyncio.Queue()
+        event_log = asyncio.Queue(settings.max_reporting_queue_size)
     else:
         event_log = NullQueue()
 
@@ -139,6 +159,7 @@ async def run(parsed_args: argparse.Namespace) -> None:
         startup_args.variables,
         [parsed_args.source_dir],
         parsed_args.shutdown_delay,
+        [parsed_args.filter_dir],
     )
 
     logger.info("Starting rules")
@@ -160,11 +181,22 @@ async def run(parsed_args: argparse.Namespace) -> None:
         file_monitor,
     )
 
-    await event_log.put(dict(type="Exit"))
     if feedback_task:
+        try:
+            await asyncio.wait_for(
+                event_log.put({"type": "Exit"}),
+                timeout=settings.max_feedback_timeout,
+            )
+        except asyncio.TimeoutError:
+            logger.warning(
+                "Timed out sending Exit to event log, "
+                "cancelling feedback task"
+            )
         await asyncio.wait(
             [feedback_task], timeout=settings.max_feedback_timeout
         )
+    else:
+        await event_log.put({"type": "Exit"})
 
     logger.info("Cancelling event source tasks")
     for task in tasks:
@@ -194,7 +226,10 @@ async def run(parsed_args: argparse.Namespace) -> None:
 def load_vars(parsed_args) -> Dict[str, str]:
     variables = dict()
     if parsed_args.vars:
-        with open(parsed_args.vars) as f:
+        validated_vars_file = validate_file_path(
+            parsed_args.vars, "Variables file"
+        )
+        with open(validated_vars_file) as f:
             variables.update(yaml.safe_load(f.read()))
 
     if parsed_args.env_vars:
@@ -221,7 +256,10 @@ def load_rulebook(
         logger.debug(
             "Loading rules from the file system %s", parsed_args.rulebook
         )
-        with open(parsed_args.rulebook, "rb") as f:
+        validated_rulebook_file = validate_file_path(
+            parsed_args.rulebook, "Rulebook file"
+        )
+        with open(validated_rulebook_file, "rb") as f:
             raw_data = f.read()
             if startup_args:
                 startup_args.check_vault = has_vaulted_str(raw_data)
@@ -252,12 +290,22 @@ def spawn_sources(
     variables: Dict[str, Any],
     source_dirs: List[str],
     shutdown_delay: float,
+    filter_dirs: List[str],
 ) -> Tuple[List[asyncio.Task], List[RuleSetQueue]]:
     tasks = []
     ruleset_queues = []
     for ruleset in rulesets:
         source_queue = asyncio.Queue(1)
+        source_feedback_queues = {}
+        source_names = []
         for source in ruleset.sources:
+            feedback_queue = _get_feedback_queue(
+                source, source_names, source_feedback_queues
+            )
+            if feedback_queue:
+                source_feedback_queues[source.name] = feedback_queue
+
+            source_names.append(source.name)
             task = asyncio.create_task(
                 start_source(
                     source,
@@ -265,11 +313,37 @@ def spawn_sources(
                     variables,
                     source_queue,
                     shutdown_delay,
+                    filter_dirs,
+                    feedback_queue,
                 )
             )
             tasks.append(task)
-        ruleset_queues.append(RuleSetQueue(ruleset, source_queue))
+        ruleset_queues.append(
+            RuleSetQueue(ruleset, source_queue, source_feedback_queues)
+        )
     return tasks, ruleset_queues
+
+
+def _get_feedback_queue(
+    source: EventSource,
+    source_names: List[str],
+    source_feedback_queues: Dict[str, asyncio.Queue],
+) -> Optional[asyncio.Queue]:
+    if not source.source_args:
+        return None
+
+    if not source.source_args.get("feedback", False):
+        return None
+
+    if settings.persistence_id is None:
+        raise SourcePluginFeedbackMisconfiguredException(
+            source_name=source.name
+        )
+
+    if source.name in source_feedback_queues or source.name in source_names:
+        raise DuplicateSourceNamesException(source_name=source.name)
+
+    return asyncio.Queue(1)
 
 
 def validate_variables(startup_args: StartupArgs) -> None:
@@ -329,3 +403,22 @@ async def validate_controller_params(startup_args: StartupArgs) -> None:
 
         data = await job_template_runner.get_config()
         logger.info("AAP Version %s", data["version"])
+
+
+def setup_semaphores():
+    # The semaphore is always created because individual rulesets can
+    # override the global default_execution_strategy to parallel in
+    # the rulebook YAML.  _call_action_with_semaphore only acquires
+    # when the semaphore exists, and actions only run concurrently
+    # under a parallel ruleset, so creating it is harmless for
+    # sequential rulesets.
+    if settings.max_concurrent_actions == 0:
+        settings.max_concurrent_actions = DEFAULT_MAX_CONCURRENT_ACTIONS
+
+    logger.info(
+        "max_concurrent_actions=%d",
+        settings.max_concurrent_actions,
+    )
+    settings.max_actions_semaphore = asyncio.Semaphore(
+        settings.max_concurrent_actions
+    )

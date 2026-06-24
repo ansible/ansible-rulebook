@@ -87,6 +87,14 @@ class RulebookNotFoundException(Exception):
     pass
 
 
+class TimedOutActionsException(Exception):
+    pass
+
+
+class TimedOutReportingException(Exception):
+    pass
+
+
 class SourcePluginNotFoundException(Exception):
     """Exception class for source plugin not found."""
 
@@ -164,6 +172,10 @@ class InvalidFilterNameException(Exception):
     pass
 
 
+class InvalidSourceNameException(Exception):
+    pass
+
+
 class JobTemplateNotFoundException(Exception):
     pass
 
@@ -206,3 +218,47 @@ class AnsibleVaultNotFound(Exception):
 
 class InvalidUrlException(Exception):
     pass
+
+
+class ControllerObjectCreateException(Exception):
+    pass
+
+
+class DuplicateSourceNamesException(Exception):
+    """Exception class for duplicate sources."""
+
+    def __init__(
+        self: "DuplicateSourceNamesException",
+        source_name: str,
+        message: str = None,
+    ) -> None:
+        """Class constructor with duplicate sources in ruleset"""
+        if message is None:
+            message = (
+                "To support feedback when multiple sources "
+                "are defined in a ruleset, it is recommended "
+                "that each source have a unique name to prevent "
+                "conflicts and the feedbacks get sent to the "
+                "correct source plugin."
+                f"Current source : {source_name}"
+            )
+        super().__init__(message)
+
+
+class SourcePluginFeedbackMisconfiguredException(Exception):
+    """Exception class for source plugin misconfiguration."""
+
+    def __init__(
+        self: "SourcePluginFeedbackMisconfiguredException",
+        source_name: str,
+        message: str = None,
+    ) -> None:
+        """Class constructor with misconfigured source plugin"""
+        if message is None:
+            message = (
+                f"Source {source_name} has requested feedback but "
+                "persistence has not been enabled. From EDA Server "
+                "please Enable persistence for Activation. If you're running "
+                "from the CLI, you can use --persistence-id."
+            )
+        super().__init__(message)

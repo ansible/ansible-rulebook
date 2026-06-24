@@ -244,6 +244,9 @@ def visit_throttle(parsed_throttle: Throttle, variables: Dict):
         throttle["once_within"] = parsed_throttle.once_within
     elif parsed_throttle.once_after:
         throttle["once_after"] = parsed_throttle.once_after
+    elif parsed_throttle.accumulate_within:
+        throttle["accumulate_within"] = parsed_throttle.accumulate_within
+        throttle["threshold"] = parsed_throttle.threshold
 
     return {"throttle": throttle}
 

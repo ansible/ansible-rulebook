@@ -21,7 +21,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from drools.dispatch import establish_async_channel, handle_async_messages
-from drools.ruleset import session_stats
+from drools.ruleset import session_stats, shutdown as drools_shutdown
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -34,6 +34,7 @@ from ansible_rulebook.collection import (
     split_collection_name,
 )
 from ansible_rulebook.messages import Shutdown
+from ansible_rulebook.persistence import enable_leader, enable_persistence
 from ansible_rulebook.rule_set_runner import RuleSetRunner
 from ansible_rulebook.rule_types import (
     EventSource,
@@ -43,7 +44,9 @@ from ansible_rulebook.rule_types import (
 from ansible_rulebook.util import (
     collect_ansible_facts,
     find_builtin_filter,
+    find_builtin_source,
     has_builtin_filter,
+    has_builtin_source,
     send_session_stats,
     substitute_variables,
 )
@@ -60,6 +63,7 @@ logger = logging.getLogger(__name__)
 
 
 all_source_queues = []
+_background_tasks = set()
 
 
 async def heartbeat_task(
@@ -84,10 +88,23 @@ class FilteredQueue:
         self.queue = queue
 
     async def put(self, data):
+        if not isinstance(data, list):
+            data = [data]
+
         for f, kwargs in self.filters:
             kwargs = kwargs or {}
-            data = f(data, **kwargs)
-        await self.queue.put(data)
+            flat_list = []
+            for e in data:
+                result = f(e, **kwargs)
+                if not isinstance(result, list):
+                    result = [result]
+                for r in result:
+                    flat_list.append(r)
+
+            data = flat_list
+
+        for e in data:
+            await self.queue.put(e)
 
     def put_nowait(self, data):
         for f, kwargs in self.filters:
@@ -102,6 +119,8 @@ async def start_source(
     variables: Dict[str, Any],
     queue: asyncio.Queue,
     shutdown_delay: float = 60.0,
+    filter_dirs: Optional[list[str]] = None,
+    source_feedback_queue: asyncio.Queue = None,
 ) -> None:
     all_source_queues.append(queue)
     try:
@@ -116,6 +135,8 @@ async def start_source(
             module = runpy.run_path(
                 os.path.join(source_dirs[0], source.source_name + ".py")
             )
+        elif has_builtin_source(source.source_name):
+            module = runpy.run_path(find_builtin_source(source.source_name))
         elif has_source(*split_collection_name(source.source_name)):
             module = runpy.run_path(
                 find_source(*split_collection_name(source.source_name))
@@ -129,7 +150,21 @@ async def start_source(
 
         for source_filter in source.source_filters:
             logger.info("loading source filter %s", source_filter.filter_name)
-            if os.path.exists(
+            if (
+                filter_dirs
+                and filter_dirs[0]
+                and os.path.exists(
+                    os.path.join(
+                        filter_dirs[0], source_filter.filter_name + ".py"
+                    )
+                )
+            ):
+                source_filter_module = runpy.run_path(
+                    os.path.join(
+                        filter_dirs[0], source_filter.filter_name + ".py"
+                    )
+                )
+            elif os.path.exists(
                 os.path.join("event_filter", source_filter.filter_name + ".py")
             ):
                 source_filter_module = runpy.run_path(
@@ -177,6 +212,8 @@ async def start_source(
                 source_name=source.source_name
             )
 
+        if source_feedback_queue:
+            args["eda_feedback_queue"] = source_feedback_queue
         await entrypoint(fqueue, args)
         shutdown_msg = (
             f"Source {source.source_name} initiated shutdown at "
@@ -188,6 +225,7 @@ async def start_source(
             f"Source {source.source_name} keyboard interrupt, "
             + f"initiated shutdown at {str(datetime.now())}"
         )
+        drools_shutdown()
         pass
     except asyncio.CancelledError:
         shutdown_msg = (
@@ -215,7 +253,7 @@ async def start_source(
         raise
     finally:
         logger.debug("Broadcast shutdown to all source plugins")
-        asyncio.create_task(
+        task = asyncio.create_task(
             broadcast(
                 Shutdown(
                     message=shutdown_msg,
@@ -224,6 +262,8 @@ async def start_source(
                 ),
             )
         )
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
 
 
 class RulebookFileChangeHandler(FileSystemEventHandler):
@@ -271,6 +311,12 @@ async def run_rulesets(
     file_monitor: str = None,
 ) -> bool:
     logger.debug("run_ruleset")
+    reader, writer = await establish_async_channel()
+    async_task = asyncio.create_task(
+        handle_async_messages(reader, writer), name="drools_async_task"
+    )
+
+    enable_persistence(parsed_args, variables)
     rulesets_queue_plans = rule_generator.generate_rulesets(
         ruleset_queues, variables, inventory
     )
@@ -284,7 +330,8 @@ async def run_rulesets(
     hosts_facts = []
     ruleset_names = []
     rulesets = {}
-    for ruleset, _ in ruleset_queues:
+    enable_leader()
+    for ruleset, _, _ in ruleset_queues:
         if ruleset.gather_facts and not hosts_facts:
             if inventory:
                 hosts_facts = collect_ansible_facts(inventory)
@@ -297,11 +344,6 @@ async def run_rulesets(
         rulesets[ruleset.name] = ruleset
 
     ruleset_tasks = []
-    reader, writer = await establish_async_channel()
-    async_task = asyncio.create_task(
-        handle_async_messages(reader, writer), name="drools_async_task"
-    )
-
     send_heartbeat_task = None
     if parsed_args and parsed_args.heartbeat > 0 and event_log:
         send_heartbeat_task = asyncio.create_task(

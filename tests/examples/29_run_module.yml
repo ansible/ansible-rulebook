@@ -2,7 +2,7 @@
 - name: 29 run module
   hosts: all
   sources:
-    - ansible.eda.generic:
+    - eda.builtin.generic:
         payload:
           - i: 1
           - i: 2

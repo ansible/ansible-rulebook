@@ -3,7 +3,7 @@
   hosts: all
   default_events_ttl: 2 seconds
   sources:
-     - ansible.eda.generic:
+     - eda.builtin.generic:
           event_delay: 4
           payload:
             - i: 1

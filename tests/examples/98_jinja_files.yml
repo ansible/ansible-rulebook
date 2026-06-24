@@ -1,0 +1,34 @@
+---
+- name: 98 jinja files
+  hosts: all
+  sources:
+    - eda.builtin.generic:
+        payload:
+           - filename: "/abc//def//jhk/test.txt"
+        create_index: index
+        shutdown_delay: 5
+  rules:
+    - name: basename
+      condition: event.basename == "test.txt"
+      actions:
+        - print_event:
+    - name: dirname
+      condition: event.dirname == "/abc/def/jhk"
+      actions:
+        - print_event:
+    - name: normpath
+      condition: event.normal == "/abc/def/jhk/test.txt"
+      actions:
+        - print_event:
+    - name: catch_all
+      condition: true
+      actions:
+        - post_event:
+            event: 
+              normal: "{{ event.filename | normpath }}"
+        - post_event:
+            event:
+              dirname: "{{ event.filename | normpath | dirname }}"
+        - post_event:
+            event:
+              basename: "{{ event.filename | normpath | basename }}"

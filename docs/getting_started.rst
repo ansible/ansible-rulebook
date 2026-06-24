@@ -16,7 +16,7 @@ following to a ``simple-rulebook.yml`` file:
     - name: Hello Events
       hosts: localhost
       sources:
-        - ansible.eda.range:
+        - eda.builtin.range:
             limit: 5
       rules:
         - name: Say Hello
@@ -29,7 +29,7 @@ following to a ``simple-rulebook.yml`` file:
 Events come from an **event source** and are then checked against **rules** to determine if an **action** should
 be taken. If the **condition** of a rule matches the event, it will run the action for that rule.
 
-In this example, the event source (``ansible.eda.range``) is the Python range function.  It produces events that count from
+In this example, the event source (``eda.builtin.range``) is the Python range function.  It produces events that count from
 :code:`i=0` to :code:`i=<limit>`.
 
 When :code:`i` is equal to 1 the condition for the the :code:`Say Hello` rule matches and it runs a simple 
@@ -98,7 +98,7 @@ will trigger the desired action. Below is our example rulebook ``webhook-example
      ## Define our source for events
 
      sources:
-       - ansible.eda.webhook:
+       - eda.builtin.webhook:
            host: 0.0.0.0
            port: 5000
 
@@ -154,7 +154,7 @@ as a ruleset and wait for events:
    INFO:root:Waiting for event
    INFO:root:load source
    INFO:root:load source filters
-   INFO:root:Calling main in ansible.eda.webhook
+   INFO:root:Calling main in eda.builtin.webhook
 
 Now, ``ansible-rulebook`` is ready and it's waiting for an event to match.
 If a webhook is triggered but the payload does not match our condition
@@ -163,7 +163,7 @@ in our rule, we can see it in the ``ansible-rulebook`` verbose output:
 .. code-block:: shell
 
    …
-   INFO:root:Calling main in ansible.eda.webhook
+   INFO:root:Calling main in eda.builtin.webhook
    INFO:aiohttp.access:127.0.0.1 [14/Oct/2022:09:49:32 +0000] "POST /endpoint HTTP/1.1" 200 158 "-" "curl/7.61.1"
    INFO:root:Waiting for event
 
@@ -175,7 +175,7 @@ magic happens, so we will simulate a webhook with the correct payload:
    curl -H 'Content-Type: application/json' -d "{\"message\": \"Ansible is super cool\"}" 127.0.0.1:5000/endpoint
 
 
-   INFO:root:Calling main in ansible.eda.webhook
+   INFO:root:Calling main in eda.builtin.webhook
    INFO:aiohttp.access:127.0.0.1 [14/Oct/2022:09:50:28 +0000] "POST /endpoint HTTP/1.1" 200 158 "-" "curl/7.61.1"
    INFO:root:calling Say Hello
    INFO:root:call_action run_playbook

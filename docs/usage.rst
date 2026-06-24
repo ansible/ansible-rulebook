@@ -17,6 +17,13 @@ The `ansible-rulebook` CLI supports the following options:
                         [--shutdown-delay SHUTDOWN_DELAY] [--gc-after GC_AFTER] [--heartbeat HEARTBEAT]
                         [--execution-strategy {sequential,parallel}] [--hot-reload] [--skip-audit-events]
                         [--vault-password-file VAULT_PASSWORD_FILE] [--vault-id VAULT_ID] [--ask-vault-pass]
+                        [-F FILTER_DIR]
+                        [--persistence-id PERSISTENCE_ID]
+                        [--controller-retry-max-timeout CONTROLLER_RETRY_MAX_TIMEOUT]
+                        [--controller-retry-attempts CONTROLLER_RETRY_ATTEMPTS]
+                        [-m MAX_CONCURRENT_ACTIONS] [--max-back-pressure-timeout MAX_BACK_PRESSURE_TIMEOUT]
+                        [--max-reporting-queue-size MAX_REPORTING_QUEUE_SIZE]
+                        [--max-batch-job-polling-size MAX_BATCH_JOB_POLLING_SIZE]
 
     optional arguments:
     -h, --help            show this help message and exit
@@ -29,6 +36,8 @@ The `ansible-rulebook` CLI supports the following options:
     --version             Show the version and exit
     -S SOURCE_DIR, --source-dir SOURCE_DIR
                             Local event source plugins dir for development.
+    -F FILTER_DIR, --filter-dir FILTER_DIR
+                            Local event filters dir for development.
     -i INVENTORY, --inventory INVENTORY
                             Path to an inventory file, can also be passed via the env var ANSIBLE_INVENTORY
     -W WEBSOCKET_URL, --websocket-url WEBSOCKET_URL, --websocket-address WEBSOCKET_URL
@@ -69,6 +78,20 @@ The `ansible-rulebook` CLI supports the following options:
                             The file containing one ansible vault password, can also be passed via the env var EDA_VAULT_PASSWORD_FILE.
     --vault-id VAULT_ID   label@filename pointing to an ansible vault password file
     --ask-vault-pass      Ask vault password interactively 
+    --persistence-id   PERSISTENCE_ID
+                         The unique id, preferably a UUID to track persistent event data
+    --controller-retry-max-timeout CONTROLLER_RETRY_MAX_TIMEOUT
+                            Maximum backoff time in seconds for controller API retries on transient errors (429/502/503/504). Default is 60. Can also be passed via env var EDA_CONTROLLER_RETRY_MAX_TIMEOUT
+    --controller-retry-attempts CONTROLLER_RETRY_ATTEMPTS
+                            Number of retry attempts for controller API calls on transient errors. Default is 5. Can also be passed via env var EDA_CONTROLLER_RETRY_ATTEMPTS
+    -m MAX_CONCURRENT_ACTIONS, --max-concurrent-actions MAX_CONCURRENT_ACTIONS
+                            Maximum number of concurrent actions for parallel execution strategy. Default is 25. Can also be passed via env var EDA_MAX_CONCURRENT_ACTIONS
+    --max-back-pressure-timeout MAX_BACK_PRESSURE_TIMEOUT
+                            Seconds to wait for actions or reporting queue to drain before aborting. Default is 3600. Can also be passed via env var EDA_MAX_BACK_PRESSURE_TIMEOUT
+    --max-reporting-queue-size MAX_REPORTING_QUEUE_SIZE
+                            Maximum backlog of reporting objects to flush to EDA Server. Default is 50. Can also be passed via env var EDA_MAX_REPORTING_QUEUE_SIZE
+    --max-batch-job-polling-size MAX_BATCH_JOB_POLLING_SIZE
+                            Maximum number of jobs per batch polling request to the controller. Default is 25. Can also be passed via env var EDA_MAX_BATCH_JOB_POLLING_SIZE
 
 To get help from `ansible-rulebook` run the following:
 
@@ -99,6 +122,14 @@ If you are using custom event source plugins use the following:
 
 .. note::
     Here `sources` is a directory containing your event source plugins.
+
+.. code-block:: console
+
+    ansible-rulebook --inventory inventory.yml --rulebook rules.yml -S sources/ -F my_filters/
+
+.. note::
+    Here `sources` is a directory containing your event source plugins.
+    `my_filters` is a directory containing your event filters.
 
 To run `ansible-rulebook` with worker mode enabled the `--worker` option can be used. The `--id`, and `--websocket-url` options can also be used to expose the event stream data::
 

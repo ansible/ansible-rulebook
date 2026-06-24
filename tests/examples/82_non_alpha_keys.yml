@@ -2,7 +2,7 @@
 - name: 82 non alpha keys
   hosts: all
   sources:
-    - ansible.eda.generic:
+    - eda.builtin.generic:
         payload:
           - "http://www.example.com": "down"
           - urls:

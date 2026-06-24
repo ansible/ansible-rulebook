@@ -3,6 +3,12 @@ Actions
 =======
 
 When a rule matches the condition(s), it fires the corresponding action for the rule.
+
+.. note::
+    Actions can use Jinja filters to transform and manipulate data. See :doc:`jinja_filters` for
+    details on available filters including regex_replace, basename, dirname, and normpath, as well
+    as Python string methods. Note that Jinja filters cannot be used in conditions.
+
 The following actions are supported:
 
 - `run_playbook`_
@@ -67,6 +73,9 @@ Run an Ansible playbook.
    * - copy_files
      - Boolean, copy the local playbook file to the ansible-runner project directory, this is not needed if you are running a playbook from an ansible collection.
      - No
+   * - lock
+     - An optional string based lock ensures sequential execution of this action when execution strategy is set to parallel. It can also be a string field from the event payload. The locks are per ruleset, if a lock is in place all actions that use the same lock will wait till the earlier action has completed.
+     - No
 
 
 run_module
@@ -115,6 +124,12 @@ Run an Ansible module
      - No
    * - var_root
      - If the event is a deeply nested dictionary, the var_root can specify the key name whose value should replace the matching event value. The var_root can take a dictionary to account for data when we have multiple matching events.
+     - No
+   * - lock
+     - An optional string based lock ensures sequential execution of this action when execution strategy is set to parallel. It can also be a string field from the event payload. The locks are per ruleset, if a lock is in place all actions that use the same lock will wait till the earlier action has completed.
+     - No
+   * - labels
+     - Optional list of strings as labels, which can be added to the job in the controller. Requires that Prompt on launch for Labels is enabled. If its not enabled the labels are ignored. ansible-rulebook will add a default label called "Activated by Event-Driven Ansible"
      - No
 
 run_job_template
@@ -178,6 +193,15 @@ Run a job template.
    * - job_args
      - Additional arguments sent to the job template launch API. Any answers to the survey and other extra vars should be set in nested key extra_vars. Event(s) and fact(s) will be automatically included in extra_vars too. Optionally if the job_args includes an attribute called limit it can be used to over write the limit set from the event payload.
      - No
+   * - lock
+     - An optional string based lock ensures sequential execution of this action when execution strategy is set to parallel. It can also be a string field from the event payload. The locks are per ruleset, if a lock is in place all actions that use the same lock will wait till the earlier action has completed.
+     - No
+   * - labels
+     - Optional list of strings as labels, which can be added to the job in the controller. Requires that Prompt on launch for Labels is enabled. If its not enabled the labels are ignored. ansible-rulebook will add a default label called "Activated by Event-Driven Ansible". If the label gets resolved as None or an empty string it will be dropped. If there are duplicate labels the duplicate ones will be removed. e.g {{ event.payload.my_label | default(None) }} if the attribute doesn't exist we will skip the label.
+     - No
+   * - add_event_uuid_label
+     - A boolean field, when set to true can leverage the event.meta.uuid field as a label, you can establish clear traceability between triggering events and their resulting jobs.
+     - No
 
 run_workflow_template
 *********************
@@ -237,7 +261,15 @@ Run a workflow template.
    * - job_args
      - Additional arguments sent to the workflow template launch API. Any answers to the survey and other extra vars should be set in nested key extra_vars. Event(s) and fact(s) will be automatically included in extra_vars too. Optionally if the job_args includes an attribute called limit it can be used to over write the limit set from the event payload.
      - No
-
+   * - lock
+     - An optional string based lock ensures sequential execution of this action when execution strategy is set to parallel. It can also be a string field from the event payload. The locks are per ruleset, if a lock is in place all actions that use the same lock will wait till the earlier action has completed.
+     - No
+   * - labels
+     - Optional list of strings as labels, which can be added to the job in the controller. Requires that Prompt on launch for Labels is enabled. If its not enabled the labels are ignored. ansible-rulebook will add a default label called "Activated by Event-Driven Ansible". If the label gets resolved as None or an empty string it will be dropped. If there are duplicate labels the duplicate ones will be removed. e.g {{ event.payload.my_label | default(None) }} if the attribute doesn't exist we will skip the label.
+     - No
+   * - add_event_uuid_label
+     - A boolean field, when set to true can leverage the event.meta.uuid field as a label, you can establish clear traceability between triggering events and their resulting jobs.
+     - No
 post_event
 **********
 .. list-table::  Post an event to a running rule set in the rules engine
@@ -283,6 +315,7 @@ Example, using data saved with assignment:
 
 | The events and facts prefixes have rule scope and cannot be accessed outside of
 | rules. Please note the use of Jinja substitution when accessing the event results.
+| You can also use :doc:`jinja_filters` to transform the data before posting it.
 
 set_fact
 ********
@@ -481,6 +514,7 @@ debug
 | **msg** and **var** are mutually exclusive, you can have only 1 of them in the debug
 | msg can be a single string or an array of strings, with references to event or events.
 | With var using the Jinja style braces is optional like shown in the example below
+| You can use :doc:`jinja_filters` to transform the data in debug messages
 
 Example:
 
@@ -516,3 +550,29 @@ none
 ****
   No action, useful when writing tests
   No arguments needed
+
+
+FAQ
+***
+| **Q:** What is the purpose of lock in run_job_template, run_playbook, run_module and run_workflow_template?
+
+| **Ans:** A lock is only relevant when you have the execution strategy set to parallel and you are executing
+| multiple jobs on different systems but you want sequential control based on some attribute, e.g the name of
+| the datacenter where the job is being executed, you want to ensure only one job is running on a 
+| datacenter at a time but you want to run other jobs in other data centers. All jobs with the same
+| lock will be run sequentially, the user has the choice of what they want to use as a lock, it could 
+| be any string attribute from the event payload or it could be a static string, where you want all other
+| actions to run parallel but others to run sequentially. e.g if you have
+| job to run a backup of a database. The lock does not queue the tasks, it just runs them as the lock is free and 
+| available, if you need to sequence tasks you can keep using the multiple actions for a rule. You can 
+| do other sequencing using workflow templates instead of job templates.
+Example:
+    .. code-block:: yaml
+
+        name: sample rule
+        condition: event.level == "error"
+        action:
+          run_job_template:
+            name: Fix My Datacenter
+            organization: Default
+            lock: "{{ event.datacenter }}"

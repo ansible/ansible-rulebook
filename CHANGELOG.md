@@ -1,7 +1,45 @@
 
 # Changelog
+## [1.3.1]
+### Changed
+### Added
+- New jinja filters in actions: `bool`
+### Fixed
 
-## [Unreleased]
+## [1.3.0]
+### Changed
+### Added
+- Add support for event persistence
+- Add `add_event_uuid_label` parameter in `run_job_template`, `run_workflow_template` actions
+- Add new `--persistence-id` command line parameter
+### Fixed
+
+## [1.2.2]
+### Changed
+### Added
+- New jinja filters in actions: `regex_replace`, `basename`, `normpath`, `dirname`
+### Fixed
+
+## [1.2.1]
+### Changed
+### Added
+- New eda.builtin filters: `dashes_to_underscores`, `insert_hosts_to_meta`, `json_filter`, `normalize_keys`
+- New eda.builtin sources: `generic`, `pg_listener`, `range`
+- Collection lifecycle configuration to deprecate, redirect, tombstone EDA filters and sources
+### Fixed
+
+## [1.2.0]
+### Changed
+### Added
+- Add support for eda.builtin.event_splitter filter
+- Add support for -F to specify filter directory for development
+- Add support for accumulate_within and threshold
+- Optionally support lock for job_template, workflow template, playbook, module actions
+- Add support for labels in run_job_template and run_workflow_template
+### Fixed
+
+
+## [1.1.7] - 2025-06-23
 ### Changed
 ### Added
 ### Fixed

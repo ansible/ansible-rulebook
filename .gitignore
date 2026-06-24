@@ -112,3 +112,8 @@ tests/e2e/utils/awx/artifacts
 # Mac
 .DS_Store
 **/.DS_Store
+
+# Node JS
+node_modules/
+package-lock.json
+package.json

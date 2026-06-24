@@ -19,10 +19,12 @@ Welcome to Ansible Rulebook documentation
    host_limit
    multi_events
    actions
+   jinja_filters
    sources
    filters
    runner
    collections
+   plugin_lifecycle
    decision_environment
 
 Indices and tables
