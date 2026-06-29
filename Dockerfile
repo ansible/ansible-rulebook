@@ -1,61 +1,127 @@
-FROM quay.io/centos/centos:stream9
+FROM quay.io/centos/centos:stream9-minimal AS builder
 
-ARG USER_ID=${USER_ID:-1001}
-ARG APP_DIR=${APP_DIR:-/app}
+# FIRST PHASE: build wheels, fetch ansible.eda collection
+
+USER root
+
 ARG SETUPTOOLS_SCM_PRETEND_VERSION
-ARG DEVEL_COLLECTION_LIBRARY=0
-ARG DEVEL_COLLECTION_REPO=git+https://github.com/ansible/event-driven-ansible.git
+# This parameter can be set to any location for the collection, including
+# git repositories:
+# https://docs.ansible.com/projects/ansible/latest/collections_guide/collections_installing.html
+ARG DEVEL_COLLECTION_REPO=ansible.eda
 ARG ANSIBLE_CORE_VER=${ANSIBLE_CORE_VER:-2.16.14}
-ARG PYTHON_VER="3.12"
-ARG PYTHON_BIN="python${PYTHON_VER}"
-ARG PIP_BIN="pip${PYTHON_VER}"
 
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
-ENV PATH="$APP_DIR/.local/bin:$PATH"
-ENV PYTHONPATH="$APP_DIR/.local/lib/${PYTHON_BIN}/site-packages:$PYTHONPATH"
-ENV HOME=$APP_DIR
+ENV PIP_BUILD_OPTS="--use-pep517 --disable-pip-version-check --wheel-dir /output/wheels"
 
-USER 0
+# Install all the needed build dependencies
+RUN microdnf update --setopt=install_weak_deps=0 -y && \
+    microdnf install --setopt=install_weak_deps=0 -y \
+      gcc \
+      git-core \
+      java-17-openjdk-devel \
+      krb5-devel \
+      libyaml \
+      postgresql-devel \
+      python3.12 \
+      python3.12-devel \
+      python3.12-pip
+
+# Use /output as place where to save all the build artifacts, so they are
+# copied to the final phase at once
+RUN mkdir -p /output
+
+# Same requirements as in ansible.eda requirements.txt, with:
+# - psycopg[binary,pool] replaced by psycopg & psycopg-c
+# - systemd-python removed
+RUN cat > /output/requirements-collection.txt <<EOF
+pyyaml>=6.0.1
+aiobotocore
+aiohttp
+aiokafka[gssapi]
+fastavro
+azure-servicebus
+dpath
+kafka-python-ng
+psycopg
+psycopg-c
+watchdog>=5.0.0
+xxhash
+EOF
+
+# Build the wheels for the collection
+# (some may be already built by the previous step)
+RUN python3.12 -m pip wheel ${PIP_BUILD_OPTS} -r /output/requirements-collection.txt
+
+# Build the wheels for ansible-core
+# (some may be already built by the previous steps)
+RUN python3.12 -m pip wheel ${PIP_BUILD_OPTS} "ansible-core==${ANSIBLE_CORE_VER}"
+
+# Import the current sources to be built
+COPY . /tmp/ansible-rulebook
+
+# Extract the requirements of ansible-rulebook, replacing psycopg[binary] with psycopg & psycopg-c
+RUN python3.12 - > /output/requirements-rulebook.txt <<EOF
+import configparser
+cfg = configparser.ConfigParser()
+cfg.read("/tmp/ansible-rulebook/setup.cfg")
+reqs = [r for r in cfg.get("options", "install_requires").splitlines() if r]
+for r in reqs:
+    if "psycopg[binary]" in r:
+        print(r.replace("psycopg[binary]", "psycopg"))
+        print(r.replace("psycopg[binary]", "psycopg-c"))
+    else:
+        print(r)
+EOF
+
+# Build the wheels for ansible-rulebook itself
+RUN python3.12 -m pip wheel ${PIP_BUILD_OPTS} -r /output/requirements-rulebook.txt
+
+# Build the wheel of ansible-rulebook itself
+RUN cd /tmp/ansible-rulebook && \
+    python3.12 -m pip wheel --no-deps ${PIP_BUILD_OPTS} .
+
+# Fetch the wanted ansible.eda collection, "installing" it
+# to the local output directory; for this we need to install ansible-core
+RUN python3.12 -m pip install --no-cache-dir --no-index --find-links /output/wheels ansible-core
+RUN ansible-galaxy collection install -p /output/collections "${DEVEL_COLLECTION_REPO}"
+
+# LAST PHASE: assemble the final image
+
+FROM quay.io/centos/centos:stream9-minimal
+
+ARG USER_ID=1001
+
+# Install the runtime dependencies needed
+RUN microdnf update --setopt=install_weak_deps=0 -y && \
+    microdnf install --setopt=install_weak_deps=0 -y \
+      java-17-openjdk-headless \
+      krb5-libs \
+      libpq \
+      libyaml \
+      python3.12 \
+      python3.12-pip && \
+    microdnf clean all && \
+    rm -rf /var/cache/yum
 
 # support random uid number and gid 0 for openshift
-RUN for dir in \
-    $APP_DIR \
-    $APP_DIR/.local \
-    $APP_DIR/.local/bin \
-    $APP_DIR/.local/lib \
-    "$APP_DIR/.local/lib/${PYTHON_BIN}/site-packages" \
-    $APP_DIR/.ansible; \
-    do mkdir -p $dir ; chown -R "${USER_ID}:0" $dir ; chmod 0775 $dir ; done \
-    && useradd --uid "$USER_ID" --gid 0 --home-dir "$APP_DIR" appuser
+RUN useradd --uid "$USER_ID" --gid 0 --create-home --key HOME_MODE=0770 --home-dir /app appuser && \
+    chmod -R g+w /app
 
-RUN dnf install -y \
-    "${PYTHON_BIN}" \
-    "${PYTHON_BIN}-devel" \
-    "${PYTHON_BIN}-pip" \
-    java-17-openjdk-devel \
-    postgresql-devel \
-    gcc \
-    git \
-    krb5-libs \
-    krb5-devel
+# Copy all the artifacts from the build phase
+COPY --from=builder /output /tmp/output
+
+# - install all the wheels (ansible-core, ansible-rulebook, and all the dependencies)
+# - copy the installed ansible.eda collection in the right place
+# - set a "pip3" compatibility symlink
+# - cleanup bits & caches
+RUN python3.12 -m pip install --no-cache-dir --no-index --find-links /tmp/output/wheels -r /tmp/output/requirements-rulebook.txt && \
+    python3.12 -m pip install --no-cache-dir --no-index --find-links /tmp/output/wheels -r /tmp/output/requirements-collection.txt && \
+    python3.12 -m pip install --no-cache-dir --no-index --find-links /tmp/output/wheels ansible-core && \
+    python3.12 -m pip install --no-cache-dir --no-index --find-links /tmp/output/wheels --no-deps ansible_rulebook && \
+    mkdir -p /usr/share/ansible/ && \
+    cp -r /tmp/output/collections /usr/share/ansible/collections && \
+    ln -s ./pip3.12 /usr/bin/pip3 && \
+    rm -rf /tmp/* /root/.cache
 
 USER $USER_ID
-WORKDIR $APP_DIR
-COPY --chown=${USER_ID}:0 . $WORKDIR
-
-RUN "${PIP_BIN}" install -U pip \
-    && pip install \
-    aiobotocore \
-    aiohttp \
-    aiokafka[gssapi] \
-    "ansible-core==${ANSIBLE_CORE_VER}" \
-    ansible-runner \
-    azure-servicebus \
-    jmespath \
-    watchdog \
-    && ansible-galaxy collection install ansible.eda
-
-RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
-    ansible-galaxy collection install ${DEVEL_COLLECTION_REPO} --force; fi"
-
-RUN "${PIP_BIN}" install .[production]
+WORKDIR /app
