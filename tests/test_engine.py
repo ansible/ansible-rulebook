@@ -23,7 +23,7 @@ import yaml
 from freezegun import freeze_time
 from jsonschema.exceptions import ValidationError
 
-from ansible_rulebook.engine import run_rulesets, start_source
+from ansible_rulebook.engine import run_rulesets
 from ansible_rulebook.exception import (
     RulenameDuplicateException,
     SourceFilterNotFoundException,
@@ -34,6 +34,7 @@ from ansible_rulebook.exception import (
 from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.rule_types import EventSource, EventSourceFilter
 from ansible_rulebook.rules_parser import parse_rule_sets
+from ansible_rulebook.source_loader import start_source
 from ansible_rulebook.validators import Validate
 
 
@@ -61,6 +62,44 @@ def load_rulebook(rules_file):
     event_log = asyncio.Queue()
 
     return ruleset_queues, event_log
+
+
+def load_rulebook_with_source_manager(rules_file, variables=None):
+    """
+    Load rulebook and initialize SourceManager.
+
+    This uses the new SourceManager architecture to properly initialize
+    sources and queues.
+
+    Returns:
+        tuple: (rulesets, ruleset_queues, event_log, source_manager)
+    """
+    from ansible_rulebook.source_manager import SourceManager
+
+    os.chdir(HERE)
+    with open(rules_file) as f:
+        data = yaml.safe_load(f.read())
+
+    Validate.rulebook(data)
+    rulesets = parse_rule_sets(data, variables)
+    pprint(rulesets)
+
+    event_log = asyncio.Queue()
+
+    # Reset SourceManager singleton for clean test state
+    SourceManager.reset_instance()
+    source_manager = SourceManager.get_instance()
+
+    # Phase 1: Initialize (creates queues)
+    ruleset_queues = source_manager.initialize(
+        rulesets=rulesets,
+        variables=variables or {},
+        source_dirs=["sources"],
+        shutdown_delay=0.1,
+        filter_dirs=[],
+    )
+
+    return rulesets, ruleset_queues, event_log, source_manager
 
 
 async def get_queue_item(queue, timeout=0.5, times=1):
@@ -102,7 +141,11 @@ async def validate_events(event_log, **kwargs):
         if event["type"] == "Action":
             action_events += 1
             actions.append(
-                f"{event['ruleset']}::{event['rule']}::{event['action']}"
+                event["ruleset"]
+                + "::"
+                + event["rule"]
+                + "::"
+                + event["action"]
             )
         elif event["type"] == "Shutdown":
             shutdown_events += 1
