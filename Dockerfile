@@ -53,6 +53,7 @@ RUN "${PIP_BIN}" install -U pip \
     azure-servicebus \
     jmespath \
     watchdog \
+    fastavro \
     && ansible-galaxy collection install ansible.eda
 
 RUN bash -c "if [ $DEVEL_COLLECTION_LIBRARY -ne 0 ]; then \
