@@ -121,6 +121,15 @@ async def _connect_websocket(
             else:
                 logger.warning(f"websocket aborted by InvalidStatus: {e}")
                 raise  # abort
+        except asyncio.exceptions.TimeoutError as e:
+            # TimeoutError is a subclass of OSError; catch it first so the
+            # OSError handler below does not swallow handshake timeouts and
+            # prevent the retry logic from running.
+            if retry_on_close:
+                backoff_delay = await _wait_before_retry(backoff_delay)
+            else:
+                logger.warning(f"websocket aborted by {type(e)}: {e}")
+                raise
         except OSError as e:
             if "[Errno 61]" in str(e):
                 # if connection cannot be established, retry later
@@ -149,10 +158,7 @@ async def _connect_websocket(
             else:
                 logger.warning(f"websocket closed by ConnectionClosedOK: {e}")
                 raise
-        except (
-            websockets.exceptions.InvalidMessage,
-            asyncio.exceptions.TimeoutError,
-        ) as e:
+        except websockets.exceptions.InvalidMessage as e:
             if retry_on_close:
                 backoff_delay = await _wait_before_retry(backoff_delay)
             else:
