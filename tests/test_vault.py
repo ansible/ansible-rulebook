@@ -13,10 +13,17 @@
 #  limitations under the License.
 
 import os
+import random
+import string
+import subprocess
+from unittest.mock import patch
 
 import pytest
 
-from ansible_rulebook.exception import VaultDecryptException
+from ansible_rulebook.exception import (
+    AnsibleVaultNotFound,
+    VaultDecryptException,
+)
 from ansible_rulebook.vault import Vault
 
 
@@ -84,8 +91,108 @@ def test_decrypt_vault_id(encrypt_hello, encrypt_world):
 def test_decrypt_error(encrypt_world):
     os.chdir(HERE)
     myvault = Vault(password_file="./pass1.txt")
-    with pytest.raises(VaultDecryptException):
-        try:
+    try:
+        with pytest.raises(VaultDecryptException):
             myvault.decrypt(encrypt_world)
-        finally:
-            myvault.close()
+    finally:
+        myvault.close()
+
+
+def _vault_encrypt(plaintext: str, password_file: str) -> str:
+    """Helper to vault-encrypt a string and return cleaned ciphertext."""
+    result = subprocess.run(
+        [
+            "ansible-vault",
+            "encrypt_string",
+            "--vault-password-file",
+            password_file,
+        ],
+        input=plaintext,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    output = result.stdout
+    idx = output.find("$ANSIBLE_VAULT")
+    assert idx != -1, output
+    vault_text = output[idx:].strip()
+    lines = vault_text.splitlines()
+    return "\n".join([lines[0]] + [line.strip() for line in lines[1:]])
+
+
+@pytest.mark.parametrize("size", [100, 1024, 2048, 4096, 5120, 8192])
+def test_decrypt_various_payload_sizes(size):
+    """Verify decryption works for payloads of various sizes."""
+    os.chdir(HERE)
+    random.seed(size)
+    plaintext = "".join(
+        random.choices(string.ascii_letters + string.digits, k=size)
+    )
+
+    vault_text = _vault_encrypt(plaintext, "./pass1.txt")
+
+    myvault = Vault(password_file="./pass1.txt")
+    try:
+        decrypted = myvault.decrypt(vault_text)
+        assert decrypted == plaintext
+    finally:
+        myvault.close()
+
+
+def test_decrypt_multiline_payload():
+    """Verify decryption of a multiline plaintext value."""
+    os.chdir(HERE)
+    multiline_text = "line1\nline2\nline3\nfinal"
+    vault_text = _vault_encrypt(multiline_text, "./pass1.txt")
+
+    myvault = Vault(password_file="./pass1.txt")
+    try:
+        decrypted = myvault.decrypt(vault_text)
+        assert decrypted == multiline_text
+    finally:
+        myvault.close()
+
+
+def test_decrypt_whitespace_preserved():
+    """Verify leading and trailing whitespace is preserved after decryption."""
+    os.chdir(HERE)
+    plaintext = "  hello world  "
+    vault_text = _vault_encrypt(plaintext, "./pass1.txt")
+
+    myvault = Vault(password_file="./pass1.txt")
+    try:
+        decrypted = myvault.decrypt(vault_text)
+        assert decrypted == plaintext
+    finally:
+        myvault.close()
+
+
+def test_decrypt_no_vault_secrets():
+    """Verify proper error when no vault secrets are configured."""
+    myvault = Vault()
+    with pytest.raises(VaultDecryptException, match="No vault secrets"):
+        myvault.decrypt("$ANSIBLE_VAULT;1.1;AES256\nabc123")
+
+
+def test_decrypt_ask_pass(encrypt_hello):
+    """Verify ask_pass writes password to a temp file."""
+    os.chdir(HERE)
+    with patch("ansible_rulebook.vault.getpass.getpass", return_value="pass1"):
+        myvault = Vault(ask_pass=True)
+
+    assert len(myvault.tempfiles) == 1
+    assert "--vault-password-file" in myvault.cli_args
+    assert "--ask-vault-pass" not in myvault.cli_args
+
+    try:
+        decrypted = myvault.decrypt(encrypt_hello)
+        assert decrypted == "hello"
+    finally:
+        myvault.close()
+
+
+def test_vault_not_found():
+    """Verify AnsibleVaultNotFound when ansible-vault is not installed."""
+    with patch("ansible_rulebook.vault.shutil.which", return_value=None):
+        with pytest.raises(AnsibleVaultNotFound):
+            Vault(password_file="./pass1.txt")
