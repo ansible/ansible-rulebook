@@ -266,14 +266,17 @@ async def test_send_event_log_to_websocket_with_exception(
 
 @pytest.mark.asyncio
 @mock.patch("ansible_rulebook.websocket.websockets.connect")
-async def test_send_event_log_to_websocket_with_non_recoverable_exception(
+async def test_send_event_log_to_websocket_1011_retries_and_recovers(
     socket_mock: AsyncMock,
 ):
+    """1011 (Internal Error) is transient and should be retried."""
     prepare_settings()
     queue = asyncio.Queue()
     queue.put_nowait({"a": 1})
     queue.put_nowait({"b": 2})
     queue.put_nowait(dict(type="Exit"))
+
+    data_sent = []
 
     mock_object = AsyncMock()
     socket_mock.return_value = mock_object
@@ -283,9 +286,20 @@ async def test_send_event_log_to_websocket_with_non_recoverable_exception(
 
     rcvd = mock.Mock()
     rcvd.code = 1011
-    socket_mock.return_value.send.side_effect = (
-        websockets.exceptions.ConnectionClosedError(rcvd=rcvd, sent=None)
-    )
+    call_count = 0
 
-    with pytest.raises(websockets.exceptions.ConnectionClosedError):
-        await send_event_log_to_websocket(queue)
+    async def send_side_effect(payload):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise websockets.exceptions.ConnectionClosedError(
+                rcvd=rcvd, sent=None
+            )
+        data_sent.append(json.loads(payload))
+
+    socket_mock.return_value.send.side_effect = send_side_effect
+
+    await send_event_log_to_websocket(queue)
+    assert len(data_sent) == 2
+    assert data_sent[0] == {"a": 1}
+    assert data_sent[1] == {"b": 2}

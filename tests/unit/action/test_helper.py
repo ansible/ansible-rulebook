@@ -587,3 +587,143 @@ async def test_get_old_job_url_failed_status(metadata, control):
     )
 
     assert result is None
+
+
+def test_log_completion_successful(metadata, control, caplog):
+    """Test log_completion logs successful status at INFO level."""
+    import logging
+
+    caplog.set_level(logging.INFO)
+    helper = Helper(metadata, control, "test_action")
+
+    controller_job = {
+        "status": "successful",
+        "id": 123,
+    }
+
+    helper.log_completion("Job template", "test-job", controller_job)
+
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelname == "INFO"
+    assert "Job template 'test-job' completed successfully" in caplog.text
+    assert "job_id: 123" in caplog.text
+
+
+def test_log_completion_failed(metadata, control, caplog):
+    """Test log_completion logs failed status at ERROR level."""
+    import logging
+
+    caplog.set_level(logging.ERROR)
+    helper = Helper(metadata, control, "test_action")
+
+    controller_job = {
+        "status": "failed",
+        "id": 456,
+    }
+
+    helper.log_completion("Job template", "test-job", controller_job)
+
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelname == "ERROR"
+    assert "Job template 'test-job' failed" in caplog.text
+    assert "job_id: 456" in caplog.text
+
+
+def test_log_completion_error(metadata, control, caplog):
+    """Test log_completion logs error status at ERROR level."""
+    import logging
+
+    caplog.set_level(logging.ERROR)
+    helper = Helper(metadata, control, "test_action")
+
+    controller_job = {
+        "status": "error",
+        "id": 789,
+    }
+
+    helper.log_completion("Workflow template", "test-workflow", controller_job)
+
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelname == "ERROR"
+    assert "Workflow template 'test-workflow' error" in caplog.text
+    assert "job_id: 789" in caplog.text
+
+
+def test_log_completion_canceled(metadata, control, caplog):
+    """Test log_completion logs canceled status at WARNING level."""
+    import logging
+
+    caplog.set_level(logging.WARNING)
+    helper = Helper(metadata, control, "test_action")
+
+    controller_job = {
+        "status": "canceled",
+        "id": 101,
+    }
+
+    helper.log_completion("Job template", "test-job", controller_job)
+
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelname == "WARNING"
+    assert "Job template 'test-job' was canceled" in caplog.text
+    assert "job_id: 101" in caplog.text
+
+
+def test_log_completion_unexpected_status(metadata, control, caplog):
+    """Test log_completion logs unexpected status at DEBUG level."""
+    import logging
+
+    caplog.set_level(logging.DEBUG)
+    helper = Helper(metadata, control, "test_action")
+
+    controller_job = {
+        "status": "pending",  # Unexpected status
+        "id": 202,
+    }
+
+    helper.log_completion("Job template", "test-job", controller_job)
+
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelname == "DEBUG"
+    assert "completed with unexpected status: pending" in caplog.text
+    assert "job_id: 202" in caplog.text
+
+
+def test_log_completion_no_job_id(metadata, control, caplog):
+    """Test log_completion handles missing job_id gracefully."""
+    import logging
+
+    caplog.set_level(logging.INFO)
+    helper = Helper(metadata, control, "test_action")
+
+    controller_job = {
+        "status": "successful",
+        # No "id" field
+    }
+
+    helper.log_completion("Job template", "test-job", controller_job)
+
+    assert len(caplog.records) == 1
+    assert "job_id: None" in caplog.text
+
+
+def test_log_completion_different_template_types(metadata, control, caplog):
+    """Test log_completion works with different template types."""
+    import logging
+
+    caplog.set_level(logging.INFO)
+    helper = Helper(metadata, control, "test_action")
+
+    # Test with Job template
+    helper.log_completion(
+        "Job template", "my-job", {"status": "successful", "id": 1}
+    )
+    assert "Job template 'my-job'" in caplog.text
+
+    caplog.clear()
+
+    # Test with Workflow template
+    helper.log_completion(
+        "Workflow template", "my-workflow", {"status": "successful", "id": 2}
+    )
+    assert "Workflow template 'my-workflow'" in caplog.text

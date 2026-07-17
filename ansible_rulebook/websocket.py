@@ -45,6 +45,8 @@ BACKOFF_MAX = 60.0
 BACKOFF_FACTOR = 1.618
 BACKOFF_INITIAL = 5
 
+WS_TRANSIENT_CLOSE_CODES = {1001, 1006, 1011, 1012, 1013}
+
 
 async def _wait_before_retry(backoff_delay: float) -> float:
     # Sleep and retry implemention duplicated from
@@ -121,6 +123,15 @@ async def _connect_websocket(
             else:
                 logger.warning(f"websocket aborted by InvalidStatus: {e}")
                 raise  # abort
+        except asyncio.exceptions.TimeoutError as e:
+            # TimeoutError is a subclass of OSError; catch it first so the
+            # OSError handler below does not swallow handshake timeouts and
+            # prevent the retry logic from running.
+            if retry_on_close:
+                backoff_delay = await _wait_before_retry(backoff_delay)
+            else:
+                logger.warning(f"websocket aborted by {type(e)}: {e}")
+                raise
         except OSError as e:
             if "[Errno 61]" in str(e):
                 # if connection cannot be established, retry later
@@ -129,14 +140,16 @@ async def _connect_websocket(
                 logger.warning(f"websocket aborted by OSError: {e}")
                 raise  # abort
         except websockets.exceptions.ConnectionClosedError as e:
-            # Check if we should retry - skip retry if close code is
-            # 1011 (unexpected error)
-            # When rcvd is None, the connection was closed without a
-            # proper close frame
-            should_retry = retry_on_close and (
-                not e.rcvd or e.rcvd.code != 1011
+            close_code = e.rcvd.code if e.rcvd else None
+            is_transient = (
+                close_code is None or close_code in WS_TRANSIENT_CLOSE_CODES
             )
-            if should_retry:
+            if retry_on_close and is_transient:
+                logger.warning(
+                    "websocket ConnectionClosedError (code=%s), "
+                    "will retry with backoff",
+                    close_code,
+                )
                 backoff_delay = await _wait_before_retry(backoff_delay)
             else:
                 logger.warning(
@@ -149,10 +162,7 @@ async def _connect_websocket(
             else:
                 logger.warning(f"websocket closed by ConnectionClosedOK: {e}")
                 raise
-        except (
-            websockets.exceptions.InvalidMessage,
-            asyncio.exceptions.TimeoutError,
-        ) as e:
+        except websockets.exceptions.InvalidMessage as e:
             if retry_on_close:
                 backoff_delay = await _wait_before_retry(backoff_delay)
             else:

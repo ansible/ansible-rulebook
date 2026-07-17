@@ -25,6 +25,7 @@ import sys
 import tempfile
 import typing
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from urllib.parse import urlparse
 
@@ -420,6 +421,54 @@ def validate_url(url: str, url_type: str) -> bool:
     if url_type == "controller":
         return res.scheme in ["http", "https"] and bool(res.netloc)
     return res.scheme in ["ws", "wss"] and bool(res.netloc)
+
+
+def validate_file_path(file_path: str, file_description: str = "File") -> str:
+    """Validate file path to prevent path traversal attacks.
+
+    This function validates user-provided file paths to ensure they are safe
+    to open. It prevents path traversal attacks and validates that the file
+    exists and is readable.
+
+    Args:
+        file_path: The file path to validate
+        file_description: Description of the file type for error messages
+
+    Returns:
+        The resolved absolute path if valid
+
+    Raises:
+        ValueError: If the path is invalid, doesn't exist, or attempts
+                   path traversal
+    """
+    if not file_path:
+        raise ValueError(f"{file_description} path cannot be empty")
+
+    # Check for null bytes (path injection attempt) before Path.resolve()
+    if "\x00" in file_path:
+        raise ValueError(f"{file_description} path contains null bytes")
+
+    try:
+        # Resolve to absolute path and resolve any symlinks
+        resolved_path = Path(file_path).resolve()
+
+        # Check if path exists
+        if not resolved_path.exists():
+            raise ValueError(f"{file_description} does not exist: {file_path}")
+
+        # Check if it's a file (not a directory)
+        if not resolved_path.is_file():
+            raise ValueError(
+                f"{file_description} path is not a file: {file_path}"
+            )
+
+        return str(resolved_path)
+
+    except (OSError, RuntimeError) as e:
+        raise ValueError(
+            f"Invalid {file_description.lower()} path: {file_path}. "
+            f"Error: {e}"
+        )
 
 
 # If the following values exist in a key,

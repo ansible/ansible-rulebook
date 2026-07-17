@@ -4,7 +4,15 @@ import logging
 from typing import Any
 
 import xxhash
-from psycopg import AsyncConnection, OperationalError
+from psycopg import AsyncConnection, OperationalError, sql
+from psycopg.conninfo import conninfo_to_dict
+from psycopg.errors import InvalidAuthorizationSpecification, InvalidPassword
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 DOCUMENTATION = r"""
 ---
@@ -35,6 +43,44 @@ options:
     type: list
     elements: str
     required: true
+  retry_max_timeout:
+    description:
+      - Maximum backoff time in seconds when retrying after a
+        transient PostgreSQL connection loss. Default is 60.
+    type: float
+    default: 60
+  retry_attempts:
+    description:
+      - Maximum number of retry attempts when reconnecting after a
+        transient PostgreSQL connection loss. Default is 10.
+    type: int
+    default: 10
+  keepalives:
+    description:
+      - Enable TCP keepalives on the PostgreSQL connection.
+        Default is 1 (enabled). Set to 0 to disable.
+    type: int
+    default: 1
+  keepalives_idle:
+    description:
+      - Seconds of inactivity before sending a TCP keepalive probe.
+        Default is 10. Controls how quickly a dead connection is detected
+        after a database failover.
+    type: int
+    default: 10
+  keepalives_interval:
+    description:
+      - Seconds between TCP keepalive probes once the idle threshold
+        is reached. Default is 10.
+    type: int
+    default: 10
+  keepalives_count:
+    description:
+      - Number of TCP keepalive probes before declaring the connection
+        dead. Default is 3. With the defaults the connection will be
+        detected as dead within ~40 seconds (10 + 10*3).
+    type: int
+    default: 3
 notes:
   - Chunking - this is just informational, a user doesn't have to do anything
     special to enable chunking. The sender, which is the pg_notify
@@ -71,6 +117,14 @@ EXAMPLES = r"""
     channels:
       - my_events
       - my_alerts
+
+- eda.builtin.pg_listener:
+    dsn: "host=localhost port=5432 dbname=mydb"
+    channels:
+      - my_events
+    keepalives_idle: 5
+    keepalives_interval: 5
+    keepalives_count: 2
 """
 
 LOGGER = logging.getLogger(__name__)
@@ -138,35 +192,151 @@ def _validate_args(args: dict[str, Any]) -> None:
         raise ValueError(err_msg)
 
 
+PG_RETRY_MAX_TIMEOUT_DEFAULT = 60
+PG_RETRY_ATTEMPTS_DEFAULT = 10
+
+PG_KEEPALIVE_DEFAULTS = {
+    "keepalives": "1",
+    "keepalives_idle": "10",
+    "keepalives_interval": "10",
+    "keepalives_count": "3",
+}
+
+
 async def main(queue: asyncio.Queue[Any], args: dict[str, Any]) -> None:
     """Listen for events from a channel."""
     _validate_args(args)
 
+    max_timeout = float(
+        args.get("retry_max_timeout", PG_RETRY_MAX_TIMEOUT_DEFAULT)
+    )
+    if max_timeout < 2.0:
+        LOGGER.warning(
+            "retry_max_timeout=%.1f is below minimum backoff (2s), "
+            "retries will have minimal delay. Resetting to 2 seconds.",
+            max_timeout,
+        )
+        max_timeout = 2.0
+
+    max_attempts = int(args.get("retry_attempts", PG_RETRY_ATTEMPTS_DEFAULT))
+    reconnecting = False
+
+    # Each outage gets a fresh AsyncRetrying budget.  The retry
+    # only wraps connection + LISTEN setup (a short-lived operation).
+    # Once connected, _process_notifications() blocks on
+    # conn.notifies() outside the retry scope.  When that connection
+    # drops, the outer loop catches it and starts a new retry
+    # sequence with a fresh budget.
+    while True:
+        conn = None
+        connected = False
+        try:
+            async for attempt in AsyncRetrying(
+                retry=retry_if_exception(_is_retryable_pg_error),
+                wait=wait_exponential(multiplier=1, min=2, max=max_timeout),
+                stop=stop_after_attempt(max_attempts),
+                before_sleep=_log_pg_retry,
+                reraise=True,
+            ):
+                with attempt:
+                    conn = await _connect_and_subscribe(args, reconnecting)
+            connected = True
+            await _process_notifications(conn, queue)
+            return
+        except asyncio.CancelledError:
+            LOGGER.info("pg_listener shutdown requested")
+            raise
+        except OperationalError as e:
+            if not connected or not _is_retryable_pg_error(e):
+                raise
+            LOGGER.warning(
+                "PostgreSQL connection lost (%s); "
+                "any in-progress messages were discarded",
+                e,
+            )
+            reconnecting = True
+        finally:
+            if conn and not conn.closed:
+                await conn.close()
+
+
+def _is_retryable_pg_error(exc: BaseException) -> bool:
+    """Retry on transient OperationalErrors but not on auth failures."""
+    return isinstance(exc, OperationalError) and not isinstance(
+        exc, (InvalidPassword, InvalidAuthorizationSpecification)
+    )
+
+
+def _log_pg_retry(retry_state) -> None:
+    exc = retry_state.outcome.exception()
+    wait = retry_state.next_action.sleep
+    LOGGER.warning(
+        "PostgreSQL connection lost (%s), reconnecting in %.0f seconds",
+        exc,
+        wait,
+    )
+
+
+def _build_connect_params(args: dict[str, Any]) -> dict[str, Any]:
+    """Build connection params, applying keepalive defaults only for
+    keys not already present in the DSN or plugin args.
+    """
+    dsn_keys = conninfo_to_dict(args.get("dsn", ""))
+    keepalive_params = {}
+    for key, default in PG_KEEPALIVE_DEFAULTS.items():
+        if key in args:
+            keepalive_params[key] = str(args[key])
+        elif key not in dsn_keys:
+            keepalive_params[key] = default
+    user_params = args.get("postgres_params", {})
+    return {**keepalive_params, **user_params}
+
+
+async def _connect_and_subscribe(
+    args: dict[str, Any],
+    reconnecting: bool,
+) -> AsyncConnection:
+    """Connect to PostgreSQL and subscribe to channels.
+
+    This is the short-lived operation wrapped by AsyncRetrying.
+    Returns the open connection for the caller to listen on.
+    """
+    conn = await AsyncConnection.connect(
+        conninfo=args.get("dsn", ""),
+        autocommit=True,
+        **_build_connect_params(args),
+    )
+    if reconnecting:
+        LOGGER.warning("PostgreSQL connection re-established")
+    cursor = conn.cursor()
+    for channel in args["channels"]:
+        # Compose the query safely using psycopg v3's sql module
+        query = sql.SQL("LISTEN {};").format(sql.Identifier(channel))
+        await cursor.execute(query)
+        LOGGER.debug("Waiting for notifications on channel %s", channel)
+    return conn
+
+
+async def _process_notifications(
+    conn: AsyncConnection,
+    queue: asyncio.Queue[Any],
+) -> None:
+    """Block on conn.notifies() and forward events to the queue.
+
+    Runs outside the retry scope.  Any OperationalError from a
+    dropped connection propagates to the caller.
+    """
+    chunked_cache: dict[str, Any] = {}
     try:
-        async with await AsyncConnection.connect(
-            conninfo=args.get("dsn", ""),
-            autocommit=True,
-            **args.get("postgres_params", {}),
-        ) as conn:
-            chunked_cache: dict[str, Any] = {}
-            cursor = conn.cursor()
-            for channel in args["channels"]:
-                await cursor.execute(f"LISTEN {channel};")
-                LOGGER.debug(
-                    "Waiting for notifications on channel %s", channel
-                )
-            async for event in conn.notifies():
-                data = json.loads(event.payload)
-                if MESSAGE_CHUNKED_UUID in data:
-                    _validate_chunked_payload(data)
-                    await _handle_chunked_message(data, chunked_cache, queue)
-                else:
-                    await queue.put(data)
+        async for event in conn.notifies():
+            data = json.loads(event.payload)
+            if MESSAGE_CHUNKED_UUID in data:
+                _validate_chunked_payload(data)
+                await _handle_chunked_message(data, chunked_cache, queue)
+            else:
+                await queue.put(data)
     except json.decoder.JSONDecodeError:
         LOGGER.exception("Error decoding data")
-        raise
-    except OperationalError:
-        LOGGER.exception("PG Listen operational error")
         raise
 
 
