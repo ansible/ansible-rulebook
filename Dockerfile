@@ -9,7 +9,7 @@ ARG SETUPTOOLS_SCM_PRETEND_VERSION
 # git repositories:
 # https://docs.ansible.com/projects/ansible/latest/collections_guide/collections_installing.html
 ARG DEVEL_COLLECTION_REPO=ansible.eda
-ARG ANSIBLE_CORE_VER=${ANSIBLE_CORE_VER:-2.16.14}
+ARG ANSIBLE_CORE_VER=${ANSIBLE_CORE_VER:-2.20.7}
 
 ENV PIP_BUILD_OPTS="--use-pep517 --disable-pip-version-check --wheel-dir /output/wheels"
 
