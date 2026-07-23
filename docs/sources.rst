@@ -10,9 +10,9 @@ Event Sources
 | that cover common integration scenarios with Ansible Event Driven. You can explore the available source plugins here:
 | https://galaxy.ansible.com/ui/repo/published/ansible/eda/content/
 
-========================
+=====================
 Builtin Event Sources
-========================
+=====================
 
 ansible-rulebook provides the following builtin event sources for testing and development:
 
@@ -221,9 +221,9 @@ Example:
    The ``pg_listener`` source requires the ``psycopg`` library to be installed.
 
 
-====================================
+======================================
 Developing Custom Event Source Plugins
-====================================
+======================================
 
 You can build your own event source plugin in Python. A plugin is a single
 Python file.
@@ -236,7 +236,7 @@ systems to other message buses and this is a great way to leverage existing plug
 Before getting started, let's take a look at some best practices and patterns:
 
 Best Practices and Patterns
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
 
 There are 3 patterns for developing event source plugins:
 
@@ -294,9 +294,364 @@ There are 3 patterns for developing event source plugins:
 - **Use Scraper plugins** when there is no message bus available and the data source can be polled periodically
 
 
+Event Feedback Mechanism
+------------------------
+
+The event feedback mechanism provides reliable event delivery guarantees by allowing source plugins to receive acknowledgment when events have been safely persisted to ansible-rulebook's in-flight database. This is particularly important for event bus plugins where events should only be removed from the external message bus (e.g., Kafka, SQS) after they have been successfully stored by ansible-rulebook.
+
+**Why Event Feedback is Important**
+
+In event-driven automation, rulebook conditions can depend on multiple events. Each event must be stored in the in-flight database before it can be safely removed from the source system. Without feedback:
+
+- Source plugins don't know if events were successfully persisted
+- Events may be lost during outages or failures
+- There's no guarantee that events required for multi-event conditions are preserved
+
+With feedback enabled, source plugins can implement "at-least-once" delivery semantics, ensuring no events are lost during processing. Note that "at-least-once" means events may be delivered multiple times (e.g., after a restart or failure); the feedback mechanism prevents event loss but does not prevent duplicates.
+
+**Prerequisites**
+
+Event feedback requires ansible-rulebook to be configured with persistence. The feedback queue is only created when persistence is enabled; without it, ansible-rulebook will raise a ``SourcePluginFeedbackMisconfiguredException`` when a source plugin requests feedback.
+
+.. note::
+   Persistence configuration is done on the EDA (Event-Driven Ansible) Server side. When running ansible-rulebook with database persistence enabled, the feedback mechanism becomes available automatically.
+
+**How Event Feedback Works**
+
+1. **Configure persistence**: Ensure ansible-rulebook is running with database persistence enabled on the EDA Server (required)
+2. **Enable feedback in rulebook**: Set ``feedback: true`` in the source plugin configuration
+3. **Receive feedback queue**: ansible-rulebook creates an ``asyncio.Queue`` and passes it to the source plugin in the ``args`` dictionary as ``eda_feedback_queue``
+4. **Wait for acknowledgment**: After submitting an event via ``await queue.put(event)``, the source plugin waits for a response on the feedback queue
+5. **Commit after acknowledgment**: Once feedback is received, the source plugin can safely acknowledge/commit the message to its external source
+
+**Implementing Feedback in Source Plugins**
+
+Here's how to implement event feedback in your source plugin:
+
+.. code-block:: python
+
+    import uuid
+
+    async def main(queue: asyncio.Queue, args: dict) -> None:
+        # Check if feedback is enabled
+        feedback_enabled = args.get("feedback", False)
+        eda_feedback_queue = args.get("eda_feedback_queue")
+        feedback_timeout = args.get("feedback_timeout", 120)  # seconds
+
+        if feedback_enabled and eda_feedback_queue is None:
+            raise ValueError(
+                "feedback: true was set but no feedback queue was provided. "
+                "This requires a compatible version of ansible-rulebook."
+            )
+
+        # Example: Message bus consumer with manual commit
+        if feedback_enabled:
+            # Disable auto-commit when feedback is enabled
+            consumer = create_consumer(enable_auto_commit=False)
+        else:
+            consumer = create_consumer(enable_auto_commit=True)
+
+        # Process messages
+        async for message in consumer:
+            # Build event with UUID for tracking
+            event = {
+                "body": message.data,
+                "meta": {}
+            }
+
+            # Every event MUST have a UUID in meta.uuid for tracking
+            # Generate UUID based on available message identifiers
+            message_id = getattr(message, 'message_id', None)
+
+            if message_id:
+                try:
+                    # Check if message_id is already a valid UUID
+                    uuid.UUID(message_id)
+                    # Use it directly
+                    event["meta"]["uuid"] = message_id
+                except (ValueError, AttributeError):
+                    # Not a valid UUID - generate UUID from the unique string
+                    event_uuid = str(uuid.uuid5(uuid.NAMESPACE_OID, message_id))
+                    event["meta"]["uuid"] = event_uuid
+                    # Store the original unique string for reference
+                    event["meta"]["message_id"] = message_id
+            else:
+                # No message_id available - MUST generate UUID from a
+                # guaranteed-unique stable identifier specific to your message source
+                # WARNING: Do not use timestamps alone - they are not unique!
+
+                # Examples of valid stable identifiers:
+                # - Kafka: f"{topic}:{partition}:{offset}"
+                # - SQS: receipt_handle (includes timestamp + random component)
+                # - RabbitMQ: f"{delivery_tag}:{consumer_tag}"
+                # - Azure Service Bus: sequence_number
+                # - Custom sources: any guaranteed-unique position/sequence identifier
+
+                # Example for Kafka-like sources:
+                if hasattr(message, "topic") and hasattr(message, "partition") and hasattr(message, "offset"):
+                    unique_str = f"{message.topic}:{message.partition}:{message.offset}"
+                    event["meta"]["uuid"] = str(uuid.uuid5(uuid.NAMESPACE_OID, unique_str))
+                else:
+                    # CRITICAL: If no guaranteed-unique identifier exists,
+                    # feedback mode cannot be used safely
+                    raise ValueError(
+                        "Cannot generate stable UUID: message source does not provide "
+                        "a guaranteed-unique identifier. Feedback mode requires a stable "
+                        "unique identifier such as Kafka offset, SQS receipt_handle, etc."
+                    )
+
+            # Submit event to ansible-rulebook
+            await queue.put(event)
+
+            # Wait for feedback before committing
+            if eda_feedback_queue:
+                try:
+                    feedback_event = await asyncio.wait_for(
+                        eda_feedback_queue.get(),
+                        timeout=feedback_timeout
+                    )
+
+                    # IMPORTANT: Verify this feedback matches our submitted event
+                    # The feedback queue is per-source, so if you have multiple
+                    # messages in flight, you must correlate by UUID
+                    if feedback_event.get("meta", {}).get("uuid") != event["meta"]["uuid"]:
+                        logger.error(
+                            "Received feedback for wrong event: expected %s, got %s",
+                            event["meta"]["uuid"],
+                            feedback_event.get("meta", {}).get("uuid")
+                        )
+                        raise ValueError("Feedback UUID mismatch")
+
+                    # Event was persisted and feedback matches, safe to commit
+                    await consumer.commit()
+                except asyncio.TimeoutError:
+                    logger.error("Timed out waiting for feedback")
+                    raise
+
+**Event UUID Requirements**
+
+When implementing event feedback, every event **must** include a UUID for tracking:
+
+**Required Field**
+
+- ``meta.uuid``: A valid RFC 4122 UUID string that uniquely identifies the event
+
+.. warning::
+   **Never submit an event without meta.uuid!** Events submitted without a UUID will cause feedback tracking and event correlation to fail. Always generate a UUID before calling ``await queue.put(event)``.
+
+**UUID Generation Strategy**
+
+1. **If your message source provides a UUID**: Use it directly in ``meta.uuid``
+
+   .. code-block:: python
+
+       # Message already has a valid UUID
+       event["meta"]["uuid"] = message.uuid_field
+
+2. **If your message source provides a unique string ID** (not a valid UUID): Generate a UUID from it using ``uuid.uuid5()`` and store the original ID in ``meta.message_id``
+
+   .. code-block:: python
+
+       import uuid
+
+       # Message has unique ID like "msg-12345-abc"
+       unique_id = message.message_id
+
+       # Generate deterministic UUID from the unique string
+       event_uuid = str(uuid.uuid5(uuid.NAMESPACE_OID, unique_id))
+
+       event["meta"]["uuid"] = event_uuid
+       event["meta"]["message_id"] = unique_id  # Store original ID
+
+3. **If your message source has no unique ID**: You **must** generate a UUID from a **guaranteed-unique stable identifier** before submitting the event. Never submit events without a UUID, and never use non-unique values like timestamps.
+
+   .. code-block:: python
+
+       import uuid
+
+       # CRITICAL: Use a guaranteed-unique identifier, NOT timestamps alone!
+       # Timestamps can be shared by multiple messages, causing UUID collisions
+       # and incorrect feedback correlation.
+
+       # Valid examples based on message source type:
+       # - Kafka: f"{topic}:{partition}:{offset}" (guaranteed unique per partition)
+       # - SQS: receipt_handle (includes timestamp + random component)
+       # - RabbitMQ: f"{delivery_tag}:{consumer_tag}"
+       # - Azure Service Bus: sequence_number
+       # - Custom: any position/sequence identifier that is guaranteed unique
+
+       # Example for Kafka:
+       if hasattr(message, 'topic') and hasattr(message, 'partition') and hasattr(message, 'offset'):
+           unique_str = f"{message.topic}:{message.partition}:{message.offset}"
+           event["meta"]["uuid"] = str(uuid.uuid5(uuid.NAMESPACE_OID, unique_str))
+       else:
+           # If no guaranteed-unique identifier exists, feedback cannot be used
+           raise ValueError(
+               "Feedback mode requires a guaranteed-unique stable identifier"
+           )
+
+   .. warning::
+      **Do not use timestamps, random values, or non-unique fields for UUID generation!**
+      This will cause UUID collisions, incorrect feedback correlation, and potential data loss.
+      If your message source does not provide a guaranteed-unique identifier, feedback mode
+      cannot be used safely.
+
+**Why UUIDs Matter for Feedback**
+
+- The UUID allows ansible-rulebook to track when each specific event has been persisted
+- Using ``uuid.uuid5()`` with the message's unique identifier ensures the same message always generates the same UUID, enabling reliable event correlation across restarts
+- Deterministic UUIDs support event correlation and can be used by downstream logic for deduplication, but they do not prevent duplicate delivery or processing by themselves
+- Event feedback provides "at-least-once" delivery guarantees; if you need exactly-once semantics, implement explicit deduplication logic in your rulebook or downstream systems
+
+**Configuration Parameters**
+
+Source plugins that support feedback should expose these parameters:
+
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - ``feedback`` (`bool`)
+     - Enable event feedback mechanism. When ``true``, ansible-rulebook passes an ``asyncio.Queue`` in ``args["eda_feedback_queue"]``
+     - No (default: ``false``)
+   * - ``feedback_timeout`` (`int`)
+     - Timeout in seconds to wait for feedback before raising an exception
+     - No (default: ``120``)
+
+**Example: Kafka Source with Feedback**
+
+.. code-block:: yaml
+
+  sources:
+    - name: kafka_with_feedback
+      ansible.eda.kafka:
+        host: localhost
+        port: 9092
+        topic: events
+        group_id: my-consumer-group
+        feedback: true
+        feedback_timeout: 120
+
+When ``feedback: true`` is set:
+
+- The Kafka consumer disables auto-commit
+- After each event is submitted to ansible-rulebook, the plugin waits for acknowledgment
+- Only after receiving feedback does the plugin commit the Kafka offset
+- This ensures messages are not lost if ansible-rulebook crashes before persisting the event
+
+**Best Practices for Feedback-Enabled Plugins**
+
+1. **Validate configuration**: Raise a clear error if ``feedback: true`` is set but ``eda_feedback_queue`` is ``None``
+2. **Use timeouts**: Always wrap ``eda_feedback_queue.get()`` with ``asyncio.wait_for()`` to prevent indefinite hangs
+3. **Handle errors gracefully**: If feedback times out, decide whether to raise an exception (stop processing) or retry. Checkout the ``asyncio.TimeoutError`` in the Kafka example
+4. **Disable auto-commit**: When feedback is enabled, ensure your client library doesn't auto-commit/auto-acknowledge messages
+5. **Document the behavior**: Clearly explain in your plugin documentation what happens when feedback is enabled
+6. **Test both modes**: Ensure your plugin works correctly with feedback enabled and disabled
+7. **Correlate feedback with submitted events**: Always verify that the feedback event's ``meta.uuid`` matches the submitted event's UUID before committing. The feedback queue is per-source, so if you have multiple messages in flight, consuming feedback without correlation can cause you to commit the wrong message offset.
+
+**Handling Concurrent Messages**
+
+The feedback queue is shared per source plugin instance. If your plugin processes messages concurrently or has multiple messages in flight, you **must** correlate feedback with submitted events to avoid committing the wrong offset:
+
+**Option 1: Serialize event processing (Recommended)**
+
+Process one message at a time and wait for its feedback before processing the next:
+
+.. code-block:: python
+
+    # This is the recommended approach shown in the example above
+    async for message in consumer:
+        event = create_event(message)
+        await queue.put(event)
+
+        # Wait for THIS event's feedback before continuing
+        feedback = await eda_feedback_queue.get()
+        if feedback["meta"]["uuid"] != event["meta"]["uuid"]:
+            raise ValueError("Feedback UUID mismatch")
+
+        await consumer.commit()
+
+**Option 2: Track in-flight events**
+
+If you need to process messages concurrently, maintain a mapping of pending events and correlate feedback:
+
+.. code-block:: python
+
+    import asyncio
+
+    pending_events = {}  # uuid -> (message, commit_future)
+
+    async def process_feedback(eda_feedback_queue):
+        """Separate task to process feedback"""
+        while True:
+            feedback = await eda_feedback_queue.get()
+            uuid = feedback.get("meta", {}).get("uuid")
+
+            if uuid in pending_events:
+                message, future = pending_events.pop(uuid)
+                future.set_result(message)  # Signal ready to commit
+            else:
+                logger.warning("Received feedback for unknown UUID: %s", uuid)
+
+    async def main(queue, args):
+        # Retrieve and validate feedback queue from args
+        feedback_enabled = args.get("feedback", False)
+        eda_feedback_queue = args.get("eda_feedback_queue")
+
+        if feedback_enabled and eda_feedback_queue is None:
+            raise ValueError(
+                "feedback: true was set but no feedback queue was provided."
+            )
+
+        # Create consumer
+        consumer = create_consumer(
+            enable_auto_commit=not feedback_enabled
+        )
+
+        # Start feedback processor if feedback is enabled
+        if eda_feedback_queue:
+            asyncio.create_task(process_feedback(eda_feedback_queue))
+
+        async for message in consumer:
+            event = create_event(message)
+            uuid = event["meta"]["uuid"]
+
+            # Track this event if feedback is enabled
+            if eda_feedback_queue:
+                commit_future = asyncio.Future()
+                pending_events[uuid] = (message, commit_future)
+
+            await queue.put(event)
+
+            # Wait for feedback for THIS specific event
+            if eda_feedback_queue:
+                committed_message = await commit_future
+                await consumer.commit(committed_message)
+            else:
+                # Auto-commit handles this
+                pass
+
+**When to Use Event Feedback**
+
+Enable event feedback when:
+
+- Your source connects to a message bus that supports acknowledgment (Kafka, SQS, RabbitMQ, etc.)
+- You need "at-least-once" delivery guarantees
+- Events are critical and cannot be lost during failures
+- Rulebook conditions depend on multiple events that must be preserved
+
+Skip event feedback when:
+
+- Your source generates events rather than consuming them (e.g. ``eda.builtin.range``)
+- Events can be safely re-sent or are not critical
+- The source doesn't support acknowledgment (e.g. webhook callbacks)
+
 
 Plugin template
-^^^^^^^^^^^^^^^
+---------------
 
 The following example demonstrates a complete event source plugin template to use
 as a starting point for developing custom plugins. This template includes proper documentation
@@ -308,7 +663,7 @@ render correctly in Automation Hub.
 
 
 Plugin entrypoint
-^^^^^^^^^^^^^^^^^
+-----------------
 The plugin python file must contain an entrypoint function exactly like the
 following:
 
@@ -365,7 +720,7 @@ immediately after the ``put`` method.
     can log it correctly.
 
 Testing plugins
-^^^^^^^^^^^^^^^
+---------------
 
 Here are some approaches to test a plugin:
 
@@ -460,7 +815,7 @@ For more comprehensive testing, a recommended approach is to use `pytest <https:
 
 
 Distributing plugins
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 For local tests the plugin source file can be saved under a folder specified by
 the ``-S`` argument in the ansible-rulebook CLI. The recommended method for
@@ -482,7 +837,7 @@ Any dependent packages needed by the custom plugin should be installed in the
 ansible-rulebook CLI env regardless the plugin is local or from a collection.
 
 Document plugins
-^^^^^^^^^^^^^^^^
+----------------
 
 Event source plugins must use the **sidecar documentation format** with ``DOCUMENTATION`` and
 ``EXAMPLES`` blocks. This format enables the plugin documentation to be rendered correctly
