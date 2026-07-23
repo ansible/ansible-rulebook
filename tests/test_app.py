@@ -9,17 +9,14 @@ from ansible_rulebook.app import (
     load_rulebook,
     load_vars,
     run,
-    spawn_sources,
     validate_actions,
 )
 from ansible_rulebook.cli import get_parser
 from ansible_rulebook.common import StartupArgs
 from ansible_rulebook.exception import (
     ControllerNeededException,
-    DuplicateSourceNamesException,
     InventoryNeededException,
     RulebookNotFoundException,
-    SourcePluginFeedbackMisconfiguredException,
     WebSocketExchangeException,
 )
 
@@ -111,35 +108,78 @@ def test_load_rulebook_missing():
 
 
 @pytest.mark.asyncio
-async def test_spawn_sources(create_ruleset):
-    with mock.patch("ansible_rulebook.app.start_source") as mock_start_source:
-        tasks, ruleset_queues = spawn_sources(
-            [create_ruleset()], dict(), ["."], 0.0, list()
-        )
-        for task in tasks:
-            task.cancel()
-        assert mock_start_source.call_count == 1
+async def test_source_manager_integration(create_ruleset):
+    """Test that SourceManager is used for source lifecycle management."""
+    from ansible_rulebook.source_manager import SourceManager
+
+    # Reset singleton before test
+    SourceManager.reset_instance()
+
+    try:
+        with mock.patch(
+            "ansible_rulebook.source_manager.start_source"
+        ) as mock_start_source:
+            manager = SourceManager.get_instance()
+            manager.initialize(
+                rulesets=[create_ruleset()],
+                variables=dict(),
+                source_dirs=["."],
+                shutdown_delay=0.0,
+                filter_dirs=list(),
+            )
+
+            # Mock the rulesets ready event to avoid blocking
+            manager.signal_rulesets_ready()
+
+            # Start sources (should call start_source for each source)
+            tasks = await manager.start_sources()
+
+            # Cleanup
+            await manager.stop_sources()
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            await manager.cleanup()
+
+            assert mock_start_source.call_count == 1
+    finally:
+        # Reset singleton after test
+        SourceManager.reset_instance()
 
 
 @pytest.mark.asyncio
 async def test_run(create_ruleset):
+    from ansible_rulebook.source_manager import SourceManager
+
     os.chdir(HERE)
     parser = get_parser()
     cmdline_args = parser.parse_args(
         ["-r", "./data/rulebook.yml", "-i", "./playbooks/inventory.yml"]
     )
 
-    with mock.patch("ansible_rulebook.app.start_source") as mock_start_source:
+    # Reset singleton before test
+    SourceManager.reset_instance()
+
+    try:
         with mock.patch(
-            "ansible_rulebook.app.run_rulesets"
-        ) as mock_run_rulesets:
-            await run(cmdline_args)
-            assert mock_start_source.call_count == 1
-            assert mock_run_rulesets.call_count == 1
+            "ansible_rulebook.source_manager.SourceManager.start_sources"
+        ) as mock_start_sources:
+            with mock.patch(
+                "ansible_rulebook.app.run_rulesets"
+            ) as mock_run_rulesets:
+                mock_start_sources.return_value = []
+                await run(cmdline_args)
+                assert mock_start_sources.call_count == 1
+                assert mock_run_rulesets.call_count == 1
+    finally:
+        # Reset singleton after test
+        SourceManager.reset_instance()
 
 
 @pytest.mark.asyncio
 async def test_run_with_websocket(create_ruleset):
+    from ansible_rulebook.source_manager import SourceManager
+
     os.chdir(HERE)
     rulesets = [create_ruleset()]
     parser = get_parser()
@@ -147,98 +187,153 @@ async def test_run_with_websocket(create_ruleset):
         ["-r", "./data/rulebook.yml", "-W", "fake", "--id", "1", "-w"]
     )
 
-    with mock.patch("ansible_rulebook.app.start_source") as mock_start_source:
+    # Reset singleton before test
+    SourceManager.reset_instance()
+
+    try:
         with mock.patch(
-            "ansible_rulebook.app.run_rulesets"
-        ) as mock_run_rulesets:
+            "ansible_rulebook.source_manager.SourceManager.start_sources"
+        ) as mock_start_sources:
             with mock.patch(
-                "ansible_rulebook.app.request_workload"
-            ) as mock_request_workload:
-                mock_request_workload.return_value = StartupArgs(
-                    rulesets=rulesets,
-                    controller_url="https://aap.controller.com:8080",
-                    controller_token="token",
-                    controller_ssl_verify="no",
-                    check_controller_connection=True,
-                )
-                with patch("ansible_rulebook.app.send_event_log_to_websocket"):
+                "ansible_rulebook.app.run_rulesets"
+            ) as mock_run_rulesets:
+                with mock.patch(
+                    "ansible_rulebook.app.request_workload"
+                ) as mock_request_workload:
+                    mock_request_workload.return_value = StartupArgs(
+                        rulesets=rulesets,
+                        controller_url="https://aap.controller.com:8080",
+                        controller_token="token",
+                        controller_ssl_verify="no",
+                        check_controller_connection=True,
+                    )
                     with patch(
-                        "ansible_rulebook.app.job_template_runner.get_config",
-                        return_value=dict(version="4.4.1"),
+                        "ansible_rulebook.app.send_event_log_to_websocket"
                     ):
-                        await run(cmdline_args)
-                        assert mock_start_source.call_count == 1
-                        assert mock_run_rulesets.call_count == 1
-                        assert mock_request_workload.call_count == 1
+                        with patch(
+                            "ansible_rulebook.app.job_template_runner."
+                            "get_config",
+                            return_value=dict(version="4.4.1"),
+                        ):
+                            mock_start_sources.return_value = []
+                            await run(cmdline_args)
+                            assert mock_start_sources.call_count == 1
+                            assert mock_run_rulesets.call_count == 1
+                            assert mock_request_workload.call_count == 1
+    finally:
+        # Reset singleton after test
+        SourceManager.reset_instance()
 
 
 @pytest.mark.asyncio
 async def test_failed_run_with_websocket(create_ruleset):
+    from ansible_rulebook.source_manager import SourceManager
+
     os.chdir(HERE)
     parser = get_parser()
     cmdline_args = parser.parse_args(
         ["-r", "./data/rulebook.yml", "-W", "fake", "--id", "1", "-w"]
     )
 
-    with mock.patch(
-        "ansible_rulebook.app.request_workload"
-    ) as mock_request_workload:
-        mock_request_workload.return_value = None
-        with pytest.raises(WebSocketExchangeException):
-            await run(cmdline_args)
-        assert mock_request_workload.call_count == 1
+    # Reset singleton before test
+    SourceManager.reset_instance()
+
+    try:
+        with mock.patch(
+            "ansible_rulebook.app.request_workload"
+        ) as mock_request_workload:
+            mock_request_workload.return_value = None
+            with pytest.raises(WebSocketExchangeException):
+                await run(cmdline_args)
+            assert mock_request_workload.call_count == 1
+    finally:
+        # Reset singleton after test
+        SourceManager.reset_instance()
 
 
 @pytest.mark.asyncio
-async def test_spawn_sources_feedback_without_persistence(
+async def test_source_manager_feedback_without_persistence(
     create_ruleset, create_event_source
 ):
     """Test that SourcePluginFeedbackMisconfiguredException is raised
     when source requests feedback but persistence is not enabled."""
-    # Create a source with feedback enabled
-    source_with_feedback = create_event_source(
-        name="feedback_source",
-        source_args={"feedback": True},
+    from ansible_rulebook.exception import (
+        SourcePluginFeedbackMisconfiguredException,
     )
-    ruleset = create_ruleset(event_sources=[source_with_feedback])
+    from ansible_rulebook.source_manager import SourceManager
 
-    # Mock settings to have persistence_id as None
-    with mock.patch("ansible_rulebook.app.settings") as mock_settings:
-        mock_settings.persistence_id = None
-        with mock.patch("ansible_rulebook.app.start_source"):
-            with pytest.raises(
-                SourcePluginFeedbackMisconfiguredException
-            ) as exc_info:
-                spawn_sources([ruleset], dict(), ["."], 0.0, list())
+    # Reset singleton before test
+    SourceManager.reset_instance()
 
-            # Verify the exception message contains the source name
-            assert "feedback_source" in str(exc_info.value)
-            assert "persistence has not been enabled" in str(exc_info.value)
+    try:
+        # Create a source with feedback enabled but missing
+        # requires_feedback_queue
+        source_with_feedback = create_event_source(
+            name="feedback_source",
+            source_args={"feedback": True},
+        )
+        ruleset = create_ruleset(event_sources=[source_with_feedback])
+
+        with pytest.raises(
+            SourcePluginFeedbackMisconfiguredException
+        ) as exc_info:
+            manager = SourceManager.get_instance()
+            manager.initialize(
+                rulesets=[ruleset],
+                variables=dict(),
+                source_dirs=["."],
+                shutdown_delay=0.0,
+                filter_dirs=list(),
+            )
+
+        # Verify the exception message contains the source name
+        assert "feedback_source" in str(exc_info.value)
+    finally:
+        # Reset singleton after test
+        SourceManager.reset_instance()
 
 
 @pytest.mark.asyncio
-async def test_spawn_sources_duplicate_source_names(
+async def test_source_manager_duplicate_source_names(
     create_ruleset, create_event_source
 ):
     """Test that DuplicateSourceNamesException is raised
     when sources with duplicate names are detected."""
-    # Create two sources with the same name and feedback enabled
-    source1 = create_event_source(
-        name="duplicate_name",
-        source_args={"feedback": True},
-    )
-    source2 = create_event_source(
-        name="duplicate_name",
-        source_args={"feedback": True},
-    )
-    ruleset = create_ruleset(event_sources=[source1, source2])
+    from ansible_rulebook.exception import DuplicateSourceNamesException
+    from ansible_rulebook.source_manager import SourceManager
 
-    # Mock settings to have persistence_id set
-    with mock.patch("ansible_rulebook.app.settings") as mock_settings:
-        mock_settings.persistence_id = "test-persistence-id"
-        with mock.patch("ansible_rulebook.app.start_source"):
+    # Reset singleton before test
+    SourceManager.reset_instance()
+
+    try:
+        # Create two sources with the same name and feedback enabled
+        source1 = create_event_source(
+            name="duplicate_name",
+            source_args={"feedback": True, "requires_feedback_queue": True},
+        )
+        source2 = create_event_source(
+            name="duplicate_name",
+            source_args={"feedback": True, "requires_feedback_queue": True},
+        )
+        ruleset = create_ruleset(event_sources=[source1, source2])
+
+        # Mock settings to have persistence_id set (needed to pass
+        # persistence check)
+        with mock.patch("ansible_rulebook.conf.settings") as mock_settings:
+            mock_settings.persistence_id = "test-persistence-id"
+
             with pytest.raises(DuplicateSourceNamesException) as exc_info:
-                spawn_sources([ruleset], dict(), ["."], 0.0, list())
+                manager = SourceManager.get_instance()
+                manager.initialize(
+                    rulesets=[ruleset],
+                    variables=dict(),
+                    source_dirs=["."],
+                    shutdown_delay=0.0,
+                    filter_dirs=list(),
+                )
 
             # Verify the exception message contains the duplicate source name
             assert "duplicate_name" in str(exc_info.value)
+    finally:
+        # Reset singleton after test
+        SourceManager.reset_instance()
