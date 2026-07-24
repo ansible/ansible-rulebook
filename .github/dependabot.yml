@@ -7,3 +7,6 @@ updates:
       - "/.github/actions/*/"
     schedule:
       interval: weekly
+    groups:
+      github-actions:
+        group-by: dependency-name
