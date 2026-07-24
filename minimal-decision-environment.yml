@@ -17,7 +17,7 @@ dependencies:
   python:
     - ansible-rulebook
   ansible_core:
-    package_pip: ansible-core~=2.16.0
+    package_pip: ansible-core~=2.20.7
   ansible_runner:
     package_pip: ansible-runner
   system:

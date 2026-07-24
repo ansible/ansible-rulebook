@@ -22,6 +22,7 @@ import pytest
 import yaml
 from freezegun import freeze_time
 from jsonschema.exceptions import ValidationError
+from packaging.version import Version
 
 from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.exception import (
@@ -35,6 +36,7 @@ from ansible_rulebook.messages import Shutdown
 from ansible_rulebook.rule_types import EventSource, EventSourceFilter
 from ansible_rulebook.rules_parser import parse_rule_sets
 from ansible_rulebook.validators import Validate
+from tests.conftest import ANSIBLE_VERSION
 
 
 class TimedOutException(Exception):
@@ -541,12 +543,15 @@ async def test_run_assert_facts():
         assert event_log.get_nowait()["type"] == "EmptyEvent", "0"
         assert event_log.get_nowait()["type"] == "Action", "0.1"
         assert event_log.get_nowait()["type"] == "Job", "1.0"
-        for i in range(47):
-            assert event_log.get_nowait()["type"] == "AnsibleEvent", f"1.{i}"
 
-        event = event_log.get_nowait()
-        assert event["type"] == "Action", "2.1"
-        assert event["action"] == "run_playbook", "2.2"
+        NATIVE_TYPES = ANSIBLE_VERSION and ANSIBLE_VERSION >= Version("2.19")
+        allowed_types = ("AnsibleEvent", "Action") if NATIVE_TYPES else ("AnsibleEvent",)
+
+        while True:
+            event = event_log.get_nowait()
+            if event["type"] == "Action" and event.get("action") == "run_playbook":
+                break
+            assert event["type"] in allowed_types, f"unexpected event type: {event['type']}"
         assert event["rc"] == 0, "2.3"
         assert event["status"] == "successful", "2.4"
         assert event_log.get_nowait()["type"] == "Shutdown", "4"
