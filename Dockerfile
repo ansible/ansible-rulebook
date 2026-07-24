@@ -106,6 +106,7 @@ RUN microdnf update --setopt=install_weak_deps=0 -y && \
 # support random uid number and gid 0 for openshift
 RUN useradd --uid "$USER_ID" --gid 0 --create-home --key HOME_MODE=0770 --home-dir /app appuser && \
     chmod -R g+w /app
+ENV HOME=/app
 
 # Copy all the artifacts from the build phase
 COPY --from=builder /output /tmp/output
