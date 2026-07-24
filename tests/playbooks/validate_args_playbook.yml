@@ -18,3 +18,9 @@
     - name: Compare value
       ansible.builtin.include_tasks: compare_value.yml
       loop: "{{ my_vars | dict2items }}"
+      when: ansible_version.full is version('2.19', '<')
+
+    - name: Compare value ansible-core 2.20+
+      ansible.builtin.include_tasks: compare_value_core_220.yml
+      loop: "{{ my_vars | dict2items }}"
+      when: ansible_version.full is version('2.19', '>')
