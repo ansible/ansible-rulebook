@@ -4,7 +4,10 @@
 ### Changed
 ### Added
 - New jinja filters in actions: `bool`
+- Add backoff/retry logic in `run_job_template` and `run_workflow_template` actions
 ### Fixed
+### Removed
+- Removed the `pg_notify` action
 
 ## [1.3.0]
 ### Changed
