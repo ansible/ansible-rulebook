@@ -1,8 +1,11 @@
 import inspect
+import re
+import subprocess
 from unittest.mock import Mock
 
 import aiohttp
 import pytest
+from packaging.version import Version
 
 from ansible_rulebook.condition_types import Condition as Conditions
 from ansible_rulebook.rule_types import (
@@ -114,3 +117,13 @@ def create_ruleset(create_event_source, create_rule, **kwargs):
         )
 
     return _ruleset
+
+
+@pytest.fixture(scope="session")
+def ansible_core_version():
+    output = subprocess.check_output(
+        ["ansible-playbook", "--version"], text=True
+    )
+    match = re.search(r"ansible-playbook\s+(?:\[core\s+)?([0-9.]+)", output)
+    assert match, f"Could not parse ansible-core version from: {output}"
+    return Version(match.group(1))
