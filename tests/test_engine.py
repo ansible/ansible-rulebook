@@ -22,6 +22,7 @@ import pytest
 import yaml
 from freezegun import freeze_time
 from jsonschema.exceptions import ValidationError
+from packaging.version import Version
 
 from ansible_rulebook.engine import run_rulesets, start_source
 from ansible_rulebook.exception import (
@@ -519,7 +520,7 @@ async def test_run_rulesets_on_hosts():
 
 
 @pytest.mark.asyncio
-async def test_run_assert_facts():
+async def test_run_assert_facts(ansible_core_version):
     ruleset_queues, event_log = load_rulebook("rules/test_set_facts.yml")
     inventory = dict(
         all=dict(hosts=dict(localhost=dict(ansible_connection="local")))
@@ -541,12 +542,21 @@ async def test_run_assert_facts():
         assert event_log.get_nowait()["type"] == "EmptyEvent", "0"
         assert event_log.get_nowait()["type"] == "Action", "0.1"
         assert event_log.get_nowait()["type"] == "Job", "1.0"
-        for i in range(47):
-            assert event_log.get_nowait()["type"] == "AnsibleEvent", f"1.{i}"
 
-        event = event_log.get_nowait()
-        assert event["type"] == "Action", "2.1"
-        assert event["action"] == "run_playbook", "2.2"
+        native_types = ansible_core_version >= Version("2.19")
+        allowed_types = (
+            ("AnsibleEvent", "Action") if native_types else ("AnsibleEvent",)
+        )
+        while True:
+            event = event_log.get_nowait()
+            if (
+                event["type"] == "Action"
+                and event.get("action") == "run_playbook"
+            ):
+                break
+            assert (
+                event["type"] in allowed_types
+            ), f"unexpected event type: {event['type']}"
         assert event["rc"] == 0, "2.3"
         assert event["status"] == "successful", "2.4"
         assert event_log.get_nowait()["type"] == "Shutdown", "4"

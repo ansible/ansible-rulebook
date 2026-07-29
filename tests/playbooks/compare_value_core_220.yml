@@ -1,0 +1,9 @@
+---
+- name: Retrieve expected value
+  ansible.builtin.set_fact:
+    expected_value: "{{ vars_json | from_json | community.general.json_query(item.key) }}"
+
+- name: Fail the task if mismatch
+  ansible.builtin.fail:
+    msg: "{{ item.key }} mismatch {{ expected_value }} != {{ item.value }}"
+  when: expected_value != item.value
