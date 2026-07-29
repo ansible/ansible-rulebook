@@ -46,6 +46,8 @@ psycopg
 psycopg-c
 watchdog>=5.0.0
 xxhash
+azure-eventhub-checkpointstoreblob-aio
+azure-identity
 EOF
 
 # Build the wheels for the collection
