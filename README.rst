@@ -63,6 +63,7 @@ Features
 * Store facts about the world from data in events
 * Limit the hosts where playbooks run based on event data
 * Run smaller jobs that run more quickly by limiting the hosts where playbooks run based on event data
+* Validate rulebook syntax and structure before execution
 
 
 ===============
