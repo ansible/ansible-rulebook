@@ -7,9 +7,13 @@ import hmac
 import json
 import logging
 import ssl
+import time
 import typing
+from dataclasses import dataclass, field
 from typing import Any
 
+import aiohttp
+import jwt
 from aiohttp import web
 
 DOCUMENTATION = r"""
@@ -83,6 +87,28 @@ options:
     type: str
     default: "hex"
     choices: ["hex", "base64"]
+  oauth_introspection_url:
+    description:
+      - The token introspection endpoint (RFC 7662) for validating
+        OAuth2 access tokens using the client credentials grant type.
+    type: str
+  oauth_client_id:
+    description:
+      - The client id for the OAuth2 client credentials grant type.
+    type: str
+  oauth_client_secret:
+    description:
+      - The client secret for the OAuth2 client credentials grant type.
+    type: str
+  oauth_jwks_url:
+    description:
+      - The JWKS endpoint (RFC 9068, RFC 7517) for validating
+        OAuth2 JWT access tokens using local signature verification.
+    type: str
+  oauth_audience:
+    description:
+      - The audience for OAuth2 JWT, if present the audience will be checked
+    type: str
 """
 
 EXAMPLES = r"""
@@ -93,7 +119,23 @@ EXAMPLES = r"""
     hmac_algo: "sha256"
     hmac_header: "x-hub-signature-256"
     hmac_format: "base64"
+- eda.builtin.webhook:
+    port: 6666
+    host: 0.0.0.0
+    oauth_introspection_url: https://your_oauth_server/
+    oauth_client_id: my_client_id
+    oauth_client_secret: "secret"
+- eda.builtin.webhook:
+    port: 6666
+    host: 0.0.0.0
+    oauth_jwks_url: https://your_oauth_server/
+    oauth_audience: "my_audience"
 """
+
+
+class AuthenticationFailed(Exception):
+    pass
+
 
 if typing.TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -105,9 +147,151 @@ routes = web.RouteTableDef()
 queue_key = web.AppKey("queue", asyncio.Queue[Any])
 token_key = web.AppKey("token", str)
 hmac_secret_key = web.AppKey("hmac_secret", bytes)
+oauth_instance_key = web.AppKey("oauth_instance", Any)
 hmac_algo_key = web.AppKey("hmac_algo", str)
 hmac_header_key = web.AppKey("hmac_header", str)
 hmac_format_key = web.AppKey("hmac_format", str)
+
+
+JWKS_CACHE_TTL = 300
+JWKS_MIN_REFRESH_INTERVAL = 5
+
+
+@dataclass
+class Oauth2JwtAuthentication:
+    """OAuth2 JWT Authentication."""
+
+    jwks_url: str
+    audience: typing.Optional[str]
+    _jwks_cache: dict | None = field(default=None, repr=False)
+    _jwks_cache_time: float = field(default=0.0, repr=False)
+    _jwks_lock: asyncio.Lock = field(default_factory=asyncio.Lock, repr=False)
+
+    def _cache_expired(self) -> bool:
+        return (
+            self._jwks_cache is None
+            or (time.monotonic() - self._jwks_cache_time) >= JWKS_CACHE_TTL
+        )
+
+    async def _get_signing_key_async(self, kid: str):
+        if self._cache_expired():
+            await self._locked_refresh()
+
+        key = self._find_key(kid)
+        if key is not None:
+            return key
+
+        await self._locked_refresh()
+        key = self._find_key(kid)
+        if key is not None:
+            return key
+
+        raise AuthenticationFailed(f"Unable to find key with kid: {kid}")
+
+    def _find_key(self, kid: str):
+        for key_data in (self._jwks_cache or {}).get("keys", []):
+            if key_data.get("kid") == kid:
+                return jwt.PyJWK.from_dict(key_data).key
+        return None
+
+    async def _locked_refresh(self):
+        async with self._jwks_lock:
+            if (
+                not self._cache_expired()
+                and (time.monotonic() - self._jwks_cache_time)
+                < JWKS_MIN_REFRESH_INTERVAL
+            ):
+                return
+            await self._refresh_jwks()
+
+    async def _refresh_jwks(self):
+        timeout = aiohttp.ClientTimeout(total=10)
+        try:
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(self.jwks_url) as response:
+                    response.raise_for_status()
+                    self._jwks_cache = await response.json()
+                    self._jwks_cache_time = time.monotonic()
+        except aiohttp.ClientResponseError as err:
+            logger.error(
+                "JWKS fetch HTTP error %s: %s", err.status, err.message
+            )
+            raise AuthenticationFailed(err.message) from err
+        except aiohttp.ClientError as err:
+            logger.error("JWKS fetch failed: %s", err)
+            raise AuthenticationFailed(str(err)) from err
+
+    async def authenticate(self, token: str):
+        """Handle OAuth2 JWT authentication."""
+        try:
+            header = jwt.get_unverified_header(token)
+            kid = header.get("kid")
+            if not kid:
+                raise AuthenticationFailed("JWT header missing kid")
+
+            signing_key = await self._get_signing_key_async(kid)
+
+            options = {
+                "verify_signature": True,
+                "verify_exp": True,
+                "verify_nbf": True,
+                "verify_iat": True,
+                "verify_aud": bool(self.audience),
+            }
+
+            jwt.decode(
+                token,
+                signing_key,
+                algorithms=["RS256"],
+                audience=self.audience,
+                options=options,
+            )
+        except AuthenticationFailed:
+            raise
+        except jwt.exceptions.PyJWTError as err:
+            message = f"JWT error: {err}"
+            logger.warning(message)
+            raise AuthenticationFailed(message) from err
+
+
+@dataclass
+class Oauth2Authentication:
+    """OAuth2 Authentication."""
+
+    introspection_url: str
+    client_id: str
+    client_secret: str
+
+    async def authenticate(self, token: str):
+        """Handle OAuth2 authentication."""
+        data = {
+            "token": token,
+            "token_type_hint": "access_token",
+        }
+        credentials = base64.b64encode(
+            (self.client_id + ":" + self.client_secret).encode()
+        ).decode()
+        timeout = aiohttp.ClientTimeout(total=120)
+        headers = {"Authorization": f"Basic {credentials}"}
+        async with aiohttp.ClientSession(
+            headers=headers, timeout=timeout
+        ) as session:
+            try:
+                async with session.post(
+                    self.introspection_url, data=data
+                ) as response:
+                    response.raise_for_status()
+                    response_data = await response.json()
+                    if not response_data.get("active", False):
+                        message = "User is not active"
+                        logger.warning(message)
+                        raise AuthenticationFailed(message)
+            except aiohttp.ClientResponseError as err:
+                logger.error(f"HTTP Error {err.status}: {err.message}")
+                raise AuthenticationFailed(err.message)
+            except aiohttp.ClientError as err:
+                logger.error(f"Network Failure {err}")
+                raise AuthenticationFailed(str(err))
 
 
 @routes.post(r"/{endpoint:.*}")
@@ -206,6 +390,28 @@ async def hmac_verify(
     return await handler(request)
 
 
+@web.middleware
+async def verify_oauth(
+    request: web.Request,
+    handler: Callable[[web.Request], Awaitable[web.StreamResponse]],
+) -> web.StreamResponse:
+    """Verify event's OAuth signature."""
+
+    if "Authorization" not in request.headers:
+        raise web.HTTPUnauthorized()
+
+    parts = request.headers["Authorization"].strip().split(None, 1)
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        raise web.HTTPUnauthorized()
+
+    try:
+        await request.app[oauth_instance_key].authenticate(parts[1])
+    except AuthenticationFailed:
+        raise web.HTTPUnauthorized() from None
+
+    return await handler(request)
+
+
 def _get_ssl_context(args: dict[str, Any]) -> ssl.SSLContext | None:
     context = None
     if "certfile" in args:
@@ -250,6 +456,37 @@ async def main(queue: asyncio.Queue[Any], args: dict[str, Any]) -> None:
         middlewares.append(bearer_auth)
         app_attrs["token"] = args["token"]
 
+    if args.get("oauth_introspection_url") and args.get("oauth_jwks_url"):
+        raise ValueError(
+            "oauth_introspection_url and oauth_jwks_url are mutually "
+            "exclusive; configure only one OAuth2 mode"
+        )
+
+    if args.get("oauth_introspection_url"):
+        middlewares.append(verify_oauth)
+        missing = [
+            name
+            for name in ("oauth_client_id", "oauth_client_secret")
+            if not args.get(name)
+        ]
+        if missing:
+            raise ValueError(
+                "Unsupported OAuth2 configuration missing "
+                + " and ".join(missing)
+            )
+        app_attrs["oauth_instance"] = Oauth2Authentication(
+            introspection_url=args["oauth_introspection_url"],
+            client_id=args["oauth_client_id"],
+            client_secret=args["oauth_client_secret"],
+        )
+
+    elif args.get("oauth_jwks_url"):
+        middlewares.append(verify_oauth)
+        app_attrs["oauth_instance"] = Oauth2JwtAuthentication(
+            jwks_url=args["oauth_jwks_url"],
+            audience=args.get("oauth_audience"),
+        )
+
     if "hmac_secret" in args:
         middlewares.append(hmac_verify)
 
@@ -279,6 +516,8 @@ async def main(queue: asyncio.Queue[Any], args: dict[str, Any]) -> None:
         app[hmac_header_key] = app_attrs["hmac_header"]
     if "hmac_format" in app_attrs:
         app[hmac_format_key] = app_attrs["hmac_format"]
+    if "oauth_instance" in app_attrs:
+        app[oauth_instance_key] = app_attrs["oauth_instance"]
 
     app[queue_key] = queue
 
