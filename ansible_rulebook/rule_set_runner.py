@@ -126,15 +126,15 @@ class RuleSetRunner:
         tasks = []
         try:
             prime_facts(self.name, self.hosts_facts)
-            task_name = (
-                f"action_plan_task:: {self.ruleset_queue_plan.ruleset.name}"
+            task_name = "action_plan_task:: " + (
+                f"{self.ruleset_queue_plan.ruleset.name}"
             )
             self.action_loop_task = asyncio.create_task(
                 self._drain_actionplan_queue(), name=task_name
             )
             tasks.append(self.action_loop_task)
-            task_name = (
-                f"source_reader_task:: {self.ruleset_queue_plan.ruleset.name}"
+            task_name = "source_reader_task:: " + (
+                f"{self.ruleset_queue_plan.ruleset.name}"
             )
             self.source_loop_task = asyncio.create_task(
                 self._drain_source_queue(), name=task_name
@@ -189,10 +189,17 @@ class RuleSetRunner:
                     kind=self.shutdown.kind,
                 )
             )
-        stats = lang.end_session(self.name)
-        if self.parsed_args and self.parsed_args.heartbeat > 0:
-            await send_session_stats(self.event_log, stats)
-        logger.info(pformat(stats))
+        try:
+            stats = lang.end_session(self.name)
+        except Exception as e:
+            # Session may already be disposed if async channel was shut down
+            logger.debug("Could not end session %s: %s", self.name, e)
+            stats = None
+
+        if stats:
+            if self.parsed_args and self.parsed_args.heartbeat > 0:
+                await send_session_stats(self.event_log, stats)
+            logger.info(pformat(stats))
 
     async def _handle_shutdown(self):
         logger.info(
@@ -425,9 +432,12 @@ class RuleSetRunner:
         last_action: bool = True,
     ) -> asyncio.Task:
         task_name = (
-            f"action::{action.action}::"
-            f"{self.ruleset_queue_plan.ruleset.name}::"
-            f"{action_item.rule}"
+            "action:: "
+            + f"{action.action}"
+            + ":: "
+            + f"{self.ruleset_queue_plan.ruleset.name}"
+            + ":: "
+            + f"{action_item.rule}"
         )
         logger.debug("Creating action task %s", task_name)
         persistent_info = None
