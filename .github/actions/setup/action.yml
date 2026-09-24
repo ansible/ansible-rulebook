@@ -31,3 +31,7 @@ runs:
     - name: Install `ansible.eda` collection
       shell: bash
       run: ansible-galaxy collection install git+https://github.com/ansible/event-driven-ansible
+
+    - name: Install `community.general` collection
+      shell: bash
+      run: ansible-galaxy collection install community.general
