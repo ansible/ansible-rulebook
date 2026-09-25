@@ -92,6 +92,7 @@ The `ansible-rulebook` CLI supports the following options:
                             Maximum backlog of reporting objects to flush to EDA Server. Default is 50. Can also be passed via env var EDA_MAX_REPORTING_QUEUE_SIZE
     --max-batch-job-polling-size MAX_BATCH_JOB_POLLING_SIZE
                             Maximum number of jobs per batch polling request to the controller. Default is 25. Can also be passed via env var EDA_MAX_BATCH_JOB_POLLING_SIZE
+    --syntax-check          Perform a syntax check on the rulebook, but do not execute it
 
 To get help from `ansible-rulebook` run the following:
 
@@ -104,6 +105,55 @@ To check the version of `ansible-rulebook` run the following:
 .. code-block:: console
 
     ansible-rulebook --version
+
+Validating Rulebooks
+====================
+
+Before executing a rulebook, you can validate its syntax using the `--syntax-check` option. This performs comprehensive validation without executing the rulebook or spawning event sources.
+
+.. code-block:: console
+
+    ansible-rulebook --rulebook rules.yml --syntax-check
+
+The syntax check validates:
+
+- **YAML syntax**: Ensures the file is valid YAML
+- **Rulebook structure**: Validates against the rulebook schema (required fields like name, hosts, sources, rules)
+- **Variable substitution**: Processes variable files and environment variables
+- **Action definitions**: Validates action syntax and required parameters
+- **Vault-encrypted variables**: Decrypts and validates vault-encrypted variables if present
+
+If validation succeeds, you will see:
+
+.. code-block:: console
+
+    No issues encountered
+
+If validation fails, an error message will describe the specific problem.
+
+.. note::
+    The `--syntax-check` option is not compatible with `--worker` mode. It requires the `--rulebook` option to be specified.
+
+You can combine syntax check with variable files:
+
+.. code-block:: console
+
+    ansible-rulebook --rulebook rules.yml --vars vars.yml --syntax-check
+
+Or with environment variables:
+
+.. code-block:: console
+
+    ansible-rulebook --rulebook rules.yml --env-vars MY_VAR,ANOTHER_VAR --syntax-check
+
+For rulebooks that use vault-encrypted variables:
+
+.. code-block:: console
+
+    ansible-rulebook --rulebook rules.yml --vault-password-file vault-pass.txt --syntax-check
+
+Running Rulebooks
+=================
 
 The normal method for running `ansible-rulebook` is the following:
 
