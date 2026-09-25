@@ -19,7 +19,7 @@ import os
 import sys
 import traceback
 from asyncio.exceptions import CancelledError
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import yaml
 
@@ -31,9 +31,10 @@ from ansible_rulebook.collection import (
 )
 from ansible_rulebook.common import StartupArgs
 from ansible_rulebook.conf import DEFAULT_MAX_CONCURRENT_ACTIONS, settings
-from ansible_rulebook.engine import run_rulesets, start_source
+from ansible_rulebook.engine import run_rulesets
 from ansible_rulebook.job_template_runner import job_template_runner
-from ansible_rulebook.rule_types import EventSource, RuleSet, RuleSetQueue
+from ansible_rulebook.rule_types import RuleSet
+from ansible_rulebook.source_manager import SourceManager
 from ansible_rulebook.util import (
     decryptable,
     decrypted_context,
@@ -51,12 +52,10 @@ from ansible_rulebook.websocket import (
 
 from .exception import (
     ControllerNeededException,
-    DuplicateSourceNamesException,
     InvalidUrlException,
     InventoryNeededException,
     InventoryNotFound,
     RulebookNotFoundException,
-    SourcePluginFeedbackMisconfiguredException,
     WebSocketExchangeException,
 )
 
@@ -153,33 +152,51 @@ async def run(parsed_args: argparse.Namespace) -> None:
     else:
         event_log = NullQueue()
 
-    logger.info("Starting sources")
-    tasks, ruleset_queues = spawn_sources(
-        startup_args.rulesets,
-        startup_args.variables,
-        [parsed_args.source_dir],
-        parsed_args.shutdown_delay,
-        [parsed_args.filter_dir],
+    # Use SourceManager for unified source lifecycle management
+    source_manager = SourceManager.get_instance()
+
+    # Phase 1: Initialize (creates queues, prepares infrastructure)
+    logger.info("Initializing sources and queues")
+    ruleset_queues = source_manager.initialize(
+        rulesets=startup_args.rulesets,
+        variables=startup_args.variables,
+        source_dirs=[parsed_args.source_dir],
+        shutdown_delay=parsed_args.shutdown_delay,
+        filter_dirs=[parsed_args.filter_dir],
+        event_log=event_log,
     )
 
+    # Start rulesets as background task
+    # (SourceManager will wait for them to be ready)
     logger.info("Starting rules")
+    ruleset_task = asyncio.create_task(
+        run_rulesets(
+            event_log,
+            ruleset_queues,
+            startup_args.variables,
+            startup_args.inventory,
+            parsed_args,
+            startup_args.project_data_file,
+            file_monitor,
+        ),
+        name="rulesets",
+    )
 
+    # Setup feedback task if websocket is configured
     feedback_task = None
     if parsed_args.websocket_url:
         feedback_task = asyncio.create_task(
-            send_event_log_to_websocket(event_log=event_log)
+            send_event_log_to_websocket(event_log=event_log),
+            name="feedback_task",
         )
-        tasks.append(feedback_task)
 
-    should_reload = await run_rulesets(
-        event_log,
-        ruleset_queues,
-        startup_args.variables,
-        startup_args.inventory,
-        parsed_args,
-        startup_args.project_data_file,
-        file_monitor,
-    )
+    # Phase 2: Start sources
+    # Waits for rulesets to be ready, then starts all sources
+    logger.info("Starting sources")
+    tasks = await source_manager.start_sources()
+
+    # Wait for rulesets to complete
+    should_reload = await ruleset_task
 
     if feedback_task:
         try:
@@ -198,10 +215,14 @@ async def run(parsed_args: argparse.Namespace) -> None:
     else:
         await event_log.put({"type": "Exit"})
 
-    logger.info("Cancelling event source tasks")
-    for task in tasks:
-        task.cancel()
+    # Stop sources gracefully (cancels tasks, no broadcast needed as
+    # rulesets handled shutdown)
+    logger.info("Stopping sources")
+    await source_manager.stop_sources(
+        "Rulebook execution completed", broadcast=False
+    )
 
+    # Gather task results (tasks already cancelled in stop_sources)
     error_found = False
     results = await asyncio.gather(*tasks, return_exceptions=True)
     for result in results:
@@ -213,12 +234,21 @@ async def run(parsed_args: argparse.Namespace) -> None:
             )
             error_found = True
 
+    # Cleanup SourceManager
+    await source_manager.cleanup()
+
     logger.info("Main complete")
     await job_template_runner.close_session()
     if error_found:
         raise Exception("One of the source plugins failed")
     elif should_reload is True:
         logger.critical("HOT-RELOAD! rules file changed, now restarting")
+        # Shutdown Drools before hot reload to clean up executors
+        from drools.ruleset import shutdown as drools_shutdown
+
+        drools_shutdown()
+        # Reset singleton before hot reload to ensure fresh state
+        SourceManager.reset_instance()
         await run(parsed_args)
 
 
@@ -283,67 +313,6 @@ def load_rulebook(
         )
 
     return rulesets
-
-
-def spawn_sources(
-    rulesets: List[RuleSet],
-    variables: Dict[str, Any],
-    source_dirs: List[str],
-    shutdown_delay: float,
-    filter_dirs: List[str],
-) -> Tuple[List[asyncio.Task], List[RuleSetQueue]]:
-    tasks = []
-    ruleset_queues = []
-    for ruleset in rulesets:
-        source_queue = asyncio.Queue(1)
-        source_feedback_queues = {}
-        source_names = []
-        for source in ruleset.sources:
-            feedback_queue = _get_feedback_queue(
-                source, source_names, source_feedback_queues
-            )
-            if feedback_queue:
-                source_feedback_queues[source.name] = feedback_queue
-
-            source_names.append(source.name)
-            task = asyncio.create_task(
-                start_source(
-                    source,
-                    source_dirs,
-                    variables,
-                    source_queue,
-                    shutdown_delay,
-                    filter_dirs,
-                    feedback_queue,
-                )
-            )
-            tasks.append(task)
-        ruleset_queues.append(
-            RuleSetQueue(ruleset, source_queue, source_feedback_queues)
-        )
-    return tasks, ruleset_queues
-
-
-def _get_feedback_queue(
-    source: EventSource,
-    source_names: List[str],
-    source_feedback_queues: Dict[str, asyncio.Queue],
-) -> Optional[asyncio.Queue]:
-    if not source.source_args:
-        return None
-
-    if not source.source_args.get("feedback", False):
-        return None
-
-    if settings.persistence_id is None:
-        raise SourcePluginFeedbackMisconfiguredException(
-            source_name=source.name
-        )
-
-    if source.name in source_feedback_queues or source.name in source_names:
-        raise DuplicateSourceNamesException(source_name=source.name)
-
-    return asyncio.Queue(1)
 
 
 def validate_variables(startup_args: StartupArgs) -> None:
