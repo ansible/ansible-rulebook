@@ -6,6 +6,13 @@
 ### Added
 ### Fixed
 
+## [1.2.3]
+### Changed
+### Added
+### Fixed
+- `ansible-vault` is invoked in a different way, fixing the decryption of e.g. JWT tokens
+### Removed
+
 ## [1.2.2]
 ### Changed
 ### Added
