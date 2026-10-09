@@ -340,3 +340,69 @@ class TestParseVaultPasswords:
 
         # Should return early without error
         parse_vault_passwords(args)
+
+
+class TestSyntaxCheckArgument:
+    """Tests for --syntax-check CLI argument."""
+
+    def test_syntax_check_argument_parsing(self):
+        """Test that --syntax-check flag is parsed correctly."""
+        from ansible_rulebook.cli import get_parser
+
+        parser = get_parser()
+        args = parser.parse_args(["--rulebook", "test.yml", "--syntax-check"])
+        assert args.syntax_check is True
+
+    def test_syntax_check_default_false(self):
+        """Test that syntax_check defaults to False."""
+        from ansible_rulebook.cli import get_parser
+
+        parser = get_parser()
+        args = parser.parse_args(["--rulebook", "test.yml"])
+        assert args.syntax_check is False
+
+    def test_syntax_check_requires_rulebook(self):
+        """Test that --syntax-check requires --rulebook argument."""
+        from ansible_rulebook.cli import validate_args
+        from argparse import Namespace
+
+        args = Namespace(
+            worker=False,
+            rulebook=None,
+            syntax_check=True,
+        )
+        with pytest.raises(ValueError) as exc_info:
+            validate_args(args)
+        # Either validation message is acceptable
+        assert "rulebook" in str(exc_info.value).lower()
+
+    def test_syntax_check_incompatible_with_worker(self):
+        """Test that --syntax-check cannot be used with --worker."""
+        from ansible_rulebook.cli import validate_args
+        from argparse import Namespace
+
+        args = Namespace(
+            worker=True,
+            rulebook="test.yml",
+            syntax_check=True,
+            id="123",
+            websocket_url="ws://example.com",
+        )
+        with pytest.raises(ValueError) as exc_info:
+            validate_args(args)
+        assert "--syntax-check is not compatible with --worker" in str(
+            exc_info.value
+        )
+
+    def test_syntax_check_with_valid_rulebook(self):
+        """Test that syntax-check works with valid rulebook."""
+        from ansible_rulebook.cli import validate_args
+        from argparse import Namespace
+
+        args = Namespace(
+            worker=False,
+            rulebook="test.yml",
+            syntax_check=True,
+        )
+        # Should not raise any exception
+        validate_args(args)

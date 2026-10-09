@@ -324,6 +324,13 @@ def get_parser() -> argparse.ArgumentParser:
         default=os.environ.get("EDA_MAX_BATCH_JOB_POLLING_SIZE", "25"),
         type=int,
     )
+    parser.add_argument(
+        "--syntax-check",
+        dest="syntax_check",
+        action="store_true",
+        default=False,
+        help="Perform a syntax check on the rulebook, but do not execute it",
+    )
 
     return parser
 
@@ -333,6 +340,10 @@ def validate_args(args: argparse.Namespace) -> None:
         raise ValueError("Worker mode needs an id and websocket url specfied")
     if not args.worker and not args.rulebook:
         raise ValueError("Rulebook must be specified in non worker mode")
+    if args.syntax_check and args.worker:
+        raise ValueError("--syntax-check is not compatible with --worker mode")
+    if args.syntax_check and not args.rulebook:
+        raise ValueError("--syntax-check requires --rulebook to be specified")
 
 
 def setup_logging_and_display(args: argparse.Namespace) -> None:
