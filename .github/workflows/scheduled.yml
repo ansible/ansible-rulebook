@@ -38,7 +38,7 @@ jobs:
           persist-credentials: false
 
       - name: black
-        uses: psf/black@4f1883b1f15305a0e83a7c87991f46292bf09f85 # stable
+        uses: psf/black@258e7dbf348bc23cb70b8cdf693481c04634ebcc # stable
         with:
           version: "22.12.0"
 
