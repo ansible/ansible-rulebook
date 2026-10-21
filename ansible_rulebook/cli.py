@@ -208,6 +208,38 @@ def get_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--ao-url",
+        help="Automation Orchestrator API base url, e.g. https://ao-host:8080, "
+        "can also be passed via the env var EDA_AO_URL",
+        default=os.environ.get("EDA_AO_URL", ""),
+    )
+    parser.add_argument(
+        "--ao-token",
+        help="Automation Orchestrator API authentication token, can also be "
+        "passed via env var EDA_AO_TOKEN",
+        default=os.environ.get("EDA_AO_TOKEN", ""),
+    )
+    parser.add_argument(
+        "--ao-username",
+        help="Automation Orchestrator username, can also be passed via env var "
+        "EDA_AO_USERNAME",
+        default=os.environ.get("EDA_AO_USERNAME", ""),
+    )
+    parser.add_argument(
+        "--ao-password",
+        help="Automation Orchestrator password, can also be passed via env var "
+        "EDA_AO_PASSWORD",
+        default=os.environ.get("EDA_AO_PASSWORD", ""),
+    )
+    parser.add_argument(
+        "--ao-ssl-verify",
+        help="How to verify SSL when connecting to Automation Orchestrator: "
+        "(yes|true) | (no|false) | <path to a CA bundle>, "
+        "default to yes for https connection, "
+        "can also be passed via env var EDA_AO_SSL_VERIFY",
+        default=os.environ.get("EDA_AO_SSL_VERIFY", "yes"),
+    )
+    parser.add_argument(
         "--controller-retry-attempts",
         type=int,
         help="Number of retry attempts for controller API calls "
