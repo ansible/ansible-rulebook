@@ -393,7 +393,7 @@ Example - Basic usage with AAP credential:
           ao_client_secret: "{{ ao_client_secret }}"
 
           # Workflow identification
-          webhook_path: "755d5f81-a574-4ea3-8461-1934cb4a5c51"
+          webhook_path: "abc123-def456-ghi789"
 
           # Data sent to workflow
           payload:
