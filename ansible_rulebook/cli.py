@@ -39,6 +39,9 @@ if not os.environ.get("JAVA_HOME"):
 
 from ansible_rulebook import app  # noqa: E402
 from ansible_rulebook import terminal  # noqa: E402
+from ansible_rulebook.ao_workflow_runner import (  # noqa: E402
+    ao_workflow_runner,
+)
 from ansible_rulebook.conf import settings  # noqa: E402
 from ansible_rulebook.job_template_runner import (  # noqa: E402
     job_template_runner,
@@ -230,6 +233,18 @@ def get_parser() -> argparse.ArgumentParser:
         help="Automation Orchestrator password, can also be passed via env var "
         "EDA_AO_PASSWORD",
         default=os.environ.get("EDA_AO_PASSWORD", ""),
+    )
+    parser.add_argument(
+        "--ao-client-id",
+        help="Automation Orchestrator OAuth2 client ID, can also be passed via "
+        "env var EDA_AO_CLIENT_ID",
+        default=os.environ.get("EDA_AO_CLIENT_ID", ""),
+    )
+    parser.add_argument(
+        "--ao-client-secret",
+        help="Automation Orchestrator OAuth2 client secret, can also be passed "
+        "via env var EDA_AO_CLIENT_SECRET",
+        default=os.environ.get("EDA_AO_CLIENT_SECRET", ""),
     )
     parser.add_argument(
         "--ao-ssl-verify",
@@ -524,6 +539,20 @@ def main(args: List[str] = None) -> int:
                 "controller_username and controller_password is required",
             )
             return 1
+
+    if args.ao_url:
+        ao_workflow_runner.host = args.ao_url
+        if args.ao_ssl_verify:
+            ao_workflow_runner.verify_ssl = args.ao_ssl_verify
+
+        if args.ao_token:
+            ao_workflow_runner.token = args.ao_token
+        elif args.ao_client_id and args.ao_client_secret:
+            ao_workflow_runner.client_id = args.ao_client_id
+            ao_workflow_runner.client_secret = args.ao_client_secret
+        elif args.ao_username and args.ao_password:
+            ao_workflow_runner.username = args.ao_username
+            ao_workflow_runner.password = args.ao_password
 
     try:
         asyncio.run(app.run(args))

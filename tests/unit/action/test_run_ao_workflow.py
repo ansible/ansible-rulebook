@@ -177,7 +177,9 @@ async def test_run_ao_workflow_workflow_name_lookup():
 
         # Verify workflow was triggered with resolved path
         mock_runner.trigger_workflow.assert_called_once()
-        assert mock_runner.trigger_workflow.call_args[0][0] == "ops/cert-renewal"
+        assert (
+            mock_runner.trigger_workflow.call_args[0][0] == "ops/cert-renewal"
+        )
 
     action_event = _validate_action_event(queue, success=True)
     assert action_event["workflow_name"] == "Certificate Renewal"
@@ -205,7 +207,9 @@ async def test_run_ao_workflow_no_path_or_name():
 
     action = RunAOWorkflow(metadata, control, **action_args)
 
-    with pytest.raises(ValueError, match="Either 'webhook_path' or 'workflow_name'"):
+    with pytest.raises(
+        ValueError, match="Either 'webhook_path' or 'workflow_name'"
+    ):
         await action()
 
 

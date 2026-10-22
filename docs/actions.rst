@@ -15,6 +15,7 @@ The following actions are supported:
 - `run_module`_
 - `run_job_template`_
 - `run_workflow_template`_
+- `run_ao_workflow`_
 - `set_fact`_
 - `post_event`_
 - `retract_fact`_
@@ -270,6 +271,220 @@ Run a workflow template.
    * - add_event_uuid_label
      - A boolean field, when set to true can leverage the event.meta.uuid field as a label, you can establish clear traceability between triggering events and their resulting jobs.
      - No
+
+run_ao_workflow
+***************
+
+Run an Automation Orchestrator (AO) workflow via webhook trigger.
+
+.. note::
+    This action requires authentication to Red Hat Automation Orchestrator. You can provide credentials via:
+
+    - AAP EDA credential of type "Red Hat Automation Orchestrator" (recommended)
+    - Environment variables (``EDA_AO_URL``, ``EDA_AO_CLIENT_ID``, ``EDA_AO_CLIENT_SECRET``, ``EDA_AO_SSL_VERIFY``)
+    - Direct action parameters (``ao_host``, ``ao_client_id``, ``ao_client_secret``, ``ao_verify_ssl``)
+
+.. note::
+    OAuth2 client_credentials authentication is required for AO service accounts. This action will obtain a fresh OAuth2 token for each workflow execution.
+
+.. note::
+    The workflow must have a webhook trigger enabled and published in Automation Orchestrator. Get the webhook UUID from the workflow's trigger configuration.
+
+.. list-table::
+   :widths: 25 150 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+     - Required
+   * - webhook_path
+     - | The webhook UUID from the AO workflow trigger configuration. This is the unique identifier
+       | found in the workflow's webhook trigger parameters. Either webhook_path or workflow_name is required.
+     - Conditional
+   * - workflow_name
+     - | The name of the workflow in AO. The action will look up the webhook path automatically.
+       | Either webhook_path or workflow_name is required. Using webhook_path is recommended for better performance.
+     - Conditional
+   * - project
+     - | When using workflow_name, optionally specify the project name to narrow the search.
+     - No
+   * - payload
+     - | Dictionary of data to send to the AO workflow. Can use Jinja2 templates to reference event data.
+       | The workflow receives this data as input parameters.
+     - No
+   * - ao_host
+     - | AO server URL (e.g., https://ao-host.example.com/). Can be provided via action parameter,
+       | AAP credential extra_vars as {{ ao_url }}, or EDA_AO_URL environment variable.
+     - Conditional
+   * - ao_client_id
+     - | OAuth2 client ID for AO service account authentication. Can be provided via action parameter,
+       | AAP credential extra_vars as {{ ao_client_id }}, or EDA_AO_CLIENT_ID environment variable.
+     - Conditional
+   * - ao_client_secret
+     - | OAuth2 client secret for AO service account authentication. Can be provided via action parameter,
+       | AAP credential extra_vars as {{ ao_client_secret }}, or EDA_AO_CLIENT_SECRET environment variable.
+     - Conditional
+   * - ao_verify_ssl
+     - | SSL certificate verification setting. Can be "yes" (verify with system CA), "no" (disable verification),
+       | or a path to a CA bundle file. Default is "yes". Can be provided via AAP credential or EDA_AO_SSL_VERIFY.
+     - No
+   * - timeout
+     - | Maximum time in seconds to wait for workflow execution to complete. Default is 600 (10 minutes).
+       | Set based on expected workflow duration.
+     - No
+   * - poll_interval
+     - | Seconds between status checks while waiting for workflow completion. Default is 5.
+       | Increase for long-running workflows to reduce API calls.
+     - No
+   * - post_facts
+     - | Boolean, post the workflow execution results as facts to the rule set. Default is true.
+       | Posted facts include execution_id, status, workflow_name, duration, and error details.
+     - No
+   * - post_events
+     - | Boolean, post the workflow execution results as events to the rule set. Default is false.
+     - No
+   * - ruleset
+     - | The name of the ruleset to post facts or events to. Default is current rule set.
+     - No
+   * - treat_errors_as_failure
+     - | Boolean, whether to treat completed_with_errors status as a failure. Default is true.
+       | Set to false to consider partial success as success.
+     - No
+
+**Posted Facts Structure:**
+
+When ``post_facts`` is enabled, the action posts the following fact structure:
+
+.. code-block:: python
+
+    {
+        "ao_execution_id": "uuid-of-execution",
+        "ao_workflow_name": "name-of-workflow",
+        "ao_status": "completed",  # or failed, cancelled, completed_with_errors
+        "ao_webhook_path": "webhook-uuid",
+        "ao_created_at": "2026-10-22T17:48:07.963156Z",
+        "ao_completed_at": "2026-10-22T17:48:08.312684Z",
+        "ao_duration_seconds": 0.349528,
+        "ao_error_details": {...}  # Only present if execution failed
+    }
+
+**Execution Statuses:**
+
+The action recognizes these AO workflow execution statuses:
+
+- ``pending``: Execution queued
+- ``running``: Execution in progress
+- ``completed``: Success
+- ``completed_with_errors``: Partial success (configurable via treat_errors_as_failure)
+- ``failed``: Failure
+- ``cancelled``: Cancelled
+
+Example - Basic usage with AAP credential:
+
+.. code-block:: yaml
+
+    - name: Trigger disk cleanup workflow
+      condition: event.payload.disk_usage | int > 90
+      action:
+        run_ao_workflow:
+          # Credentials from AAP credential extra_vars
+          ao_host: "{{ ao_url }}"
+          ao_client_id: "{{ ao_client_id }}"
+          ao_client_secret: "{{ ao_client_secret }}"
+
+          # Workflow identification
+          webhook_path: "755d5f81-a574-4ea3-8461-1934cb4a5c51"
+
+          # Data sent to workflow
+          payload:
+            hostname: "{{ event.payload.host }}"
+            disk_usage: "{{ event.payload.disk_usage }}"
+            mount_point: "{{ event.payload.mount_point | default('/') }}"
+            timestamp: "{{ event.meta.received_at }}"
+
+Example - Using workflow name lookup:
+
+.. code-block:: yaml
+
+    - name: Trigger workflow by name
+      condition: event.payload.event_type == "vm_create"
+      action:
+        run_ao_workflow:
+          ao_host: "{{ ao_url }}"
+          ao_client_id: "{{ ao_client_id }}"
+          ao_client_secret: "{{ ao_client_secret }}"
+          workflow_name: "VM Provisioning"
+          project: "IT Operations"
+          payload:
+            vm_name: "{{ event.payload.vm_name }}"
+            cpu: "{{ event.payload.cpu | default(2) }}"
+            memory: "{{ event.payload.memory | default(4) }}"
+
+Example - With custom timeout and polling:
+
+.. code-block:: yaml
+
+    - name: Long-running deployment workflow
+      condition: event.payload.event_type == "app_deploy"
+      action:
+        run_ao_workflow:
+          ao_host: "{{ ao_url }}"
+          ao_client_id: "{{ ao_client_id }}"
+          ao_client_secret: "{{ ao_client_secret }}"
+          webhook_path: "abc123-def456-ghi789"
+          payload:
+            app_name: "{{ event.payload.app_name }}"
+            version: "{{ event.payload.version }}"
+          timeout: 900  # 15 minutes
+          poll_interval: 10  # Check every 10 seconds
+          post_facts: true
+
+Example - Chaining workflows using posted facts:
+
+.. code-block:: yaml
+
+    - name: Trigger primary workflow
+      condition: event.payload.event_type == "deploy"
+      action:
+        run_ao_workflow:
+          ao_host: "{{ ao_url }}"
+          ao_client_id: "{{ ao_client_id }}"
+          ao_client_secret: "{{ ao_client_secret }}"
+          webhook_path: "primary-workflow-uuid"
+          post_facts: true
+          ruleset: "Deployment Pipeline"
+
+    - name: Trigger validation after primary completes
+      condition: >
+        event.ao_workflow_name == "primary-workflow" and
+        event.ao_status == "completed"
+      action:
+        run_ao_workflow:
+          ao_host: "{{ ao_url }}"
+          ao_client_id: "{{ ao_client_id }}"
+          ao_client_secret: "{{ ao_client_secret }}"
+          webhook_path: "validation-workflow-uuid"
+          payload:
+            deployment_execution_id: "{{ event.ao_execution_id }}"
+
+Example - Conditional workflow selection:
+
+.. code-block:: yaml
+
+    - name: Route to environment-specific workflow
+      condition: event.payload.event_type == "deploy"
+      action:
+        run_ao_workflow:
+          ao_host: "{{ ao_url }}"
+          ao_client_id: "{{ ao_client_id }}"
+          ao_client_secret: "{{ ao_client_secret }}"
+          webhook_path: >
+            {{ 'prod-workflow-uuid' if event.payload.environment == 'production'
+               else 'dev-workflow-uuid' }}
+          payload:
+            app_name: "{{ event.payload.app_name }}"
+            environment: "{{ event.payload.environment }}"
+
 post_event
 **********
 .. list-table::  Post an event to a running rule set in the rules engine

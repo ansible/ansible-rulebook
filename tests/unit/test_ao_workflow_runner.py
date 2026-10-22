@@ -54,6 +54,78 @@ class TestAOWorkflowRunnerInit:
         assert runner.password == "pass"
         assert runner.token == ""
 
+    def test_init_from_environment_variables(self):
+        """Test initialization from environment variables."""
+        import os
+
+        # Set environment variables
+        os.environ["EDA_AO_URL"] = "https://ao-env.example.com"
+        os.environ["EDA_AO_CLIENT_ID"] = "env-client-id"
+        os.environ["EDA_AO_CLIENT_SECRET"] = "env-client-secret"
+        os.environ["EDA_AO_SSL_VERIFY"] = "no"
+
+        try:
+            # Initialize without arguments - should read from env
+            runner = AOWorkflowRunner()
+
+            assert runner.host == "https://ao-env.example.com/"
+            assert runner.client_id == "env-client-id"
+            assert runner.client_secret == "env-client-secret"
+            assert runner.verify_ssl == "no"
+        finally:
+            # Clean up environment variables
+            del os.environ["EDA_AO_URL"]
+            del os.environ["EDA_AO_CLIENT_ID"]
+            del os.environ["EDA_AO_CLIENT_SECRET"]
+            del os.environ["EDA_AO_SSL_VERIFY"]
+
+    def test_init_args_override_environment(self):
+        """Test that explicit arguments override environment variables."""
+        import os
+
+        os.environ["EDA_AO_URL"] = "https://ao-env.example.com"
+        os.environ["EDA_AO_CLIENT_ID"] = "env-client-id"
+
+        try:
+            # Explicit arguments should take precedence
+            runner = AOWorkflowRunner(
+                host="https://ao-arg.example.com",
+                client_id="arg-client-id",
+            )
+
+            assert runner.host == "https://ao-arg.example.com/"
+            assert runner.client_id == "arg-client-id"
+        finally:
+            del os.environ["EDA_AO_URL"]
+            del os.environ["EDA_AO_CLIENT_ID"]
+
+    @pytest.mark.asyncio
+    async def test_lazy_loading_from_environment(self):
+        """Test that environment variables are loaded lazily when needed."""
+        import os
+
+        # Create runner with empty values
+        runner = AOWorkflowRunner()
+
+        # Set environment variables AFTER initialization
+        os.environ["EDA_AO_URL"] = "https://ao-lazy.example.com"
+        os.environ["EDA_AO_CLIENT_ID"] = "lazy-client-id"
+        os.environ["EDA_AO_CLIENT_SECRET"] = "lazy-client-secret"
+
+        try:
+            # Call _load_from_environment manually to simulate what happens
+            # in _get_access_token
+            runner._load_from_environment()
+
+            # Should have picked up the environment variables
+            assert runner.host == "https://ao-lazy.example.com/"
+            assert runner.client_id == "lazy-client-id"
+            assert runner.client_secret == "lazy-client-secret"
+        finally:
+            del os.environ["EDA_AO_URL"]
+            del os.environ["EDA_AO_CLIENT_ID"]
+            del os.environ["EDA_AO_CLIENT_SECRET"]
+
 
 class TestAOWorkflowRunnerSessions:
     """Tests for session management."""
@@ -165,7 +237,9 @@ class TestAOWorkflowRunnerAuthentication:
         mock_response = AsyncMock()
         mock_response.status = 401
         mock_response.raise_for_status = Mock(side_effect=auth_error)
-        mock_response.text = AsyncMock(return_value='{"error": "Unauthorized"}')
+        mock_response.text = AsyncMock(
+            return_value='{"error": "Unauthorized"}'
+        )
         mock_response.__aenter__ = AsyncMock(return_value=mock_response)
         mock_response.__aexit__ = AsyncMock(return_value=None)
 
@@ -177,6 +251,93 @@ class TestAOWorkflowRunnerAuthentication:
                 await runner._get_access_token()
         finally:
             await runner.close_session()
+
+    @pytest.mark.asyncio
+    async def test_get_access_token_with_oauth2(self):
+        """Test OAuth2 client_credentials authentication."""
+        runner = AOWorkflowRunner(
+            host="https://ao.example.com",
+            client_id="test-client-id",
+            client_secret="test-client-secret",
+        )
+
+        mock_response = AsyncMock()
+        mock_response.status = 200
+        mock_response.text = AsyncMock(
+            return_value='{"access_token": "oauth2-token-456"}'
+        )
+        mock_response.raise_for_status = Mock()
+        mock_response.__aenter__ = AsyncMock(return_value=mock_response)
+        mock_response.__aexit__ = AsyncMock()
+
+        try:
+            runner._create_session()
+            runner._raw_session.post = Mock(return_value=mock_response)
+
+            token = await runner._get_access_token()
+
+            assert token == "oauth2-token-456"
+            # OAuth2 tokens are not cached
+            assert runner._access_token is None
+            runner._raw_session.post.assert_called_once()
+
+            # Verify it was called with form data
+            call_args = runner._raw_session.post.call_args
+            assert "data" in call_args[1]
+            assert call_args[1]["data"]["grant_type"] == "client_credentials"
+            assert call_args[1]["data"]["client_id"] == "test-client-id"
+            assert (
+                call_args[1]["data"]["client_secret"] == "test-client-secret"
+            )
+        finally:
+            await runner.close_session()
+
+    @pytest.mark.asyncio
+    async def test_get_access_token_oauth2_always_fresh(self):
+        """Test that OAuth2 tokens are fetched fresh each time."""
+        runner = AOWorkflowRunner(
+            host="https://ao.example.com",
+            client_id="test-client-id",
+            client_secret="test-client-secret",
+        )
+
+        mock_response = AsyncMock()
+        mock_response.status = 200
+        mock_response.text = AsyncMock(
+            return_value='{"access_token": "fresh-token"}'
+        )
+        mock_response.raise_for_status = Mock()
+        mock_response.__aenter__ = AsyncMock(return_value=mock_response)
+        mock_response.__aexit__ = AsyncMock()
+
+        try:
+            runner._create_session()
+            runner._raw_session.post = Mock(return_value=mock_response)
+
+            # Get token twice
+            token1 = await runner._get_access_token()
+            token2 = await runner._get_access_token()
+
+            assert token1 == "fresh-token"
+            assert token2 == "fresh-token"
+
+            # Should be called twice (no caching)
+            assert runner._raw_session.post.call_count == 2
+        finally:
+            await runner.close_session()
+
+    @pytest.mark.asyncio
+    async def test_init_with_client_credentials(self):
+        """Test initialization with OAuth2 client credentials."""
+        runner = AOWorkflowRunner(
+            host="https://ao.example.com",
+            client_id="client-123",
+            client_secret="secret-456",
+        )
+
+        assert runner.client_id == "client-123"
+        assert runner.client_secret == "secret-456"
+        assert runner.token == ""
 
 
 class TestAOWorkflowRunnerWorkflowLookup:
@@ -300,7 +461,7 @@ class TestAOWorkflowRunnerTrigger:
             assert execution_id == "exec-123"
             mock_request.assert_called_once_with(
                 "POST",
-                "api/v1/webhooks/ops/test",
+                "api/v1/webhooks/eda/ops/test",
                 json={"key": "value"},
             )
 
@@ -321,7 +482,7 @@ class TestAOWorkflowRunnerTrigger:
 
             assert execution_id == "exec-456"
             mock_request.assert_called_once_with(
-                "POST", "api/v1/webhooks/ops/test", json={}
+                "POST", "api/v1/webhooks/eda/ops/test", json={}
             )
 
 
@@ -405,7 +566,9 @@ class TestAOWorkflowRunnerExecution:
 
         execution = {"status": "completed_with_errors"}
         assert (
-            runner.is_execution_successful(execution, treat_errors_as_failure=True)
+            runner.is_execution_successful(
+                execution, treat_errors_as_failure=True
+            )
             is False
         )
 
@@ -416,7 +579,9 @@ class TestAOWorkflowRunnerExecution:
 
         execution = {"status": "completed_with_errors"}
         assert (
-            runner.is_execution_successful(execution, treat_errors_as_failure=False)
+            runner.is_execution_successful(
+                execution, treat_errors_as_failure=False
+            )
             is True
         )
 

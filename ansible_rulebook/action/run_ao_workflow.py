@@ -50,6 +50,10 @@ class RunAOWorkflow:
         treat_errors_as_failure (bool): Treat completed_with_errors as failure
             (default: True)
         ruleset (str): Ruleset name for posting facts/events (optional)
+        ao_host (str): AO base URL (optional, can use env EDA_AO_URL)
+        ao_client_id (str): OAuth2 client ID (optional, can use env EDA_AO_CLIENT_ID)
+        ao_client_secret (str): OAuth2 client secret (optional, can use env EDA_AO_CLIENT_SECRET)
+        ao_verify_ssl (str): SSL verification (optional, can use env EDA_AO_SSL_VERIFY)
     """
 
     def __init__(
@@ -66,6 +70,31 @@ class RunAOWorkflow:
 
     async def __call__(self):
         """Execute the action."""
+        # Configure AO credentials if provided in action args
+        # This allows passing credentials directly from AAP credential extra_vars
+        ao_host = self.action_args.get("ao_host")
+        ao_client_id = self.action_args.get("ao_client_id")
+        ao_client_secret = self.action_args.get("ao_client_secret")
+        ao_verify_ssl = self.action_args.get("ao_verify_ssl")
+
+        if ao_host:
+            ao_workflow_runner.host = ao_host
+            logger.debug("Using AO host from action args: %s", ao_host)
+
+        if ao_client_id:
+            ao_workflow_runner.client_id = ao_client_id
+            logger.debug("Using AO client_id from action args")
+
+        if ao_client_secret:
+            ao_workflow_runner.client_secret = ao_client_secret
+            logger.debug("Using AO client_secret from action args")
+
+        if ao_verify_ssl:
+            ao_workflow_runner.verify_ssl = ao_verify_ssl
+            logger.debug(
+                "Using AO verify_ssl from action args: %s", ao_verify_ssl
+            )
+
         # Validate parameters
         webhook_path = self.action_args.get("webhook_path")
         workflow_name = self.action_args.get("workflow_name")
@@ -98,7 +127,9 @@ class RunAOWorkflow:
 
         # Substitute variables in payload
         if payload:
-            payload = self.helper.collect_extra_vars(payload, include_events=True)
+            payload = self.helper.collect_extra_vars(
+                payload, include_events=True
+            )
 
         await self._run(
             webhook_path,
@@ -160,7 +191,9 @@ class RunAOWorkflow:
 
             # Add error details if present
             if execution.get("error_details"):
-                self.execution_result["error_details"] = execution["error_details"]
+                self.execution_result["error_details"] = execution[
+                    "error_details"
+                ]
 
             # Calculate duration if timestamps available
             if execution.get("created_at") and execution.get("completed_at"):
@@ -247,7 +280,9 @@ class RunAOWorkflow:
         post_facts = self.action_args.get("post_facts", True)
         post_events = self.action_args.get("post_events", False)
 
-        if (post_facts or post_events) and "error" not in self.execution_result:
+        if (
+            post_facts or post_events
+        ) and "error" not in self.execution_result:
             level = logging.DEBUG
             if settings.print_events:
                 level = self.display.level
@@ -268,7 +303,9 @@ class RunAOWorkflow:
 
             # Add optional fields if present
             if "created_at" in self.execution_result:
-                result_data["ao_created_at"] = self.execution_result["created_at"]
+                result_data["ao_created_at"] = self.execution_result[
+                    "created_at"
+                ]
             if "completed_at" in self.execution_result:
                 result_data["ao_completed_at"] = self.execution_result[
                     "completed_at"

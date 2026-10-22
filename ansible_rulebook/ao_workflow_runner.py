@@ -15,6 +15,7 @@
 import asyncio
 import json
 import logging
+import os
 import ssl
 import time
 from functools import cached_property
@@ -76,9 +77,10 @@ class AOWorkflowRunner:
     """
 
     WORKFLOWS_SLUG = "api/v1/workflows"
-    WEBHOOKS_SLUG = "api/v1/webhooks"
+    WEBHOOKS_SLUG = "api/v1/webhooks"  # Workflow webhook triggers (not /eda/)
     EXECUTIONS_SLUG = "api/v1/executions"
     AUTH_SLUG = "api/v1/auth/login"
+    AUTH_TOKEN_SLUG = "api/v1/auth/token"
 
     # Terminal execution statuses
     COMPLETED_STATUSES = [
@@ -97,6 +99,8 @@ class AOWorkflowRunner:
         token: str = "",
         username: str = "",
         password: str = "",
+        client_id: str = "",
+        client_secret: str = "",
         verify_ssl: str = "yes",
     ):
         """Initialize the AO Workflow Runner.
@@ -106,14 +110,37 @@ class AOWorkflowRunner:
             token: Bearer token for authentication
             username: Username for authentication (if token not provided)
             password: Password for authentication (if token not provided)
+            client_id: OAuth2 client ID for authentication
+            client_secret: OAuth2 client secret for authentication
             verify_ssl: SSL verification setting (yes/no/<path to CA bundle>)
+
+        Note:
+            If arguments are not provided, will check environment variables:
+            - EDA_AO_URL
+            - EDA_AO_TOKEN
+            - EDA_AO_CLIENT_ID
+            - EDA_AO_CLIENT_SECRET
+            - EDA_AO_USERNAME
+            - EDA_AO_PASSWORD
+            - EDA_AO_SSL_VERIFY
         """
+        # Use environment variables as fallback if arguments not provided
+        # Prioritize OAuth2 client credentials (recommended for AO service accounts)
         self.token = token
         self._host = ""
-        self.host = host
+        self.host = host or os.environ.get("EDA_AO_URL", "")
+        self.client_id = client_id or os.environ.get("EDA_AO_CLIENT_ID", "")
+        self.client_secret = client_secret or os.environ.get(
+            "EDA_AO_CLIENT_SECRET", ""
+        )
+        # Username/password kept for backwards compatibility but not recommended
         self.username = username
         self.password = password
-        self.verify_ssl = verify_ssl
+        # For verify_ssl, only use default if no arg and no env var
+        if verify_ssl == "yes" and "EDA_AO_SSL_VERIFY" in os.environ:
+            self.verify_ssl = os.environ["EDA_AO_SSL_VERIFY"]
+        else:
+            self.verify_ssl = verify_ssl
         self._session = None
         self._raw_session = None
         self._access_token = None
@@ -169,6 +196,54 @@ class AOWorkflowRunner:
                 return ssl.create_default_context(cafile=self.verify_ssl)
         return False
 
+    def _load_from_environment(self):
+        """Load credentials from environment variables if not already set.
+
+        This is called lazily to ensure environment variables set by AAP EDA
+        credentials are available before we try to use them.
+        """
+        # Check for empty or default host (empty string becomes "/" via setter)
+        if not self.host or self.host == "/":
+            env_host = os.environ.get("EDA_AO_URL", "")
+            if env_host:
+                self.host = env_host
+                logger.debug("Loaded AO URL from environment: %s", env_host)
+
+        if not self.token:
+            self.token = os.environ.get("EDA_AO_TOKEN", "")
+            if self.token:
+                logger.debug("Loaded AO token from environment")
+
+        if not self.client_id:
+            self.client_id = os.environ.get("EDA_AO_CLIENT_ID", "")
+            if self.client_id:
+                logger.debug(
+                    "Loaded AO client_id from environment: %s", self.client_id
+                )
+
+        if not self.client_secret:
+            self.client_secret = os.environ.get("EDA_AO_CLIENT_SECRET", "")
+            if self.client_secret:
+                logger.debug(
+                    "Loaded AO client_secret from environment (length: %d)",
+                    len(self.client_secret),
+                )
+
+        if self.verify_ssl == "yes" and "EDA_AO_SSL_VERIFY" in os.environ:
+            self.verify_ssl = os.environ["EDA_AO_SSL_VERIFY"]
+            logger.debug(
+                "Loaded AO SSL verify from environment: %s", self.verify_ssl
+            )
+
+        # Log what we have after loading
+        logger.debug(
+            "AO credentials after env load: host=%s, has_token=%s, has_client_id=%s, has_client_secret=%s",
+            bool(self.host and self.host != "/"),
+            bool(self.token),
+            bool(self.client_id),
+            bool(self.client_secret),
+        )
+
     async def _get_access_token(self) -> str:
         """Authenticate and get access token.
 
@@ -178,17 +253,85 @@ class AOWorkflowRunner:
         Raises:
             AOAuthenticationException: If authentication fails
         """
+        # Load from environment if needed (lazy loading for AAP EDA)
+        self._load_from_environment()
+
+        # Direct token takes precedence
         if self.token:
             return self.token
 
+        # OAuth2 client_credentials flow (always fetch fresh token)
+        if self.client_id and self.client_secret:
+            return await self._get_oauth2_token()
+
+        # Cached token from username/password auth
         if self._access_token:
             return self._access_token
 
-        if not (self.username and self.password):
+        # Username/password auth
+        if self.username and self.password:
+            return await self._get_username_password_token()
+
+        raise AOAuthenticationException(
+            "Either token, client_id/client_secret, or username/password "
+            "must be provided"
+        )
+
+    async def _get_oauth2_token(self) -> str:
+        """Get OAuth2 token using client_credentials grant.
+
+        Returns:
+            str: Bearer token for API requests
+
+        Raises:
+            AOAuthenticationException: If authentication fails
+        """
+        url = urljoin(self.host, self.AUTH_TOKEN_SLUG)
+        auth_data = {
+            "grant_type": "client_credentials",
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+        }
+
+        try:
+            self._create_session()
+            async with self._raw_session.post(
+                url, data=auth_data, ssl=self._sslcontext
+            ) as response:
+                response.raise_for_status()
+                response_text = await response.text()
+                if not response_text:
+                    raise AOAuthenticationException(
+                        "Empty OAuth2 token response"
+                    )
+                result = json.loads(response_text)
+                access_token = result.get("access_token")
+                if not access_token:
+                    raise AOAuthenticationException(
+                        "No access_token in OAuth2 response"
+                    )
+                logger.debug("Successfully obtained OAuth2 access token")
+                return access_token
+        except aiohttp.ClientResponseError as e:
+            logger.error("OAuth2 authentication failed: %s", e)
             raise AOAuthenticationException(
-                "Either token or username/password must be provided"
+                f"OAuth2 authentication failed: {e}"
+            )
+        except (aiohttp.ClientError, json.JSONDecodeError) as e:
+            logger.error("OAuth2 authentication error: %s", e)
+            raise AOAuthenticationException(
+                f"OAuth2 authentication error: {e}"
             )
 
+    async def _get_username_password_token(self) -> str:
+        """Get token using username/password authentication.
+
+        Returns:
+            str: Bearer token for API requests
+
+        Raises:
+            AOAuthenticationException: If authentication fails
+        """
         url = urljoin(self.host, self.AUTH_SLUG)
         auth_data = {
             "username": self.username,
@@ -301,10 +444,10 @@ class AOWorkflowRunner:
     async def trigger_workflow(
         self, webhook_path: str, payload: Optional[dict] = None
     ) -> str:
-        """Trigger a workflow via webhook.
+        """Trigger a workflow via EDA webhook.
 
         Args:
-            webhook_path: Webhook path (e.g., "ops/disk-cleanup")
+            webhook_path: Webhook UUID or path (e.g., "755d5f81-a574-4ea3-8461-1934cb4a5c51")
             payload: Optional payload data to send
 
         Returns:
