@@ -60,6 +60,7 @@ LEGACY_SOURCE_MAPPING = {
     "ansible.eda.pg_listener": "eda.builtin.pg_listener",
     "ansible.eda.generic": "eda.builtin.generic",
     "ansible.eda.range": "eda.builtin.range",
+    "ansible.eda.webhook": "eda.builtin.webhook",
 }
 
 logger = logging.getLogger(__name__)
