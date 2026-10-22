@@ -202,6 +202,9 @@
                                 "$ref": "#/$defs/run-workflow-template-action"
                             },
                             {
+                                "$ref": "#/$defs/run-ao-workflow-action"
+                            },
+                            {
                                 "$ref": "#/$defs/post-event-action"
                             },
                             {
@@ -238,6 +241,9 @@
                         },
                         {
                             "$ref": "#/$defs/run-workflow-template-action"
+                        },
+                        {
+                            "$ref": "#/$defs/run-ao-workflow-action"
                         },
                         {
                             "$ref": "#/$defs/post-event-action"
@@ -562,6 +568,53 @@
             },
             "required": [
                 "run_workflow_template"
+            ],
+            "additionalProperties": false
+        },
+        "run-ao-workflow-action": {
+            "type": "object",
+            "properties": {
+                "run_ao_workflow": {
+                    "type": "object",
+                    "properties": {
+                        "webhook_path": {
+                            "type": "string"
+                        },
+                        "workflow_name": {
+                            "type": "string"
+                        },
+                        "project": {
+                            "type": "string"
+                        },
+                        "payload": {
+                            "type": "object"
+                        },
+                        "timeout": {
+                            "type": "integer",
+                            "default": 600
+                        },
+                        "poll_interval": {
+                            "type": "integer",
+                            "default": 5
+                        },
+                        "treat_errors_as_failure": {
+                            "type": "boolean",
+                            "default": true
+                        },
+                        "post_facts": {
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "post_events": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "run_ao_workflow"
             ],
             "additionalProperties": false
         },
