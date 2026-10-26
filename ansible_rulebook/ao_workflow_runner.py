@@ -316,12 +316,12 @@ class AOWorkflowRunner:
             logger.error("OAuth2 authentication failed: %s", e)
             raise AOAuthenticationException(
                 f"OAuth2 authentication failed: {e}"
-            )
+            ) from e
         except (aiohttp.ClientError, json.JSONDecodeError) as e:
             logger.error("OAuth2 authentication error: %s", e)
             raise AOAuthenticationException(
                 f"OAuth2 authentication error: {e}"
-            )
+            ) from e
 
     async def _get_username_password_token(self) -> str:
         """Get token using username/password authentication.
@@ -358,10 +358,14 @@ class AOWorkflowRunner:
                 return self._access_token
         except aiohttp.ClientResponseError as e:
             logger.error("Authentication failed: %s", e)
-            raise AOAuthenticationException(f"Authentication failed: {e}")
+            raise AOAuthenticationException(
+                f"Authentication failed: {e}"
+            ) from e
         except (aiohttp.ClientError, json.JSONDecodeError) as e:
             logger.error("Authentication error: %s", e)
-            raise AOAuthenticationException(f"Authentication error: {e}")
+            raise AOAuthenticationException(
+                f"Authentication error: {e}"
+            ) from e
 
     async def _api_request(self, method: str, path: str, **kwargs) -> dict:
         """Make authenticated API request to AO.
@@ -397,10 +401,12 @@ class AOWorkflowRunner:
                     logger.error(CLIENT_INVALID_JSON_STRING, url, str(e))
                     raise AOWorkflowRunnerException(
                         f"Invalid JSON response from AO: {e}"
-                    )
+                    ) from e
         except aiohttp.ClientError as e:
             logger.error(CLIENT_CONNECT_ERROR_STRING, str(e))
-            raise AOWorkflowRunnerException(f"AO API request failed: {e}")
+            raise AOWorkflowRunnerException(
+                f"AO API request failed: {e}"
+            ) from e
 
     async def lookup_webhook_path(
         self, workflow_name: str, project: Optional[str] = None
@@ -539,7 +545,27 @@ class AOWorkflowRunner:
 
                 await asyncio.sleep(poll_interval)
 
+            except AOAuthenticationException:
+                # Authentication errors won't fix themselves, fail fast
+                logger.error(
+                    "Authentication failed while checking execution %s",
+                    execution_id,
+                )
+                raise
             except AOWorkflowRunnerException as e:
+                # Check if this wraps a 4xx client error - those won't fix themselves
+                if e.__cause__ and isinstance(
+                    e.__cause__, aiohttp.ClientResponseError
+                ):
+                    if 400 <= e.__cause__.status < 500:
+                        logger.error(
+                            "Client error for execution %s (status %d), failing immediately: %s",
+                            execution_id,
+                            e.__cause__.status,
+                            e,
+                        )
+                        raise
+                # Retry transient errors (network issues, 5xx server errors)
                 logger.warning(
                     "Error checking execution status, will retry: %s", e
                 )
