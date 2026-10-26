@@ -85,6 +85,7 @@ class NullQueue:
 logger = logging.getLogger(__name__)
 INVENTORY_ACTIONS = ("run_playbook", "run_module")
 CONTROLLER_ACTIONS = ("run_job_template", "run_workflow_template")
+AO_ACTIONS = ("run_ao_workflow",)
 
 
 def log_exception_without_data(exc_type, exc_value, exc_traceback):
@@ -153,6 +154,8 @@ async def run(parsed_args: argparse.Namespace) -> None:
     setup_semaphores()
     if startup_args.check_controller_connection:
         await validate_controller_params(startup_args)
+    if startup_args.check_ao_connection:
+        await validate_ao_params(startup_args)
 
     if parsed_args.websocket_url:
         event_log = asyncio.Queue(settings.max_reporting_queue_size)
@@ -363,6 +366,8 @@ def validate_actions(startup_args: StartupArgs) -> None:
             for action in rule.actions:
                 if action.action in CONTROLLER_ACTIONS:
                     startup_args.check_controller_connection = True
+                if action.action in AO_ACTIONS:
+                    startup_args.check_ao_connection = True
                 if (
                     action.action in INVENTORY_ACTIONS
                     and not startup_args.inventory
@@ -411,6 +416,13 @@ async def validate_controller_params(startup_args: StartupArgs) -> None:
         data = await job_template_runner.get_config()
         logger.info("AAP Version %s", data["version"])
 
+
+async def validate_ao_params(startup_args: StartupArgs) -> None:
+    """Validate and configure Automation Orchestrator connection.
+
+    This is called independently when run_ao_workflow actions are detected,
+    allowing AO-only rulebooks to validate without controller setup.
+    """
     if startup_args.ao_url:
         if not validate_url(startup_args.ao_url, "ao"):
             raise InvalidUrlException("Invalid Automation Orchestrator url.")

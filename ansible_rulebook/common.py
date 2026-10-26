@@ -35,5 +35,6 @@ class StartupArgs:
     project_data_file: str = field(default="")
     inventory: str = field(default="")
     check_controller_connection: bool = field(default=False)
+    check_ao_connection: bool = field(default=False)
     check_vault: bool = field(default=True)
     env_vars: Dict = field(default_factory=dict)
