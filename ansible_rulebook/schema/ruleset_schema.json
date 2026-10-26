@@ -576,6 +576,18 @@
             "properties": {
                 "run_ao_workflow": {
                     "type": "object",
+                    "anyOf": [
+                        {
+                            "required": [
+                                "webhook_path"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "workflow_name"
+                            ]
+                        }
+                    ],
                     "properties": {
                         "webhook_path": {
                             "type": "string"
@@ -603,11 +615,26 @@
                         },
                         "post_facts": {
                             "type": "boolean",
-                            "default": false
+                            "default": true
                         },
                         "post_events": {
                             "type": "boolean",
                             "default": false
+                        },
+                        "ruleset": {
+                            "type": "string"
+                        },
+                        "ao_host": {
+                            "type": "string"
+                        },
+                        "ao_client_id": {
+                            "type": "string"
+                        },
+                        "ao_client_secret": {
+                            "type": "string"
+                        },
+                        "ao_verify_ssl": {
+                            "type": "string"
                         }
                     },
                     "additionalProperties": false
