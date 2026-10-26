@@ -461,7 +461,7 @@ class TestAOWorkflowRunnerTrigger:
             assert execution_id == "exec-123"
             mock_request.assert_called_once_with(
                 "POST",
-                "api/v1/webhooks/eda/ops/test",
+                "api/v1/webhooks/ops/test",
                 json={"key": "value"},
             )
 
@@ -482,7 +482,7 @@ class TestAOWorkflowRunnerTrigger:
 
             assert execution_id == "exec-456"
             mock_request.assert_called_once_with(
-                "POST", "api/v1/webhooks/eda/ops/test", json={}
+                "POST", "api/v1/webhooks/ops/test", json={}
             )
 
 
