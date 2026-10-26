@@ -554,18 +554,20 @@ class AOWorkflowRunner:
                 raise
             except AOWorkflowRunnerException as e:
                 # Check if this wraps a 4xx client error - those won't fix themselves
+                # Exception: 429 (rate limit) is transient, keep polling
                 if e.__cause__ and isinstance(
                     e.__cause__, aiohttp.ClientResponseError
                 ):
-                    if 400 <= e.__cause__.status < 500:
+                    status = e.__cause__.status
+                    if 400 <= status < 500 and status != 429:
                         logger.error(
                             "Client error for execution %s (status %d), failing immediately: %s",
                             execution_id,
-                            e.__cause__.status,
+                            status,
                             e,
                         )
                         raise
-                # Retry transient errors (network issues, 5xx server errors)
+                # Retry transient errors (network issues, 5xx server errors, rate limits)
                 logger.warning(
                     "Error checking execution status, will retry: %s", e
                 )
