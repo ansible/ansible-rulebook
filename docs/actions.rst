@@ -441,6 +441,10 @@ Example - With custom timeout and polling:
 
 Example - Chaining workflows using posted facts:
 
+.. note::
+    When ``post_facts: true`` is used, workflow results are accessible via ``fact.*`` (not ``event.*``).
+    The ``ao_workflow_name`` value is the workflow name as defined in Automation Orchestrator, not the webhook path.
+
 .. code-block:: yaml
 
     - name: Trigger primary workflow
@@ -456,8 +460,8 @@ Example - Chaining workflows using posted facts:
 
     - name: Trigger validation after primary completes
       condition: >
-        event.ao_workflow_name == "primary-workflow" and
-        event.ao_status == "completed"
+        fact.ao_workflow_name == "Primary Deployment Workflow" and
+        fact.ao_status == "completed"
       action:
         run_ao_workflow:
           ao_host: "{{ ao_url }}"
@@ -465,7 +469,7 @@ Example - Chaining workflows using posted facts:
           ao_client_secret: "{{ ao_client_secret }}"
           webhook_path: "validation-workflow-uuid"
           payload:
-            deployment_execution_id: "{{ event.ao_execution_id }}"
+            deployment_execution_id: "{{ fact.ao_execution_id }}"
 
 Example - Conditional workflow selection:
 
