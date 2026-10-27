@@ -33,7 +33,7 @@ Ensure you have installed all components listed in the :ref:`requirements` secti
 Requirements
 ------------
 
-* Python >= 3.9
+* Python >= 3.10
 * Python 3 pip
 
 * Java development kit >= 17

@@ -4,6 +4,8 @@
 ### Changed
 ### Added
 - New jinja filters in actions: `bool`
+### Removed
+- Official support for Python 3.9; Python 3.10 is now the minimum supported version.
 ### Fixed
 
 ## [1.3.0]
