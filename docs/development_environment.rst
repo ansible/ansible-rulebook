@@ -24,7 +24,7 @@ Ready to contribute? Here's how to set up `ansible_rulebook` for local developme
 .. code-block:: console
 
     cd ansible_rulebook/
-    python3.9 -m venv venv
+    python3.10 -m venv venv
     source venv/bin/activate
     pip install -e .[development]
     pip install -r requirements_dev.txt
@@ -165,7 +165,6 @@ Create a new release on GitHub plus upload the package to PyPI:
 .. code-block:: console
 
     twine upload dist/*
-
 
 
 
