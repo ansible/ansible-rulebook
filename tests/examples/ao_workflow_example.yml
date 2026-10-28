@@ -1,0 +1,124 @@
+---
+# Example rulebook demonstrating the run_ao_workflow action
+# This rulebook shows how to trigger Automation Orchestrator workflows
+# in response to events from Event-Driven Ansible.
+#
+# Prerequisites:
+# - Automation Orchestrator instance accessible via URL
+# - Workflows configured with webhook triggers
+# - AO credentials provided via CLI args or environment variables:
+#   --ao-url https://ao-host:8080
+#   --ao-token <bearer-token>
+#   OR
+#   --ao-username <username> --ao-password <password>
+
+- name: Automation Orchestrator Integration Examples
+  hosts: all
+  sources:
+    - ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5000
+
+  rules:
+    # Example 1: Trigger workflow using direct webhook path
+    - name: Certificate expiry alert - trigger renewal workflow
+      condition: event.alert_type == "certificate_expiry"
+      action:
+        run_ao_workflow:
+          webhook_path: "ops/cert-renewal"
+          payload:
+            hostname: "{{ event.hostname }}"
+            certificate_name: "{{ event.cert_name }}"
+            days_until_expiry: "{{ event.days_remaining }}"
+          timeout: 300
+          poll_interval: 5
+          post_facts: true
+          post_events: false
+
+    # Example 2: Lookup workflow by name and project
+    - name: Disk space alert - trigger cleanup workflow
+      condition: event.alert_type == "disk_space" and event.usage > 80
+      action:
+        run_ao_workflow:
+          workflow_name: "Disk Cleanup"
+          project: "IT Operations"
+          payload:
+            hostname: "{{ event.hostname }}"
+            filesystem: "{{ event.filesystem }}"
+            usage_percent: "{{ event.usage }}"
+          timeout: 600
+          post_facts: true
+
+    # Example 3: Handle completed_with_errors as success
+    - name: Application deployment - allow partial success
+      condition: event.action == "deploy_app"
+      action:
+        run_ao_workflow:
+          workflow_name: "Application Deployment"
+          payload:
+            application_name: "{{ event.app_name }}"
+            version: "{{ event.version }}"
+            environment: "{{ event.environment }}"
+          treat_errors_as_failure: false
+          post_facts: true
+          post_events: true
+
+    # Example 4: Quick workflow execution with custom timeout
+    - name: Service restart - quick operation
+      condition: event.alert_type == "service_down"
+      action:
+        run_ao_workflow:
+          webhook_path: "ops/service-restart"
+          payload:
+            hostname: "{{ event.hostname }}"
+            service_name: "{{ event.service }}"
+          timeout: 120
+          poll_interval: 2
+          post_facts: false
+
+    # Example 5: Post results to different ruleset
+    - name: Security incident - cross-ruleset notification
+      condition: event.severity == "critical"
+      action:
+        run_ao_workflow:
+          workflow_name: "Security Response"
+          project: "Security Operations"
+          payload:
+            incident_id: "{{ event.incident_id }}"
+            severity: "{{ event.severity }}"
+            source: "{{ event.source }}"
+          ruleset: security_monitoring
+          post_facts: true
+          post_events: true
+
+# Sample webhook payloads for testing:
+#
+# Certificate expiry alert:
+# curl -X POST http://localhost:5000/endpoint \
+#   -H "Content-Type: application/json" \
+#   -d '{
+#     "alert_type": "certificate_expiry",
+#     "hostname": "web01.example.com",
+#     "cert_name": "*.example.com",
+#     "days_remaining": 15
+#   }'
+#
+# Disk space alert:
+# curl -X POST http://localhost:5000/endpoint \
+#   -H "Content-Type: application/json" \
+#   -d '{
+#     "alert_type": "disk_space",
+#     "hostname": "db01.example.com",
+#     "filesystem": "/var/lib/mysql",
+#     "usage": 85
+#   }'
+#
+# Application deployment:
+# curl -X POST http://localhost:5000/endpoint \
+#   -H "Content-Type: application/json" \
+#   -d '{
+#     "action": "deploy_app",
+#     "app_name": "customer-portal",
+#     "version": "2.1.0",
+#     "environment": "production"
+#   }'
