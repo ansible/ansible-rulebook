@@ -22,7 +22,7 @@ def test_get_version():
   Executable location = (.+)
   Drools_jpy version = \d+\.\d+\.\d+
   Java home = (.+)
-  Java version = \d+(\.\d+)?(\.\d+)?(\.\d+)?
+  Java version = [1-9][0-9]*(([.]0)*[.][1-9][0-9]*)*
   Ansible core version = \d+\.\d+\.\d+([a-zA-Z0-9\+\-\.]*)?
   Python version = \d+\.\d+\.\d+([a-zA-Z0-9\+\-\.]*)?
   Python executable = (\S+)
