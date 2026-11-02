@@ -47,9 +47,7 @@ EDA_PLAYBOOKS_PATHS = [".", "playbooks"]
 EDA_YAML_EXTENSIONS = [".yml", ".yaml"]
 
 LEGACY_FILTER_MAPPING = {
-    "ansible.eda.dashes_to_underscores": (
-        "ansible.builtin.dashes_to_underscores"
-    ),
+    "ansible.eda.dashes_to_underscores": "eda.builtin.dashes_to_underscores",
     "ansible.eda.json_filter": "eda.builtin.json_filter",
     "ansible.eda.normalize_keys": "eda.builtin.normalize_keys",
     "ansible.eda.insert_hosts_to_meta": "eda.builtin.insert_hosts_to_meta",

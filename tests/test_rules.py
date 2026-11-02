@@ -41,6 +41,7 @@ from ansible_rulebook.rules_parser import (
     parse_rule_sets,
     parse_source_filter,
 )
+from ansible_rulebook.util import has_builtin_filter, has_builtin_source
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -310,6 +311,7 @@ def test_all_legacy_source_mappings():
         assert (
             result[0].source_name == new_name
         ), f"Failed for {old_name} -> {new_name}"
+        assert has_builtin_source(new_name), f"{new_name} is not a builtin"
 
 
 def test_all_legacy_filter_mappings():
@@ -321,6 +323,7 @@ def test_all_legacy_filter_mappings():
         assert (
             result.filter_name == new_name
         ), f"Failed for {old_name} -> {new_name}"
+        assert has_builtin_filter(new_name), f"{new_name} is not a builtin"
 
 
 @pytest.mark.parametrize(
