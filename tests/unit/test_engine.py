@@ -22,15 +22,10 @@ from anyio import NamedTemporaryFile
 from freezegun import freeze_time
 
 from ansible_rulebook.engine import (
-    FilteredQueue,
     RulebookFileChangeHandler,
-    all_source_queues,
-    broadcast,
     heartbeat_task,
-    meta_info_filter,
     monitor_rulebook,
     run_rulesets,
-    start_source,
 )
 from ansible_rulebook.exception import (
     HotReloadException,
@@ -46,6 +41,12 @@ from ansible_rulebook.rule_types import (
     ExecutionStrategy,
     RuleSet,
     RuleSetQueue,
+)
+from ansible_rulebook.source_loader import (
+    FilteredQueue,
+    broadcast,
+    meta_info_filter,
+    start_source,
 )
 
 
@@ -161,25 +162,18 @@ class TestBroadcast:
     @pytest.mark.asyncio
     async def test_broadcast_empty_queues(self):
         """Test broadcast with no queues."""
-        # Clear global queues list
-        all_source_queues.clear()
-
         shutdown = Shutdown(message="test shutdown", delay=30.0)
-        await broadcast(shutdown)
+        await broadcast([], shutdown)
         # Should not raise any exceptions
 
     @pytest.mark.asyncio
     async def test_broadcast_multiple_queues(self):
         """Test broadcast with multiple queues."""
-        # Clear and setup queues
-        all_source_queues.clear()
-
         queue1 = asyncio.Queue()
         queue2 = asyncio.Queue()
-        all_source_queues.extend([queue1, queue2])
 
         shutdown = Shutdown(message="test shutdown", delay=30.0)
-        await broadcast(shutdown)
+        await broadcast([queue1, queue2], shutdown)
 
         # Verify shutdown was sent to both queues
         result1 = await queue1.get()
@@ -187,9 +181,6 @@ class TestBroadcast:
 
         assert result1 == shutdown
         assert result2 == shutdown
-
-        # Cleanup
-        all_source_queues.clear()
 
 
 class TestHeartbeatTask:
@@ -338,12 +329,12 @@ class TestStartSource:
     """Test the start_source function."""
 
     def setup_method(self):
-        """Clear global queues before each test."""
-        all_source_queues.clear()
+        """Setup before each test."""
+        pass
 
     def teardown_method(self):
-        """Clear global queues after each test."""
-        all_source_queues.clear()
+        """Cleanup after each test."""
+        pass
 
     @pytest.mark.asyncio
     async def test_start_source_local_file(self):
@@ -369,14 +360,15 @@ class TestStartSource:
         # Mock all the dependencies
         with patch("os.path.exists", return_value=True):
             with patch(
-                "ansible_rulebook.engine.has_builtin_filter", return_value=True
+                "ansible_rulebook.source_loader.has_builtin_filter",
+                return_value=True,
             ):
                 with patch(
-                    "ansible_rulebook.engine.find_builtin_filter",
+                    "ansible_rulebook.source_loader.find_builtin_filter",
                     return_value="/fake/filter.py",
                 ):
                     with patch(
-                        "ansible_rulebook.engine.runpy.run_path"
+                        "ansible_rulebook.source_loader.runpy.run_path"
                     ) as mock_run_path:
 
                         def run_path_side_effect(path):
@@ -391,9 +383,6 @@ class TestStartSource:
                         await start_source(
                             source, ["/fake/source/dir"], variables, queue
                         )
-
-        # Verify queue was added to global list
-        assert queue in all_source_queues
 
         # Verify event was put in queue (should have meta info added)
         event = await asyncio.wait_for(queue.get(), timeout=1.0)
@@ -413,7 +402,9 @@ class TestStartSource:
 
         queue = asyncio.Queue()
 
-        with patch("ansible_rulebook.engine.has_source", return_value=False):
+        with patch(
+            "ansible_rulebook.source_loader.has_source", return_value=False
+        ):
             with pytest.raises(SourcePluginNotFoundException):
                 await start_source(source, [], {}, queue)
 
@@ -507,14 +498,14 @@ def main(queue, args):
         # Mock all the dependencies
         with patch("os.path.exists", return_value=True):
             with patch(
-                "ansible_rulebook.engine.has_builtin_filter"
+                "ansible_rulebook.source_loader.has_builtin_filter"
             ) as mock_has_builtin:
                 with patch(
-                    "ansible_rulebook.engine.find_builtin_filter",
+                    "ansible_rulebook.source_loader.find_builtin_filter",
                     return_value="/fake/filter.py",
                 ):
                     with patch(
-                        "ansible_rulebook.engine.runpy.run_path"
+                        "ansible_rulebook.source_loader.runpy.run_path"
                     ) as mock_run_path:
                         # Configure has_builtin_filter to return True
                         # for both filters
@@ -570,10 +561,11 @@ async def main(queue, args):
             queue = asyncio.Queue()
 
             with patch(
-                "ansible_rulebook.engine.has_source_filter", return_value=False
+                "ansible_rulebook.source_loader.has_source_filter",
+                return_value=False,
             ):
                 with patch(
-                    "ansible_rulebook.engine.has_builtin_filter",
+                    "ansible_rulebook.source_loader.has_builtin_filter",
                     return_value=False,
                 ):
                     with pytest.raises(SourceFilterNotFoundException):
@@ -610,14 +602,21 @@ async def main(queue, args):
 
             queue = asyncio.Queue()
 
-            with patch("ansible_rulebook.engine.broadcast") as mock_broadcast:
-                await start_source(source, [source_dir], {}, queue)
+            # Create a mock broadcast callback
+            mock_broadcast = AsyncMock()
+            await start_source(
+                source,
+                [source_dir],
+                {},
+                queue,
+                broadcast_callback=mock_broadcast,
+            )
 
-                # Verify broadcast was called with appropriate shutdown message
-                mock_broadcast.assert_called_once()
-                shutdown_arg = mock_broadcast.call_args[0][0]
-                assert "keyboard interrupt" in shutdown_arg.message
-                assert shutdown_arg.source_plugin == source_name
+            # Verify broadcast was called with appropriate shutdown message
+            mock_broadcast.assert_called_once()
+            shutdown_arg = mock_broadcast.call_args[0][0]
+            assert "keyboard interrupt" in shutdown_arg.message
+            assert shutdown_arg.source_plugin == source_name
 
         finally:
             os.unlink(temp_path)

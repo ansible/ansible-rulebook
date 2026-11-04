@@ -22,7 +22,7 @@ from unittest.mock import patch
 import pytest
 from freezegun import freeze_time
 
-from ansible_rulebook.engine import run_rulesets, start_source
+from ansible_rulebook.engine import run_rulesets
 from ansible_rulebook.exception import (
     ControllerApiException,
     JobTemplateNotFoundException,
@@ -31,6 +31,7 @@ from ansible_rulebook.exception import (
 )
 from ansible_rulebook.job_template_runner import job_template_runner
 from ansible_rulebook.messages import Shutdown
+from ansible_rulebook.source_loader import start_source
 from ansible_rulebook.util import MASKED_STRING
 
 from .test_engine import get_queue_item, load_rulebook, validate_events
