@@ -43,6 +43,7 @@ from ansible_rulebook.action.noop import Noop
 from ansible_rulebook.action.post_event import PostEvent
 from ansible_rulebook.action.print_event import PrintEvent
 from ansible_rulebook.action.retract_fact import RetractFact
+from ansible_rulebook.action.run_ao_workflow import RunAOWorkflow
 from ansible_rulebook.action.run_job_template import RunJobTemplate
 from ansible_rulebook.action.run_module import RunModule
 from ansible_rulebook.action.run_playbook import RunPlaybook
@@ -90,6 +91,7 @@ ACTION_CLASSES = {
     "run_module": RunModule,
     "run_job_template": RunJobTemplate,
     "run_workflow_template": RunWorkflowTemplate,
+    "run_ao_workflow": RunAOWorkflow,
 }
 
 
