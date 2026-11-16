@@ -76,15 +76,3 @@ jobs:
           flags: "unittests-${{ matrix.python-version }}"
           name: codecov-umbrella
           verbose: true
-
-      - name: Notify to slack if failure
-        if: ${{ failure() }}
-        uses: rtCamp/action-slack-notify@06cc13f74fa8d4d2296c09455d91e9453e4025f4 # v2.4.1
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_USERNAME: GH Slack Notifier for EDA
-          SLACK_TITLE: Failure of scheduled tests for ansible-rulebook
-          SLACK_MESSAGE: |
-            Scheduled tests for ansible-rulebook failed.
-            Id: ${{ github.run_id }}"
-            Workflow: ${{ github.workflow }}
