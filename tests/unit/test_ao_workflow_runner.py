@@ -366,102 +366,200 @@ class TestAOWorkflowRunnerAuthentication:
         assert runner.token == ""
 
 
+WORKFLOWS_URL = f"{AO_HOST}/api/v1/workflows"
+PROJECTS_URL = f"{AO_HOST}/api/v1/projects"
+WORKFLOW_ID = "85cea36b-4516-4851-b33e-f7776629ddaa"
+PROJECT_ID = "1b73baa3-c9b4-49c4-84ce-5cdfea8175b9"
+VERSION_URL = f"{WORKFLOWS_URL}/{WORKFLOW_ID}/versions/3"
+
+
+def _workflow(name="Disk Cleanup", published_version_number=3, **extra):
+    """A workflow as returned by GET /api/v1/workflows."""
+    workflow = {
+        "id": WORKFLOW_ID,
+        "name": name,
+        "project_id": PROJECT_ID,
+        "current_version": 4,
+        "published_version_number": published_version_number,
+        "is_enabled": True,
+    }
+    workflow.update(extra)
+    return workflow
+
+
+def _page(*resources):
+    """A list response of AO: the items are under "resources"."""
+    return {
+        "next": None,
+        "prev": None,
+        "total": None,
+        "resources": list(resources),
+    }
+
+
+def _version(*triggers):
+    """A workflow version as returned by GET .../versions/{version}."""
+    return {
+        "workflow_id": WORKFLOW_ID,
+        "version": 3,
+        "status": "published",
+        "workflow_definition": {
+            "name": "Disk Cleanup",
+            "schema_version": "2.0.0",
+            "triggers": list(triggers),
+            "nodes": [],
+            "edges": [],
+        },
+    }
+
+
+def _webhook_trigger(path, trigger_id="webhook"):
+    return {
+        "id": trigger_id,
+        "type": "webhook_trigger",
+        "parameters": {
+            "webhook_path": path,
+            "authorized_service_account_ids": ["sa-1"],
+        },
+    }
+
+
+MANUAL_TRIGGER = {"id": "manual", "type": "manual_trigger", "parameters": {}}
+
+
 class TestAOWorkflowRunnerWorkflowLookup:
-    """Tests for workflow lookup methods."""
+    """Tests for workflow lookup functionality."""
 
     @pytest.mark.asyncio
-    async def test_lookup_webhook_path_success(self):
-        """Test successful webhook path lookup."""
-        runner = AOWorkflowRunner(
-            host="https://ao.example.com",
-            token="test-token",
-        )
-
-        with patch.object(
-            runner, "_api_request", new_callable=AsyncMock
-        ) as mock_request:
-            mock_request.return_value = {
-                "results": [
-                    {
-                        "name": "Test Workflow",
-                        "webhook_path": "ops/test-workflow",
-                    }
-                ]
-            }
-
-            path = await runner.lookup_webhook_path("Test Workflow")
-
-            assert path == "ops/test-workflow"
-            mock_request.assert_called_once_with(
-                "GET",
-                runner.WORKFLOWS_SLUG,
-                params={"name": "Test Workflow"},
+    async def test_lookup_webhook_path_success(self, token_runner):
+        """The path comes from the trigger of the published version."""
+        with aioresponses() as mocked:
+            mocked.get(
+                f"{WORKFLOWS_URL}?name=Disk+Cleanup",
+                payload=_page(_workflow()),
+            )
+            mocked.get(
+                VERSION_URL,
+                payload=_version(
+                    MANUAL_TRIGGER, _webhook_trigger("disk-cleanup")
+                ),
             )
 
+            path = await token_runner.lookup_webhook_path("Disk Cleanup")
+
+            assert path == "disk-cleanup"
+
     @pytest.mark.asyncio
-    async def test_lookup_webhook_path_with_project(self):
-        """Test webhook path lookup with project filter."""
-        runner = AOWorkflowRunner(
-            host="https://ao.example.com",
-            token="test-token",
-        )
-
-        with patch.object(
-            runner, "_api_request", new_callable=AsyncMock
-        ) as mock_request:
-            mock_request.return_value = {
-                "results": [
-                    {
-                        "name": "Test Workflow",
-                        "webhook_path": "ops/test-workflow",
-                    }
-                ]
-            }
-
-            path = await runner.lookup_webhook_path(
-                "Test Workflow", project="Operations"
+    async def test_lookup_webhook_path_with_project(self, token_runner):
+        """The project name is resolved to the project_id filter."""
+        with aioresponses() as mocked:
+            mocked.get(
+                f"{PROJECTS_URL}?name=IT+Operations",
+                payload=_page({"id": PROJECT_ID, "name": "IT Operations"}),
+            )
+            mocked.get(
+                f"{WORKFLOWS_URL}?name=Disk+Cleanup&project_id={PROJECT_ID}",
+                payload=_page(_workflow()),
+            )
+            mocked.get(
+                VERSION_URL, payload=_version(_webhook_trigger("disk-cleanup"))
             )
 
-            assert path == "ops/test-workflow"
-            mock_request.assert_called_once_with(
-                "GET",
-                runner.WORKFLOWS_SLUG,
-                params={"name": "Test Workflow", "project": "Operations"},
+            path = await token_runner.lookup_webhook_path(
+                "Disk Cleanup", project="IT Operations"
             )
 
-    @pytest.mark.asyncio
-    async def test_lookup_webhook_path_not_found(self):
-        """Test workflow not found error."""
-        runner = AOWorkflowRunner(
-            host="https://ao.example.com",
-            token="test-token",
-        )
-
-        with patch.object(
-            runner, "_api_request", new_callable=AsyncMock
-        ) as mock_request:
-            mock_request.return_value = {"results": []}
-
-            with pytest.raises(AOWorkflowNotFoundException):
-                await runner.lookup_webhook_path("Nonexistent Workflow")
+            assert path == "disk-cleanup"
 
     @pytest.mark.asyncio
-    async def test_lookup_webhook_path_no_webhook_configured(self):
-        """Test workflow with no webhook path configured."""
-        runner = AOWorkflowRunner(
-            host="https://ao.example.com",
-            token="test-token",
-        )
+    async def test_lookup_webhook_path_project_not_found(self, token_runner):
+        """An unknown project is reported, the workflows are not listed."""
+        with aioresponses() as mocked:
+            mocked.get(f"{PROJECTS_URL}?name=Nowhere", payload=_page())
 
-        with patch.object(
-            runner, "_api_request", new_callable=AsyncMock
-        ) as mock_request:
-            mock_request.return_value = {
-                "results": [{"name": "Test Workflow"}]
-            }
+            with pytest.raises(
+                AOWorkflowNotFoundException, match="Project 'Nowhere'"
+            ):
+                await token_runner.lookup_webhook_path(
+                    "Disk Cleanup", project="Nowhere"
+                )
 
-            with pytest.raises(AOWorkflowNotFoundException):
-                await runner.lookup_webhook_path("Test Workflow")
+    @pytest.mark.asyncio
+    async def test_lookup_webhook_path_not_found(self, token_runner):
+        """Test workflow not found."""
+        with aioresponses() as mocked:
+            mocked.get(f"{WORKFLOWS_URL}?name=Nonexistent", payload=_page())
+
+            with pytest.raises(AOWorkflowNotFoundException, match="not found"):
+                await token_runner.lookup_webhook_path("Nonexistent")
+
+    @pytest.mark.asyncio
+    async def test_lookup_webhook_path_ambiguous_name(self, token_runner):
+        """Two projects can have a workflow with the same name."""
+        with aioresponses() as mocked:
+            mocked.get(
+                f"{WORKFLOWS_URL}?name=Disk+Cleanup",
+                payload=_page(
+                    _workflow(), _workflow(id="other", project_id="other")
+                ),
+            )
+
+            with pytest.raises(
+                AOWorkflowNotFoundException, match="More than one workflow"
+            ):
+                await token_runner.lookup_webhook_path("Disk Cleanup")
+
+    @pytest.mark.asyncio
+    async def test_lookup_webhook_path_not_published(self, token_runner):
+        """A workflow without a published version cannot be triggered."""
+        with aioresponses() as mocked:
+            mocked.get(
+                f"{WORKFLOWS_URL}?name=Disk+Cleanup",
+                payload=_page(_workflow(published_version_number=None)),
+            )
+
+            with pytest.raises(
+                AOWorkflowNotFoundException, match="no published version"
+            ):
+                await token_runner.lookup_webhook_path("Disk Cleanup")
+
+    @pytest.mark.asyncio
+    async def test_lookup_webhook_path_no_webhook_configured(
+        self, token_runner
+    ):
+        """Test workflow with no webhook trigger."""
+        with aioresponses() as mocked:
+            mocked.get(
+                f"{WORKFLOWS_URL}?name=Disk+Cleanup",
+                payload=_page(_workflow()),
+            )
+            mocked.get(VERSION_URL, payload=_version(MANUAL_TRIGGER))
+
+            with pytest.raises(
+                AOWorkflowNotFoundException, match="no webhook trigger"
+            ):
+                await token_runner.lookup_webhook_path("Disk Cleanup")
+
+    @pytest.mark.asyncio
+    async def test_lookup_webhook_path_several_webhooks(self, token_runner):
+        """With several webhook triggers the path must be given."""
+        with aioresponses() as mocked:
+            mocked.get(
+                f"{WORKFLOWS_URL}?name=Disk+Cleanup",
+                payload=_page(_workflow()),
+            )
+            mocked.get(
+                VERSION_URL,
+                payload=_version(
+                    _webhook_trigger("disk-cleanup", "a"),
+                    _webhook_trigger("disk-cleanup-urgent", "b"),
+                ),
+            )
+
+            with pytest.raises(
+                AOWorkflowNotFoundException, match="more than one webhook"
+            ):
+                await token_runner.lookup_webhook_path("Disk Cleanup")
 
 
 class TestAOWorkflowRunnerTrigger:

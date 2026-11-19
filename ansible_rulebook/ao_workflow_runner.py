@@ -75,6 +75,7 @@ class AOWorkflowRunner:
     """
 
     WORKFLOWS_SLUG = "api/v1/workflows"
+    PROJECTS_SLUG = "api/v1/projects"
     WEBHOOKS_SLUG = "api/v1/webhooks"  # Workflow webhook triggers (not /eda/)
     EXECUTIONS_SLUG = "api/v1/executions"
     AUTH_SLUG = "api/v1/auth/login"
@@ -589,44 +590,102 @@ class AOWorkflowRunner:
                     f"AO API request failed: {e}"
                 ) from e
 
+    async def _lookup_project_id(self, project: str) -> str:
+        """Look up the ID of a project by its name.
+
+        Args:
+            project: Name of the project
+
+        Returns:
+            str: ID of the project
+
+        Raises:
+            AOWorkflowNotFoundException: If the project is not found
+        """
+        result = await self._api_request(
+            "GET", self.PROJECTS_SLUG, params={"name": project}
+        )
+        for candidate in result.get("resources", []):
+            if candidate.get("name") == project:
+                return candidate["id"]
+
+        raise AOWorkflowNotFoundException(f"Project '{project}' not found")
+
     async def lookup_webhook_path(
         self, workflow_name: str, project: Optional[str] = None
     ) -> str:
-        """Look up webhook path for a workflow by name.
+        """Look up the webhook path of a workflow by the workflow name.
+
+        The webhook path is not part of the workflow itself. It is a
+        parameter of the webhook trigger in the published version of the
+        workflow, so the lookup takes up to three requests: project (when
+        given), workflow and published version.
 
         Args:
             workflow_name: Name of the workflow
-            project: Optional project name to narrow search
+            project: Optional project name, needed when workflows in
+                different projects have the same name
 
         Returns:
             str: Webhook path for the workflow
 
         Raises:
-            AOWorkflowNotFoundException: If workflow not found
+            AOWorkflowNotFoundException: If the project or the workflow is
+                not found, the name is ambiguous, the workflow is not
+                published, or it does not have exactly one webhook trigger
         """
+        where = f" in project '{project}'" if project else ""
         params = {"name": workflow_name}
         if project:
-            params["project"] = project
+            params["project_id"] = await self._lookup_project_id(project)
 
         result = await self._api_request(
             "GET", self.WORKFLOWS_SLUG, params=params
         )
-
-        workflows = result.get("results", [])
+        workflows = [
+            workflow
+            for workflow in result.get("resources", [])
+            if workflow.get("name") == workflow_name
+        ]
         if not workflows:
             raise AOWorkflowNotFoundException(
-                f"Workflow '{workflow_name}' not found"
-                + (f" in project '{project}'" if project else "")
+                f"Workflow '{workflow_name}' not found{where}"
+            )
+        if len(workflows) > 1:
+            raise AOWorkflowNotFoundException(
+                f"More than one workflow named '{workflow_name}' "
+                f"found{where}, set 'project' or use 'webhook_path'"
             )
 
         workflow = workflows[0]
-        webhook_path = workflow.get("webhook_path")
-        if not webhook_path:
+        version = workflow.get("published_version_number")
+        if not version:
             raise AOWorkflowNotFoundException(
-                f"Workflow '{workflow_name}' has no webhook_path configured"
+                f"Workflow '{workflow_name}' has no published version"
             )
 
-        return webhook_path
+        published = await self._api_request(
+            "GET", f"{self.WORKFLOWS_SLUG}/{workflow['id']}/versions/{version}"
+        )
+        definition = published.get("workflow_definition") or {}
+        webhook_paths = [
+            trigger["parameters"]["webhook_path"]
+            for trigger in definition.get("triggers") or []
+            if trigger.get("type") == "webhook_trigger"
+            and (trigger.get("parameters") or {}).get("webhook_path")
+        ]
+        if not webhook_paths:
+            raise AOWorkflowNotFoundException(
+                f"Workflow '{workflow_name}' has no webhook trigger in its "
+                f"published version"
+            )
+        if len(webhook_paths) > 1:
+            raise AOWorkflowNotFoundException(
+                f"Workflow '{workflow_name}' has more than one webhook "
+                f"trigger ({', '.join(webhook_paths)}), use 'webhook_path'"
+            )
+
+        return webhook_paths[0]
 
     async def trigger_workflow(
         self, webhook_path: str, payload: Optional[dict] = None
