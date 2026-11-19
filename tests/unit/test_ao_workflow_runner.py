@@ -995,6 +995,29 @@ class TestAOWorkflowRunnerTokenCache:
             assert oauth_runner._access_token_expires_at is None
 
 
+class TestAOWorkflowRunnerPermissions:
+    """Tests for the errors of a service account without a role."""
+
+    @pytest.mark.asyncio
+    async def test_wait_for_execution_forbidden_explains_role(
+        self, token_runner
+    ):
+        """A 403 on the status check says what the service account lacks."""
+        with aioresponses() as mocked:
+            mocked.get(EXECUTION_URL, status=403)
+
+            with pytest.raises(
+                AOWorkflowRunnerException, match="project-auditor"
+            ) as excinfo:
+                await token_runner.wait_for_execution(
+                    "exec-1", timeout=30, poll_interval=0
+                )
+
+            assert "was triggered" in str(excinfo.value)
+            assert excinfo.value.__cause__.status == 403
+            assert _calls(mocked, "GET", EXECUTION_URL) == 1
+
+
 class TestAOWorkflowRunnerRetries:
     """Tests for the retry policy of GET and POST requests."""
 

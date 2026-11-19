@@ -801,6 +801,16 @@ class AOWorkflowRunner:
                     e.__cause__, aiohttp.ClientResponseError
                 ):
                     status = e.__cause__.status
+                    if status == 403:
+                        # Being authorized on the webhook trigger allows the
+                        # trigger only, reading the execution needs a role.
+                        raise AOWorkflowRunnerException(
+                            f"Not allowed to read execution {execution_id}. "
+                            "The workflow was triggered, but its status "
+                            "cannot be checked: the service account needs a "
+                            "role that can read executions in the project "
+                            "of the workflow, for example project-auditor"
+                        ) from e.__cause__
                     if 400 <= status < 500 and status != 429:
                         logger.error(
                             "Client error for execution %s (status %d), "
