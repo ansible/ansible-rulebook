@@ -14,6 +14,7 @@
 
 """Unit tests for ansible_rulebook.ao_workflow_runner module."""
 
+import time
 from unittest.mock import AsyncMock, Mock, patch
 
 import aiohttp
@@ -34,6 +35,7 @@ from ansible_rulebook.conf import settings
 AO_HOST = "https://ao.example.com"
 WEBHOOK_URL = f"{AO_HOST}/api/v1/webhooks/disk-cleanup"
 EXECUTION_URL = f"{AO_HOST}/api/v1/executions/exec-1"
+TOKEN_URL = f"{AO_HOST}/api/v1/auth/token"
 
 
 def _calls(mocked, method, url):
@@ -718,6 +720,181 @@ class TestAOWorkflowRunnerOverrides:
 
         runner.host = "http://ao.example.com"
         assert runner._sslcontext is False
+
+
+@pytest_asyncio.fixture
+async def oauth_runner(monkeypatch):
+    """Runner with client credentials and retries without delay."""
+    monkeypatch.setattr(settings, "controller_retry_attempts", 3)
+    monkeypatch.setattr(settings, "controller_retry_max_timeout", 0.0)
+    runner = AOWorkflowRunner(
+        host=AO_HOST, client_id="client-id", client_secret="client-secret"
+    )
+    yield runner
+    await runner.close_session()
+
+
+def _token(value, expires_in=900):
+    """Body of a token response."""
+    body = {"access_token": value, "token_type": "Bearer"}
+    if expires_in is not None:
+        body["expires_in"] = expires_in
+    return body
+
+
+class TestAOWorkflowRunnerTokenCache:
+    """Tests for the reuse of OAuth2 access tokens."""
+
+    @pytest.mark.asyncio
+    async def test_token_reused_while_valid(self, oauth_runner):
+        """One token request serves the calls made within its lifetime."""
+        with aioresponses() as mocked:
+            mocked.post(TOKEN_URL, payload=_token("t1"), repeat=True)
+            mocked.get(
+                EXECUTION_URL, payload={"status": "running"}, repeat=True
+            )
+
+            for _ in range(5):
+                await oauth_runner.get_execution_status("exec-1")
+
+            assert _calls(mocked, "POST", TOKEN_URL) == 1
+            assert _calls(mocked, "GET", EXECUTION_URL) == 5
+
+    @pytest.mark.asyncio
+    async def test_trigger_and_wait_use_one_token(self, oauth_runner):
+        """Triggering a workflow and waiting for it needs a single token."""
+        with aioresponses() as mocked:
+            mocked.post(TOKEN_URL, payload=_token("t1"), repeat=True)
+            mocked.post(
+                WEBHOOK_URL, status=202, payload={"execution_id": "exec-1"}
+            )
+            mocked.get(EXECUTION_URL, payload={"status": "pending"})
+            mocked.get(EXECUTION_URL, payload={"status": "running"})
+            mocked.get(EXECUTION_URL, payload={"status": "completed"})
+
+            execution_id = await oauth_runner.trigger_workflow(
+                "disk-cleanup", {}
+            )
+            execution = await oauth_runner.wait_for_execution(
+                execution_id, timeout=30, poll_interval=0
+            )
+
+            assert execution["status"] == "completed"
+            assert _calls(mocked, "POST", TOKEN_URL) == 1
+
+    @pytest.mark.asyncio
+    async def test_token_renewed_after_expiry(self, oauth_runner):
+        """An expired token is not sent again."""
+        with aioresponses() as mocked:
+            mocked.post(TOKEN_URL, payload=_token("t1"))
+            mocked.post(TOKEN_URL, payload=_token("t2"))
+            mocked.get(
+                EXECUTION_URL, payload={"status": "running"}, repeat=True
+            )
+
+            await oauth_runner.get_execution_status("exec-1")
+            oauth_runner._access_token_expires_at = time.monotonic() - 1
+            await oauth_runner.get_execution_status("exec-1")
+
+            assert _calls(mocked, "POST", TOKEN_URL) == 2
+            last_call = mocked.requests[("GET", URL(EXECUTION_URL))][-1]
+            assert last_call.kwargs["headers"]["Authorization"] == "Bearer t2"
+
+    @pytest.mark.asyncio
+    async def test_token_expiry_uses_margin(self, oauth_runner):
+        """A token is renewed TOKEN_EXPIRY_MARGIN seconds before expiry."""
+        with aioresponses() as mocked:
+            mocked.post(TOKEN_URL, payload=_token("t1", expires_in=900))
+
+            before = time.monotonic()
+            await oauth_runner._get_access_token()
+            after = time.monotonic()
+
+            margin = AOWorkflowRunner.TOKEN_EXPIRY_MARGIN
+            assert (
+                before + 900 - margin
+                <= oauth_runner._access_token_expires_at
+                <= after + 900 - margin
+            )
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("expires_in", [None, 0, 30, "not-a-number"])
+    async def test_token_not_cached_without_usable_lifetime(
+        self, oauth_runner, expires_in
+    ):
+        """Without a lifetime longer than the margin every call asks anew."""
+        with aioresponses() as mocked:
+            mocked.post(
+                TOKEN_URL, payload=_token("t1", expires_in), repeat=True
+            )
+            mocked.get(
+                EXECUTION_URL, payload={"status": "running"}, repeat=True
+            )
+
+            await oauth_runner.get_execution_status("exec-1")
+            await oauth_runner.get_execution_status("exec-1")
+
+            assert _calls(mocked, "POST", TOKEN_URL) == 2
+            assert oauth_runner._access_token is None
+
+    @pytest.mark.asyncio
+    async def test_rejected_cached_token_is_renewed_once(self, oauth_runner):
+        """A 401 on a cached token gets one retry with a new token."""
+        with aioresponses() as mocked:
+            mocked.post(TOKEN_URL, payload=_token("t1"))
+            mocked.post(TOKEN_URL, payload=_token("t2"))
+            mocked.get(EXECUTION_URL, payload={"status": "running"})
+            mocked.get(EXECUTION_URL, status=401)
+            mocked.get(EXECUTION_URL, payload={"status": "completed"})
+
+            await oauth_runner.get_execution_status("exec-1")
+            execution = await oauth_runner.get_execution_status("exec-1")
+
+            assert execution["status"] == "completed"
+            assert _calls(mocked, "POST", TOKEN_URL) == 2
+            last_call = mocked.requests[("GET", URL(EXECUTION_URL))][-1]
+            assert last_call.kwargs["headers"]["Authorization"] == "Bearer t2"
+
+    @pytest.mark.asyncio
+    async def test_rejected_new_token_is_not_retried(self, oauth_runner):
+        """A 401 on a token that was just issued is an error."""
+        with aioresponses() as mocked:
+            mocked.post(TOKEN_URL, payload=_token("t1"), repeat=True)
+            mocked.get(EXECUTION_URL, status=401, repeat=True)
+
+            with pytest.raises(AOWorkflowRunnerException):
+                await oauth_runner.get_execution_status("exec-1")
+
+            assert _calls(mocked, "GET", EXECUTION_URL) == 1
+            assert _calls(mocked, "POST", TOKEN_URL) == 1
+
+    @pytest.mark.asyncio
+    async def test_token_not_reused_for_other_credentials(self, oauth_runner):
+        """A cached token belongs to the credentials it was issued for."""
+        with aioresponses() as mocked:
+            mocked.post(TOKEN_URL, payload=_token("t1"))
+            mocked.post(TOKEN_URL, payload=_token("t2"))
+
+            assert await oauth_runner._get_access_token() == "t1"
+            assert await oauth_runner._get_access_token() == "t1"
+
+            oauth_runner.client_secret = "another-secret"
+
+            assert await oauth_runner._get_access_token() == "t2"
+            assert _calls(mocked, "POST", TOKEN_URL) == 2
+
+    @pytest.mark.asyncio
+    async def test_close_session_forgets_token(self, oauth_runner):
+        """Closing the session drops the cached token."""
+        with aioresponses() as mocked:
+            mocked.post(TOKEN_URL, payload=_token("t1"))
+
+            await oauth_runner._get_access_token()
+            assert oauth_runner._access_token == "t1"
+
+            await oauth_runner.close_session()
+            assert oauth_runner._access_token is None
+            assert oauth_runner._access_token_expires_at is None
 
 
 class TestAOWorkflowRunnerRetries:

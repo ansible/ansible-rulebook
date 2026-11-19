@@ -88,6 +88,9 @@ class AOWorkflowRunner:
         "cancelled",
     ]
     SUCCESS_STATUSES = ["completed"]
+    # Seconds before its reported expiry at which a cached access token is
+    # no longer used
+    TOKEN_EXPIRY_MARGIN = 60
     PARTIAL_SUCCESS_STATUSES = ["completed_with_errors"]
     FAILURE_STATUSES = ["failed", "cancelled"]
 
@@ -145,6 +148,8 @@ class AOWorkflowRunner:
         self._raw_session = None
         self._post_retry_options = None
         self._access_token = None
+        self._access_token_expires_at = None
+        self._access_token_key = None
         self._sslcontext_key = None
         self._sslcontext_value = False
         # A runner created by with_overrides() already carries the settings
@@ -167,7 +172,7 @@ class AOWorkflowRunner:
         if self._raw_session:
             await self._raw_session.close()
             self._raw_session = None
-        self._access_token = None
+        self._invalidate_access_token()
 
     def _create_session(self):
         """Create aiohttp session with retry logic."""
@@ -340,13 +345,14 @@ class AOWorkflowRunner:
         if self.token:
             return self.token
 
-        # OAuth2 client_credentials flow (always fetch fresh token)
+        # Token obtained earlier with the current settings and still valid
+        cached_token = self._cached_access_token()
+        if cached_token:
+            return cached_token
+
+        # OAuth2 client_credentials flow
         if self.client_id and self.client_secret:
             return await self._get_oauth2_token()
-
-        # Cached token from username/password auth
-        if self._access_token:
-            return self._access_token
 
         # Username/password auth
         if self.username and self.password:
@@ -356,6 +362,67 @@ class AOWorkflowRunner:
             "Either token, client_id/client_secret, or username/password "
             "must be provided"
         )
+
+    def _credentials_key(self) -> tuple:
+        """Settings an access token was issued for."""
+        return (
+            self.host,
+            self.client_id,
+            self.client_secret,
+            self.username,
+            self.password,
+        )
+
+    def _cached_access_token(self) -> Optional[str]:
+        """Return the cached access token while it can still be used.
+
+        A token is reused only for the settings it was issued for and until
+        TOKEN_EXPIRY_MARGIN seconds before the expiry reported by AO.
+        """
+        if not self._access_token:
+            return None
+        if self._access_token_key != self._credentials_key():
+            return None
+        if (
+            self._access_token_expires_at is not None
+            and time.monotonic() >= self._access_token_expires_at
+        ):
+            return None
+        return self._access_token
+
+    def _invalidate_access_token(self) -> None:
+        """Forget the cached access token."""
+        self._access_token = None
+        self._access_token_expires_at = None
+        self._access_token_key = None
+
+    def _store_access_token(
+        self, access_token: str, expires_in, always: bool
+    ) -> None:
+        """Cache an access token until shortly before it expires.
+
+        Args:
+            access_token: Token returned by AO
+            expires_in: Lifetime in seconds reported by AO, if any
+            always: Cache the token even when AO reports no lifetime
+        """
+        try:
+            lifetime = float(expires_in)
+        except (TypeError, ValueError):
+            lifetime = None
+
+        if lifetime is None:
+            if not always:
+                return
+            expires_at = None
+        elif lifetime <= self.TOKEN_EXPIRY_MARGIN:
+            return
+        else:
+            expires_at = time.monotonic() + lifetime - self.TOKEN_EXPIRY_MARGIN
+
+        self._access_token = access_token
+        self._access_token_expires_at = expires_at
+        self._access_token_key = self._credentials_key()
 
     async def _get_oauth2_token(self) -> str:
         """Get OAuth2 token using client_credentials grant.
@@ -391,6 +458,11 @@ class AOWorkflowRunner:
                         "No access_token in OAuth2 response"
                     )
                 logger.debug("Successfully obtained OAuth2 access token")
+                # Reused until shortly before the expiry reported by AO.
+                # Without expires_in a new token is requested every time.
+                self._store_access_token(
+                    access_token, result.get("expires_in"), always=False
+                )
                 return access_token
         except aiohttp.ClientResponseError as e:
             logger.error("OAuth2 authentication failed: %s", e)
@@ -430,12 +502,15 @@ class AOWorkflowRunner:
                         "Empty authentication response"
                     )
                 result = json.loads(response_text)
-                self._access_token = result.get("access_token")
-                if not self._access_token:
+                access_token = result.get("access_token")
+                if not access_token:
                     raise AOAuthenticationException(
                         "No access_token in authentication response"
                     )
-                return self._access_token
+                self._store_access_token(
+                    access_token, result.get("expires_in"), always=True
+                )
+                return access_token
         except aiohttp.ClientResponseError as e:
             logger.error("Authentication failed: %s", e)
             raise AOAuthenticationException(
@@ -461,34 +536,58 @@ class AOWorkflowRunner:
         Raises:
             AOWorkflowRunnerException: If request fails
         """
-        access_token = await self._get_access_token()
-        url = urljoin(self.host, path)
+        base_headers = kwargs.pop("headers", {})
 
-        headers = kwargs.pop("headers", {})
-        headers["Authorization"] = f"Bearer {access_token}"
+        for attempt in (1, 2):
+            # Load the settings first: the cache is checked against them
+            self._load_from_environment()
+            from_cache = self._cached_access_token() is not None
+            access_token = await self._get_access_token()
+            url = urljoin(self.host, path)
 
-        try:
-            self._create_session()
-            if method.upper() == "POST":
-                kwargs["retry_options"] = self._post_retry_options
-            async with self._session.request(
-                method, url, headers=headers, ssl=self._sslcontext, **kwargs
-            ) as response:
-                response_text = await response.text()
-                if not response_text:
-                    return {}
-                try:
-                    return json.loads(response_text)
-                except json.JSONDecodeError as e:
-                    logger.error(CLIENT_INVALID_JSON_STRING, url, str(e))
-                    raise AOWorkflowRunnerException(
-                        f"Invalid JSON response from AO: {e}"
-                    ) from e
-        except aiohttp.ClientError as e:
-            logger.error(CLIENT_CONNECT_ERROR_STRING, str(e))
-            raise AOWorkflowRunnerException(
-                f"AO API request failed: {e}"
-            ) from e
+            headers = dict(base_headers)
+            headers["Authorization"] = f"Bearer {access_token}"
+
+            try:
+                self._create_session()
+                if method.upper() == "POST":
+                    kwargs["retry_options"] = self._post_retry_options
+                async with self._session.request(
+                    method,
+                    url,
+                    headers=headers,
+                    ssl=self._sslcontext,
+                    **kwargs,
+                ) as response:
+                    response_text = await response.text()
+                    if not response_text:
+                        return {}
+                    try:
+                        return json.loads(response_text)
+                    except json.JSONDecodeError as e:
+                        logger.error(CLIENT_INVALID_JSON_STRING, url, str(e))
+                        raise AOWorkflowRunnerException(
+                            f"Invalid JSON response from AO: {e}"
+                        ) from e
+            except aiohttp.ClientError as e:
+                rejected_cached_token = (
+                    isinstance(e, aiohttp.ClientResponseError)
+                    and e.status == 401
+                    and from_cache
+                    and attempt == 1
+                )
+                if rejected_cached_token:
+                    # The token was revoked or expired earlier than reported
+                    logger.debug(
+                        "AO rejected the cached access token, "
+                        "requesting a new one"
+                    )
+                    self._invalidate_access_token()
+                    continue
+                logger.error(CLIENT_CONNECT_ERROR_STRING, str(e))
+                raise AOWorkflowRunnerException(
+                    f"AO API request failed: {e}"
+                ) from e
 
     async def lookup_webhook_path(
         self, workflow_name: str, project: Optional[str] = None
