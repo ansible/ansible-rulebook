@@ -18,13 +18,37 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import aiohttp
 import pytest
+import pytest_asyncio
+from aioresponses import aioresponses
+from yarl import URL
 
 from ansible_rulebook.ao_workflow_runner import (
     AOAuthenticationException,
     AOExecutionTimeoutException,
     AOWorkflowNotFoundException,
     AOWorkflowRunner,
+    AOWorkflowRunnerException,
 )
+from ansible_rulebook.conf import settings
+
+AO_HOST = "https://ao.example.com"
+WEBHOOK_URL = f"{AO_HOST}/api/v1/webhooks/disk-cleanup"
+EXECUTION_URL = f"{AO_HOST}/api/v1/executions/exec-1"
+
+
+def _calls(mocked, method, url):
+    """Number of requests that aioresponses received for method and url."""
+    return len(mocked.requests.get((method, URL(url)), []))
+
+
+@pytest_asyncio.fixture
+async def token_runner(monkeypatch):
+    """Runner with a static token and retries without delay."""
+    monkeypatch.setattr(settings, "controller_retry_attempts", 3)
+    monkeypatch.setattr(settings, "controller_retry_max_timeout", 0.0)
+    runner = AOWorkflowRunner(host=AO_HOST, token="static-token")
+    yield runner
+    await runner.close_session()
 
 
 class TestAOWorkflowRunnerInit:
@@ -694,3 +718,72 @@ class TestAOWorkflowRunnerOverrides:
 
         runner.host = "http://ao.example.com"
         assert runner._sslcontext is False
+
+
+class TestAOWorkflowRunnerRetries:
+    """Tests for the retry policy of GET and POST requests."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("status", [500, 504])
+    async def test_trigger_not_retried_on_500_and_504(
+        self, token_runner, status
+    ):
+        """A POST answered with 500 or 504 may have started the workflow."""
+        with aioresponses() as mocked:
+            mocked.post(WEBHOOK_URL, status=status)
+            mocked.post(
+                WEBHOOK_URL, status=202, payload={"execution_id": "exec-2"}
+            )
+
+            with pytest.raises(AOWorkflowRunnerException):
+                await token_runner.trigger_workflow("disk-cleanup", {})
+
+            assert _calls(mocked, "POST", WEBHOOK_URL) == 1
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("status", [429, 502, 503])
+    async def test_trigger_retried_on_429_502_503(self, token_runner, status):
+        """POST retries follow the policy used by job_template_runner."""
+        with aioresponses() as mocked:
+            mocked.post(WEBHOOK_URL, status=status)
+            mocked.post(
+                WEBHOOK_URL, status=202, payload={"execution_id": "exec-1"}
+            )
+
+            execution_id = await token_runner.trigger_workflow(
+                "disk-cleanup", {}
+            )
+
+            assert execution_id == "exec-1"
+            assert _calls(mocked, "POST", WEBHOOK_URL) == 2
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("status", [429, 500, 502, 503, 504])
+    async def test_status_check_retried_on_server_errors(
+        self, token_runner, status
+    ):
+        """GET requests are safe to repeat on every transient error."""
+        with aioresponses() as mocked:
+            mocked.get(EXECUTION_URL, status=status)
+            mocked.get(
+                EXECUTION_URL, status=200, payload={"status": "running"}
+            )
+
+            execution = await token_runner.get_execution_status("exec-1")
+
+            assert execution["status"] == "running"
+            assert _calls(mocked, "GET", EXECUTION_URL) == 2
+
+    @pytest.mark.asyncio
+    async def test_trigger_not_retried_on_client_error(self, token_runner):
+        """A 4xx answer is final."""
+        with aioresponses() as mocked:
+            mocked.post(WEBHOOK_URL, status=403)
+            mocked.post(
+                WEBHOOK_URL, status=202, payload={"execution_id": "exec-2"}
+            )
+
+            with pytest.raises(AOWorkflowRunnerException):
+                await token_runner.trigger_workflow("disk-cleanup", {})
+
+            assert _calls(mocked, "POST", WEBHOOK_URL) == 1

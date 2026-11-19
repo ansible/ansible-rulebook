@@ -143,6 +143,7 @@ class AOWorkflowRunner:
             self.verify_ssl = verify_ssl
         self._session = None
         self._raw_session = None
+        self._post_retry_options = None
         self._access_token = None
         self._sslcontext_key = None
         self._sslcontext_value = False
@@ -183,7 +184,23 @@ class AOWorkflowRunner:
                 statuses={429, 500, 502, 503, 504},
                 retry_all_server_errors=False,
                 exceptions={aiohttp.ClientConnectorError},
-                methods={"GET", "POST"},
+                methods={"GET"},
+            )
+            # POST retries are limited to 429/502/503, as in
+            # job_template_runner. A webhook POST starts a workflow
+            # execution and AO provides no idempotency for it, so a POST
+            # answered with 500 or 504 is not sent again: the gateway may
+            # return them after AO accepted the request, and a second
+            # POST would start the workflow twice.
+            self._post_retry_options = ExponentialRetry(
+                attempts=settings.controller_retry_attempts,
+                start_timeout=2.0,
+                max_timeout=settings.controller_retry_max_timeout,
+                factor=2.0,
+                statuses={429, 502, 503},
+                retry_all_server_errors=False,
+                exceptions={aiohttp.ClientConnectorError},
+                methods={"POST"},
             )
             self._session = RetryClient(
                 client_session=client_session,
@@ -452,6 +469,8 @@ class AOWorkflowRunner:
 
         try:
             self._create_session()
+            if method.upper() == "POST":
+                kwargs["retry_options"] = self._post_retry_options
             async with self._session.request(
                 method, url, headers=headers, ssl=self._sslcontext, **kwargs
             ) as response:
