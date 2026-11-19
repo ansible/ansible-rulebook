@@ -19,7 +19,6 @@ import os
 import ssl
 import time
 from functools import cached_property
-from http import HTTPStatus
 from typing import Optional, Union
 from urllib.parse import urljoin
 
@@ -125,7 +124,8 @@ class AOWorkflowRunner:
             - EDA_AO_SSL_VERIFY
         """
         # Use environment variables as fallback if arguments not provided
-        # Prioritize OAuth2 client credentials (recommended for AO service accounts)
+        # Prioritize OAuth2 client credentials (recommended for AO service
+        # accounts)
         self.token = token
         self._host = ""
         self.host = host or os.environ.get("EDA_AO_URL", "")
@@ -133,7 +133,8 @@ class AOWorkflowRunner:
         self.client_secret = client_secret or os.environ.get(
             "EDA_AO_CLIENT_SECRET", ""
         )
-        # Username/password kept for backwards compatibility but not recommended
+        # Username/password kept for backwards compatibility but not
+        # recommended
         self.username = username
         self.password = password
         # For verify_ssl, only use default if no arg and no env var
@@ -237,7 +238,8 @@ class AOWorkflowRunner:
 
         # Log what we have after loading
         logger.debug(
-            "AO credentials after env load: host=%s, has_token=%s, has_client_id=%s, has_client_secret=%s",
+            "AO credentials after env load: host=%s, has_token=%s, "
+            "has_client_id=%s, has_client_secret=%s",
             bool(self.host and self.host != "/"),
             bool(self.token),
             bool(self.client_id),
@@ -453,7 +455,8 @@ class AOWorkflowRunner:
         """Trigger a workflow via EDA webhook.
 
         Args:
-            webhook_path: Webhook UUID or path (e.g., "755d5f81-a574-4ea3-8461-1934cb4a5c51")
+            webhook_path: Webhook UUID or path
+                (e.g., "755d5f81-a574-4ea3-8461-1934cb4a5c51")
             payload: Optional payload data to send
 
         Returns:
@@ -553,7 +556,8 @@ class AOWorkflowRunner:
                 )
                 raise
             except AOWorkflowRunnerException as e:
-                # Check if this wraps a 4xx client error - those won't fix themselves
+                # Check if this wraps a 4xx client error - those won't fix
+                # themselves
                 # Exception: 429 (rate limit) is transient, keep polling
                 if e.__cause__ and isinstance(
                     e.__cause__, aiohttp.ClientResponseError
@@ -561,13 +565,15 @@ class AOWorkflowRunner:
                     status = e.__cause__.status
                     if 400 <= status < 500 and status != 429:
                         logger.error(
-                            "Client error for execution %s (status %d), failing immediately: %s",
+                            "Client error for execution %s (status %d), "
+                            "failing immediately: %s",
                             execution_id,
                             status,
                             e,
                         )
                         raise
-                # Retry transient errors (network issues, 5xx server errors, rate limits)
+                # Retry transient errors (network issues, 5xx server errors,
+                # rate limits)
                 logger.warning(
                     "Error checking execution status, will retry: %s", e
                 )

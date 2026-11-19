@@ -20,10 +20,7 @@ import pytest
 from ansible_rulebook.action.control import Control
 from ansible_rulebook.action.metadata import Metadata
 from ansible_rulebook.action.run_ao_workflow import RunAOWorkflow
-from ansible_rulebook.ao_workflow_runner import (
-    AOExecutionFailedException,
-    AOWorkflowNotFoundException,
-)
+from ansible_rulebook.ao_workflow_runner import AOWorkflowNotFoundException
 
 
 def _validate_action_event(queue, success, reason=None):

@@ -13,7 +13,6 @@
 #  limitations under the License.
 
 import logging
-import uuid
 
 from drools import ruleset as lang
 
@@ -40,7 +39,8 @@ class RunAOWorkflow:
 
     Parameters:
         webhook_path (str): Direct webhook path (e.g., "ops/disk-cleanup")
-        workflow_name (str): Workflow name for lookup (alternative to webhook_path)
+        workflow_name (str): Workflow name for lookup (alternative to
+            webhook_path)
         project (str): Project name for workflow lookup (optional)
         payload (dict): Data to send as webhook payload (optional)
         timeout (int): Max wait time in seconds (default: 600)
@@ -51,9 +51,12 @@ class RunAOWorkflow:
             (default: True)
         ruleset (str): Ruleset name for posting facts/events (optional)
         ao_host (str): AO base URL (optional, can use env EDA_AO_URL)
-        ao_client_id (str): OAuth2 client ID (optional, can use env EDA_AO_CLIENT_ID)
-        ao_client_secret (str): OAuth2 client secret (optional, can use env EDA_AO_CLIENT_SECRET)
-        ao_verify_ssl (str): SSL verification (optional, can use env EDA_AO_SSL_VERIFY)
+        ao_client_id (str): OAuth2 client ID (optional, can use env
+            EDA_AO_CLIENT_ID)
+        ao_client_secret (str): OAuth2 client secret (optional, can use env
+            EDA_AO_CLIENT_SECRET)
+        ao_verify_ssl (str): SSL verification (optional, can use env
+            EDA_AO_SSL_VERIFY)
     """
 
     def __init__(
@@ -71,7 +74,8 @@ class RunAOWorkflow:
     async def __call__(self):
         """Execute the action."""
         # Configure AO credentials if provided in action args
-        # This allows passing credentials directly from AAP credential extra_vars
+        # This allows passing credentials directly from AAP credential
+        # extra_vars
         ao_host = self.action_args.get("ao_host")
         ao_client_id = self.action_args.get("ao_client_id")
         ao_client_secret = self.action_args.get("ao_client_secret")
@@ -114,7 +118,8 @@ class RunAOWorkflow:
         )
 
         logger.info(
-            "Running AO workflow: webhook_path=%s, workflow_name=%s, project=%s",
+            "Running AO workflow: webhook_path=%s, workflow_name=%s, "
+            "project=%s",
             webhook_path,
             workflow_name,
             project,

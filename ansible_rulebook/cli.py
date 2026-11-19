@@ -212,8 +212,8 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--ao-url",
-        help="Automation Orchestrator API base url, e.g. https://ao-host:8080, "
-        "can also be passed via the env var EDA_AO_URL",
+        help="Automation Orchestrator API base url, e.g. "
+        "https://ao-host:8080, can also be passed via the env var EDA_AO_URL",
         default=os.environ.get("EDA_AO_URL", ""),
     )
     parser.add_argument(
@@ -224,26 +224,26 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--ao-username",
-        help="Automation Orchestrator username, can also be passed via env var "
-        "EDA_AO_USERNAME",
+        help="Automation Orchestrator username, can also be passed via "
+        "env var EDA_AO_USERNAME",
         default=os.environ.get("EDA_AO_USERNAME", ""),
     )
     parser.add_argument(
         "--ao-password",
-        help="Automation Orchestrator password, can also be passed via env var "
-        "EDA_AO_PASSWORD",
+        help="Automation Orchestrator password, can also be passed via "
+        "env var EDA_AO_PASSWORD",
         default=os.environ.get("EDA_AO_PASSWORD", ""),
     )
     parser.add_argument(
         "--ao-client-id",
-        help="Automation Orchestrator OAuth2 client ID, can also be passed via "
-        "env var EDA_AO_CLIENT_ID",
+        help="Automation Orchestrator OAuth2 client ID, can also be passed "
+        "via env var EDA_AO_CLIENT_ID",
         default=os.environ.get("EDA_AO_CLIENT_ID", ""),
     )
     parser.add_argument(
         "--ao-client-secret",
-        help="Automation Orchestrator OAuth2 client secret, can also be passed "
-        "via env var EDA_AO_CLIENT_SECRET",
+        help="Automation Orchestrator OAuth2 client secret, can also be "
+        "passed via env var EDA_AO_CLIENT_SECRET",
         default=os.environ.get("EDA_AO_CLIENT_SECRET", ""),
     )
     parser.add_argument(
