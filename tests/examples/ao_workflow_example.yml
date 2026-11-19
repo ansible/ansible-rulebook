@@ -6,11 +6,14 @@
 # Prerequisites:
 # - Automation Orchestrator instance accessible via URL
 # - Workflows configured with webhook triggers
-# - AO credentials provided via CLI args or environment variables:
-#   --ao-url https://ao-host:8080
-#   --ao-token <bearer-token>
-#   OR
-#   --ao-username <username> --ao-password <password>
+# - An AO service account that is authorized on the webhook triggers and
+#   has a role that can read executions (for example project-auditor)
+# - AO connection provided via CLI args or environment variables:
+#   --ao-url https://ao-host:8080              (EDA_AO_URL)
+#   --ao-client-id <service account client id> (EDA_AO_CLIENT_ID)
+#   --ao-client-secret <client secret>         (EDA_AO_CLIENT_SECRET)
+#   User names and passwords cannot trigger AO webhooks.
+# - Webhook paths use lowercase letters, digits, "-" and "_" (no "/")
 
 - name: Automation Orchestrator Integration Examples
   hosts: all
@@ -25,7 +28,7 @@
       condition: event.alert_type == "certificate_expiry"
       action:
         run_ao_workflow:
-          webhook_path: "ops/cert-renewal"
+          webhook_path: "cert-renewal"
           payload:
             hostname: "{{ event.hostname }}"
             certificate_name: "{{ event.cert_name }}"
@@ -68,7 +71,7 @@
       condition: event.alert_type == "service_down"
       action:
         run_ao_workflow:
-          webhook_path: "ops/service-restart"
+          webhook_path: "service-restart"
           payload:
             hostname: "{{ event.hostname }}"
             service_name: "{{ event.service }}"

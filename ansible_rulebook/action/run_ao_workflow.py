@@ -38,7 +38,7 @@ class RunAOWorkflow:
     via webhook and optionally waits for completion.
 
     Parameters:
-        webhook_path (str): Direct webhook path (e.g., "ops/disk-cleanup")
+        webhook_path (str): Direct webhook path (e.g., "disk-cleanup")
         workflow_name (str): Workflow name for lookup (alternative to
             webhook_path)
         project (str): Project name for workflow lookup (optional)

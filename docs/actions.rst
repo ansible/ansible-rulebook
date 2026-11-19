@@ -285,10 +285,30 @@ Run an Automation Orchestrator (AO) workflow via webhook trigger.
     - Direct action parameters (``ao_host``, ``ao_client_id``, ``ao_client_secret``, ``ao_verify_ssl``)
 
 .. note::
-    OAuth2 client_credentials authentication is required for AO service accounts. This action will obtain a fresh OAuth2 token for each workflow execution.
+    OAuth2 client_credentials authentication is required for AO service accounts. The access token is reused until
+    shortly before it expires and is then requested again.
 
 .. note::
-    The workflow must have a webhook trigger enabled and published in Automation Orchestrator. Get the webhook UUID from the workflow's trigger configuration.
+    The service account needs two things in Automation Orchestrator:
+
+    - it must be one of the authorized service accounts of the webhook trigger, which allows it to trigger the workflow;
+    - it must have a role that can read executions in the project of the workflow, for example ``project-auditor``,
+      which allows the action to check the result. Without it the workflow is triggered and the action fails.
+      Looking up a workflow with ``workflow_name`` needs read access to workflows and projects as well.
+
+.. note::
+    AO webhook endpoints accept service account tokens only. A user name and password (``--ao-username`` and
+    ``--ao-password``) can log in but cannot trigger a workflow. A token passed with ``--ao-token`` is not renewed
+    when it expires, use it for short tests only.
+
+.. note::
+    The workflow must have a webhook trigger and be published in Automation Orchestrator. The webhook path is shown
+    in the trigger configuration, it is the last part of the webhook URL.
+
+.. note::
+    The action waits for the workflow to finish. When ``timeout`` is reached the action fails and the workflow keeps
+    running in AO. A trigger request answered with HTTP 500 or 504 is reported as failed and is not sent again,
+    because AO may already have started the workflow.
 
 .. list-table::
    :widths: 25 150 10
@@ -298,15 +318,18 @@ Run an Automation Orchestrator (AO) workflow via webhook trigger.
      - Description
      - Required
    * - webhook_path
-     - | The webhook UUID from the AO workflow trigger configuration. This is the unique identifier
-       | found in the workflow's webhook trigger parameters. Either webhook_path or workflow_name is required.
+     - | The webhook path from the AO workflow trigger configuration, for example ``disk-cleanup`` or a UUID.
+       | AO accepts lowercase letters, digits, ``-`` and ``_``, a path cannot contain ``/``.
+       | Either webhook_path or workflow_name is required.
      - Conditional
    * - workflow_name
-     - | The name of the workflow in AO. The action will look up the webhook path automatically.
+     - | The exact name of the workflow in AO. The action looks up the webhook path in the published version
+       | of the workflow, which must have exactly one webhook trigger.
        | Either webhook_path or workflow_name is required. Using webhook_path is recommended for better performance.
      - Conditional
    * - project
      - | When using workflow_name, optionally specify the project name to narrow the search.
+       | Required when workflows in different projects have the same name.
      - No
    * - payload
      - | Dictionary of data to send to the AO workflow. Can use Jinja2 templates to reference event data.
@@ -327,10 +350,11 @@ Run an Automation Orchestrator (AO) workflow via webhook trigger.
    * - ao_verify_ssl
      - | SSL certificate verification setting. Can be "yes" (verify with system CA), "no" (disable verification),
        | or a path to a CA bundle file. Default is "yes". Can be provided via AAP credential or EDA_AO_SSL_VERIFY.
+       | ao_host, ao_client_id, ao_client_secret and ao_verify_ssl set on an action apply to that action only.
      - No
    * - timeout
      - | Maximum time in seconds to wait for workflow execution to complete. Default is 600 (10 minutes).
-       | Set based on expected workflow duration.
+       | Set based on expected workflow duration. The workflow is not cancelled when the timeout is reached.
      - No
    * - poll_interval
      - | Seconds between status checks while waiting for workflow completion. Default is 5.
@@ -374,6 +398,7 @@ The action recognizes these AO workflow execution statuses:
 
 - ``pending``: Execution queued
 - ``running``: Execution in progress
+- ``paused``: Execution waiting, for example on a wait step or an approval
 - ``completed``: Success
 - ``completed_with_errors``: Partial success (configurable via treat_errors_as_failure)
 - ``failed``: Failure
