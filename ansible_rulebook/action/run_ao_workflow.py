@@ -71,34 +71,37 @@ class RunAOWorkflow:
         self.execution_result = {}
         self.display = terminal.Display()
 
+    # action argument -> AOWorkflowRunner setting
+    CONNECTION_ARGS = {
+        "ao_host": "host",
+        "ao_client_id": "client_id",
+        "ao_client_secret": "client_secret",
+        "ao_verify_ssl": "verify_ssl",
+    }
+
+    def _get_runner(self):
+        """Return the runner for this action and whether the action owns it.
+
+        Connection settings passed as action args (for example from AAP
+        credential extra_vars) apply to this action only. They are given to
+        a runner of its own instead of being written to the shared runner,
+        where they would be picked up by the other actions.
+        """
+        overrides = {
+            setting: str(self.action_args[arg])
+            for arg, setting in self.CONNECTION_ARGS.items()
+            if self.action_args.get(arg)
+        }
+        if not overrides:
+            return ao_workflow_runner, False
+
+        logger.debug(
+            "Using AO settings from action args: %s", sorted(overrides)
+        )
+        return ao_workflow_runner.with_overrides(**overrides), True
+
     async def __call__(self):
         """Execute the action."""
-        # Configure AO credentials if provided in action args
-        # This allows passing credentials directly from AAP credential
-        # extra_vars
-        ao_host = self.action_args.get("ao_host")
-        ao_client_id = self.action_args.get("ao_client_id")
-        ao_client_secret = self.action_args.get("ao_client_secret")
-        ao_verify_ssl = self.action_args.get("ao_verify_ssl")
-
-        if ao_host:
-            ao_workflow_runner.host = ao_host
-            logger.debug("Using AO host from action args: %s", ao_host)
-
-        if ao_client_id:
-            ao_workflow_runner.client_id = ao_client_id
-            logger.debug("Using AO client_id from action args")
-
-        if ao_client_secret:
-            ao_workflow_runner.client_secret = ao_client_secret
-            logger.debug("Using AO client_secret from action args")
-
-        if ao_verify_ssl:
-            ao_workflow_runner.verify_ssl = ao_verify_ssl
-            logger.debug(
-                "Using AO verify_ssl from action args: %s", ao_verify_ssl
-            )
-
         # Validate parameters
         webhook_path = self.action_args.get("webhook_path")
         workflow_name = self.action_args.get("workflow_name")
@@ -136,18 +139,25 @@ class RunAOWorkflow:
                 payload, include_events=True
             )
 
-        await self._run(
-            webhook_path,
-            workflow_name,
-            project,
-            payload,
-            timeout,
-            poll_interval,
-            treat_errors_as_failure,
-        )
+        runner, owns_runner = self._get_runner()
+        try:
+            await self._run(
+                runner,
+                webhook_path,
+                workflow_name,
+                project,
+                payload,
+                timeout,
+                poll_interval,
+                treat_errors_as_failure,
+            )
+        finally:
+            if owns_runner:
+                await runner.close_session()
 
     async def _run(
         self,
+        runner,
         webhook_path: str,
         workflow_name: str,
         project: str,
@@ -165,23 +175,23 @@ class RunAOWorkflow:
                     workflow_name,
                     f" in project '{project}'" if project else "",
                 )
-                webhook_path = await ao_workflow_runner.lookup_webhook_path(
+                webhook_path = await runner.lookup_webhook_path(
                     workflow_name, project
                 )
                 logger.info("Resolved webhook path: %s", webhook_path)
 
             # Trigger workflow
-            self.execution_id = await ao_workflow_runner.trigger_workflow(
+            self.execution_id = await runner.trigger_workflow(
                 webhook_path, payload
             )
 
             # Wait for completion
-            execution = await ao_workflow_runner.wait_for_execution(
+            execution = await runner.wait_for_execution(
                 self.execution_id, timeout, poll_interval
             )
 
             # Check if successful
-            is_successful = ao_workflow_runner.is_execution_successful(
+            is_successful = runner.is_execution_successful(
                 execution, treat_errors_as_failure
             )
 

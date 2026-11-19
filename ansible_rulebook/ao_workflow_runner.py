@@ -18,7 +18,6 @@ import logging
 import os
 import ssl
 import time
-from functools import cached_property
 from typing import Optional, Union
 from urllib.parse import urljoin
 
@@ -145,6 +144,11 @@ class AOWorkflowRunner:
         self._session = None
         self._raw_session = None
         self._access_token = None
+        self._sslcontext_key = None
+        self._sslcontext_value = False
+        # A runner created by with_overrides() already carries the settings
+        # resolved from the environment and must not read them again.
+        self._use_environment = True
 
     @property
     def host(self):
@@ -187,9 +191,21 @@ class AOWorkflowRunner:
                 raise_for_status=True,
             )
 
-    @cached_property
+    @property
     def _sslcontext(self) -> Union[bool, ssl.SSLContext]:
-        """Get SSL context for HTTPS connections."""
+        """Get SSL context for HTTPS connections.
+
+        The context is rebuilt whenever the host or the verify_ssl setting
+        changes, so a new setting is never ignored in favor of an old one.
+        """
+        key = (self.host, self.verify_ssl)
+        if self._sslcontext_key != key:
+            self._sslcontext_value = self._build_sslcontext()
+            self._sslcontext_key = key
+        return self._sslcontext_value
+
+    def _build_sslcontext(self) -> Union[bool, ssl.SSLContext]:
+        """Translate verify_ssl (yes/no/<CA bundle>) into an aiohttp value."""
         if self.host.startswith("https"):
             if self.verify_ssl.lower() in ["yes", "true"]:
                 return True
@@ -203,6 +219,9 @@ class AOWorkflowRunner:
         This is called lazily to ensure environment variables set by AAP EDA
         credentials are available before we try to use them.
         """
+        if not self._use_environment:
+            return
+
         # Check for empty or default host (empty string becomes "/" via setter)
         if not self.host or self.host == "/":
             env_host = os.environ.get("EDA_AO_URL", "")
@@ -245,6 +264,48 @@ class AOWorkflowRunner:
             bool(self.client_id),
             bool(self.client_secret),
         )
+
+    def with_overrides(
+        self,
+        host: str = "",
+        client_id: str = "",
+        client_secret: str = "",
+        verify_ssl: str = "",
+    ) -> "AOWorkflowRunner":
+        """Create a runner for one action with its own connection settings.
+
+        The new runner starts from the settings of this runner and replaces
+        the ones given. This runner is left untouched, so the settings that
+        one action passes never reach another action.
+
+        Args:
+            host: AO base URL to use instead of the configured one
+            client_id: OAuth2 client ID to use instead of the configured one
+            client_secret: OAuth2 client secret to use instead of the
+                configured one
+            verify_ssl: SSL verification setting (yes/no/<path to CA bundle>)
+                to use instead of the configured one
+
+        Returns:
+            AOWorkflowRunner: A new runner; the caller must close its session
+        """
+        self._load_from_environment()
+        # Client credentials given to the action take precedence over a
+        # token or a username/password configured globally.
+        own_credentials = bool(client_id or client_secret)
+        runner = AOWorkflowRunner(
+            host=host or self.host,
+            token="" if own_credentials else self.token,
+            username="" if own_credentials else self.username,
+            password="" if own_credentials else self.password,
+            client_id=client_id or self.client_id,
+            client_secret=client_secret or self.client_secret,
+        )
+        # Set after the constructor: an explicit "yes" must not be replaced
+        # by EDA_AO_SSL_VERIFY, which the constructor does for the default.
+        runner.verify_ssl = verify_ssl or self.verify_ssl
+        runner._use_environment = False
+        return runner
 
     async def _get_access_token(self) -> str:
         """Authenticate and get access token.

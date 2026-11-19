@@ -592,3 +592,105 @@ class TestAOWorkflowRunnerExecution:
 
         execution = {"status": "failed"}
         assert runner.is_execution_successful(execution) is False
+
+
+class TestAOWorkflowRunnerOverrides:
+    """Tests for per-action connection settings."""
+
+    def test_with_overrides_returns_separate_runner(self):
+        """The shared runner keeps its settings when an action overrides."""
+        shared = AOWorkflowRunner(
+            host="https://ao.example.com",
+            client_id="shared-id",
+            client_secret="shared-secret",
+        )
+        shared.verify_ssl = "yes"
+
+        own = shared.with_overrides(
+            host="https://other-ao.example.com",
+            client_id="own-id",
+            client_secret="own-secret",
+            verify_ssl="no",
+        )
+
+        assert own is not shared
+        assert own.host == "https://other-ao.example.com/"
+        assert own.client_id == "own-id"
+        assert own.client_secret == "own-secret"
+        assert own.verify_ssl == "no"
+
+        assert shared.host == "https://ao.example.com/"
+        assert shared.client_id == "shared-id"
+        assert shared.client_secret == "shared-secret"
+        assert shared.verify_ssl == "yes"
+
+    def test_with_overrides_inherits_missing_settings(self):
+        """Settings that the action does not pass come from the runner."""
+        shared = AOWorkflowRunner(
+            host="https://ao.example.com",
+            client_id="shared-id",
+            client_secret="shared-secret",
+        )
+        shared.verify_ssl = "/etc/pki/ca.pem"
+
+        own = shared.with_overrides(host="https://other-ao.example.com")
+
+        assert own.host == "https://other-ao.example.com/"
+        assert own.client_id == "shared-id"
+        assert own.client_secret == "shared-secret"
+        assert own.verify_ssl == "/etc/pki/ca.pem"
+
+    def test_with_overrides_client_credentials_replace_token(self):
+        """Client credentials of the action win over a global token."""
+        shared = AOWorkflowRunner(
+            host="https://ao.example.com",
+            token="global-token",
+            username="user",
+            password="pass",
+        )
+
+        own = shared.with_overrides(
+            client_id="own-id", client_secret="own-secret"
+        )
+
+        assert own.token == ""
+        assert own.username == ""
+        assert own.password == ""
+        assert own.client_id == "own-id"
+
+    def test_with_overrides_keeps_explicit_verify_ssl(self):
+        """An explicit "yes" is not replaced by EDA_AO_SSL_VERIFY."""
+        import os
+
+        shared = AOWorkflowRunner(host="https://ao.example.com")
+        os.environ["EDA_AO_SSL_VERIFY"] = "no"
+        try:
+            own = shared.with_overrides(verify_ssl="yes")
+            own._load_from_environment()
+
+            assert own.verify_ssl == "yes"
+            assert own._sslcontext is True
+        finally:
+            del os.environ["EDA_AO_SSL_VERIFY"]
+
+    def test_sslcontext_follows_verify_ssl(self):
+        """Changing verify_ssl is honored on the next request."""
+        runner = AOWorkflowRunner(host="https://ao.example.com")
+
+        runner.verify_ssl = "no"
+        assert runner._sslcontext is False
+
+        runner.verify_ssl = "yes"
+        assert runner._sslcontext is True
+
+        runner.verify_ssl = "no"
+        assert runner._sslcontext is False
+
+    def test_sslcontext_follows_host(self):
+        """Changing the host scheme is honored on the next request."""
+        runner = AOWorkflowRunner(host="https://ao.example.com")
+        runner.verify_ssl = "yes"
+        assert runner._sslcontext is True
+
+        runner.host = "http://ao.example.com"
+        assert runner._sslcontext is False

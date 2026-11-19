@@ -13,14 +13,17 @@
 #  limitations under the License.
 
 import asyncio
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
 from ansible_rulebook.action.control import Control
 from ansible_rulebook.action.metadata import Metadata
 from ansible_rulebook.action.run_ao_workflow import RunAOWorkflow
-from ansible_rulebook.ao_workflow_runner import AOWorkflowNotFoundException
+from ansible_rulebook.ao_workflow_runner import (
+    AOWorkflowNotFoundException,
+    AOWorkflowRunnerException,
+)
 
 
 def _validate_action_event(queue, success, reason=None):
@@ -448,3 +451,157 @@ async def test_run_ao_workflow_completed_with_errors_as_success():
     # Should succeed
     action_event = _validate_action_event(queue, success=True)
     assert action_event["status"] == "completed_with_errors"
+
+
+def _own_runner_mock(execution_id):
+    """Build a runner mock as returned by with_overrides()."""
+    own_runner = Mock()
+    own_runner.trigger_workflow = AsyncMock(return_value=execution_id)
+    own_runner.wait_for_execution = AsyncMock(
+        return_value={
+            "id": execution_id,
+            "status": "completed",
+            "workflow_name": "Test Workflow",
+            "created_at": "2024-01-01T00:00:00Z",
+            "completed_at": "2024-01-01T00:01:00Z",
+        }
+    )
+    own_runner.is_execution_successful = lambda x, y: True
+    own_runner.close_session = AsyncMock()
+    return own_runner
+
+
+@pytest.mark.asyncio
+async def test_run_ao_workflow_connection_args_use_own_runner():
+    """Connection args of an action must not change the shared runner."""
+    queue = asyncio.Queue()
+    metadata = Metadata(
+        rule="r1",
+        rule_set="rs1",
+        rule_uuid="u1",
+        rule_set_uuid="u2",
+        rule_run_at="abc",
+    )
+    control = Control(
+        queue=queue,
+        inventory="",
+        hosts=["all"],
+        variables={},
+        project_data_file="",
+    )
+    action_args = {
+        "webhook_path": "test-workflow",
+        "post_facts": False,
+        "ao_host": "https://other-ao.example.com",
+        "ao_client_id": "own-id",
+        "ao_client_secret": "own-secret",
+        "ao_verify_ssl": "no",
+    }
+
+    with patch(
+        "ansible_rulebook.action.run_ao_workflow.ao_workflow_runner"
+    ) as mock_runner:
+        own_runner = _own_runner_mock("exec-333")
+        mock_runner.with_overrides = Mock(return_value=own_runner)
+        mock_runner.trigger_workflow = AsyncMock()
+
+        action = RunAOWorkflow(metadata, control, **action_args)
+        await action()
+
+        mock_runner.with_overrides.assert_called_once_with(
+            host="https://other-ao.example.com",
+            client_id="own-id",
+            client_secret="own-secret",
+            verify_ssl="no",
+        )
+        # The workflow runs on the runner of the action, which is closed
+        own_runner.trigger_workflow.assert_called_once()
+        own_runner.close_session.assert_awaited_once()
+        # The shared runner is neither used nor closed
+        mock_runner.trigger_workflow.assert_not_called()
+        mock_runner.close_session.assert_not_called()
+
+    action_event = _validate_action_event(queue, success=True)
+    assert action_event["execution_id"] == "exec-333"
+
+
+@pytest.mark.asyncio
+async def test_run_ao_workflow_own_runner_closed_on_failure():
+    """The runner of the action is closed even when the action fails."""
+    queue = asyncio.Queue()
+    metadata = Metadata(
+        rule="r1",
+        rule_set="rs1",
+        rule_uuid="u1",
+        rule_set_uuid="u2",
+        rule_run_at="abc",
+    )
+    control = Control(
+        queue=queue,
+        inventory="",
+        hosts=["all"],
+        variables={},
+        project_data_file="",
+    )
+    action_args = {
+        "webhook_path": "test-workflow",
+        "post_facts": False,
+        "ao_verify_ssl": "no",
+    }
+
+    with patch(
+        "ansible_rulebook.action.run_ao_workflow.ao_workflow_runner"
+    ) as mock_runner:
+        own_runner = _own_runner_mock("exec-444")
+        own_runner.trigger_workflow = AsyncMock(
+            side_effect=AOWorkflowRunnerException("boom")
+        )
+        mock_runner.with_overrides = Mock(return_value=own_runner)
+
+        action = RunAOWorkflow(metadata, control, **action_args)
+        await action()
+
+        mock_runner.with_overrides.assert_called_once_with(verify_ssl="no")
+        own_runner.close_session.assert_awaited_once()
+
+    _validate_action_event(queue, success=False)
+
+
+@pytest.mark.asyncio
+async def test_run_ao_workflow_without_connection_args_uses_shared_runner():
+    """Without connection args the action uses the shared runner."""
+    queue = asyncio.Queue()
+    metadata = Metadata(
+        rule="r1",
+        rule_set="rs1",
+        rule_uuid="u1",
+        rule_set_uuid="u2",
+        rule_run_at="abc",
+    )
+    control = Control(
+        queue=queue,
+        inventory="",
+        hosts=["all"],
+        variables={},
+        project_data_file="",
+    )
+    action_args = {"webhook_path": "test-workflow", "post_facts": False}
+
+    with patch(
+        "ansible_rulebook.action.run_ao_workflow.ao_workflow_runner"
+    ) as mock_runner:
+        mock_runner.trigger_workflow = AsyncMock(return_value="exec-555")
+        mock_runner.wait_for_execution = AsyncMock(
+            return_value={"id": "exec-555", "status": "completed"}
+        )
+        mock_runner.is_execution_successful = lambda x, y: True
+        mock_runner.close_session = AsyncMock()
+
+        action = RunAOWorkflow(metadata, control, **action_args)
+        await action()
+
+        mock_runner.with_overrides.assert_not_called()
+        mock_runner.trigger_workflow.assert_called_once()
+        mock_runner.close_session.assert_not_called()
+
+    _validate_action_event(queue, success=True)
