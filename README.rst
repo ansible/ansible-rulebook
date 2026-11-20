@@ -86,6 +86,17 @@ Refer to the `Contributing guide <https://docs.ansible.com/projects/rulebook/en/
 To find out how to join the community and get in touch, see the `Getting in touch <https://docs.ansible.com/projects/rulebook/en/latest/contributing.html#getting-in-touch>`_ section of our docs.
 You can also find more information in the `Ansible communication guide <https://docs.ansible.com/projects/ansible/devel/community/communication.html>`_.
 
+=========
+Releasing
+=========
+
+Production releases are published by the ``Release Workflow``. For release
+events, the workflow requires the ``ansible/ansible-rulebook`` repository, a
+protected ``v`` tag, and a published GitHub release.
+The workflow builds the wheel and source distribution, attaches them to the
+GitHub release, and publishes them to PyPI using GitHub Actions OIDC trusted
+publishing.
+
 Credits
 -------
 
