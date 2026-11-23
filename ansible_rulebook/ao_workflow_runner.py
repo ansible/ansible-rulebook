@@ -78,7 +78,6 @@ class AOWorkflowRunner:
     PROJECTS_SLUG = "api/v1/projects"
     WEBHOOKS_SLUG = "api/v1/webhooks"  # Workflow webhook triggers (not /eda/)
     EXECUTIONS_SLUG = "api/v1/executions"
-    AUTH_SLUG = "api/v1/auth/login"
     AUTH_TOKEN_SLUG = "api/v1/auth/token"
 
     # Terminal execution statuses
@@ -98,9 +97,6 @@ class AOWorkflowRunner:
     def __init__(
         self,
         host: str = "",
-        token: str = "",
-        username: str = "",
-        password: str = "",
         client_id: str = "",
         client_secret: str = "",
         verify_ssl: str = "yes",
@@ -109,9 +105,6 @@ class AOWorkflowRunner:
 
         Args:
             host: AO base URL (e.g., https://ao-host:8080)
-            token: Bearer token for authentication
-            username: Username for authentication (if token not provided)
-            password: Password for authentication (if token not provided)
             client_id: OAuth2 client ID for authentication
             client_secret: OAuth2 client secret for authentication
             verify_ssl: SSL verification setting (yes/no/<path to CA bundle>)
@@ -119,27 +112,16 @@ class AOWorkflowRunner:
         Note:
             If arguments are not provided, will check environment variables:
             - EDA_AO_URL
-            - EDA_AO_TOKEN
             - EDA_AO_CLIENT_ID
             - EDA_AO_CLIENT_SECRET
-            - EDA_AO_USERNAME
-            - EDA_AO_PASSWORD
             - EDA_AO_SSL_VERIFY
         """
-        # Use environment variables as fallback if arguments not provided
-        # Prioritize OAuth2 client credentials (recommended for AO service
-        # accounts)
-        self.token = token
         self._host = ""
         self.host = host or os.environ.get("EDA_AO_URL", "")
         self.client_id = client_id or os.environ.get("EDA_AO_CLIENT_ID", "")
         self.client_secret = client_secret or os.environ.get(
             "EDA_AO_CLIENT_SECRET", ""
         )
-        # Username/password kept for backwards compatibility but not
-        # recommended
-        self.username = username
-        self.password = password
         # For verify_ssl, only use default if no arg and no env var
         if verify_ssl == "yes" and "EDA_AO_SSL_VERIFY" in os.environ:
             self.verify_ssl = os.environ["EDA_AO_SSL_VERIFY"]
@@ -151,6 +133,7 @@ class AOWorkflowRunner:
         self._access_token = None
         self._access_token_expires_at = None
         self._access_token_key = None
+        self._token_lock = asyncio.Lock()
         self._sslcontext_key = None
         self._sslcontext_value = False
         # A runner created by with_overrides() already carries the settings
@@ -252,11 +235,6 @@ class AOWorkflowRunner:
                 self.host = env_host
                 logger.debug("Loaded AO URL from environment: %s", env_host)
 
-        if not self.token:
-            self.token = os.environ.get("EDA_AO_TOKEN", "")
-            if self.token:
-                logger.debug("Loaded AO token from environment")
-
         if not self.client_id:
             self.client_id = os.environ.get("EDA_AO_CLIENT_ID", "")
             if self.client_id:
@@ -280,10 +258,9 @@ class AOWorkflowRunner:
 
         # Log what we have after loading
         logger.debug(
-            "AO credentials after env load: host=%s, has_token=%s, "
+            "AO credentials after env load: host=%s, "
             "has_client_id=%s, has_client_secret=%s",
             bool(self.host and self.host != "/"),
-            bool(self.token),
             bool(self.client_id),
             bool(self.client_secret),
         )
@@ -313,14 +290,8 @@ class AOWorkflowRunner:
             AOWorkflowRunner: A new runner; the caller must close its session
         """
         self._load_from_environment()
-        # Client credentials given to the action take precedence over a
-        # token or a username/password configured globally.
-        own_credentials = bool(client_id or client_secret)
         runner = AOWorkflowRunner(
             host=host or self.host,
-            token="" if own_credentials else self.token,
-            username="" if own_credentials else self.username,
-            password="" if own_credentials else self.password,
             client_id=client_id or self.client_id,
             client_secret=client_secret or self.client_secret,
         )
@@ -331,7 +302,7 @@ class AOWorkflowRunner:
         return runner
 
     async def _get_access_token(self) -> str:
-        """Authenticate and get access token.
+        """Authenticate and get access token using OAuth2 client credentials.
 
         Returns:
             str: Bearer token for API requests
@@ -342,27 +313,24 @@ class AOWorkflowRunner:
         # Load from environment if needed (lazy loading for AAP EDA)
         self._load_from_environment()
 
-        # Direct token takes precedence
-        if self.token:
-            return self.token
+        # Use lock to prevent race conditions when multiple concurrent
+        # actions request tokens
+        async with self._token_lock:
+            # Check cache again inside lock - another thread may have
+            # fetched it while we were waiting
+            cached_token = self._cached_access_token()
+            if cached_token:
+                return cached_token
 
-        # Token obtained earlier with the current settings and still valid
-        cached_token = self._cached_access_token()
-        if cached_token:
-            return cached_token
+            # OAuth2 client_credentials flow
+            if self.client_id and self.client_secret:
+                return await self._get_oauth2_token()
 
-        # OAuth2 client_credentials flow
-        if self.client_id and self.client_secret:
-            return await self._get_oauth2_token()
-
-        # Username/password auth
-        if self.username and self.password:
-            return await self._get_username_password_token()
-
-        raise AOAuthenticationException(
-            "Either token, client_id/client_secret, or username/password "
-            "must be provided"
-        )
+            raise AOAuthenticationException(
+                "OAuth2 client_id and client_secret must be provided. "
+                "Set via EDA_AO_CLIENT_ID and EDA_AO_CLIENT_SECRET environment "
+                "variables or --ao-client-id/--ao-client-secret CLI arguments."
+            )
 
     def _credentials_key(self) -> tuple:
         """Settings an access token was issued for."""
@@ -370,8 +338,6 @@ class AOWorkflowRunner:
             self.host,
             self.client_id,
             self.client_secret,
-            self.username,
-            self.password,
         )
 
     def _cached_access_token(self) -> Optional[str]:
@@ -474,53 +440,6 @@ class AOWorkflowRunner:
             logger.error("OAuth2 authentication error: %s", e)
             raise AOAuthenticationException(
                 f"OAuth2 authentication error: {e}"
-            ) from e
-
-    async def _get_username_password_token(self) -> str:
-        """Get token using username/password authentication.
-
-        Returns:
-            str: Bearer token for API requests
-
-        Raises:
-            AOAuthenticationException: If authentication fails
-        """
-        url = urljoin(self.host, self.AUTH_SLUG)
-        auth_data = {
-            "username": self.username,
-            "password": self.password,
-        }
-
-        try:
-            self._create_session()
-            async with self._raw_session.post(
-                url, json=auth_data, ssl=self._sslcontext
-            ) as response:
-                response.raise_for_status()
-                response_text = await response.text()
-                if not response_text:
-                    raise AOAuthenticationException(
-                        "Empty authentication response"
-                    )
-                result = json.loads(response_text)
-                access_token = result.get("access_token")
-                if not access_token:
-                    raise AOAuthenticationException(
-                        "No access_token in authentication response"
-                    )
-                self._store_access_token(
-                    access_token, result.get("expires_in"), always=True
-                )
-                return access_token
-        except aiohttp.ClientResponseError as e:
-            logger.error("Authentication failed: %s", e)
-            raise AOAuthenticationException(
-                f"Authentication failed: {e}"
-            ) from e
-        except (aiohttp.ClientError, json.JSONDecodeError) as e:
-            logger.error("Authentication error: %s", e)
-            raise AOAuthenticationException(
-                f"Authentication error: {e}"
             ) from e
 
     async def _api_request(self, method: str, path: str, **kwargs) -> dict:
@@ -669,10 +588,11 @@ class AOWorkflowRunner:
         )
         definition = published.get("workflow_definition") or {}
         webhook_paths = [
-            trigger["parameters"]["webhook_path"]
+            (trigger.get("parameters") or {}).get("webhook_path")
             for trigger in definition.get("triggers") or []
             if trigger.get("type") == "webhook_trigger"
-            and (trigger.get("parameters") or {}).get("webhook_path")
+            and isinstance(trigger.get("parameters"), dict)
+            and trigger.get("parameters").get("webhook_path")
         ]
         if not webhook_paths:
             raise AOWorkflowNotFoundException(
@@ -760,7 +680,7 @@ class AOWorkflowRunner:
 
         while True:
             elapsed = time.time() - start_time
-            if elapsed > timeout:
+            if elapsed >= timeout:
                 raise AOExecutionTimeoutException(
                     f"Execution {execution_id} timed out after {timeout}s"
                 )
@@ -825,6 +745,10 @@ class AOWorkflowRunner:
                 logger.warning(
                     "Error checking execution status, will retry: %s", e
                 )
+                # Check timeout before sleeping to avoid exceeding it
+                elapsed = time.time() - start_time
+                if elapsed >= timeout:
+                    continue  # Let the timeout check at loop start handle it
                 await asyncio.sleep(poll_interval)
 
     def is_execution_successful(

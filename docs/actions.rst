@@ -297,11 +297,6 @@ Run an Automation Orchestrator (AO) workflow via webhook trigger.
       Looking up a workflow with ``workflow_name`` needs read access to workflows and projects as well.
 
 .. note::
-    AO webhook endpoints accept service account tokens only. A user name and password (``--ao-username`` and
-    ``--ao-password``) can log in but cannot trigger a workflow. A token passed with ``--ao-token`` is not renewed
-    when it expires, use it for short tests only.
-
-.. note::
     The workflow must have a webhook trigger and be published in Automation Orchestrator. The webhook path is shown
     in the trigger configuration, it is the last part of the webhook URL.
 

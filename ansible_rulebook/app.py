@@ -133,10 +133,9 @@ async def run(parsed_args: argparse.Namespace) -> None:
         startup_args.controller_username = parsed_args.controller_username
         startup_args.controller_password = parsed_args.controller_password
         startup_args.ao_url = parsed_args.ao_url
-        startup_args.ao_token = parsed_args.ao_token
         startup_args.ao_ssl_verify = parsed_args.ao_ssl_verify
-        startup_args.ao_username = parsed_args.ao_username
-        startup_args.ao_password = parsed_args.ao_password
+        startup_args.ao_client_id = parsed_args.ao_client_id
+        startup_args.ao_client_secret = parsed_args.ao_client_secret
 
     validate_actions(startup_args)
     validate_variables(startup_args)
@@ -428,13 +427,12 @@ async def validate_ao_params(startup_args: StartupArgs) -> None:
             raise InvalidUrlException("Invalid Automation Orchestrator url.")
 
         ao_workflow_runner.host = startup_args.ao_url
-        ao_workflow_runner.token = startup_args.ao_token
         if startup_args.ao_ssl_verify:
             ao_workflow_runner.verify_ssl = startup_args.ao_ssl_verify
 
-        if startup_args.ao_username and startup_args.ao_password:
-            ao_workflow_runner.username = startup_args.ao_username
-            ao_workflow_runner.password = startup_args.ao_password
+        if startup_args.ao_client_id and startup_args.ao_client_secret:
+            ao_workflow_runner.client_id = startup_args.ao_client_id
+            ao_workflow_runner.client_secret = startup_args.ao_client_secret
 
         logger.info(
             "Automation Orchestrator configured: %s", startup_args.ao_url

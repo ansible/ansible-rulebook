@@ -45,40 +45,20 @@ def _calls(mocked, method, url):
 
 @pytest_asyncio.fixture
 async def token_runner(monkeypatch):
-    """Runner with a static token and retries without delay."""
+    """Runner with OAuth2 credentials and a cached token for non-auth tests."""
     monkeypatch.setattr(settings, "controller_retry_attempts", 3)
     monkeypatch.setattr(settings, "controller_retry_max_timeout", 0.0)
-    runner = AOWorkflowRunner(host=AO_HOST, token="static-token")
+    runner = AOWorkflowRunner(
+        host=AO_HOST, client_id="test-client", client_secret="test-secret"
+    )
+    # Provide a cached token so tests don't try to authenticate
+    runner._store_access_token("test-token", expires_in=3600, always=True)
     yield runner
     await runner.close_session()
 
 
 class TestAOWorkflowRunnerInit:
     """Tests for AOWorkflowRunner initialization."""
-
-    def test_init_with_token(self):
-        """Test initialization with bearer token."""
-        runner = AOWorkflowRunner(
-            host="https://ao.example.com",
-            token="test-token",
-        )
-
-        assert runner.host == "https://ao.example.com/"
-        assert runner.token == "test-token"
-        assert runner._session is None
-        assert runner._access_token is None
-
-    def test_init_with_username_password(self):
-        """Test initialization with username/password."""
-        runner = AOWorkflowRunner(
-            host="https://ao.example.com",
-            username="user",
-            password="pass",
-        )
-
-        assert runner.username == "user"
-        assert runner.password == "pass"
-        assert runner.token == ""
 
     def test_init_from_environment_variables(self):
         """Test initialization from environment variables."""
@@ -161,7 +141,8 @@ class TestAOWorkflowRunnerSessions:
         """Test session creation."""
         runner = AOWorkflowRunner(
             host="https://ao.example.com",
-            token="test-token",
+            client_id="test-client-id",
+            client_secret="test-client-secret",
         )
 
         try:
@@ -178,7 +159,8 @@ class TestAOWorkflowRunnerSessions:
         """Test session cleanup."""
         runner = AOWorkflowRunner(
             host="https://ao.example.com",
-            token="test-token",
+            client_id="test-client-id",
+            client_secret="test-client-secret",
         )
 
         runner._create_session()
@@ -195,88 +177,12 @@ class TestAOWorkflowRunnerAuthentication:
     """Tests for authentication methods."""
 
     @pytest.mark.asyncio
-    async def test_get_access_token_with_token(self):
-        """Test using provided bearer token."""
-        runner = AOWorkflowRunner(
-            host="https://ao.example.com",
-            token="test-token",
-        )
-
-        token = await runner._get_access_token()
-        assert token == "test-token"
-
-    @pytest.mark.asyncio
     async def test_get_access_token_no_credentials(self):
         """Test authentication failure with no credentials."""
         runner = AOWorkflowRunner(host="https://ao.example.com")
 
         with pytest.raises(AOAuthenticationException):
             await runner._get_access_token()
-
-    @pytest.mark.asyncio
-    async def test_get_access_token_with_username_password(self):
-        """Test authentication with username/password."""
-        runner = AOWorkflowRunner(
-            host="https://ao.example.com",
-            username="user",
-            password="pass",
-        )
-
-        mock_response = AsyncMock()
-        mock_response.status = 200
-        mock_response.text = AsyncMock(
-            return_value='{"access_token": "auth-token-123"}'
-        )
-        mock_response.raise_for_status = Mock()
-        mock_response.__aenter__ = AsyncMock(return_value=mock_response)
-        mock_response.__aexit__ = AsyncMock()
-
-        try:
-            runner._create_session()
-            runner._raw_session.post = Mock(return_value=mock_response)
-
-            token = await runner._get_access_token()
-
-            assert token == "auth-token-123"
-            assert runner._access_token == "auth-token-123"
-            runner._raw_session.post.assert_called_once()
-        finally:
-            await runner.close_session()
-
-    @pytest.mark.asyncio
-    async def test_get_access_token_auth_failure(self):
-        """Test authentication failure handling."""
-        runner = AOWorkflowRunner(
-            host="https://ao.example.com",
-            username="user",
-            password="wrong",
-        )
-
-        # Create error to raise
-        auth_error = aiohttp.ClientResponseError(
-            request_info=Mock(),
-            history=(),
-            status=401,
-            message="Unauthorized",
-        )
-
-        mock_response = AsyncMock()
-        mock_response.status = 401
-        mock_response.raise_for_status = Mock(side_effect=auth_error)
-        mock_response.text = AsyncMock(
-            return_value='{"error": "Unauthorized"}'
-        )
-        mock_response.__aenter__ = AsyncMock(return_value=mock_response)
-        mock_response.__aexit__ = AsyncMock(return_value=None)
-
-        try:
-            runner._create_session()
-            runner._raw_session.post = Mock(return_value=mock_response)
-
-            with pytest.raises(AOAuthenticationException):
-                await runner._get_access_token()
-        finally:
-            await runner.close_session()
 
     @pytest.mark.asyncio
     async def test_get_access_token_with_oauth2(self):
@@ -363,7 +269,6 @@ class TestAOWorkflowRunnerAuthentication:
 
         assert runner.client_id == "client-123"
         assert runner.client_secret == "secret-456"
-        assert runner.token == ""
 
 
 WORKFLOWS_URL = f"{AO_HOST}/api/v1/workflows"
@@ -570,8 +475,10 @@ class TestAOWorkflowRunnerTrigger:
         """Test successful workflow trigger."""
         runner = AOWorkflowRunner(
             host="https://ao.example.com",
-            token="test-token",
+            client_id="test-client",
+            client_secret="test-secret",
         )
+        runner._store_access_token("test-token", expires_in=3600, always=True)
 
         with patch.object(
             runner, "_api_request", new_callable=AsyncMock
@@ -594,8 +501,10 @@ class TestAOWorkflowRunnerTrigger:
         """Test workflow trigger with no payload."""
         runner = AOWorkflowRunner(
             host="https://ao.example.com",
-            token="test-token",
+            client_id="test-client",
+            client_secret="test-secret",
         )
+        runner._store_access_token("test-token", expires_in=3600, always=True)
 
         with patch.object(
             runner, "_api_request", new_callable=AsyncMock
@@ -618,8 +527,10 @@ class TestAOWorkflowRunnerExecution:
         """Test getting execution status."""
         runner = AOWorkflowRunner(
             host="https://ao.example.com",
-            token="test-token",
+            client_id="test-client",
+            client_secret="test-secret",
         )
+        runner._store_access_token("test-token", expires_in=3600, always=True)
 
         with patch.object(
             runner, "_api_request", new_callable=AsyncMock
@@ -639,8 +550,10 @@ class TestAOWorkflowRunnerExecution:
         """Test waiting for successful execution."""
         runner = AOWorkflowRunner(
             host="https://ao.example.com",
-            token="test-token",
+            client_id="test-client",
+            client_secret="test-secret",
         )
+        runner._store_access_token("test-token", expires_in=3600, always=True)
 
         with patch.object(
             runner, "get_execution_status", new_callable=AsyncMock
@@ -662,8 +575,10 @@ class TestAOWorkflowRunnerExecution:
         """Test execution timeout."""
         runner = AOWorkflowRunner(
             host="https://ao.example.com",
-            token="test-token",
+            client_id="test-client",
+            client_secret="test-secret",
         )
+        runner._store_access_token("test-token", expires_in=3600, always=True)
 
         with patch.object(
             runner, "get_execution_status", new_callable=AsyncMock
@@ -763,24 +678,6 @@ class TestAOWorkflowRunnerOverrides:
         assert own.client_id == "shared-id"
         assert own.client_secret == "shared-secret"
         assert own.verify_ssl == "/etc/pki/ca.pem"
-
-    def test_with_overrides_client_credentials_replace_token(self):
-        """Client credentials of the action win over a global token."""
-        shared = AOWorkflowRunner(
-            host="https://ao.example.com",
-            token="global-token",
-            username="user",
-            password="pass",
-        )
-
-        own = shared.with_overrides(
-            client_id="own-id", client_secret="own-secret"
-        )
-
-        assert own.token == ""
-        assert own.username == ""
-        assert own.password == ""
-        assert own.client_id == "own-id"
 
     def test_with_overrides_keeps_explicit_verify_ssl(self):
         """An explicit "yes" is not replaced by EDA_AO_SSL_VERIFY."""

@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import logging
+from typing import Optional
 
 from drools import ruleset as lang
 
@@ -158,9 +159,9 @@ class RunAOWorkflow:
     async def _run(
         self,
         runner,
-        webhook_path: str,
-        workflow_name: str,
-        project: str,
+        webhook_path: Optional[str],
+        workflow_name: Optional[str],
+        project: Optional[str],
         payload: dict,
         timeout: int,
         poll_interval: int,
