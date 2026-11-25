@@ -1,4 +1,5 @@
 import inspect
+import os
 import re
 import subprocess
 from unittest.mock import Mock
@@ -127,3 +128,9 @@ def ansible_core_version():
     match = re.search(r"ansible-playbook\s+(?:\[core\s+)?([0-9.]+)", output)
     assert match, f"Could not parse ansible-core version from: {output}"
     return Version(match.group(1))
+
+
+def pytest_configure(config):
+    # Do not use cowsay, even if available, otherwise the output will not be
+    # matched anymore
+    os.environ["ANSIBLE_NOCOWS"] = "1"
