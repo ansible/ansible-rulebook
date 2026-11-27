@@ -39,6 +39,9 @@ if not os.environ.get("JAVA_HOME"):
 
 from ansible_rulebook import app  # noqa: E402
 from ansible_rulebook import terminal  # noqa: E402
+from ansible_rulebook.ao_workflow_runner import (  # noqa: E402
+    ao_workflow_runner,
+)
 from ansible_rulebook.conf import settings  # noqa: E402
 from ansible_rulebook.job_template_runner import (  # noqa: E402
     job_template_runner,
@@ -206,6 +209,32 @@ def get_parser() -> argparse.ArgumentParser:
             "EDA_CONTROLLER_RETRY_MAX_TIMEOUT",
             settings.controller_retry_max_timeout,
         ),
+    )
+    parser.add_argument(
+        "--ao-url",
+        help="Automation Orchestrator API base url, e.g. "
+        "https://ao-host:8080, can also be passed via the env var EDA_AO_URL",
+        default=os.environ.get("EDA_AO_URL", ""),
+    )
+    parser.add_argument(
+        "--ao-client-id",
+        help="Automation Orchestrator OAuth2 client ID, can also be passed "
+        "via env var EDA_AO_CLIENT_ID",
+        default=os.environ.get("EDA_AO_CLIENT_ID", ""),
+    )
+    parser.add_argument(
+        "--ao-client-secret",
+        help="Automation Orchestrator OAuth2 client secret, can also be "
+        "passed via env var EDA_AO_CLIENT_SECRET",
+        default=os.environ.get("EDA_AO_CLIENT_SECRET", ""),
+    )
+    parser.add_argument(
+        "--ao-ssl-verify",
+        help="How to verify SSL when connecting to Automation Orchestrator: "
+        "(yes|true) | (no|false) | <path to a CA bundle>, "
+        "default to yes for https connection, "
+        "can also be passed via env var EDA_AO_SSL_VERIFY",
+        default=os.environ.get("EDA_AO_SSL_VERIFY", "yes"),
     )
     parser.add_argument(
         "--controller-retry-attempts",
@@ -492,6 +521,15 @@ def main(args: List[str] = None) -> int:
                 "controller_username and controller_password is required",
             )
             return 1
+
+    if args.ao_url:
+        ao_workflow_runner.host = args.ao_url
+        if args.ao_ssl_verify:
+            ao_workflow_runner.verify_ssl = args.ao_ssl_verify
+
+        if args.ao_client_id and args.ao_client_secret:
+            ao_workflow_runner.client_id = args.ao_client_id
+            ao_workflow_runner.client_secret = args.ao_client_secret
 
     try:
         asyncio.run(app.run(args))

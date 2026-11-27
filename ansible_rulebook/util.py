@@ -416,9 +416,9 @@ def ensure_trailing_slash(url: str) -> str:
 
 
 def validate_url(url: str, url_type: str) -> bool:
-    """Check controller or websocket url"""
+    """Check controller, ao, or websocket url"""
     res = urlparse(url)
-    if url_type == "controller":
+    if url_type in ["controller", "ao"]:
         return res.scheme in ["http", "https"] and bool(res.netloc)
     return res.scheme in ["ws", "wss"] and bool(res.netloc)
 

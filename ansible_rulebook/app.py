@@ -24,6 +24,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import yaml
 
 from ansible_rulebook import rules_parser as rules_parser
+from ansible_rulebook.ao_workflow_runner import ao_workflow_runner
 from ansible_rulebook.collection import (
     has_rulebook,
     load_rulebook as collection_load_rulebook,
@@ -84,6 +85,7 @@ class NullQueue:
 logger = logging.getLogger(__name__)
 INVENTORY_ACTIONS = ("run_playbook", "run_module")
 CONTROLLER_ACTIONS = ("run_job_template", "run_workflow_template")
+AO_ACTIONS = ("run_ao_workflow",)
 
 
 def log_exception_without_data(exc_type, exc_value, exc_traceback):
@@ -130,6 +132,10 @@ async def run(parsed_args: argparse.Namespace) -> None:
         startup_args.controller_ssl_verify = parsed_args.controller_ssl_verify
         startup_args.controller_username = parsed_args.controller_username
         startup_args.controller_password = parsed_args.controller_password
+        startup_args.ao_url = parsed_args.ao_url
+        startup_args.ao_ssl_verify = parsed_args.ao_ssl_verify
+        startup_args.ao_client_id = parsed_args.ao_client_id
+        startup_args.ao_client_secret = parsed_args.ao_client_secret
 
     validate_actions(startup_args)
     validate_variables(startup_args)
@@ -147,6 +153,8 @@ async def run(parsed_args: argparse.Namespace) -> None:
     setup_semaphores()
     if startup_args.check_controller_connection:
         await validate_controller_params(startup_args)
+    if startup_args.check_ao_connection:
+        await validate_ao_params(startup_args)
 
     if parsed_args.websocket_url:
         event_log = asyncio.Queue(settings.max_reporting_queue_size)
@@ -215,6 +223,7 @@ async def run(parsed_args: argparse.Namespace) -> None:
 
     logger.info("Main complete")
     await job_template_runner.close_session()
+    await ao_workflow_runner.close_session()
     if error_found:
         raise Exception("One of the source plugins failed")
     elif should_reload is True:
@@ -356,6 +365,8 @@ def validate_actions(startup_args: StartupArgs) -> None:
             for action in rule.actions:
                 if action.action in CONTROLLER_ACTIONS:
                     startup_args.check_controller_connection = True
+                if action.action in AO_ACTIONS:
+                    startup_args.check_ao_connection = True
                 if (
                     action.action in INVENTORY_ACTIONS
                     and not startup_args.inventory
@@ -403,6 +414,29 @@ async def validate_controller_params(startup_args: StartupArgs) -> None:
 
         data = await job_template_runner.get_config()
         logger.info("AAP Version %s", data["version"])
+
+
+async def validate_ao_params(startup_args: StartupArgs) -> None:
+    """Validate and configure Automation Orchestrator connection.
+
+    This is called independently when run_ao_workflow actions are detected,
+    allowing AO-only rulebooks to validate without controller setup.
+    """
+    if startup_args.ao_url:
+        if not validate_url(startup_args.ao_url, "ao"):
+            raise InvalidUrlException("Invalid Automation Orchestrator url.")
+
+        ao_workflow_runner.host = startup_args.ao_url
+        if startup_args.ao_ssl_verify:
+            ao_workflow_runner.verify_ssl = startup_args.ao_ssl_verify
+
+        if startup_args.ao_client_id and startup_args.ao_client_secret:
+            ao_workflow_runner.client_id = startup_args.ao_client_id
+            ao_workflow_runner.client_secret = startup_args.ao_client_secret
+
+        logger.info(
+            "Automation Orchestrator configured: %s", startup_args.ao_url
+        )
 
 
 def setup_semaphores():
