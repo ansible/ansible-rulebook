@@ -1,0 +1,2 @@
+# Needed for setuptools-scm to work with `git archive`-produced sources from GitHub's tar.gz URLs
+.git_archival.txt  export-subst
