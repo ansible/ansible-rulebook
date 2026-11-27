@@ -117,3 +117,6 @@ tests/e2e/utils/awx/artifacts
 node_modules/
 package-lock.json
 package.json
+
+# setuptools-scm
+!.git_archival.txt

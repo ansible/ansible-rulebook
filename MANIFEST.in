@@ -1,13 +1,8 @@
-include AUTHORS.rst
-include CONTRIBUTING.rst
-include HISTORY.rst
-include LICENSE
-include README.rst
+# do not include the `.git_archival.txt` file in sdist builds from repo source
+# this avoids setuptools-scm warnings on development builds
+exclude .git_archival.txt
 
-recursive-include tests *
-recursive-exclude * __pycache__
-recursive-exclude * *.py[co]
-
-recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif
-
-recursive-include ansible_rulebook/schema *.json
+# furthermore do not include the `MANIFEST.in` file itself in sdist builds from
+# repo source to avoid the following setuptools warning on development builds:
+# warning: no previously-included files found matching '.git_archival.txt'
+exclude MANIFEST.in
