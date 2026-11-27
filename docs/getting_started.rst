@@ -207,6 +207,24 @@ possibility of simplifying the lives of many technical and
 sleep-deprived engineers.
 
 
+Validating Your Rulebooks
+--------------------------
+
+Before running a rulebook in production, it's good practice to validate its syntax. You can use the ``--syntax-check`` flag to verify your rulebook without executing it:
+
+.. code-block:: shell
+
+   ansible-rulebook --rulebook webhook-example.yml --syntax-check
+
+This will validate the YAML syntax, rulebook structure, and action definitions. If everything is correct, you'll see:
+
+.. code-block:: shell
+
+   No issues encountered
+
+This is especially useful in CI/CD pipelines or when developing complex rulebooks with multiple rulesets.
+
+
 Extras
 ------
 
