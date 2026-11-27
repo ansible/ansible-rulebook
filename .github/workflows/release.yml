@@ -5,39 +5,88 @@ on:
     types: [published]
 
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
-    # Restrict this action only to protected tags
-    if: github.repository == 'ansible/ansible-rulebook' && startsWith(github.event.release.tag_name, 'v')
+    if: >-
+      github.repository == 'ansible/ansible-rulebook' &&
+      github.ref_protected == true &&
+      startsWith(github.event.release.tag_name, 'v')
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: refs/tags/${{ github.event.release.tag_name }}
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: "3.11"
+          python-version: "3.x"
 
       - name: Install dependencies
+        # build is pinned to satisfy sonarcloud concerns
         run: |
-          python -m pip install -U build setuptools setuptools_scm
+          python -Im pip install build==1.5.0 --only-binary=:all:
 
       - name: Build package
         run: make dist
 
+      - name: Upload distributions as workflow artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: distributions
+          path: dist/*
+
+  release-assets:
+    needs: build
+    if: >-
+      github.repository == 'ansible/ansible-rulebook' &&
+      github.ref_protected == true &&
+      startsWith(github.event.release.tag_name, 'v')
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: distributions
+          path: dist/
+
       - name: Upload artifacts to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-          RELEASE_ID: ${{ github.event.release.id }}
-        run: |
-          gh release upload "$RELEASE_TAG" dist/*
+        run: gh release upload --repo "$GITHUB_REPOSITORY" "$RELEASE_TAG" dist/*
 
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
+  publish:
+    needs: [build, release-assets]
+    if: >-
+      github.repository == 'ansible/ansible-rulebook' &&
+      github.ref_protected == true &&
+      startsWith(github.event.release.tag_name, 'v')
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: >-
+        https://pypi.org/project/ansible-rulebook/${{
+          github.event.release.tag_name
+        }}
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          name: distributions
+          path: dist/
+
+      - name: Publish distributions
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
